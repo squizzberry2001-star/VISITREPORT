@@ -781,11 +781,11 @@ function StoreDetailCard({ detail }) {
     ['Alamat', detail.address || detail.storeAddress || '-']
   ];
   return (
-    <div className="surface-card rounded-[28px] p-5 md:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
+    <div className="store-detail-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6">
+      <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-audit-primary">Detail Store</p>
-          <h3 className="mt-1 text-xl font-extrabold text-slate-950">{detail.siteDescr || detail.storeName || 'Store belum dipilih'}</h3>
+          <h3 className="mt-1 break-words text-lg font-extrabold leading-tight text-slate-950 md:text-xl">{detail.siteDescr || detail.storeName || 'Store belum dipilih'}</h3>
         </div>
         <div className="hidden h-12 w-12 place-items-center rounded-2xl bg-slate-900 text-white md:grid">
           <Icon name="store" className="h-6 w-6" />
@@ -793,9 +793,9 @@ function StoreDetailCard({ detail }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {items.map(([label, value]) => (
-          <div key={label} className={cx('rounded-2xl border border-slate-200 bg-slate-50 p-3', label === 'Alamat' ? 'sm:col-span-2 xl:col-span-2' : '')}>
+          <div key={label} className={cx('store-detail-item rounded-2xl border border-slate-200 bg-slate-50 p-3', label === 'Alamat' ? 'sm:col-span-2 xl:col-span-2' : '')}>
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-1 text-sm font-semibold leading-5 text-slate-800">{value}</p>
+            <p className="mt-1 min-w-0 break-words text-sm font-semibold leading-5 text-slate-800">{value}</p>
           </div>
         ))}
       </div>
@@ -824,6 +824,17 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function getEditorCanvasSize(imageElement) {
+  const width = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
+  const height = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
+  const maxSide = 1400;
+  const scale = Math.min(1, maxSide / Math.max(width, height));
+  return {
+    width: Math.max(360, Math.round(width * scale)),
+    height: Math.max(360, Math.round(height * scale))
+  };
+}
+
 function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
@@ -834,14 +845,29 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [markers, setMarkers] = useState([]);
   const [mode, setMode] = useState('move');
+  const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
 
   useEffect(() => {
     if (!open) return undefined;
     const previousOverflow = document.body.style.overflow;
     const previousTouchAction = document.body.style.touchAction;
+    const previousPosition = document.body.style.position;
+    const previousWidth = document.body.style.width;
+    const previousTop = document.body.style.top;
+    const lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
-    return () => { document.body.style.overflow = previousOverflow; document.body.style.touchAction = previousTouchAction; };
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${lockedScrollY}px`;
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+      document.body.style.position = previousPosition;
+      document.body.style.width = previousWidth;
+      document.body.style.top = previousTop;
+      window.requestAnimationFrame(() => window.scrollTo(0, lockedScrollY));
+    };
   }, [open]);
 
   useEffect(() => {
@@ -851,12 +877,17 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     setOffset({ x: 0, y: 0 });
     setMarkers([]);
     setMode('move');
-    loadImageElement(image).then((loaded) => { if (cancelled) return; imgRef.current = loaded; drawEditorCanvas(); }).catch(() => {});
+    loadImageElement(image).then((loaded) => {
+      if (cancelled) return;
+      imgRef.current = loaded;
+      setCanvasSize(getEditorCanvasSize(loaded));
+      window.requestAnimationFrame(() => drawEditorCanvas());
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [open, image]);
 
   function scheduleDraw() { if (rafRef.current) window.cancelAnimationFrame(rafRef.current); rafRef.current = window.requestAnimationFrame(() => drawEditorCanvas()); }
-  useEffect(() => { if (!open) return; scheduleDraw(); }, [zoom, offset, markers, mode, open]);
+  useEffect(() => { if (!open) return; scheduleDraw(); }, [zoom, offset, markers, mode, open, canvasSize]);
 
   function drawEditorCanvas(targetCanvas) {
     const canvas = targetCanvas || canvasRef.current;
@@ -915,11 +946,11 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
 
   if (!open) return null;
   return (
-    <div className="photo-editor-overlay fixed inset-0 z-[95] grid place-items-center bg-slate-950/60 p-3 backdrop-blur-[2px]" role="dialog" aria-modal="true">
-      <div className="photo-editor-panel w-full max-w-2xl rounded-[28px] bg-white p-4 shadow-2xl md:p-5">
-        <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Crop & Marker</p><h3 className="text-lg font-black text-slate-950">{title}</h3></div><Button variant="icon" onClick={onClose} aria-label="Tutup editor"><Icon name="close" className="h-4 w-4" /></Button></div>
-        <div className="photo-editor-canvas-shell overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2"><canvas ref={canvasRef} width="1080" height="1080" className="mx-auto block w-full touch-none rounded-xl bg-white" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onWheel={handleWheel} /></div>
-        <div className="mt-3 flex flex-wrap items-center justify-end gap-2"><Button variant={mode === 'move' ? 'primary' : 'secondary'} icon="crop" onClick={() => setMode('move')} aria-label="Mode geser dan crop" /><Button variant={mode === 'marker' ? 'primary' : 'secondary'} icon="marker" onClick={() => setMode('marker')} aria-label="Mode marker" /><Button variant="secondary" icon="left" onClick={() => setMarkers((current) => current.slice(0, -1))} aria-label="Undo marker" /><Button variant="secondary" icon="eraser" onClick={() => confirmAction('Hapus semua marker pada foto ini?') && setMarkers([])} aria-label="Clear marker" /><Button icon="check" onClick={saveEditedImage}>Simpan</Button></div>
+    <div className="photo-editor-overlay fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-[2px]" role="dialog" aria-modal="true">
+      <div className="photo-editor-panel w-full rounded-[24px] bg-white p-3 shadow-2xl md:p-4">
+        <div className="photo-editor-header flex shrink-0 items-center justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary">Crop & Marker</p><h3 className="truncate text-base font-black text-slate-950">{title}</h3></div><Button variant="icon" onClick={onClose} aria-label="Tutup editor"><Icon name="close" className="h-4 w-4" /></Button></div>
+        <div className="photo-editor-canvas-shell mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2"><canvas ref={canvasRef} width={canvasSize.width} height={canvasSize.height} style={{ aspectRatio: `${canvasSize.width} / ${canvasSize.height}` }} className="block max-h-full max-w-full touch-none rounded-xl bg-white" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onWheel={handleWheel} /></div>
+        <div className="photo-editor-actions mt-3 flex shrink-0 flex-wrap items-center justify-end gap-2"><Button variant={mode === 'move' ? 'primary' : 'secondary'} icon="crop" onClick={() => setMode('move')} aria-label="Mode geser dan crop" /><Button variant={mode === 'marker' ? 'primary' : 'secondary'} icon="marker" onClick={() => setMode('marker')} aria-label="Mode marker" /><Button variant="secondary" icon="left" onClick={() => setMarkers((current) => current.slice(0, -1))} aria-label="Undo marker" /><Button variant="secondary" icon="eraser" onClick={() => confirmAction('Hapus semua marker pada foto ini?') && setMarkers([])} aria-label="Clear marker" /><Button icon="check" onClick={saveEditedImage}>Simpan</Button></div>
       </div>
     </div>
   );
@@ -1152,8 +1183,8 @@ function VisitSetupSection({ visit, update }) {
   }
   return (
     <SectionShell title="Mulai visit">
-      <div className="visit-setup-grid grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-5">
-        <div className="visit-setup-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6">
+      <div className="visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5">
+        <div className="visit-setup-card surface-card min-w-0 rounded-[24px] p-4 md:rounded-[28px] md:p-6">
           <div className="grid gap-4 md:gap-5">
             <SelectField label="Nama Bestie" required value={visit.nama || ''} options={BESTIE_NAMES} onChange={handleBestieChange} placeholder="Pilih nama bestie" icon="user" />
             <SelectField label="Store" required value={visit.store || ''} options={storeOptions} onChange={handleStoreChange} placeholder="Pilih store" icon="store" />

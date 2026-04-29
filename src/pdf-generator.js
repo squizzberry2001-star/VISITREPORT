@@ -324,7 +324,7 @@
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(x, cardY, cardW, cardH, 4, 4, 'FD');
-      const added = await addImageInBox(doc, photo.image, x + 3, cardY + 3, cardW - 6, imageH, 'contain');
+      const added = await addImageInBox(doc, photo.image, x + 3, cardY + 3, cardW - 6, imageH, 'coverCrop');
       if (!added) {
         doc.setFillColor(248, 250, 252);
         doc.roundedRect(x + 3, cardY + 3, cardW - 6, imageH, 3, 3, 'F');
@@ -507,19 +507,20 @@
 
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
     const lineHeight = 3.65;
-    const imageSize = Math.max(44, Math.min(cardWidth - 10, cardHeight - 22));
-    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageSize - 13) / lineHeight));
+    const imageWidth = Math.max(44, cardWidth - 8);
+    const imageHeight = Math.max(36, Math.min(cardHeight * 0.64, cardHeight - 21));
+    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 13) / lineHeight));
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
       const lines = doc.splitTextToSize(text(photo.description, '-'), cardWidth - 10);
       const first = lines.slice(0, maxLinesWithImage);
-      items.push({ image: photo.image, lines: first, lineHeight: lineHeight, imageHeight: imageSize, imageSize: imageSize, title: 'Foto ' + String(index + 1), continuation: false });
+      items.push({ image: photo.image, lines: first, lineHeight: lineHeight, imageHeight: imageHeight, imageWidth: imageWidth, title: 'Foto ' + String(index + 1), continuation: false });
       let rest = lines.slice(maxLinesWithImage);
       let continuationIndex = 1;
       while (rest.length) {
         const chunk = rest.slice(0, maxLinesTextOnly);
-        items.push({ image: '', lines: chunk, lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
+        items.push({ image: '', lines: chunk, lineHeight: lineHeight, imageHeight: 0, imageWidth: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
         rest = rest.slice(maxLinesTextOnly);
         continuationIndex += 1;
       }
@@ -535,19 +536,20 @@
     let descY = y + 7;
     let descHeight = height - 10;
     if (item.image) {
-      const imgSize = Math.min(item.imageSize || item.imageHeight || 46, width - 8, height - 22);
-      const imgX = x + (width - imgSize) / 2;
+      const imgW = Math.min(item.imageWidth || width - 8, width - 8);
+      const imgH = Math.min(item.imageHeight || height * 0.62, height - 21);
+      const imgX = x + (width - imgW) / 2;
       const imgY = y + 4;
-      const added = await addImageInBox(doc, item.image, imgX, imgY, imgSize, imgSize, 'coverCrop');
+      const added = await addImageInBox(doc, item.image, imgX, imgY, imgW, imgH, 'coverCrop');
       if (!added) {
         doc.setFillColor(248, 250, 252);
-        doc.roundedRect(imgX, imgY, imgSize, imgSize, 3, 3, 'F');
+        doc.roundedRect(imgX, imgY, imgW, imgH, 3, 3, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.8);
         doc.setTextColor(148, 163, 184);
-        doc.text('No photo', x + width / 2, imgY + imgSize / 2, { align: 'center' });
+        doc.text('No photo', x + width / 2, imgY + imgH / 2, { align: 'center' });
       }
-      descY = imgY + imgSize + 5;
+      descY = imgY + imgH + 5;
       descHeight = height - (descY - y) - 4;
     }
 
