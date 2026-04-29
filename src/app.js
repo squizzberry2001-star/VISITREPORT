@@ -7,6 +7,8 @@ const MASTER_STORES = Array.isArray(window.DEFAULT_STORE_MASTER_DATA) ? window.D
 const JOB_LEVELS = ['', '1A', 'NS3', 'NS1', 'MG3', 'MG1'];
 const HISTORY_META_KEY = 'rbv_react_history_meta_v3';
 const ACTIVE_VISIT_KEY = 'rbv_react_active_visit_v3';
+const MANUAL_STORE_REQUEST_KEY = 'rbv_manual_store_requests_v6';
+const MANUAL_STORE_APPROVED_KEY = 'rbv_manual_store_approved_v6';
 const REPORT_DB_NAME = 'regional_bestie_visit_react_db';
 const REPORT_DB_STORE = 'visits';
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -43,9 +45,87 @@ function uniqueBy(items, keyFn) {
     });
     return result;
 }
+function readJsonArray(key) {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch (error) {
+        return [];
+    }
+}
+function saveJsonArray(key, items) {
+    const safeItems = Array.isArray(items) ? items : [];
+    localStorage.setItem(key, JSON.stringify(safeItems));
+    return safeItems;
+}
+function readManualStoreRequests() {
+    return readJsonArray(MANUAL_STORE_REQUEST_KEY);
+}
+function saveManualStoreRequests(items) {
+    return saveJsonArray(MANUAL_STORE_REQUEST_KEY, items);
+}
+function readApprovedManualStores() {
+    return readJsonArray(MANUAL_STORE_APPROVED_KEY);
+}
+function saveApprovedManualStores(items) {
+    return saveJsonArray(MANUAL_STORE_APPROVED_KEY, uniqueBy(items, (item) => normalize(item.storeName || item.siteDescr || item.label)));
+}
+function createManualStoreRequest(payload) {
+    const now = Date.now();
+    const request = {
+        id: `manual_store_${now}_${Math.random().toString(36).slice(2, 8)}`,
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+        bestieName: cleanText(payload.bestieName),
+        storeName: cleanText(payload.storeName),
+        storeCode: cleanText(payload.storeCode),
+        address: cleanText(payload.address),
+        note: cleanText(payload.note)
+    };
+    saveManualStoreRequests([request, ...readManualStoreRequests()]);
+    return request;
+}
+function approveManualStoreRequest(id) {
+    const now = Date.now();
+    const requests = readManualStoreRequests();
+    let approved = null;
+    const nextRequests = requests.map((item) => {
+        if (item.id !== id)
+            return item;
+        approved = { ...item, status: 'approved', updatedAt: now };
+        return approved;
+    });
+    saveManualStoreRequests(nextRequests);
+    if (approved) {
+        saveApprovedManualStores([{
+                siteDescr: approved.storeName,
+                storeName: approved.storeName,
+                siteCode: approved.storeCode,
+                siteCode4: approved.storeCode,
+                address: approved.address,
+                city: '',
+                source: 'manual-approved',
+                approvedAt: now,
+                requestedBy: approved.bestieName
+            }, ...readApprovedManualStores()]);
+    }
+    return approved;
+}
+function rejectManualStoreRequest(id) {
+    const now = Date.now();
+    saveManualStoreRequests(readManualStoreRequests().map((item) => item.id === id ? { ...item, status: 'rejected', updatedAt: now } : item));
+}
+function findApprovedManualStore(storeName) {
+    const key = normalize(storeName);
+    if (!key)
+        return null;
+    return readApprovedManualStores().find((item) => normalize(item.storeName || item.siteDescr) === key || normalize(item.siteCode || item.siteCode4) === key) || null;
+}
 const BESTIE_NAMES = uniqueBy(BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
-    return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
+    return cleanText((item === null || item === void 0 ? void 0 : item.storeName) || (item === null || item === void 0 ? void 0 : item.assignmentStoreName) || (item === null || item === void 0 ? void 0 : item.siteDescr) || (item === null || item === void 0 ? void 0 : item.store));
 }
 function getStoresForBestie(bestieName) {
     const key = normalize(bestieName);
@@ -58,13 +138,20 @@ function getStoresForBestie(bestieName) {
         value: getStoreLabel(item)
     }))
         .filter((item) => item.label);
+    const approvedManual = readApprovedManualStores().map((item) => ({
+        label: cleanText(item.storeName || item.siteDescr),
+        source: 'manual-approved',
+        master: item,
+        value: cleanText(item.storeName || item.siteDescr)
+    })).filter((item) => item.label);
     const fallback = MASTER_STORES.map((item) => ({
         label: cleanText(item.siteDescr),
         source: 'master',
         master: item,
         value: cleanText(item.siteDescr)
     })).filter((item) => item.label);
-    return uniqueBy(assigned.length ? assigned : fallback, (item) => normalize(item.label))
+    const base = assigned.length ? assigned : fallback;
+    return uniqueBy([...base, ...approvedManual], (item) => normalize(item.label))
         .sort((a, b) => a.label.localeCompare(b.label));
 }
 function findAssignmentStore(storeName, bestieName) {
@@ -86,26 +173,28 @@ function findMasterStore(storeName) {
 }
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
-    const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName);
+    const approvedManual = findApprovedManualStore(storeName);
+    const master = findMasterStore(storeName || (assignment === null || assignment === void 0 ? void 0 : assignment.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.assignmentStoreName) || (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.siteDescr) || (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.storeName));
     const merged = {
         ...(assignment || {}),
-        ...(master || {})
+        ...(master || {}),
+        ...(approvedManual || {})
     };
     if (!merged.siteDescr)
-        merged.siteDescr = assignment?.storeName || assignment?.assignmentStoreName || storeName || '';
+        merged.siteDescr = (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.assignmentStoreName) || storeName || '';
     if (!merged.address)
-        merged.address = assignment?.storeAddress || '';
-    if (!merged.siteCode && assignment?.storeCode)
+        merged.address = (assignment === null || assignment === void 0 ? void 0 : assignment.storeAddress) || '';
+    if (!merged.siteCode && (assignment === null || assignment === void 0 ? void 0 : assignment.storeCode))
         merged.siteCode = assignment.storeCode;
-    if (!merged.siteCode4 && assignment?.storeCode)
+    if (!merged.siteCode4 && (assignment === null || assignment === void 0 ? void 0 : assignment.storeCode))
         merged.siteCode4 = assignment.storeCode;
-    if (!merged.storeHead && assignment?.storeHead)
+    if (!merged.storeHead && (assignment === null || assignment === void 0 ? void 0 : assignment.storeHead))
         merged.storeHead = assignment.storeHead;
-    if (!merged.areaManager && assignment?.areaManager)
+    if (!merged.areaManager && (assignment === null || assignment === void 0 ? void 0 : assignment.areaManager))
         merged.areaManager = assignment.areaManager;
-    if (!merged.regionalManager && assignment?.regionalManager)
+    if (!merged.regionalManager && (assignment === null || assignment === void 0 ? void 0 : assignment.regionalManager))
         merged.regionalManager = assignment.regionalManager;
-    if (!merged.city && assignment?.city)
+    if (!merged.city && (assignment === null || assignment === void 0 ? void 0 : assignment.city))
         merged.city = assignment.city;
     return merged;
 }
@@ -152,8 +241,8 @@ function blankPhoto() {
     return { image: '', description: '' };
 }
 function normalizeQscPhotos(visit) {
-    const legacy = visit?.qscResultPhoto ? [visit.qscResultPhoto] : [];
-    const source = Array.isArray(visit?.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
+    const legacy = (visit === null || visit === void 0 ? void 0 : visit.qscResultPhoto) ? [visit.qscResultPhoto] : [];
+    const source = Array.isArray(visit === null || visit === void 0 ? void 0 : visit.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
     const firstTwo = [0, 1].map((index) => source[index] || blankPhoto());
     return firstTwo;
 }
@@ -167,7 +256,7 @@ function createVisit(bestieName = '', storeName = '') {
         nama: cleanText(bestieName),
         store: cleanText(storeName || detail.siteDescr),
         tanggal: new Date().toISOString().slice(0, 10),
-        storeLeader: cleanText(detail.storeHead),
+        storeLeader: '',
         storeLeaderLevel: '',
         shiftLeader: '',
         shiftLeaderLevel: '',
@@ -187,7 +276,7 @@ function createVisit(bestieName = '', storeName = '') {
     };
 }
 function isMeaningfulObservation(row) {
-    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row?.[key]));
+    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row === null || row === void 0 ? void 0 : row[key]));
 }
 function visitProgress(visit) {
     if (!visit)
@@ -207,7 +296,7 @@ function visitProgress(visit) {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 function historyMetaFromVisit(visit) {
-    const detail = getStoreWebDetail(visit?.store);
+    const detail = getStoreWebDetail(visit === null || visit === void 0 ? void 0 : visit.store);
     return {
         id: visit.id,
         bestieName: cleanText(visit.nama, '-'),
@@ -269,7 +358,7 @@ async function getVisitRecord(id) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(REPORT_DB_STORE, 'readonly');
         const request = tx.objectStore(REPORT_DB_STORE).get(id);
-        request.onsuccess = () => resolve(request.result?.data || null);
+        request.onsuccess = () => { var _a; return resolve(((_a = request.result) === null || _a === void 0 ? void 0 : _a.data) || null); };
         request.onerror = () => reject(request.error);
     });
 }
@@ -441,7 +530,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
+    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange === null || onChange === void 0 ? void 0 : onChange(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
@@ -484,16 +573,28 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         const html = editorRef.current ? editorRef.current.innerHTML : '';
         onChange(isEmpty(html) ? '' : html);
     }
+    function focusLastEditableNode(container) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        const target = container.querySelector('li') || container;
+        range.selectNodeContents(target);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
     function command(name, argument = null) {
         const editor = editorRef.current;
         if (!editor)
             return;
         const listCommand = name === 'insertUnorderedList' || name === 'insertOrderedList';
-        if (listCommand && isEmpty(editor.innerHTML) && window.getSelection()?.isCollapsed) {
-            editor.focus({ preventScroll: true });
+        editor.focus({ preventScroll: true });
+        if (listCommand && isEmpty(editor.innerHTML)) {
+            editor.innerHTML = name === 'insertUnorderedList' ? '<ul><li><br></li></ul>' : '<ol><li><br></li></ol>';
+            focusLastEditableNode(editor);
+            emit();
+            setActiveTools((current) => ({ ...current, [name]: true }));
             return;
         }
-        editor.focus({ preventScroll: true });
         try {
             document.execCommand(name, false, argument);
         }
@@ -526,6 +627,16 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
 function SelectInput({ children, className = '', ...props }) {
     return React.createElement("select", { className: cx('form-control appearance-none', className), ...props }, children);
 }
+function SelectField({ label, value, options, onChange, placeholder = 'Pilih', required, icon }) {
+    const normalizedOptions = (options || []).map((item) => typeof item === 'string' ? { label: item, value: item } : item);
+    return (React.createElement(Field, { label: label, required: required },
+        React.createElement("div", { className: "relative" },
+            icon ? React.createElement("span", { className: "pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400" },
+                React.createElement(Icon, { name: icon, className: "h-5 w-5" })) : null,
+            React.createElement(SelectInput, { value: value || '', onChange: (event) => onChange(event.target.value), className: icon ? 'pl-12 pr-12' : 'pr-12', required: required },
+                React.createElement("option", { value: "" }, placeholder),
+                normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label }, item.label))))));
+}
 function Toggle({ checked, onChange, label, className = '' }) {
     return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, onClick: () => onChange(!checked), className: cx('slide-toggle', checked && 'active', className) },
         label ? React.createElement("span", { className: "slide-toggle-label" }, label) : null,
@@ -533,19 +644,18 @@ function Toggle({ checked, onChange, label, className = '' }) {
             React.createElement("span", null))));
 }
 function EmptyState({ icon = 'spark', title, children, action }) {
-    return (React.createElement("div", { className: "surface-card flex flex-col items-center justify-center rounded-[28px] px-6 py-12 text-center" },
-        React.createElement("div", { className: "mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
-            React.createElement(Icon, { name: icon, className: "h-7 w-7" })),
+    return (React.createElement("div", { className: "surface-card flex flex-col items-center justify-center rounded-[28px] px-6 py-10 text-center" },
+        React.createElement("div", { className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
+            React.createElement(Icon, { name: icon, className: "h-6 w-6" })),
         React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
-        React.createElement("p", { className: "mt-2 max-w-md text-sm leading-6 text-slate-600" }, children),
+        children ? React.createElement("p", { className: "mt-2 max-w-md text-sm leading-6 text-slate-600" }, children) : null,
         action ? React.createElement("div", { className: "mt-5" }, action) : null));
 }
-function InactiveSection({ title, children }) {
+function InactiveSection({ title }) {
     return (React.createElement("div", { className: "inactive-section surface-card rounded-[28px] p-6 text-center md:p-8" },
         React.createElement("div", { className: "mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-500" },
             React.createElement(Icon, { name: "eye", className: "h-6 w-6" })),
-        React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
-        React.createElement("p", { className: "mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600" }, children)));
+        React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title)));
 }
 // =============================================================
 // Molecules
@@ -571,8 +681,9 @@ function SearchableCombobox({ label, value, options, onChange, onSelect, placeho
         onSelect ? onSelect(item) : onChange(item.value || item.label);
         setOpen(false);
         window.requestAnimationFrame(() => {
-            const input = wrapRef.current?.querySelector('input');
-            input?.blur();
+            var _a;
+            const input = (_a = wrapRef.current) === null || _a === void 0 ? void 0 : _a.querySelector('input');
+            input === null || input === void 0 ? void 0 : input.blur();
         });
     }
     return (React.createElement(Field, { label: label, required: required, helper: helper },
@@ -782,45 +893,42 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             return;
         onChange({ ...(value || blankPhoto()), image: '' });
     }
-    const description = value?.description || '';
+    const description = (value === null || value === void 0 ? void 0 : value.description) || '';
     return (React.createElement("div", { className: "surface-card overflow-hidden rounded-[26px]" },
         React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 px-4 py-3" },
             React.createElement("div", { className: "min-w-0" },
                 React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-900" },
                     label,
-                    required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null),
-                React.createElement("p", { className: "text-xs text-slate-500" }, "Kamera, galeri, crop, dan marker tersedia.")),
+                    required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null)),
             React.createElement("div", { className: "flex shrink-0 gap-2" },
-                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
+                (value === null || value === void 0 ? void 0 : value.image) ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
-                value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
+                (value === null || value === void 0 ? void 0 : value.image) ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
-        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
+        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', (value === null || value === void 0 ? void 0 : value.image) ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, (value === null || value === void 0 ? void 0 : value.image) ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
-            React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Belum ada foto"),
-            React.createElement("p", { className: "mt-1 text-xs leading-5" }, "Ambil langsung dari kamera atau pilih dari galeri."))),
+            React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
             React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => cameraRef.current?.click(), "aria-label": "Ambil foto dari kamera" }),
-            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => galleryRef.current?.click(), "aria-label": "Pilih foto dari galeri" })),
-        React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto, root cause, atau catatan corrective action...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi singkat foto...", minRows: 2 })),
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
+            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { var _a; return (_a = cameraRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Ambil foto dari kamera" }),
+            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { var _a; return (_a = galleryRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Pilih foto dari galeri" })),
+        React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
 }
-function SectionShell({ kicker, title, description, children, actions, preTitle }) {
+function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
         React.createElement("div", { className: "section-heading mb-5 flex flex-col gap-3" },
-            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, kicker),
             preTitle ? React.createElement("div", { className: "section-pretitle" }, preTitle) : null,
             React.createElement("div", { className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
                 React.createElement("h2", { className: "text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, title),
-                actions ? React.createElement("div", { className: "section-actions flex flex-wrap gap-2 md:justify-end" }, actions) : null),
-            description ? React.createElement("p", { className: "max-w-2xl text-sm leading-6 text-slate-600" }, description) : null),
+                actions ? React.createElement("div", { className: "section-actions flex flex-wrap gap-2 md:justify-end" }, actions) : null)),
         children));
 }
 function CrewEditor({ visit, update }) {
-    const crewList = visit.crewList?.length ? visit.crewList : [{ name: '', level: '' }];
+    var _a;
+    const crewList = ((_a = visit.crewList) === null || _a === void 0 ? void 0 : _a.length) ? visit.crewList : [{ name: '', level: '' }];
     const updateCrew = (index, patch) => {
         const next = crewList.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item);
         update({ crewList: next });
@@ -839,8 +947,7 @@ function CrewEditor({ visit, update }) {
                     React.createElement("div", { className: "grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
                         React.createElement(Icon, { name: "user" })),
                     React.createElement("div", null,
-                        React.createElement("h3", { className: "font-extrabold text-slate-950" }, "Store Leader"),
-                        React.createElement("p", { className: "text-xs text-slate-500" }, "PIC utama saat visit"))),
+                        React.createElement("h3", { className: "font-extrabold text-slate-950" }, "Store Leader"))),
                 React.createElement("div", { className: "grid gap-3 sm:grid-cols-[1fr_120px]" },
                     React.createElement(Field, { label: "Nama" },
                         React.createElement(TextInput, { value: visit.storeLeader || '', onChange: (e) => update({ storeLeader: e.target.value }), placeholder: "Nama store leader" })),
@@ -851,8 +958,7 @@ function CrewEditor({ visit, update }) {
                     React.createElement("div", { className: "grid h-10 w-10 place-items-center rounded-2xl bg-orange-50 text-audit-accent" },
                         React.createElement(Icon, { name: "user" })),
                     React.createElement("div", null,
-                        React.createElement("h3", { className: "font-extrabold text-slate-950" }, "Shift Leader"),
-                        React.createElement("p", { className: "text-xs text-slate-500" }, "PIC operasional shift"))),
+                        React.createElement("h3", { className: "font-extrabold text-slate-950" }, "Shift Leader"))),
                 React.createElement("div", { className: "grid gap-3 sm:grid-cols-[1fr_120px]" },
                     React.createElement(Field, { label: "Nama" },
                         React.createElement(TextInput, { value: visit.shiftLeader || '', onChange: (e) => update({ shiftLeader: e.target.value }), placeholder: "Nama shift leader" })),
@@ -860,8 +966,7 @@ function CrewEditor({ visit, update }) {
                         React.createElement(SelectInput, { value: visit.shiftLeaderLevel || '', onChange: (e) => update({ shiftLeaderLevel: e.target.value }) }, JOB_LEVELS.map((level) => React.createElement("option", { key: level, value: level }, level || 'Pilih'))))))),
         React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
             React.createElement("div", { className: "mb-5" },
-                React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, "Crew Store"),
-                React.createElement("p", { className: "text-sm text-slate-500" }, "Tambahkan crew yang ikut mendampingi audit.")),
+                React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, "Crew Store")),
             React.createElement("div", { className: "grid gap-3" }, crewList.map((crew, index) => (React.createElement("div", { key: index, className: "grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[44px_1fr_130px_44px] sm:items-end" },
                 React.createElement("div", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-slate-600" }, index + 1),
                 React.createElement(Field, { label: "Nama Crew" },
@@ -874,7 +979,7 @@ function CrewEditor({ visit, update }) {
                 React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addCrew }, "Tambah Crew")))));
 }
 function ObservationCards({ title, rows, onChange }) {
-    const safeRows = rows?.length ? rows : [blankObservationRow()];
+    const safeRows = (rows === null || rows === void 0 ? void 0 : rows.length) ? rows : [blankObservationRow()];
     const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
     const addRow = () => onChange([...safeRows, blankObservationRow()]);
     const removeRow = (index) => {
@@ -887,8 +992,7 @@ function ObservationCards({ title, rows, onChange }) {
         React.createElement(RichTextInput, { value: row[key] || '', onChange: (value) => updateRow(index, { [key]: value }), placeholder: placeholder })));
     return (React.createElement("div", { className: "grid gap-4" },
         React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-            React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
-            React.createElement("p", { className: "text-sm leading-6 text-slate-600" }, "Isi temuan dengan format singkat. Toolbar kecil dapat dipakai untuk bullet, number, bold, italic, dan underline.")),
+            React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title)),
         safeRows.map((row, index) => (React.createElement("article", { key: index, className: "surface-card rounded-[28px] p-4 md:p-5" },
             React.createElement("div", { className: "mb-4 flex items-center justify-between gap-3" },
                 React.createElement(Badge, { tone: isMeaningfulObservation(row) ? 'success' : 'default' },
@@ -910,7 +1014,7 @@ function ObservationCards({ title, rows, onChange }) {
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row"))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
-    const safePhotos = photos?.length ? photos : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()];
+    const safePhotos = (photos === null || photos === void 0 ? void 0 : photos.length) ? photos : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()];
     const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
     const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
     const removeEmpty = () => {
@@ -923,8 +1027,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
         React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
             React.createElement("p", { className: "text-sm font-bold text-slate-900" },
                 safePhotos.length,
-                " slot foto tersedia"),
-            React.createElement("p", { className: "mt-1 text-sm leading-6 text-slate-600" }, "Gunakan crop dan marker merah pada foto agar evidence mudah dipahami.")),
+                " slot foto")),
         React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: `${prefix} ${index + 1}`, value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true })))),
         React.createElement("div", { className: "flex flex-wrap justify-end gap-2" },
             React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: removeEmpty }, "Rapikan Slot Kosong"),
@@ -938,48 +1041,52 @@ const SECTION_DEFS = [
     { id: 'evidence', label: 'Evidence', title: 'Evidence', icon: 'image', hint: 'Foto temuan' },
     { id: 'assignment', label: 'Assign', title: 'Store Assignment', icon: 'excel', hint: 'CA purpose' }
 ];
+function ProgressBar({ value }) {
+    const safeValue = Math.max(0, Math.min(100, Number(value || 0)));
+    return (React.createElement("div", { className: "progress-mini", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": safeValue },
+        React.createElement("span", { style: { width: safeValue + '%' } })));
+}
 function VisitSetupSection({ visit, update }) {
-    const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => {
-        const detail = getStoreWebDetail(item.label);
-        const code = detail.siteCode4 || detail.siteCode || item.assignment?.storeCode || '';
-        return { ...item, meta: [code ? 'Kode ' + code : '', detail.city || item.assignment?.city || '', detail.areaManager || item.assignment?.areaManager || ''].filter(Boolean).join(' • ') };
-    }), [visit.nama]);
+    const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label })), [visit.nama]);
     const detail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
-    function selectBestie(item) { update({ nama: item.value || item.label }); }
-    function selectStore(item) { const detail = getStoreWebDetail(item.value || item.label); update({ store: item.value || item.label, storeLeader: visit.storeLeader ? visit.storeLeader : cleanText(detail.storeHead) }); }
-    return (React.createElement(SectionShell, { kicker: "Section 1", title: "Mulai visit", description: "Pilih nama bestie dan store. Detail store dapat dilihat di halaman ini." },
+    const progress = visitProgress(visit);
+    function handleBestieChange(value) {
+        var _a;
+        const stores = getStoresForBestie(value);
+        update({ nama: value, store: ((_a = stores[0]) === null || _a === void 0 ? void 0 : _a.label) || '' });
+    }
+    function handleStoreChange(value) {
+        update({ store: value });
+    }
+    return (React.createElement(SectionShell, { title: "Mulai visit" },
         React.createElement("div", { className: "visit-setup-grid grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-5" },
             React.createElement("div", { className: "visit-setup-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
                 React.createElement("div", { className: "grid gap-4 md:gap-5" },
-                    React.createElement(SearchableCombobox, { label: "Nama Bestie", required: true, value: visit.nama || '', options: BESTIE_NAMES, onChange: (value) => update({ nama: value }), onSelect: selectBestie, placeholder: "Cari nama bestie...", icon: "user", helper: "Nama ini akan masuk ke history, monitor, PDF, dan Excel assignment." }),
-                    React.createElement(SearchableCombobox, { label: "Store", required: true, value: visit.store || '', options: storeOptions, onChange: (value) => update({ store: value }), onSelect: selectStore, placeholder: "Cari store atau kode store...", icon: "store", helper: "Store manual tetap bisa dipakai bila belum tersedia di master data." }),
-                    React.createElement("div", { className: "grid gap-3 sm:grid-cols-2" },
-                        React.createElement("div", { className: "rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100" },
+                    React.createElement(SelectField, { label: "Nama Bestie", required: true, value: visit.nama || '', options: BESTIE_NAMES, onChange: handleBestieChange, placeholder: "Pilih nama bestie", icon: "user" }),
+                    React.createElement(SelectField, { label: "Store", required: true, value: visit.store || '', options: storeOptions, onChange: handleStoreChange, placeholder: "Pilih store", icon: "store" }),
+                    React.createElement("div", { className: "visit-progress-card rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100" },
+                        React.createElement("div", { className: "mb-2 flex items-center justify-between gap-3" },
                             React.createElement("p", { className: "text-xs font-bold uppercase tracking-wide" }, "Progress"),
-                            React.createElement("p", { className: "mt-1 text-2xl font-black" },
-                                visitProgress(visit),
+                            React.createElement("p", { className: "text-sm font-black" },
+                                progress,
                                 "%")),
-                        React.createElement("div", { className: "rounded-2xl bg-orange-50 p-4 text-orange-900 ring-1 ring-orange-100" },
-                            React.createElement("p", { className: "text-xs font-bold uppercase tracking-wide" }, "Visit Date"),
-                            React.createElement("p", { className: "mt-1 text-lg font-black" }, formatDate(visit.tanggal)))))),
+                        React.createElement(ProgressBar, { value: progress })))),
             React.createElement(StoreDetailCard, { detail: detail }))));
 }
 function GeneralInfoSection({ visit, update }) {
-    return (React.createElement(SectionShell, { kicker: "Section 2", title: "General Information", description: "Isi tanggal visit, store leader, shift leader, dan crew store." },
+    return (React.createElement(SectionShell, { title: "General Information" },
         React.createElement("div", { className: "grid gap-5" },
-            React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
-                React.createElement("div", { className: "grid gap-4 md:grid-cols-[240px_1fr] md:items-end" },
-                    React.createElement(Field, { label: "Hari, Tanggal", required: true },
-                        React.createElement(TextInput, { type: "date", value: visit.tanggal || '', onChange: (e) => update({ tanggal: e.target.value }) })),
-                    React.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600" }, "Isi data General Information sesuai kondisi saat visit."))),
+            React.createElement("div", { className: "date-card surface-card rounded-[28px] p-5 md:p-6" },
+                React.createElement(Field, { label: "Hari, Tanggal", required: true },
+                    React.createElement(TextInput, { type: "date", value: visit.tanggal || '', onChange: (e) => update({ tanggal: e.target.value }) }))),
             React.createElement(CrewEditor, { visit: visit, update: update }))));
 }
 function QscResultSection({ visit, update }) {
     const enabled = visit.showQSCResult === true;
     const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
-    return (React.createElement(SectionShell, { kicker: "Section 3", title: "QSC / FAMITRACK Result", description: "Aktifkan slide, lalu upload 2 foto result QSC/Famitrack.", actions: React.createElement(Toggle, { checked: enabled, onChange: (value) => update({ showQSCResult: value }), label: enabled ? 'Hide slide' : 'Unhide slide' }) }, !enabled ? React.createElement(InactiveSection, { title: "Slide QSC/Famitrack masih disembunyikan" }, "Aktifkan toggle di atas untuk membuka konten upload foto dan memasukkan slide ini ke PDF.") : React.createElement(React.Fragment, null,
+    return (React.createElement(SectionShell, { title: "QSC / FAMITRACK Result", actions: React.createElement(Toggle, { checked: enabled, onChange: (value) => update({ showQSCResult: value }), label: enabled ? 'Hide slide' : 'Unhide slide' }) }, !enabled ? React.createElement(InactiveSection, { title: "Slide QSC/Famitrack disembunyikan" }) : React.createElement(React.Fragment, null,
         missing ? React.createElement("div", { className: "mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900" },
-            "Masih kurang ",
+            "Kurang ",
             missing,
             " foto wajib.") : null,
         React.createElement("div", { className: "grid gap-5 lg:grid-cols-2" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true }))))));
@@ -998,7 +1105,7 @@ function ObservationSection({ visit, update }) {
                 React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
                 " QSC Observation")),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement(SectionShell, { kicker: "Section 4", title: "Observation & Root Cause Analysis", description: "Pilih sub menu, aktifkan slide, lalu isi temuan dan root cause analysis.", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' masih disembunyikan' }, "Aktifkan toggle untuk membuka tabel input dan memasukkan slide ini ke PDF.") : tab === 'opi' ? React.createElement(ObservationCards, { title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
+    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
 }
 function EvidenceSection({ visit, update }) {
     const [tab, setTab] = useState('finding');
@@ -1014,112 +1121,169 @@ function EvidenceSection({ visit, update }) {
                 React.createElement(Icon, { name: "image", className: "h-4 w-4" }),
                 " Corrective Action")),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement(SectionShell, { kicker: "Section 5", title: "Evidence Photos", description: "Aktifkan slide, lalu upload foto evidence dan edit marker merah jika dibutuhkan.", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' masih disembunyikan' }, "Aktifkan toggle untuk membuka konten upload foto dan memasukkan slide ini ke PDF.") : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
 function AssignmentSection({ visit, update, onPreview }) {
-    return (React.createElement(SectionShell, { kicker: "Section 6", title: "Store Assignment", description: "Bagian ini tetap menjadi arahan corrective action untuk store dan akan tampil di akhir PDF." },
-        React.createElement("div", { className: "grid gap-5 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]" },
-            React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
-                React.createElement(Field, { label: "Assignment Link" },
-                    React.createElement(TextInput, { type: "url", value: visit.storeAssignmentLink || '', onChange: (e) => update({ storeAssignmentLink: e.target.value }), placeholder: "https://..." })),
-                React.createElement("div", { className: "mt-5 flex flex-wrap gap-2" },
-                    React.createElement(Button, { icon: "eye", onClick: onPreview }, "Preview PDF"))),
-            React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
-                React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, "Mekanisme Pelaporan"),
-                React.createElement("ol", { className: "mt-4 space-y-3 text-sm leading-6 text-slate-700" },
-                    React.createElement("li", null,
-                        React.createElement("strong", null, "1."),
-                        " Tim store mengunduh file assignment pada link yang tersedia."),
-                    React.createElement("li", null,
-                        React.createElement("strong", null, "2."),
-                        " Store mengisi tindakan perbaikan berdasarkan temuan dalam laporan."),
-                    React.createElement("li", null,
-                        React.createElement("strong", null, "3."),
-                        " Tindakan perbaikan wajib dilakukan sebelum deadline yang disepakati."),
-                    React.createElement("li", null,
-                        React.createElement("strong", null, "4."),
-                        " File dikirim kembali via email dengan terusan ke Regional Manager, Area Manager, Regional Bestie, dan FMCU."))))));
+    return (React.createElement(SectionShell, { title: "Store Assignment" },
+        React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
+            React.createElement(Field, { label: "Assignment Link" },
+                React.createElement(TextInput, { type: "url", value: visit.storeAssignmentLink || '', onChange: (e) => update({ storeAssignmentLink: e.target.value }), placeholder: "https://..." })),
+            React.createElement("div", { className: "mt-5 flex flex-wrap gap-2" },
+                React.createElement(Button, { icon: "eye", onClick: onPreview }, "Preview PDF")))));
+}
+function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+    const isAndroid = /android/i.test(navigator.userAgent || '');
+    async function installNow() {
+        if (!deferredPrompt)
+            return;
+        try {
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            onPromptUsed === null || onPromptUsed === void 0 ? void 0 : onPromptUsed();
+            onClose();
+        }
+        catch (error) {
+            onPromptUsed === null || onPromptUsed === void 0 ? void 0 : onPromptUsed();
+        }
+    }
+    if (!open)
+        return null;
+    return (React.createElement("div", { className: "fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-lg md:rounded-[30px] md:p-6" },
+            React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
+                React.createElement("div", { className: "flex items-center gap-3" },
+                    React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
+                        React.createElement(Icon, { name: "spark" })),
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Install App"),
+                        React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Tambahkan ke layar depan"))),
+                React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
+                    React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
+            deferredPrompt && isAndroid ? React.createElement(Button, { className: "mb-4 w-full", icon: "download", onClick: installNow }, "Tambahkan Sekarang") : null,
+            React.createElement("div", { className: "grid gap-3 text-sm leading-6 text-slate-700" },
+                React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" },
+                    React.createElement("strong", null, "Android Chrome:"),
+                    " buka menu tiga titik, pilih ",
+                    React.createElement("strong", null, "Tambahkan ke layar utama"),
+                    ", lalu tekan ",
+                    React.createElement("strong", null, "Install"),
+                    "."),
+                React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" },
+                    React.createElement("strong", null, "iPhone Safari:"),
+                    " tekan tombol ",
+                    React.createElement("strong", null, "Share"),
+                    ", pilih ",
+                    React.createElement("strong", null, "Add to Home Screen"),
+                    ", lalu tekan ",
+                    React.createElement("strong", null, "Add"),
+                    "."),
+                !isIos && !isAndroid ? React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" }, "Desktop: gunakan menu browser, lalu pilih install atau create shortcut.") : null))));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
-    return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 pb-28 md:px-8 md:py-8 md:pb-8" },
-        React.createElement("section", { className: "glass-panel overflow-hidden rounded-[30px] p-5 md:p-8" },
-            React.createElement("div", { className: "grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] lg:items-center" },
-                React.createElement("div", null,
-                    React.createElement("button", { type: "button", onClick: onTitleTap, className: "text-left" },
-                        React.createElement("span", { className: "inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary ring-1 ring-emerald-100" }, "Dashboard Audit"),
-                        React.createElement("h1", { className: "mt-3 max-w-2xl text-3xl font-black tracking-tight text-slate-950 md:text-6xl" }, "Regional Bestie Visit Report")),
-                    React.createElement("p", { className: "mt-3 max-w-xl text-sm leading-6 text-slate-600 md:text-base md:leading-7" }, "Lihat history, mulai visit baru, dan lanjutkan audit dari satu tempat."),
-                    React.createElement("div", { className: "mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap" },
-                        React.createElement(Button, { className: "w-full sm:w-auto", icon: "plus", onClick: onNewVisit }, "Buat Kunjungan"),
-                        React.createElement(Button, { className: "w-full sm:w-auto", variant: "danger", icon: "trash", onClick: onClearHistory }, "Hapus History"))),
-                React.createElement("div", { className: "grid grid-cols-3 gap-2 md:gap-3 lg:grid-cols-1" },
-                    React.createElement("div", { className: "rounded-3xl bg-slate-950 p-4 text-white md:p-5" },
-                        React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wide text-slate-300 md:text-xs" }, "History"),
-                        React.createElement("p", { className: "mt-1 text-2xl font-black md:text-4xl" }, history.length)),
-                    React.createElement("div", { className: "rounded-3xl bg-white p-4 ring-1 ring-slate-200 md:p-5" },
-                        React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wide text-slate-500 md:text-xs" }, "Progress"),
-                        React.createElement("p", { className: "mt-1 text-2xl font-black text-audit-primary md:text-4xl" },
-                            averageProgress,
-                            "%")),
-                    React.createElement("div", { className: "rounded-3xl bg-white p-4 ring-1 ring-slate-200 md:p-5" },
-                        React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-wide text-slate-500 md:text-xs" }, "Storage"),
-                        React.createElement("p", { className: "mt-1 text-[11px] font-bold leading-5 text-slate-800 md:text-sm md:leading-6" }, storageLabel))))),
+    const [installOpen, setInstallOpen] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    useEffect(() => {
+        function handleBeforeInstallPrompt(event) {
+            event.preventDefault();
+            setDeferredPrompt(event);
+        }
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }, []);
+    return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-8" },
+        React.createElement("section", { className: "dashboard-compact glass-panel overflow-hidden rounded-[26px] p-4 md:rounded-[30px] md:p-7" },
+            React.createElement("div", { className: "flex items-start justify-between gap-3" },
+                React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
+                    React.createElement("span", { className: "inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100" }, "Dashboard"),
+                    React.createElement("h1", { className: "mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl" }, "Regional Bestie Visit Report")),
+                React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info tambah ke layar depan" },
+                    React.createElement(Icon, { name: "spark", className: "h-5 w-5" }))),
+            React.createElement("div", { className: "mt-4 grid grid-cols-2 gap-2" },
+                React.createElement(Button, { icon: "plus", onClick: onNewVisit }, "Buat Kunjungan Baru"),
+                React.createElement(Button, { variant: "danger", icon: "trash", onClick: onClearHistory }, "Hapus Semua History")),
+            React.createElement("div", { className: "mt-4 grid grid-cols-3 gap-2" },
+                React.createElement("div", { className: "dashboard-stat dark" },
+                    React.createElement("p", null, "History"),
+                    React.createElement("strong", null, history.length)),
+                React.createElement("div", { className: "dashboard-stat" },
+                    React.createElement("p", null, "Progress"),
+                    React.createElement("strong", null,
+                        averageProgress,
+                        "%")),
+                React.createElement("div", { className: "dashboard-stat" },
+                    React.createElement("p", null, "Storage"),
+                    React.createElement("span", null, storageLabel)))),
         React.createElement("section", null,
-            React.createElement("div", { className: "mb-4 flex items-end justify-between gap-3" },
-                React.createElement("div", null,
-                    React.createElement("h2", { className: "text-xl font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan"),
-                    React.createElement("p", { className: "text-sm text-slate-500" }, "Draft tersimpan otomatis di perangkat ini."))),
-            history.length ? (React.createElement("div", { className: "grid gap-4 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "surface-card rounded-[26px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
-                React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
+            React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
+            history.length ? (React.createElement("div", { className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
+                React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
                     React.createElement("div", { className: "min-w-0" },
                         React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
-                        React.createElement("p", { className: "mt-1 truncate text-sm text-slate-500" }, item.bestieName)),
+                        React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
                     React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' },
                         item.progress || 0,
                         "%")),
-                React.createElement("div", { className: "grid grid-cols-2 gap-2 text-sm" },
-                    React.createElement("div", { className: "rounded-2xl bg-slate-50 p-3" },
-                        React.createElement("p", { className: "text-[11px] font-bold uppercase text-slate-500" }, "Kode"),
-                        React.createElement("p", { className: "mt-1 font-bold text-slate-800" }, item.storeCode || '-')),
-                    React.createElement("div", { className: "rounded-2xl bg-slate-50 p-3" },
-                        React.createElement("p", { className: "text-[11px] font-bold uppercase text-slate-500" }, "Visit"),
-                        React.createElement("p", { className: "mt-1 font-bold text-slate-800" }, formatDate(item.visitDate)))),
-                React.createElement("p", { className: "mt-3 text-xs text-slate-500" },
-                    "Update: ",
-                    formatDateTime(item.updatedAt)),
+                React.createElement("div", { className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500" },
+                    React.createElement("span", null, item.storeCode || '-'),
+                    React.createElement("span", null, "\u2022"),
+                    React.createElement("span", null, formatDate(item.visitDate))),
+                React.createElement(ProgressBar, { value: item.progress || 0 }),
                 React.createElement("div", { className: "mt-4 flex gap-2" },
                     React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
                     React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
-                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history kunjungan", action: React.createElement(Button, { icon: "plus", onClick: onNewVisit }, "Buat Kunjungan Baru") }, "Mulai visit baru, lalu data akan muncul otomatis di history dashboard.")))));
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history", action: React.createElement(Button, { icon: "plus", onClick: onNewVisit }, "Buat Kunjungan Baru") }))),
+        React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })));
 }
 function NewVisitModal({ open, onClose, onCreate }) {
     const [bestieName, setBestieName] = useState('');
     const [storeName, setStoreName] = useState('');
-    const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({
-        ...item,
-        meta: [getStoreWebDetail(item.label).siteCode4 || getStoreWebDetail(item.label).siteCode || '', getStoreWebDetail(item.label).city || ''].filter(Boolean).join(' • ')
-    })), [bestieName]);
+    const [manualOpen, setManualOpen] = useState(false);
+    const [manualStoreName, setManualStoreName] = useState('');
+    const [manualStoreCode, setManualStoreCode] = useState('');
+    const [manualAddress, setManualAddress] = useState('');
+    const [manualNote, setManualNote] = useState('');
+    const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
     useEffect(() => {
+        var _a;
         if (!open)
             return;
-        const initialBestie = bestieName || BESTIE_NAMES[0] || '';
-        const initialStore = storeName || getStoresForBestie(initialBestie)[0]?.label || '';
+        const initialBestie = BESTIE_NAMES[0] || '';
+        const initialStore = ((_a = getStoresForBestie(initialBestie)[0]) === null || _a === void 0 ? void 0 : _a.label) || '';
         setBestieName(initialBestie);
         setStoreName(initialStore);
+        setManualOpen(false);
+        setManualStoreName('');
+        setManualStoreCode('');
+        setManualAddress('');
+        setManualNote('');
     }, [open]);
     useEffect(() => {
-        if (!bestieName)
-            return;
+        var _a;
         const options = getStoresForBestie(bestieName);
         if (!storeName || !options.some((item) => normalize(item.label) === normalize(storeName))) {
-            setStoreName(options[0]?.label || '');
+            setStoreName(((_a = options[0]) === null || _a === void 0 ? void 0 : _a.label) || '');
         }
     }, [bestieName]);
+    function submitManualRequest() {
+        if (!cleanText(manualStoreName)) {
+            alert('Nama toko manual wajib diisi.');
+            return;
+        }
+        createManualStoreRequest({ bestieName, storeName: manualStoreName, storeCode: manualStoreCode, address: manualAddress, note: manualNote });
+        setManualOpen(false);
+        setManualStoreName('');
+        setManualStoreCode('');
+        setManualAddress('');
+        setManualNote('');
+        alert('Request toko manual sudah dikirim ke panel admin.');
+    }
     if (!open)
         return null;
     return (React.createElement("div", { className: "fixed inset-0 z-[80] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "w-full rounded-t-[32px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7" },
+        React.createElement("div", { className: "new-visit-modal w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7" },
             React.createElement("div", { className: "mb-5 flex items-start justify-between gap-3" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Kunjungan Baru"),
@@ -1127,11 +1291,25 @@ function NewVisitModal({ open, onClose, onCreate }) {
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "grid gap-4" },
-                React.createElement(SearchableCombobox, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, onSelect: (item) => setBestieName(item.value), placeholder: "Cari bestie...", icon: "user" }),
-                React.createElement(SearchableCombobox, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, onSelect: (item) => setStoreName(item.value || item.label), placeholder: "Cari store...", icon: "store" })),
+                React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true }),
+                React.createElement(SelectField, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", icon: "store", required: true }),
+                React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
+                    React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900", onClick: () => setManualOpen((state) => !state) },
+                        React.createElement("span", null, "Request toko manual"),
+                        React.createElement(Icon, { name: "right", className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '') })),
+                    manualOpen ? React.createElement("div", { className: "mt-3 grid gap-3" },
+                        React.createElement(Field, { label: "Nama Toko" },
+                            React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value), placeholder: "Nama toko" })),
+                        React.createElement(Field, { label: "Kode Toko" },
+                            React.createElement(TextInput, { value: manualStoreCode, onChange: (e) => setManualStoreCode(e.target.value), placeholder: "Kode toko" })),
+                        React.createElement(Field, { label: "Alamat" },
+                            React.createElement(TextArea, { value: manualAddress, onChange: (e) => setManualAddress(e.target.value), placeholder: "Alamat toko", minRows: 2 })),
+                        React.createElement(Field, { label: "Catatan" },
+                            React.createElement(TextArea, { value: manualNote, onChange: (e) => setManualNote(e.target.value), placeholder: "Catatan", minRows: 2 })),
+                        React.createElement(Button, { variant: "secondary", icon: "spark", onClick: submitManualRequest }, "Kirim Request Admin")) : null)),
             React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
                 React.createElement(Button, { variant: "secondary", onClick: onClose }, "Tutup"),
-                React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, storeName) }, "Mulai Kunjungan")))));
+                React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, storeName), disabled: !bestieName || !storeName }, "Mulai Kunjungan")))));
 }
 function downloadBlob(blob, fileName) {
     const url = URL.createObjectURL(blob);
@@ -1143,8 +1321,91 @@ function downloadBlob(blob, fileName) {
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
+function PdfCanvasPreview({ blob, pdfUrl, status }) {
+    const pagesRef = useRef(null);
+    const [fallback, setFallback] = useState(false);
+    const [renderStatus, setRenderStatus] = useState('');
+    useEffect(() => {
+        let cancelled = false;
+        let resizeTimer = null;
+        const container = pagesRef.current;
+        async function renderPdf() {
+            const target = pagesRef.current;
+            if (!target || !blob)
+                return;
+            target.innerHTML = '';
+            const pdfjsLib = window.pdfjsLib;
+            if (!(pdfjsLib === null || pdfjsLib === void 0 ? void 0 : pdfjsLib.getDocument)) {
+                setFallback(true);
+                return;
+            }
+            try {
+                setFallback(false);
+                setRenderStatus('Memuat preview...');
+                if (pdfjsLib.GlobalWorkerOptions) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc || 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+                const data = await blob.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data }).promise;
+                const maxWidth = Math.max(280, Math.min((target.clientWidth || 360) - 10, 1120));
+                for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+                    if (cancelled)
+                        return;
+                    const page = await pdf.getPage(pageNumber);
+                    const baseViewport = page.getViewport({ scale: 1 });
+                    const scale = maxWidth / baseViewport.width;
+                    const viewport = page.getViewport({ scale });
+                    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+                    const pageWrap = document.createElement('div');
+                    pageWrap.className = 'pdf-preview-page-wrap';
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'pdf-preview-page-canvas';
+                    canvas.width = Math.floor(viewport.width * outputScale);
+                    canvas.height = Math.floor(viewport.height * outputScale);
+                    canvas.style.width = Math.floor(viewport.width) + 'px';
+                    canvas.style.height = Math.floor(viewport.height) + 'px';
+                    pageWrap.appendChild(canvas);
+                    target.appendChild(pageWrap);
+                    const context = canvas.getContext('2d', { alpha: false });
+                    await page.render({ canvasContext: context, viewport, transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null }).promise;
+                }
+                setRenderStatus('');
+            }
+            catch (error) {
+                console.warn('PDF canvas preview gagal:', error);
+                setRenderStatus('');
+                setFallback(true);
+            }
+        }
+        renderPdf();
+        function scheduleRender() {
+            if (!blob)
+                return;
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(renderPdf, 250);
+        }
+        const observer = window.ResizeObserver && container ? new ResizeObserver(scheduleRender) : null;
+        if (observer && container)
+            observer.observe(container);
+        window.addEventListener('orientationchange', scheduleRender);
+        return () => {
+            cancelled = true;
+            clearTimeout(resizeTimer);
+            observer === null || observer === void 0 ? void 0 : observer.disconnect();
+            window.removeEventListener('orientationchange', scheduleRender);
+        };
+    }, [blob]);
+    if (!blob)
+        return React.createElement("div", { className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600" }, status);
+    if (fallback && pdfUrl)
+        return React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0&view=Fit', title: "Preview Regional Bestie PDF" });
+    return React.createElement("div", { className: "pdf-canvas-scroll" },
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages" }),
+        renderStatus ? React.createElement("div", { className: "pdf-render-status" }, renderStatus) : null);
+}
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
+    const [pdfBlob, setPdfBlob] = useState(null);
     const [status, setStatus] = useState('Menyiapkan preview PDF...');
     const [busy, setBusy] = useState(false);
     useEffect(() => {
@@ -1153,17 +1414,19 @@ function PreviewPage({ visit, onBack }) {
         async function render() {
             if (!visit)
                 return;
-            setStatus('Merender PDF dari data terbaru...');
+            setStatus('Merender PDF...');
             try {
                 const blob = await window.ReportVisitPDF.createBlob(visit);
                 if (cancelled)
                     return;
                 objectUrl = URL.createObjectURL(blob);
+                setPdfBlob(blob);
                 setPdfUrl(objectUrl);
-                setStatus('Preview siap. Download PDF tersedia di halaman ini.');
+                setStatus('Preview siap.');
             }
             catch (error) {
-                setStatus(error?.message || 'Preview PDF gagal dibuat.');
+                setPdfBlob(null);
+                setStatus((error === null || error === void 0 ? void 0 : error.message) || 'Preview PDF gagal dibuat.');
             }
         }
         render();
@@ -1175,13 +1438,13 @@ function PreviewPage({ visit, onBack }) {
         await window.ReportVisitPDF.save(visit);
     }
     catch (error) {
-        alert(error?.message || 'Gagal download PDF.');
+        alert((error === null || error === void 0 ? void 0 : error.message) || 'Gagal download PDF.');
     }
     finally {
         setBusy(false);
     } }
-    async function handleExportExcel() { if (!visit)
-        return; if (!window.__caAssignmentExport?.buildWorkbook) {
+    async function handleExportExcel() { var _a; if (!visit)
+        return; if (!((_a = window.__caAssignmentExport) === null || _a === void 0 ? void 0 : _a.buildWorkbook)) {
         alert('Mesin export Excel belum siap.');
         return;
     } setBusy(true); try {
@@ -1190,26 +1453,27 @@ function PreviewPage({ visit, onBack }) {
         downloadBlob(blob, fileName);
     }
     catch (error) {
-        alert(error?.message || 'Gagal export Excel CA Assignment.');
+        alert((error === null || error === void 0 ? void 0 : error.message) || 'Gagal export Excel CA Assignment.');
     }
     finally {
         setBusy(false);
     } }
     if (!visit)
         return React.createElement("main", { className: "preview-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8" },
-            React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif", action: React.createElement(Button, { variant: "secondary", onClick: onBack }, "Kembali") }, "Buat atau buka history kunjungan terlebih dahulu."));
-    return (React.createElement("main", { className: "preview-page mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-8" },
-        React.createElement("div", { className: "preview-header mb-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
+            React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif", action: React.createElement(Button, { variant: "secondary", onClick: onBack }, "Kembali") }));
+    return (React.createElement("main", { className: "preview-page mx-auto w-full max-w-7xl px-4 py-4 md:px-8 md:py-8" },
+        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
             React.createElement("div", null,
                 React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
-                React.createElement("h1", { className: "mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review sebelum download"),
-                React.createElement("p", { className: "mt-2 text-sm leading-6 text-slate-600" }, status)),
-            React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100" },
-                React.createElement("p", { className: "text-xs font-bold uppercase tracking-wide" }, "Progress"),
-                React.createElement("p", { className: "text-2xl font-black" },
-                    visitProgress(visit),
-                    "%"))),
-        React.createElement("div", { className: "preview-modal-card surface-card overflow-hidden rounded-[28px]" },
+                React.createElement("h1", { className: "mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review Report")),
+            React.createElement("div", { className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100" },
+                React.createElement("div", { className: "mb-2 flex items-center justify-between gap-3" },
+                    React.createElement("p", { className: "text-xs font-bold uppercase tracking-wide" }, "Progress"),
+                    React.createElement("p", { className: "text-sm font-black" },
+                        visitProgress(visit),
+                        "%")),
+                React.createElement(ProgressBar, { value: visitProgress(visit) }))),
+        React.createElement("div", { className: "preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]" },
             React.createElement("div", { className: "preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between" },
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-950" }, visit.store || 'Store belum dipilih'),
@@ -1224,7 +1488,8 @@ function PreviewPage({ visit, onBack }) {
                         React.createElement("span", { className: "text-left leading-tight" },
                             React.createElement("span", { className: "block" }, "Export Excel CA Assigment"),
                             React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store"))))),
-            React.createElement("div", { className: "preview-frame-wrap" }, pdfUrl ? React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&view=FitH', title: "Preview Regional Bestie PDF" }) : React.createElement("div", { className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600" }, status)))));
+            React.createElement("div", { className: "preview-frame-wrap" },
+                React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status })))));
 }
 // =============================================================
 // Secret monitor helpers
@@ -1233,7 +1498,7 @@ function getConvexConfig() {
     return window.RB_CONVEX_CONFIG || {};
 }
 function buildVisitKey(visit) {
-    return [visit?.nama, visit?.store, visit?.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || visit?.id || SESSION_ID;
+    return [visit === null || visit === void 0 ? void 0 : visit.nama, visit === null || visit === void 0 ? void 0 : visit.store, visit === null || visit === void 0 ? void 0 : visit.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || (visit === null || visit === void 0 ? void 0 : visit.id) || SESSION_ID;
 }
 function convexUrl(path) {
     const config = getConvexConfig();
@@ -1299,7 +1564,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
             return;
         setPin('');
         setError('');
-        setTimeout(() => inputRef.current?.focus(), 60);
+        setTimeout(() => { var _a; return (_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.focus(); }, 60);
     }, [open]);
     useEffect(() => {
         if (pin.length < 6)
@@ -1334,6 +1599,7 @@ function SecretMonitorPanel({ open, onClose, history }) {
     const [source, setSource] = useState('local');
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
+    const [manualRequests, setManualRequests] = useState([]);
     async function refresh() {
         setLoading(true);
         try {
@@ -1376,8 +1642,21 @@ function SecretMonitorPanel({ open, onClose, history }) {
             })));
         }
         finally {
+            setManualRequests(readManualStoreRequests());
             setLoading(false);
         }
+    }
+    function approveRequest(id) {
+        if (!confirmAction('Approve request toko manual ini?'))
+            return;
+        approveManualStoreRequest(id);
+        setManualRequests(readManualStoreRequests());
+    }
+    function rejectRequest(id) {
+        if (!confirmAction('Tolak request toko manual ini?'))
+            return;
+        rejectManualStoreRequest(id);
+        setManualRequests(readManualStoreRequests());
     }
     useEffect(() => {
         if (open)
@@ -1416,6 +1695,28 @@ function SecretMonitorPanel({ open, onClose, history }) {
                 React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
                     React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
                     React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
+            React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
+                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                    React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
+                    React.createElement(Badge, { tone: "default" },
+                        manualRequests.filter((item) => item.status === 'pending').length,
+                        " pending")),
+                React.createElement("div", { className: "grid gap-3" }, manualRequests.length ? manualRequests.map((item) => (React.createElement("div", { key: item.id, className: "rounded-2xl bg-white p-3 ring-1 ring-slate-200" },
+                    React.createElement("div", { className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
+                        React.createElement("div", { className: "min-w-0" },
+                            React.createElement("p", { className: "font-extrabold text-slate-950" }, item.storeName || '-'),
+                            React.createElement("p", { className: "text-xs text-slate-500" },
+                                item.bestieName || '-',
+                                " \u2022 ",
+                                item.storeCode || '-',
+                                " \u2022 ",
+                                formatDateTime(item.createdAt)),
+                            item.address ? React.createElement("p", { className: "mt-1 text-xs text-slate-600" }, item.address) : null),
+                        React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
+                            React.createElement(Badge, { tone: item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default' }, item.status),
+                            item.status === 'pending' ? React.createElement(React.Fragment, null,
+                                React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => approveRequest(item.id) }, "Approve"),
+                                React.createElement(Button, { variant: "danger", icon: "close", onClick: () => rejectRequest(item.id) }, "Reject")) : null))))) : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200" }, "Belum ada request."))),
             React.createElement("div", { className: "mb-4 max-w-md" },
                 React.createElement("div", { className: "relative" },
                     React.createElement(Icon, { name: "search", className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" }),
@@ -1447,47 +1748,42 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
             React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Bestie Audit"),
             React.createElement("h2", { className: "mt-2 text-xl font-black leading-tight" }, "Visit Report System")),
         React.createElement("nav", { className: "space-y-2", "aria-label": "System menu" },
-            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
+            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap === null || onTitleTap === void 0 ? void 0 : onTitleTap(); setScreen('dashboard'); } },
                 React.createElement("span", { className: "flex items-center gap-3" },
                     React.createElement(Icon, { name: "home" }),
                     React.createElement("span", null,
-                        React.createElement("span", { className: "block font-extrabold" }, "Dashboard"),
-                        React.createElement("span", { className: "nav-muted block text-xs" }, "History & new visit")))),
+                        React.createElement("span", { className: "block font-extrabold" }, "Dashboard")))),
             React.createElement("button", { type: "button", className: cx('nav-item', screen === 'audit' && 'active'), onClick: () => visit ? setScreen('audit') : onNewVisit() },
                 React.createElement("span", { className: "flex items-center gap-3" },
                     React.createElement(Icon, { name: "clipboard" }),
                     React.createElement("span", null,
-                        React.createElement("span", { className: "block font-extrabold" }, "Audit Form"),
-                        React.createElement("span", { className: "nav-muted block text-xs" }, "Section aktif saja")))),
+                        React.createElement("span", { className: "block font-extrabold" }, "Audit Form")))),
             React.createElement("button", { type: "button", className: cx('nav-item', screen === 'preview' && 'active'), onClick: () => visit ? setScreen('preview') : onNewVisit() },
                 React.createElement("span", { className: "flex items-center gap-3" },
                     React.createElement(Icon, { name: "pdf" }),
                     React.createElement("span", null,
-                        React.createElement("span", { className: "block font-extrabold" }, "Preview PDF"),
-                        React.createElement("span", { className: "nav-muted block text-xs" }, "Download & Excel"))))),
+                        React.createElement("span", { className: "block font-extrabold" }, "Preview PDF"))))),
         visit ? (React.createElement("div", { className: "mt-6" },
             React.createElement("p", { className: "mb-3 px-2 text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500" }, "Sub Menu Section"),
             React.createElement("div", { className: "space-y-1" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('nav-item !rounded-2xl !px-3 !py-2', screen === 'audit' && activeSection === index && 'active'), onClick: () => { setScreen('audit'); goSection(index); } },
                 React.createElement("span", { className: "flex items-center gap-3" },
                     React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
                     React.createElement("span", { className: "min-w-0" },
-                        React.createElement("span", { className: "block truncate text-sm font-extrabold" }, section.title),
-                        React.createElement("span", { className: "nav-muted block text-xs" }, section.hint))))))))) : null,
+                        React.createElement("span", { className: "block truncate text-sm font-extrabold" }, section.title))))))))) : null,
         React.createElement("div", { className: "mt-auto space-y-2 pt-5" },
             React.createElement(Button, { className: "w-full", variant: "secondary", icon: "plus", onClick: onNewVisit }, "Kunjungan Baru"),
             visit ? React.createElement(Button, { className: "w-full", variant: "danger", icon: "eraser", onClick: onClearData }, "Clear Data") : null)));
 }
-function MobileTopBar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onTitleTap }) {
-    return (React.createElement("header", { className: "sticky top-0 z-40 border-b border-slate-200 bg-white/94 px-4 py-3 backdrop-blur-xl md:hidden" },
-        React.createElement("div", { className: "flex items-center justify-between gap-3" },
-            React.createElement("button", { type: "button", className: "flex items-center gap-3 text-left", onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
-                React.createElement("span", { className: "grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white" },
-                    React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
-                React.createElement("span", null,
-                    React.createElement("span", { className: "block text-sm font-black text-slate-950" }, "Bestie Visit"),
-                    React.createElement("span", { className: "block text-xs text-slate-500" }, "Generate your visit report"))),
-            screen === 'dashboard' ? React.createElement(Button, { variant: "icon", onClick: onNewVisit, "aria-label": "Kunjungan baru" },
-                React.createElement(Icon, { name: "plus", className: "h-5 w-5" })) : null)));
+function MobileTopBar({ screen, visit, activeSection, goSection }) {
+    if (screen !== 'audit' || !visit)
+        return null;
+    const progress = visitProgress(visit);
+    return (React.createElement("header", { className: "mobile-quick-section md:hidden" },
+        React.createElement("div", { className: "mobile-quick-scroll", "aria-label": "Quick section" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('mobile-quick-chip', activeSection === index && 'active'), onClick: () => goSection(index) },
+            React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
+            React.createElement("span", null, section.label))))),
+        React.createElement("div", { className: "mobile-quick-progress" },
+            React.createElement(ProgressBar, { value: progress }))));
 }
 function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) {
     const goAudit = () => visit ? setScreen('audit') : onNewVisit();
@@ -1507,6 +1803,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
                 React.createElement("span", null, "Clear")) : null)));
 }
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
+    var _a;
     useEffect(() => {
         function handleKey(event) { if (event.key === 'ArrowRight')
             goSection(activeSection + 1); if (event.key === 'ArrowLeft')
@@ -1516,10 +1813,10 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
     }, [activeSection]);
     if (!visit)
         return React.createElement("main", { className: "workspace-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8" },
-            React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }, "Buat kunjungan baru dari dashboard terlebih dahulu."));
+            React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
     const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update }), React.createElement(AssignmentSection, { visit: visit, update: update, onPreview: onPreview })];
     return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-8" },
-        React.createElement("div", { className: "mb-5 rounded-[28px] bg-white p-4 ring-1 ring-slate-200" },
+        React.createElement("div", { className: "mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block" },
             React.createElement("div", { className: "flex items-center justify-between gap-3" },
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-950" }, visit.store || 'Store belum dipilih'),
@@ -1536,7 +1833,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
                 React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
                 " ",
                 section.label)))),
-        React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection }, screens[activeSection])));
+        React.createElement("div", { key: ((_a = SECTION_DEFS[activeSection]) === null || _a === void 0 ? void 0 : _a.id) || activeSection }, screens[activeSection])));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
@@ -1549,9 +1846,10 @@ function App() {
     const [secretOpen, setSecretOpen] = useState(false);
     const secretTapRef = useRef({ count: 0, timer: null });
     async function updateStorageLabel() {
+        var _a;
         const localBytes = calcLocalStorageBytes();
         let label = `LocalStorage ${formatBytes(localBytes)}`;
-        if (navigator.storage?.estimate) {
+        if ((_a = navigator.storage) === null || _a === void 0 ? void 0 : _a.estimate) {
             try {
                 const estimate = await navigator.storage.estimate();
                 label += ` • Browser ${formatBytes(estimate.usage || 0)}`;
@@ -1566,12 +1864,15 @@ function App() {
     }
     useEffect(() => {
         refreshHistory();
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+            navigator.serviceWorker.register('service-worker.js').catch(() => { });
+        }
     }, []);
     useEffect(() => {
         window.getFormData = () => visit || {};
     }, [visit]);
     useEffect(() => {
-        if (!visit?.id)
+        if (!(visit === null || visit === void 0 ? void 0 : visit.id))
             return;
         const timer = setTimeout(async () => {
             const nextVisit = { ...visit, updatedAt: Date.now() };
@@ -1642,7 +1943,7 @@ function App() {
         await deleteVisitRecord(id);
         const nextMeta = saveHistoryMeta(readHistoryMeta().filter((item) => item.id !== id));
         setHistory(nextMeta);
-        if (visit?.id === id) {
+        if ((visit === null || visit === void 0 ? void 0 : visit.id) === id) {
             setVisit(null);
             setScreen('dashboard');
             localStorage.removeItem(ACTIVE_VISIT_KEY);

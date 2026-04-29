@@ -8,6 +8,8 @@ const MASTER_STORES = Array.isArray(window.DEFAULT_STORE_MASTER_DATA) ? window.D
 const JOB_LEVELS = ['', '1A', 'NS3', 'NS1', 'MG3', 'MG1'];
 const HISTORY_META_KEY = 'rbv_react_history_meta_v3';
 const ACTIVE_VISIT_KEY = 'rbv_react_active_visit_v3';
+const MANUAL_STORE_REQUEST_KEY = 'rbv_manual_store_requests_v6';
+const MANUAL_STORE_APPROVED_KEY = 'rbv_manual_store_approved_v6';
 const REPORT_DB_NAME = 'regional_bestie_visit_react_db';
 const REPORT_DB_STORE = 'visits';
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -50,6 +52,91 @@ function uniqueBy(items, keyFn) {
   return result;
 }
 
+function readJsonArray(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveJsonArray(key, items) {
+  const safeItems = Array.isArray(items) ? items : [];
+  localStorage.setItem(key, JSON.stringify(safeItems));
+  return safeItems;
+}
+
+function readManualStoreRequests() {
+  return readJsonArray(MANUAL_STORE_REQUEST_KEY);
+}
+
+function saveManualStoreRequests(items) {
+  return saveJsonArray(MANUAL_STORE_REQUEST_KEY, items);
+}
+
+function readApprovedManualStores() {
+  return readJsonArray(MANUAL_STORE_APPROVED_KEY);
+}
+
+function saveApprovedManualStores(items) {
+  return saveJsonArray(MANUAL_STORE_APPROVED_KEY, uniqueBy(items, (item) => normalize(item.storeName || item.siteDescr || item.label)));
+}
+
+function createManualStoreRequest(payload) {
+  const now = Date.now();
+  const request = {
+    id: `manual_store_${now}_${Math.random().toString(36).slice(2, 8)}`,
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    bestieName: cleanText(payload.bestieName),
+    storeName: cleanText(payload.storeName),
+    storeCode: cleanText(payload.storeCode),
+    address: cleanText(payload.address),
+    note: cleanText(payload.note)
+  };
+  saveManualStoreRequests([request, ...readManualStoreRequests()]);
+  return request;
+}
+
+function approveManualStoreRequest(id) {
+  const now = Date.now();
+  const requests = readManualStoreRequests();
+  let approved = null;
+  const nextRequests = requests.map((item) => {
+    if (item.id !== id) return item;
+    approved = { ...item, status: 'approved', updatedAt: now };
+    return approved;
+  });
+  saveManualStoreRequests(nextRequests);
+  if (approved) {
+    saveApprovedManualStores([{
+      siteDescr: approved.storeName,
+      storeName: approved.storeName,
+      siteCode: approved.storeCode,
+      siteCode4: approved.storeCode,
+      address: approved.address,
+      city: '',
+      source: 'manual-approved',
+      approvedAt: now,
+      requestedBy: approved.bestieName
+    }, ...readApprovedManualStores()]);
+  }
+  return approved;
+}
+
+function rejectManualStoreRequest(id) {
+  const now = Date.now();
+  saveManualStoreRequests(readManualStoreRequests().map((item) => item.id === id ? { ...item, status: 'rejected', updatedAt: now } : item));
+}
+
+function findApprovedManualStore(storeName) {
+  const key = normalize(storeName);
+  if (!key) return null;
+  return readApprovedManualStores().find((item) => normalize(item.storeName || item.siteDescr) === key || normalize(item.siteCode || item.siteCode4) === key) || null;
+}
+
 const BESTIE_NAMES = uniqueBy(
   BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)),
   (item) => item
@@ -71,6 +158,13 @@ function getStoresForBestie(bestieName) {
     }))
     .filter((item) => item.label);
 
+  const approvedManual = readApprovedManualStores().map((item) => ({
+    label: cleanText(item.storeName || item.siteDescr),
+    source: 'manual-approved',
+    master: item,
+    value: cleanText(item.storeName || item.siteDescr)
+  })).filter((item) => item.label);
+
   const fallback = MASTER_STORES.map((item) => ({
     label: cleanText(item.siteDescr),
     source: 'master',
@@ -78,7 +172,8 @@ function getStoresForBestie(bestieName) {
     value: cleanText(item.siteDescr)
   })).filter((item) => item.label);
 
-  return uniqueBy(assigned.length ? assigned : fallback, (item) => normalize(item.label))
+  const base = assigned.length ? assigned : fallback;
+  return uniqueBy([...base, ...approvedManual], (item) => normalize(item.label))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
@@ -101,12 +196,14 @@ function findMasterStore(storeName) {
 
 function getStoreWebDetail(storeName) {
   const assignment = findAssignmentStore(storeName);
-  const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName);
+  const approvedManual = findApprovedManualStore(storeName);
+  const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName || approvedManual?.siteDescr || approvedManual?.storeName);
   const merged = {
     ...(assignment || {}),
-    ...(master || {})
+    ...(master || {}),
+    ...(approvedManual || {})
   };
-  if (!merged.siteDescr) merged.siteDescr = assignment?.storeName || assignment?.assignmentStoreName || storeName || '';
+  if (!merged.siteDescr) merged.siteDescr = approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || storeName || '';
   if (!merged.address) merged.address = assignment?.storeAddress || '';
   if (!merged.siteCode && assignment?.storeCode) merged.siteCode = assignment.storeCode;
   if (!merged.siteCode4 && assignment?.storeCode) merged.siteCode4 = assignment.storeCode;
@@ -175,7 +272,7 @@ function createVisit(bestieName = '', storeName = '') {
     nama: cleanText(bestieName),
     store: cleanText(storeName || detail.siteDescr),
     tanggal: new Date().toISOString().slice(0, 10),
-    storeLeader: cleanText(detail.storeHead),
+    storeLeader: '',
     storeLeaderLevel: '',
     shiftLeader: '',
     shiftLeaderLevel: '',
@@ -459,15 +556,28 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
     onChange(isEmpty(html) ? '' : html);
   }
 
+  function focusLastEditableNode(container) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    const target = container.querySelector('li') || container;
+    range.selectNodeContents(target);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
   function command(name, argument = null) {
     const editor = editorRef.current;
     if (!editor) return;
     const listCommand = name === 'insertUnorderedList' || name === 'insertOrderedList';
-    if (listCommand && isEmpty(editor.innerHTML) && window.getSelection()?.isCollapsed) {
-      editor.focus({ preventScroll: true });
+    editor.focus({ preventScroll: true });
+    if (listCommand && isEmpty(editor.innerHTML)) {
+      editor.innerHTML = name === 'insertUnorderedList' ? '<ul><li><br></li></ul>' : '<ol><li><br></li></ol>';
+      focusLastEditableNode(editor);
+      emit();
+      setActiveTools((current) => ({ ...current, [name]: true }));
       return;
     }
-    editor.focus({ preventScroll: true });
     try { document.execCommand(name, false, argument); } catch (error) {}
     emit();
     window.requestAnimationFrame(() => {
@@ -524,6 +634,21 @@ function SelectInput({ children, className = '', ...props }) {
   return <select className={cx('form-control appearance-none', className)} {...props}>{children}</select>;
 }
 
+function SelectField({ label, value, options, onChange, placeholder = 'Pilih', required, icon }) {
+  const normalizedOptions = (options || []).map((item) => typeof item === 'string' ? { label: item, value: item } : item);
+  return (
+    <Field label={label} required={required}>
+      <div className="relative">
+        {icon ? <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400"><Icon name={icon} className="h-5 w-5" /></span> : null}
+        <SelectInput value={value || ''} onChange={(event) => onChange(event.target.value)} className={icon ? 'pl-12 pr-12' : 'pr-12'} required={required}>
+          <option value="">{placeholder}</option>
+          {normalizedOptions.map((item) => <option key={(item.value || '') + '-' + item.label} value={item.value || item.label}>{item.label}</option>)}
+        </SelectInput>
+      </div>
+    </Field>
+  );
+}
+
 function Toggle({ checked, onChange, label, className = '' }) {
   return (
     <button
@@ -541,25 +666,24 @@ function Toggle({ checked, onChange, label, className = '' }) {
 
 function EmptyState({ icon = 'spark', title, children, action }) {
   return (
-    <div className="surface-card flex flex-col items-center justify-center rounded-[28px] px-6 py-12 text-center">
-      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-audit-primary">
-        <Icon name={icon} className="h-7 w-7" />
+    <div className="surface-card flex flex-col items-center justify-center rounded-[28px] px-6 py-10 text-center">
+      <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-audit-primary">
+        <Icon name={icon} className="h-6 w-6" />
       </div>
       <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
-      <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{children}</p>
+      {children ? <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{children}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }
 
-function InactiveSection({ title, children }) {
+function InactiveSection({ title }) {
   return (
     <div className="inactive-section surface-card rounded-[28px] p-6 text-center md:p-8">
       <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
         <Icon name="eye" className="h-6 w-6" />
       </div>
       <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">{children}</p>
     </div>
   );
 }
@@ -804,32 +928,30 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
   return (
     <div className="surface-card overflow-hidden rounded-[26px]">
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-        <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{label}{required ? <span className="ml-1 text-rose-600">*</span> : null}</p><p className="text-xs text-slate-500">Kamera, galeri, crop, dan marker tersedia.</p></div>
+        <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{label}{required ? <span className="ml-1 text-rose-600">*</span> : null}</p></div>
         <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => setEditorOpen(true)} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
       </div>
       <div className={cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]')}>
-        {value?.image ? <img src={value.image} alt={label} /> : <div className="flex flex-col items-center px-5 text-center text-slate-500"><div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm"><Icon name="image" className="h-7 w-7" /></div><p className="text-sm font-bold text-slate-700">Belum ada foto</p><p className="mt-1 text-xs leading-5">Ambil langsung dari kamera atau pilih dari galeri.</p></div>}
+        {value?.image ? <img src={value.image} alt={label} /> : <div className="flex flex-col items-center px-5 text-center text-slate-500"><div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm"><Icon name="image" className="h-7 w-7" /></div><p className="text-sm font-bold text-slate-700">Upload foto</p></div>}
       </div>
       <div className="photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3"><input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFiles} /><input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleFiles} /><Button variant="icon" icon="camera" onClick={() => cameraRef.current?.click()} aria-label="Ambil foto dari kamera" /><Button variant="icon" icon="gallery" onClick={() => galleryRef.current?.click()} aria-label="Pilih foto dari galeri" /></div>
       <div className="border-t border-slate-200 p-3">
-        {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto, root cause, atau catatan corrective action..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi singkat foto..." minRows={2} />}
+        {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
       <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} onClose={() => setEditorOpen(false)} onSave={(editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage })} />
     </div>
   );
 }
 
-function SectionShell({ kicker, title, description, children, actions, preTitle }) {
+function SectionShell({ title, children, actions, preTitle }) {
   return (
     <section className="slide-enter fade-in">
       <div className="section-heading mb-5 flex flex-col gap-3">
-        <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">{kicker}</p>
         {preTitle ? <div className="section-pretitle">{preTitle}</div> : null}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-2xl font-black tracking-tight text-slate-950 md:text-3xl">{title}</h2>
           {actions ? <div className="section-actions flex flex-wrap gap-2 md:justify-end">{actions}</div> : null}
         </div>
-        {description ? <p className="max-w-2xl text-sm leading-6 text-slate-600">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -857,7 +979,6 @@ function CrewEditor({ visit, update }) {
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-audit-primary"><Icon name="user" /></div>
             <div>
               <h3 className="font-extrabold text-slate-950">Store Leader</h3>
-              <p className="text-xs text-slate-500">PIC utama saat visit</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
@@ -870,7 +991,6 @@ function CrewEditor({ visit, update }) {
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-orange-50 text-audit-accent"><Icon name="user" /></div>
             <div>
               <h3 className="font-extrabold text-slate-950">Shift Leader</h3>
-              <p className="text-xs text-slate-500">PIC operasional shift</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
@@ -883,7 +1003,6 @@ function CrewEditor({ visit, update }) {
       <div className="surface-card rounded-[28px] p-5 md:p-6">
         <div className="mb-5">
           <h3 className="text-lg font-extrabold text-slate-950">Crew Store</h3>
-          <p className="text-sm text-slate-500">Tambahkan crew yang ikut mendampingi audit.</p>
         </div>
         <div className="grid gap-3">
           {crewList.map((crew, index) => (
@@ -922,7 +1041,6 @@ function ObservationCards({ title, rows, onChange }) {
     <div className="grid gap-4">
       <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
         <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
-        <p className="text-sm leading-6 text-slate-600">Isi temuan dengan format singkat. Toolbar kecil dapat dipakai untuk bullet, number, bold, italic, dan underline.</p>
       </div>
       {safeRows.map((row, index) => (
         <article key={index} className="surface-card rounded-[28px] p-4 md:p-5">
@@ -962,8 +1080,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
   return (
     <div className="grid gap-4">
       <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
-        <p className="text-sm font-bold text-slate-900">{safePhotos.length} slot foto tersedia</p>
-        <p className="mt-1 text-sm leading-6 text-slate-600">Gunakan crop dan marker merah pada foto agar evidence mudah dipahami.</p>
+        <p className="text-sm font-bold text-slate-900">{safePhotos.length} slot foto</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
@@ -987,23 +1104,37 @@ const SECTION_DEFS = [
   { id: 'assignment', label: 'Assign', title: 'Store Assignment', icon: 'excel', hint: 'CA purpose' }
 ];
 
-function VisitSetupSection({ visit, update }) {
-  const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => {
-    const detail = getStoreWebDetail(item.label);
-    const code = detail.siteCode4 || detail.siteCode || item.assignment?.storeCode || '';
-    return { ...item, meta: [code ? 'Kode ' + code : '', detail.city || item.assignment?.city || '', detail.areaManager || item.assignment?.areaManager || ''].filter(Boolean).join(' • ') };
-  }), [visit.nama]);
-  const detail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
-  function selectBestie(item) { update({ nama: item.value || item.label }); }
-  function selectStore(item) { const detail = getStoreWebDetail(item.value || item.label); update({ store: item.value || item.label, storeLeader: visit.storeLeader ? visit.storeLeader : cleanText(detail.storeHead) }); }
+function ProgressBar({ value }) {
+  const safeValue = Math.max(0, Math.min(100, Number(value || 0)));
   return (
-    <SectionShell kicker="Section 1" title="Mulai visit" description="Pilih nama bestie dan store. Detail store dapat dilihat di halaman ini.">
+    <div className="progress-mini" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={safeValue}>
+      <span style={{ width: safeValue + '%' }} />
+    </div>
+  );
+}
+
+function VisitSetupSection({ visit, update }) {
+  const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label })), [visit.nama]);
+  const detail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
+  const progress = visitProgress(visit);
+  function handleBestieChange(value) {
+    const stores = getStoresForBestie(value);
+    update({ nama: value, store: stores[0]?.label || '' });
+  }
+  function handleStoreChange(value) {
+    update({ store: value });
+  }
+  return (
+    <SectionShell title="Mulai visit">
       <div className="visit-setup-grid grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-5">
         <div className="visit-setup-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6">
           <div className="grid gap-4 md:gap-5">
-            <SearchableCombobox label="Nama Bestie" required value={visit.nama || ''} options={BESTIE_NAMES} onChange={(value) => update({ nama: value })} onSelect={selectBestie} placeholder="Cari nama bestie..." icon="user" helper="Nama ini akan masuk ke history, monitor, PDF, dan Excel assignment." />
-            <SearchableCombobox label="Store" required value={visit.store || ''} options={storeOptions} onChange={(value) => update({ store: value })} onSelect={selectStore} placeholder="Cari store atau kode store..." icon="store" helper="Store manual tetap bisa dipakai bila belum tersedia di master data." />
-            <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="mt-1 text-2xl font-black">{visitProgress(visit)}%</p></div><div className="rounded-2xl bg-orange-50 p-4 text-orange-900 ring-1 ring-orange-100"><p className="text-xs font-bold uppercase tracking-wide">Visit Date</p><p className="mt-1 text-lg font-black">{formatDate(visit.tanggal)}</p></div></div>
+            <SelectField label="Nama Bestie" required value={visit.nama || ''} options={BESTIE_NAMES} onChange={handleBestieChange} placeholder="Pilih nama bestie" icon="user" />
+            <SelectField label="Store" required value={visit.store || ''} options={storeOptions} onChange={handleStoreChange} placeholder="Pilih store" icon="store" />
+            <div className="visit-progress-card rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100">
+              <div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{progress}%</p></div>
+              <ProgressBar value={progress} />
+            </div>
           </div>
         </div>
         <StoreDetailCard detail={detail} />
@@ -1014,17 +1145,12 @@ function VisitSetupSection({ visit, update }) {
 
 function GeneralInfoSection({ visit, update }) {
   return (
-    <SectionShell kicker="Section 2" title="General Information" description="Isi tanggal visit, store leader, shift leader, dan crew store.">
+    <SectionShell title="General Information">
       <div className="grid gap-5">
-        <div className="surface-card rounded-[28px] p-5 md:p-6">
-          <div className="grid gap-4 md:grid-cols-[240px_1fr] md:items-end">
-            <Field label="Hari, Tanggal" required>
-              <TextInput type="date" value={visit.tanggal || ''} onChange={(e) => update({ tanggal: e.target.value })} />
-            </Field>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-              Isi data General Information sesuai kondisi saat visit.
-            </div>
-          </div>
+        <div className="date-card surface-card rounded-[28px] p-5 md:p-6">
+          <Field label="Hari, Tanggal" required>
+            <TextInput type="date" value={visit.tanggal || ''} onChange={(e) => update({ tanggal: e.target.value })} />
+          </Field>
         </div>
         <CrewEditor visit={visit} update={update} />
       </div>
@@ -1036,8 +1162,8 @@ function QscResultSection({ visit, update }) {
   const enabled = visit.showQSCResult === true;
   const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
   return (
-    <SectionShell kicker="Section 3" title="QSC / FAMITRACK Result" description="Aktifkan slide, lalu upload 2 foto result QSC/Famitrack." actions={<Toggle checked={enabled} onChange={(value) => update({ showQSCResult: value })} label={enabled ? 'Hide slide' : 'Unhide slide'} />}>
-      {!enabled ? <InactiveSection title="Slide QSC/Famitrack masih disembunyikan">Aktifkan toggle di atas untuk membuka konten upload foto dan memasukkan slide ini ke PDF.</InactiveSection> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Masih kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
+    <SectionShell title="QSC / FAMITRACK Result" actions={<Toggle checked={enabled} onChange={(value) => update({ showQSCResult: value })} label={enabled ? 'Hide slide' : 'Unhide slide'} />}>
+      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
     </SectionShell>
   );
 }
@@ -1049,8 +1175,8 @@ function ObservationSection({ visit, update }) {
   const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
   const preTitle = <div className="section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex gap-2 overflow-x-auto pb-1"><button type="button" className={cx('subnav-chip prominent', tab === 'opi' && 'active')} onClick={() => setTab('opi')}><Icon name="clipboard" className="h-4 w-4" /> OPI Project</button><button type="button" className={cx('subnav-chip prominent', tab === 'qsc' && 'active')} onClick={() => setTab('qsc')}><Icon name="clipboard" className="h-4 w-4" /> QSC Observation</button></div><Toggle checked={enabled} onChange={setEnabled} label={toggleLabel} /></div>;
   return (
-    <SectionShell kicker="Section 4" title="Observation & Root Cause Analysis" description="Pilih sub menu, aktifkan slide, lalu isi temuan dan root cause analysis." preTitle={preTitle}>
-      {!enabled ? <InactiveSection title={(tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' masih disembunyikan'}>Aktifkan toggle untuk membuka tabel input dan memasukkan slide ini ke PDF.</InactiveSection> : tab === 'opi' ? <ObservationCards title="OPI Project Observation" rows={visit.opiData} onChange={(opiData) => update({ opiData })} /> : <ObservationCards title="QSC Observation" rows={visit.qscData} onChange={(qscData) => update({ qscData })} />}
+    <SectionShell title="Observation & Root Cause Analysis" preTitle={preTitle}>
+      {!enabled ? <InactiveSection title={(tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan'} /> : tab === 'opi' ? <ObservationCards title="OPI Project Observation" rows={visit.opiData} onChange={(opiData) => update({ opiData })} /> : <ObservationCards title="QSC Observation" rows={visit.qscData} onChange={(qscData) => update({ qscData })} />}
     </SectionShell>
   );
 }
@@ -1062,95 +1188,113 @@ function EvidenceSection({ visit, update }) {
   const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
   const preTitle = <div className="section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex gap-2 overflow-x-auto pb-1"><button type="button" className={cx('subnav-chip prominent', tab === 'finding' && 'active')} onClick={() => setTab('finding')}><Icon name="image" className="h-4 w-4" /> Finding Evidence</button><button type="button" className={cx('subnav-chip prominent', tab === 'corrective' && 'active')} onClick={() => setTab('corrective')}><Icon name="image" className="h-4 w-4" /> Corrective Action</button></div><Toggle checked={enabled} onChange={setEnabled} label={toggleLabel} /></div>;
   return (
-    <SectionShell kicker="Section 5" title="Evidence Photos" description="Aktifkan slide, lalu upload foto evidence dan edit marker merah jika dibutuhkan." preTitle={preTitle}>
-      {!enabled ? <InactiveSection title={(tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' masih disembunyikan'}>Aktifkan toggle untuk membuka konten upload foto dan memasukkan slide ini ke PDF.</InactiveSection> : tab === 'finding' ? <PhotoGrid prefix="Finding" photos={visit.findingEvidencePhotos} onChange={(findingEvidencePhotos) => update({ findingEvidencePhotos })} /> : <PhotoGrid prefix="Corrective" photos={visit.correctiveActionPhotos} onChange={(correctiveActionPhotos) => update({ correctiveActionPhotos })} />}
+    <SectionShell title="Evidence Photos" preTitle={preTitle}>
+      {!enabled ? <InactiveSection title={(tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan'} /> : tab === 'finding' ? <PhotoGrid prefix="Finding" photos={visit.findingEvidencePhotos} onChange={(findingEvidencePhotos) => update({ findingEvidencePhotos })} /> : <PhotoGrid prefix="Corrective" photos={visit.correctiveActionPhotos} onChange={(correctiveActionPhotos) => update({ correctiveActionPhotos })} />}
     </SectionShell>
   );
 }
 
 function AssignmentSection({ visit, update, onPreview }) {
   return (
-    <SectionShell kicker="Section 6" title="Store Assignment" description="Bagian ini tetap menjadi arahan corrective action untuk store dan akan tampil di akhir PDF.">
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <div className="surface-card rounded-[28px] p-5 md:p-6">
-          <Field label="Assignment Link">
-            <TextInput type="url" value={visit.storeAssignmentLink || ''} onChange={(e) => update({ storeAssignmentLink: e.target.value })} placeholder="https://..." />
-          </Field>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button icon="eye" onClick={onPreview}>Preview PDF</Button>
-          </div>
-        </div>
-        <div className="surface-card rounded-[28px] p-5 md:p-6">
-          <h3 className="text-lg font-extrabold text-slate-950">Mekanisme Pelaporan</h3>
-          <ol className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
-            <li><strong>1.</strong> Tim store mengunduh file assignment pada link yang tersedia.</li>
-            <li><strong>2.</strong> Store mengisi tindakan perbaikan berdasarkan temuan dalam laporan.</li>
-            <li><strong>3.</strong> Tindakan perbaikan wajib dilakukan sebelum deadline yang disepakati.</li>
-            <li><strong>4.</strong> File dikirim kembali via email dengan terusan ke Regional Manager, Area Manager, Regional Bestie, dan FMCU.</li>
-          </ol>
+    <SectionShell title="Store Assignment">
+      <div className="surface-card rounded-[28px] p-5 md:p-6">
+        <Field label="Assignment Link">
+          <TextInput type="url" value={visit.storeAssignmentLink || ''} onChange={(e) => update({ storeAssignmentLink: e.target.value })} placeholder="https://..." />
+        </Field>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button icon="eye" onClick={onPreview}>Preview PDF</Button>
         </div>
       </div>
     </SectionShell>
   );
 }
 
+function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+  const isAndroid = /android/i.test(navigator.userAgent || '');
+  async function installNow() {
+    if (!deferredPrompt) return;
+    try {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      onPromptUsed?.();
+      onClose();
+    } catch (error) {
+      onPromptUsed?.();
+    }
+  }
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6" role="dialog" aria-modal="true">
+      <div className="w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-lg md:rounded-[30px] md:p-6">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary"><Icon name="spark" /></span>
+            <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Install App</p><h2 className="text-xl font-black text-slate-950">Tambahkan ke layar depan</h2></div>
+          </div>
+          <Button variant="icon" onClick={onClose} aria-label="Tutup"><Icon name="close" className="h-4 w-4" /></Button>
+        </div>
+        {deferredPrompt && isAndroid ? <Button className="mb-4 w-full" icon="download" onClick={installNow}>Tambahkan Sekarang</Button> : null}
+        <div className="grid gap-3 text-sm leading-6 text-slate-700">
+          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200"><strong>Android Chrome:</strong> buka menu tiga titik, pilih <strong>Tambahkan ke layar utama</strong>, lalu tekan <strong>Install</strong>.</div>
+          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200"><strong>iPhone Safari:</strong> tekan tombol <strong>Share</strong>, pilih <strong>Add to Home Screen</strong>, lalu tekan <strong>Add</strong>.</div>
+          {!isIos && !isAndroid ? <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">Desktop: gunakan menu browser, lalu pilih install atau create shortcut.</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
   const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
+  const [installOpen, setInstallOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  useEffect(() => {
+    function handleBeforeInstallPrompt(event) {
+      event.preventDefault();
+      setDeferredPrompt(event);
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
   return (
-    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 pb-28 md:px-8 md:py-8 md:pb-8">
-      <section className="glass-panel overflow-hidden rounded-[30px] p-5 md:p-8">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)] lg:items-center">
-          <div>
-            <button type="button" onClick={onTitleTap} className="text-left">
-              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary ring-1 ring-emerald-100">Dashboard Audit</span>
-              <h1 className="mt-3 max-w-2xl text-3xl font-black tracking-tight text-slate-950 md:text-6xl">Regional Bestie Visit Report</h1>
-            </button>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 md:text-base md:leading-7">Lihat history, mulai visit baru, dan lanjutkan audit dari satu tempat.</p>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-              <Button className="w-full sm:w-auto" icon="plus" onClick={onNewVisit}>Buat Kunjungan</Button>
-              <Button className="w-full sm:w-auto" variant="danger" icon="trash" onClick={onClearHistory}>Hapus History</Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 md:gap-3 lg:grid-cols-1">
-            <div className="rounded-3xl bg-slate-950 p-4 text-white md:p-5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-300 md:text-xs">History</p>
-              <p className="mt-1 text-2xl font-black md:text-4xl">{history.length}</p>
-            </div>
-            <div className="rounded-3xl bg-white p-4 ring-1 ring-slate-200 md:p-5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 md:text-xs">Progress</p>
-              <p className="mt-1 text-2xl font-black text-audit-primary md:text-4xl">{averageProgress}%</p>
-            </div>
-            <div className="rounded-3xl bg-white p-4 ring-1 ring-slate-200 md:p-5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 md:text-xs">Storage</p>
-              <p className="mt-1 text-[11px] font-bold leading-5 text-slate-800 md:text-sm md:leading-6">{storageLabel}</p>
-            </div>
-          </div>
+    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-8">
+      <section className="dashboard-compact glass-panel overflow-hidden rounded-[26px] p-4 md:rounded-[30px] md:p-7">
+        <div className="flex items-start justify-between gap-3">
+          <button type="button" onClick={onTitleTap} className="min-w-0 text-left">
+            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100">Dashboard</span>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl">Regional Bestie Visit Report</h1>
+          </button>
+          <button type="button" className="install-info-button" onClick={() => setInstallOpen(true)} aria-label="Info tambah ke layar depan"><Icon name="spark" className="h-5 w-5" /></button>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>
+          <Button variant="danger" icon="trash" onClick={onClearHistory}>Hapus Semua History</Button>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="dashboard-stat dark"><p>History</p><strong>{history.length}</strong></div>
+          <div className="dashboard-stat"><p>Progress</p><strong>{averageProgress}%</strong></div>
+          <div className="dashboard-stat"><p>Storage</p><span>{storageLabel}</span></div>
         </div>
       </section>
 
       <section>
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">History Kunjungan</h2>
-            <p className="text-sm text-slate-500">Draft tersimpan otomatis di perangkat ini.</p>
-          </div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-black tracking-tight text-slate-950 md:text-2xl">History Kunjungan</h2>
         </div>
         {history.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {history.map((item) => (
-              <article key={item.id} className="surface-card rounded-[26px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5">
-                <div className="mb-4 flex items-start justify-between gap-3">
+              <article key={item.id} className="history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5">
+                <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-base font-extrabold text-slate-950 md:text-lg">{item.storeName}</p>
-                    <p className="mt-1 truncate text-sm text-slate-500">{item.bestieName}</p>
+                    <p className="mt-1 truncate text-xs text-slate-500">{item.bestieName}</p>
                   </div>
                   <Badge tone={item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default'}>{item.progress || 0}%</Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-2xl bg-slate-50 p-3"><p className="text-[11px] font-bold uppercase text-slate-500">Kode</p><p className="mt-1 font-bold text-slate-800">{item.storeCode || '-'}</p></div>
-                  <div className="rounded-2xl bg-slate-50 p-3"><p className="text-[11px] font-bold uppercase text-slate-500">Visit</p><p className="mt-1 font-bold text-slate-800">{formatDate(item.visitDate)}</p></div>
-                </div>
-                <p className="mt-3 text-xs text-slate-500">Update: {formatDateTime(item.updatedAt)}</p>
+                <div className="mb-3 flex items-center gap-2 text-xs font-bold text-slate-500"><span>{item.storeCode || '-'}</span><span>•</span><span>{formatDate(item.visitDate)}</span></div>
+                <ProgressBar value={item.progress || 0} />
                 <div className="mt-4 flex gap-2">
                   <Button className="flex-1" variant="secondary" icon="clipboard" onClick={() => onOpenVisit(item.id)}>Lanjutkan</Button>
                   <Button variant="icon" onClick={() => onDeleteVisit(item.id)} aria-label="Hapus history"><Icon name="trash" className="h-4 w-4" /></Button>
@@ -1159,11 +1303,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             ))}
           </div>
         ) : (
-          <EmptyState icon="clipboard" title="Belum ada history kunjungan" action={<Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>}>
-            Mulai visit baru, lalu data akan muncul otomatis di history dashboard.
-          </EmptyState>
+          <EmptyState icon="clipboard" title="Belum ada history" action={<Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>} />
         )}
       </section>
+      <InstallGuideModal open={installOpen} onClose={() => setInstallOpen(false)} deferredPrompt={deferredPrompt} onPromptUsed={() => setDeferredPrompt(null)} />
     </main>
   );
 }
@@ -1171,31 +1314,51 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
 function NewVisitModal({ open, onClose, onCreate }) {
   const [bestieName, setBestieName] = useState('');
   const [storeName, setStoreName] = useState('');
-  const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({
-    ...item,
-    meta: [getStoreWebDetail(item.label).siteCode4 || getStoreWebDetail(item.label).siteCode || '', getStoreWebDetail(item.label).city || ''].filter(Boolean).join(' • ')
-  })), [bestieName]);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualStoreName, setManualStoreName] = useState('');
+  const [manualStoreCode, setManualStoreCode] = useState('');
+  const [manualAddress, setManualAddress] = useState('');
+  const [manualNote, setManualNote] = useState('');
+  const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
 
   useEffect(() => {
     if (!open) return;
-    const initialBestie = bestieName || BESTIE_NAMES[0] || '';
-    const initialStore = storeName || getStoresForBestie(initialBestie)[0]?.label || '';
+    const initialBestie = BESTIE_NAMES[0] || '';
+    const initialStore = getStoresForBestie(initialBestie)[0]?.label || '';
     setBestieName(initialBestie);
     setStoreName(initialStore);
+    setManualOpen(false);
+    setManualStoreName('');
+    setManualStoreCode('');
+    setManualAddress('');
+    setManualNote('');
   }, [open]);
 
   useEffect(() => {
-    if (!bestieName) return;
     const options = getStoresForBestie(bestieName);
     if (!storeName || !options.some((item) => normalize(item.label) === normalize(storeName))) {
       setStoreName(options[0]?.label || '');
     }
   }, [bestieName]);
 
+  function submitManualRequest() {
+    if (!cleanText(manualStoreName)) {
+      alert('Nama toko manual wajib diisi.');
+      return;
+    }
+    createManualStoreRequest({ bestieName, storeName: manualStoreName, storeCode: manualStoreCode, address: manualAddress, note: manualNote });
+    setManualOpen(false);
+    setManualStoreName('');
+    setManualStoreCode('');
+    setManualAddress('');
+    setManualNote('');
+    alert('Request toko manual sudah dikirim ke panel admin.');
+  }
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[80] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6" role="dialog" aria-modal="true">
-      <div className="w-full rounded-t-[32px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7">
+      <div className="new-visit-modal w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7">
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Kunjungan Baru</p>
@@ -1204,12 +1367,24 @@ function NewVisitModal({ open, onClose, onCreate }) {
           <Button variant="icon" onClick={onClose} aria-label="Tutup"><Icon name="close" className="h-4 w-4" /></Button>
         </div>
         <div className="grid gap-4">
-          <SearchableCombobox label="Nama Bestie" value={bestieName} options={BESTIE_NAMES} onChange={setBestieName} onSelect={(item) => setBestieName(item.value)} placeholder="Cari bestie..." icon="user" />
-          <SearchableCombobox label="Store" value={storeName} options={storeOptions} onChange={setStoreName} onSelect={(item) => setStoreName(item.value || item.label)} placeholder="Cari store..." icon="store" />
+          <SelectField label="Nama Bestie" value={bestieName} options={BESTIE_NAMES} onChange={setBestieName} placeholder="Pilih nama bestie" icon="user" required />
+          <SelectField label="Store" value={storeName} options={storeOptions} onChange={setStoreName} placeholder="Pilih store" icon="store" required />
+          <div className="rounded-2xl border border-slate-200 p-3">
+            <button type="button" className="flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900" onClick={() => setManualOpen((state) => !state)}>
+              <span>Request toko manual</span><Icon name="right" className={cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '')} />
+            </button>
+            {manualOpen ? <div className="mt-3 grid gap-3">
+              <Field label="Nama Toko"><TextInput value={manualStoreName} onChange={(e) => setManualStoreName(e.target.value)} placeholder="Nama toko" /></Field>
+              <Field label="Kode Toko"><TextInput value={manualStoreCode} onChange={(e) => setManualStoreCode(e.target.value)} placeholder="Kode toko" /></Field>
+              <Field label="Alamat"><TextArea value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Alamat toko" minRows={2} /></Field>
+              <Field label="Catatan"><TextArea value={manualNote} onChange={(e) => setManualNote(e.target.value)} placeholder="Catatan" minRows={2} /></Field>
+              <Button variant="secondary" icon="spark" onClick={submitManualRequest}>Kirim Request Admin</Button>
+            </div> : null}
+          </div>
         </div>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" onClick={onClose}>Tutup</Button>
-          <Button icon="plus" onClick={() => onCreate(bestieName, storeName)}>Mulai Kunjungan</Button>
+          <Button icon="plus" onClick={() => onCreate(bestieName, storeName)} disabled={!bestieName || !storeName}>Mulai Kunjungan</Button>
         </div>
       </div>
     </div>
@@ -1227,8 +1402,87 @@ function downloadBlob(blob, fileName) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
+function PdfCanvasPreview({ blob, pdfUrl, status }) {
+  const pagesRef = useRef(null);
+  const [fallback, setFallback] = useState(false);
+  const [renderStatus, setRenderStatus] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    let resizeTimer = null;
+    const container = pagesRef.current;
+
+    async function renderPdf() {
+      const target = pagesRef.current;
+      if (!target || !blob) return;
+      target.innerHTML = '';
+      const pdfjsLib = window.pdfjsLib;
+      if (!pdfjsLib?.getDocument) {
+        setFallback(true);
+        return;
+      }
+      try {
+        setFallback(false);
+        setRenderStatus('Memuat preview...');
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc || 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+        const data = await blob.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
+        const maxWidth = Math.max(280, Math.min((target.clientWidth || 360) - 10, 1120));
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          if (cancelled) return;
+          const page = await pdf.getPage(pageNumber);
+          const baseViewport = page.getViewport({ scale: 1 });
+          const scale = maxWidth / baseViewport.width;
+          const viewport = page.getViewport({ scale });
+          const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+          const pageWrap = document.createElement('div');
+          pageWrap.className = 'pdf-preview-page-wrap';
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdf-preview-page-canvas';
+          canvas.width = Math.floor(viewport.width * outputScale);
+          canvas.height = Math.floor(viewport.height * outputScale);
+          canvas.style.width = Math.floor(viewport.width) + 'px';
+          canvas.style.height = Math.floor(viewport.height) + 'px';
+          pageWrap.appendChild(canvas);
+          target.appendChild(pageWrap);
+          const context = canvas.getContext('2d', { alpha: false });
+          await page.render({ canvasContext: context, viewport, transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null }).promise;
+        }
+        setRenderStatus('');
+      } catch (error) {
+        console.warn('PDF canvas preview gagal:', error);
+        setRenderStatus('');
+        setFallback(true);
+      }
+    }
+
+    renderPdf();
+    function scheduleRender() {
+      if (!blob) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderPdf, 250);
+    }
+    const observer = window.ResizeObserver && container ? new ResizeObserver(scheduleRender) : null;
+    if (observer && container) observer.observe(container);
+    window.addEventListener('orientationchange', scheduleRender);
+    return () => {
+      cancelled = true;
+      clearTimeout(resizeTimer);
+      observer?.disconnect();
+      window.removeEventListener('orientationchange', scheduleRender);
+    };
+  }, [blob]);
+
+  if (!blob) return <div className="grid min-h-[52vh] place-items-center p-8 text-center text-slate-600">{status}</div>;
+  if (fallback && pdfUrl) return <iframe className="preview-frame" src={pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0&view=Fit'} title="Preview Regional Bestie PDF" />;
+  return <div className="pdf-canvas-scroll"><div ref={pagesRef} className="pdf-canvas-pages" />{renderStatus ? <div className="pdf-render-status">{renderStatus}</div> : null}</div>;
+}
+
 function PreviewPage({ visit, onBack }) {
   const [pdfUrl, setPdfUrl] = useState('');
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [status, setStatus] = useState('Menyiapkan preview PDF...');
   const [busy, setBusy] = useState(false);
 
@@ -1237,14 +1491,18 @@ function PreviewPage({ visit, onBack }) {
     let objectUrl = '';
     async function render() {
       if (!visit) return;
-      setStatus('Merender PDF dari data terbaru...');
+      setStatus('Merender PDF...');
       try {
         const blob = await window.ReportVisitPDF.createBlob(visit);
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
+        setPdfBlob(blob);
         setPdfUrl(objectUrl);
-        setStatus('Preview siap. Download PDF tersedia di halaman ini.');
-      } catch (error) { setStatus(error?.message || 'Preview PDF gagal dibuat.'); }
+        setStatus('Preview siap.');
+      } catch (error) {
+        setPdfBlob(null);
+        setStatus(error?.message || 'Preview PDF gagal dibuat.');
+      }
     }
     render();
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
@@ -1253,12 +1511,12 @@ function PreviewPage({ visit, onBack }) {
   async function handleDownloadPdf() { if (!visit) return; setBusy(true); try { await window.ReportVisitPDF.save(visit); } catch (error) { alert(error?.message || 'Gagal download PDF.'); } finally { setBusy(false); } }
   async function handleExportExcel() { if (!visit) return; if (!window.__caAssignmentExport?.buildWorkbook) { alert('Mesin export Excel belum siap.'); return; } setBusy(true); try { const blob = await window.__caAssignmentExport.buildWorkbook(visit); const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx'; downloadBlob(blob, fileName); } catch (error) { alert(error?.message || 'Gagal export Excel CA Assignment.'); } finally { setBusy(false); } }
 
-  if (!visit) return <main className="preview-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>}>Buat atau buka history kunjungan terlebih dahulu.</EmptyState></main>;
+  if (!visit) return <main className="preview-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
 
   return (
-    <main className="preview-page mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-8">
-      <div className="preview-header mb-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Preview PDF</p><h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Review sebelum download</h1><p className="mt-2 text-sm leading-6 text-slate-600">{status}</p></div><div className="rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-2xl font-black">{visitProgress(visit)}%</p></div></div>
-      <div className="preview-modal-card surface-card overflow-hidden rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon="download" onClick={handleDownloadPdf} disabled={busy}>Download PDF</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap">{pdfUrl ? <iframe className="preview-frame" src={pdfUrl + '#toolbar=0&navpanes=0&view=FitH'} title="Preview Regional Bestie PDF" /> : <div className="grid min-h-[52vh] place-items-center p-8 text-center text-slate-600">{status}</div>}</div></div>
+    <main className="preview-page mx-auto w-full max-w-7xl px-4 py-4 md:px-8 md:py-8">
+      <div className="preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Preview PDF</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Review Report</h1></div><div className="preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{visitProgress(visit)}%</p></div><ProgressBar value={visitProgress(visit)} /></div></div>
+      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon="download" onClick={handleDownloadPdf} disabled={busy}>Download PDF</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
     </main>
   );
 }
@@ -1384,6 +1642,7 @@ function SecretMonitorPanel({ open, onClose, history }) {
   const [source, setSource] = useState('local');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [manualRequests, setManualRequests] = useState([]);
 
   async function refresh() {
     setLoading(true);
@@ -1424,8 +1683,21 @@ function SecretMonitorPanel({ open, onClose, history }) {
         session_id: '-'
       })));
     } finally {
+      setManualRequests(readManualStoreRequests());
       setLoading(false);
     }
+  }
+
+  function approveRequest(id) {
+    if (!confirmAction('Approve request toko manual ini?')) return;
+    approveManualStoreRequest(id);
+    setManualRequests(readManualStoreRequests());
+  }
+
+  function rejectRequest(id) {
+    if (!confirmAction('Tolak request toko manual ini?')) return;
+    rejectManualStoreRequest(id);
+    setManualRequests(readManualStoreRequests());
   }
 
   useEffect(() => {
@@ -1461,6 +1733,20 @@ function SecretMonitorPanel({ open, onClose, history }) {
           <div className="rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100"><p className="text-xs font-bold uppercase">Total Visit</p><p className="mt-2 text-3xl font-black">{rows.length}</p></div>
           <div className="rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100"><p className="text-xs font-bold uppercase">Bestie Unik</p><p className="mt-2 text-3xl font-black">{uniqueBesties}</p></div>
           <div className="rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200"><p className="text-xs font-bold uppercase text-slate-500">Visit Hari Ini</p><p className="mt-2 text-3xl font-black">{todayVisits}</p></div>
+        </div>
+
+        <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-black text-slate-950">Request Toko Manual</h3><Badge tone="default">{manualRequests.filter((item) => item.status === 'pending').length} pending</Badge></div>
+          <div className="grid gap-3">
+            {manualRequests.length ? manualRequests.map((item) => (
+              <div key={item.id} className="rounded-2xl bg-white p-3 ring-1 ring-slate-200">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="min-w-0"><p className="font-extrabold text-slate-950">{item.storeName || '-'}</p><p className="text-xs text-slate-500">{item.bestieName || '-'} • {item.storeCode || '-'} • {formatDateTime(item.createdAt)}</p>{item.address ? <p className="mt-1 text-xs text-slate-600">{item.address}</p> : null}</div>
+                  <div className="flex flex-wrap items-center gap-2"><Badge tone={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default'}>{item.status}</Badge>{item.status === 'pending' ? <><Button variant="secondary" icon="check" onClick={() => approveRequest(item.id)}>Approve</Button><Button variant="danger" icon="close" onClick={() => rejectRequest(item.id)}>Reject</Button></> : null}</div>
+                </div>
+              </div>
+            )) : <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200">Belum ada request.</div>}
+          </div>
         </div>
 
         <div className="mb-4 max-w-md">
@@ -1505,13 +1791,13 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
 
       <nav className="space-y-2" aria-label="System menu">
         <button type="button" className={cx('nav-item', screen === 'dashboard' && 'active')} onClick={() => { onTitleTap?.(); setScreen('dashboard'); }}>
-          <span className="flex items-center gap-3"><Icon name="home" /><span><span className="block font-extrabold">Dashboard</span><span className="nav-muted block text-xs">History & new visit</span></span></span>
+          <span className="flex items-center gap-3"><Icon name="home" /><span><span className="block font-extrabold">Dashboard</span></span></span>
         </button>
         <button type="button" className={cx('nav-item', screen === 'audit' && 'active')} onClick={() => visit ? setScreen('audit') : onNewVisit()}>
-          <span className="flex items-center gap-3"><Icon name="clipboard" /><span><span className="block font-extrabold">Audit Form</span><span className="nav-muted block text-xs">Section aktif saja</span></span></span>
+          <span className="flex items-center gap-3"><Icon name="clipboard" /><span><span className="block font-extrabold">Audit Form</span></span></span>
         </button>
         <button type="button" className={cx('nav-item', screen === 'preview' && 'active')} onClick={() => visit ? setScreen('preview') : onNewVisit()}>
-          <span className="flex items-center gap-3"><Icon name="pdf" /><span><span className="block font-extrabold">Preview PDF</span><span className="nav-muted block text-xs">Download & Excel</span></span></span>
+          <span className="flex items-center gap-3"><Icon name="pdf" /><span><span className="block font-extrabold">Preview PDF</span></span></span>
         </button>
       </nav>
 
@@ -1523,7 +1809,7 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
               <button key={section.id} type="button" className={cx('nav-item !rounded-2xl !px-3 !py-2', screen === 'audit' && activeSection === index && 'active')} onClick={() => { setScreen('audit'); goSection(index); }}>
                 <span className="flex items-center gap-3">
                   <Icon name={section.icon} className="h-4 w-4" />
-                  <span className="min-w-0"><span className="block truncate text-sm font-extrabold">{section.title}</span><span className="nav-muted block text-xs">{section.hint}</span></span>
+                  <span className="min-w-0"><span className="block truncate text-sm font-extrabold">{section.title}</span></span>
                 </span>
               </button>
             ))}
@@ -1539,16 +1825,20 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
   );
 }
 
-function MobileTopBar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onTitleTap }) {
+function MobileTopBar({ screen, visit, activeSection, goSection }) {
+  if (screen !== 'audit' || !visit) return null;
+  const progress = visitProgress(visit);
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/94 px-4 py-3 backdrop-blur-xl md:hidden">
-      <div className="flex items-center justify-between gap-3">
-        <button type="button" className="flex items-center gap-3 text-left" onClick={() => { onTitleTap?.(); setScreen('dashboard'); }}>
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white"><Icon name="spark" className="h-5 w-5" /></span>
-          <span><span className="block text-sm font-black text-slate-950">Bestie Visit</span><span className="block text-xs text-slate-500">Generate your visit report</span></span>
-        </button>
-        {screen === 'dashboard' ? <Button variant="icon" onClick={onNewVisit} aria-label="Kunjungan baru"><Icon name="plus" className="h-5 w-5" /></Button> : null}
+    <header className="mobile-quick-section md:hidden">
+      <div className="mobile-quick-scroll" aria-label="Quick section">
+        {SECTION_DEFS.map((section, index) => (
+          <button key={section.id} type="button" className={cx('mobile-quick-chip', activeSection === index && 'active')} onClick={() => goSection(index)}>
+            <Icon name={section.icon} className="h-4 w-4" />
+            <span>{section.label}</span>
+          </button>
+        ))}
       </div>
+      <div className="mobile-quick-progress"><ProgressBar value={progress} /></div>
     </header>
   );
 }
@@ -1573,13 +1863,13 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
     return () => document.removeEventListener('keydown', handleKey);
   }, [activeSection]);
 
-  if (!visit) return <main className="workspace-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8"><EmptyState icon="clipboard" title="Belum ada visit aktif">Buat kunjungan baru dari dashboard terlebih dahulu.</EmptyState></main>;
+  if (!visit) return <main className="workspace-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8"><EmptyState icon="clipboard" title="Belum ada visit aktif" /></main>;
 
   const screens = [<VisitSetupSection visit={visit} update={update} />, <GeneralInfoSection visit={visit} update={update} />, <QscResultSection visit={visit} update={update} />, <ObservationSection visit={visit} update={update} />, <EvidenceSection visit={visit} update={update} />, <AssignmentSection visit={visit} update={update} onPreview={onPreview} />];
 
   return (
     <main className="workspace-page mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-8">
-      <div className="mb-5 rounded-[28px] bg-white p-4 ring-1 ring-slate-200"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="hidden gap-2 sm:flex"><Button variant="icon" onClick={() => goSection(activeSection - 1)} disabled={activeSection <= 0} aria-label="Section sebelumnya"><Icon name="left" className="h-5 w-5" /></Button><Button variant="icon" onClick={() => goSection(activeSection + 1)} disabled={activeSection >= SECTION_DEFS.length - 1} aria-label="Section berikutnya"><Icon name="right" className="h-5 w-5" /></Button></div></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sub menu section">{SECTION_DEFS.map((section, index) => <button key={section.id} type="button" className={cx('subnav-chip', activeSection === index && 'active')} onClick={() => goSection(index)}><Icon name={section.icon} className="h-4 w-4" /> {section.label}</button>)}</div></div>
+      <div className="mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="hidden gap-2 sm:flex"><Button variant="icon" onClick={() => goSection(activeSection - 1)} disabled={activeSection <= 0} aria-label="Section sebelumnya"><Icon name="left" className="h-5 w-5" /></Button><Button variant="icon" onClick={() => goSection(activeSection + 1)} disabled={activeSection >= SECTION_DEFS.length - 1} aria-label="Section berikutnya"><Icon name="right" className="h-5 w-5" /></Button></div></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sub menu section">{SECTION_DEFS.map((section, index) => <button key={section.id} type="button" className={cx('subnav-chip', activeSection === index && 'active')} onClick={() => goSection(index)}><Icon name={section.icon} className="h-4 w-4" /> {section.label}</button>)}</div></div>
       <div key={SECTION_DEFS[activeSection]?.id || activeSection}>{screens[activeSection]}</div>
     </main>
   );
@@ -1615,6 +1905,9 @@ function App() {
 
   useEffect(() => {
     refreshHistory();
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
   }, []);
 
   useEffect(() => {

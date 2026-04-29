@@ -27,3 +27,13 @@ Generator PDF memakai ukuran landscape 16:9 seperti template. Slide QSC/Famitrac
 - Crop photo otomatis muncul setelah upload, background halaman dikunci, zoom memakai pinch/gesture tanpa slider.
 - Rich text dipindah ke bawah textbox dengan state hover/active dan perbaikan command bullet/number.
 - PDF menambahkan footer watermark `GENERATE BY BESTIE VISIT WEB REPORT` di semua halaman, General Information memakai label Visitor, dan grid evidence maksimal 6 foto per halaman.
+
+## Revamp v6
+- Mobile header logo diganti menjadi quick section sticky yang ringkas.
+- Semua label `Section 1 - Section 6`, subtitle panduan, dan narasi form yang tidak perlu dihapus dari tampilan utama.
+- Dashboard dibuat lebih minimalis, dilengkapi tombol info blinking untuk panduan Add to Home Screen/PWA.
+- Dropdown Nama Bestie dan Store di modal kunjungan baru serta Section 1 memakai native select agar lebih stabil di mobile.
+- Request toko manual tersimpan sebagai approval queue di Panel Admin.
+- Store Leader tidak lagi auto-fill dari master data; input manual.
+- Crop/marker photo popup diperbaiki agar proporsional dan body tidak ikut scroll.
+- Preview PDF diganti menjadi canvas-based preview menggunakan PDF.js agar ukuran slide mengikuti layar mobile.
