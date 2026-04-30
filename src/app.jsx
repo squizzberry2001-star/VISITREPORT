@@ -1317,6 +1317,17 @@ function ObservationCards({ title, rows, onChange }) {
       <RichTextInput value={row[key] || ''} onChange={(value) => updateRow(index, { [key]: value })} placeholder={placeholder} />
     </Field>
   );
+  const mobileNav = (
+    <div className="observation-mobile-nav" aria-label="Navigasi temuan observation">
+      <div className="observation-nav-status">Temuan {activeRowNumber} / {safeRows.length}</div>
+      <div className="observation-nav-controls">
+        <button type="button" className="observation-nav-button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya"><Icon name="left" className="h-5 w-5" /></button>
+        <button type="button" className="observation-nav-add" onClick={addRow} aria-label="Tambah temuan"><Icon name="plus" className="h-5 w-5" /></button>
+        <button type="button" className="observation-nav-button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya"><Icon name="right" className="h-5 w-5" /></button>
+      </div>
+    </div>
+  );
+  const mobileNavPortal = ReactDOM?.createPortal ? ReactDOM.createPortal(mobileNav, document.body) : mobileNav;
 
   return (
     <div className="observation-card-system grid gap-4">
@@ -1346,14 +1357,7 @@ function ObservationCards({ title, rows, onChange }) {
       <div className="observation-desktop-add flex justify-end">
         <Button variant="secondary" icon="plus" onClick={addRow}>Tambah Row</Button>
       </div>
-      <div className="observation-mobile-nav" aria-label="Navigasi temuan observation">
-        <div className="observation-nav-status">Temuan {activeRowNumber} / {safeRows.length}</div>
-        <div className="observation-nav-controls">
-          <button type="button" className="observation-nav-button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya"><Icon name="left" className="h-5 w-5" /></button>
-          <button type="button" className="observation-nav-add" onClick={addRow} aria-label="Tambah temuan"><Icon name="plus" className="h-5 w-5" /></button>
-          <button type="button" className="observation-nav-button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya"><Icon name="right" className="h-5 w-5" /></button>
-        </div>
-      </div>
+      {mobileNavPortal}
     </div>
   );
 }
@@ -2611,7 +2615,7 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp19').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp21').catch(() => {});
     }
   }, []);
 

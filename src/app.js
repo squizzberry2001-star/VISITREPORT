@@ -1220,6 +1220,20 @@ function ObservationCards({ title, rows, onChange }) {
     const goNext = () => setActiveIndex((current) => Math.min(safeRows.length - 1, current + 1));
     const richField = (label, key, row, index, placeholder) => (React.createElement(Field, { label: label },
         React.createElement(RichTextInput, { value: row[key] || '', onChange: (value) => updateRow(index, { [key]: value }), placeholder: placeholder })));
+    const mobileNav = (React.createElement("div", { className: "observation-mobile-nav", "aria-label": "Navigasi temuan observation" },
+        React.createElement("div", { className: "observation-nav-status" },
+            "Temuan ",
+            activeRowNumber,
+            " / ",
+            safeRows.length),
+        React.createElement("div", { className: "observation-nav-controls" },
+            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya" },
+                React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
+            React.createElement("button", { type: "button", className: "observation-nav-add", onClick: addRow, "aria-label": "Tambah temuan" },
+                React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
+            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya" },
+                React.createElement(Icon, { name: "right", className: "h-5 w-5" })))));
+    const mobileNavPortal = (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(mobileNav, document.body) : mobileNav;
     return (React.createElement("div", { className: "observation-card-system grid gap-4" },
         React.createElement("div", { className: "observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
             React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
@@ -1247,19 +1261,7 @@ function ObservationCards({ title, rows, onChange }) {
                     richField('Hasil', 'hasil', row, index, 'Hasil tindakan...')))))),
         React.createElement("div", { className: "observation-desktop-add flex justify-end" },
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row")),
-        React.createElement("div", { className: "observation-mobile-nav", "aria-label": "Navigasi temuan observation" },
-            React.createElement("div", { className: "observation-nav-status" },
-                "Temuan ",
-                activeRowNumber,
-                " / ",
-                safeRows.length),
-            React.createElement("div", { className: "observation-nav-controls" },
-                React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya" },
-                    React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
-                React.createElement("button", { type: "button", className: "observation-nav-add", onClick: addRow, "aria-label": "Tambah temuan" },
-                    React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
-                React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya" },
-                    React.createElement(Icon, { name: "right", className: "h-5 w-5" }))))));
+        mobileNavPortal));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
     const minSlots = 8;
@@ -2518,7 +2520,7 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js?v=revamp19').catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=revamp21').catch(() => { });
         }
     }, []);
     useEffect(() => {

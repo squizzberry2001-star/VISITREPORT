@@ -1764,3 +1764,62 @@ select,
     max-height: calc(100dvh - 178px - var(--safe-bottom)) !important;
   }
 }
+
+
+/* Revamp focus v21: observation card navigation must stay fixed above mobile navbar */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1180px) {
+  body > .observation-mobile-nav,
+  .observation-mobile-nav {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: calc(4.75rem + var(--safe-bottom)) !important;
+    transform: translate3d(-50%, 0, 0) !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: .28rem !important;
+    width: auto !important;
+    max-width: calc(100vw - 1.25rem) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    pointer-events: none !important;
+  }
+  body > .observation-mobile-nav .observation-nav-status,
+  body > .observation-mobile-nav .observation-nav-controls,
+  .observation-mobile-nav .observation-nav-status,
+  .observation-mobile-nav .observation-nav-controls {
+    pointer-events: auto !important;
+  }
+  body > .observation-mobile-nav .observation-nav-controls,
+  .observation-mobile-nav .observation-nav-controls {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: .68rem !important;
+  }
+  body > .observation-mobile-nav .observation-nav-status,
+  .observation-mobile-nav .observation-nav-status {
+    min-width: 112px !important;
+    border-radius: 999px !important;
+    background: rgba(15, 23, 42, .88) !important;
+    color: #fff !important;
+    padding: .27rem .65rem !important;
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+    letter-spacing: .04em !important;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .28) !important;
+  }
+  .observation-card-system {
+    padding-bottom: calc(8.6rem + var(--safe-bottom)) !important;
+  }
+}
