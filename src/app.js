@@ -250,6 +250,8 @@ const PHOTO_EDITOR_PRESETS = {
         defaultAspect: 'landscape',
         aspectOptions: [
             { key: 'landscape', label: '4:3', width: 4, height: 3 },
+            { key: 'wide', label: '16:9', width: 16, height: 9 },
+            { key: 'square', label: '1:1', width: 1, height: 1 },
             { key: 'portrait', label: '3:4', width: 3, height: 4 }
         ],
         defaultMarkerSize: 'md'
@@ -473,6 +475,12 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M5 12h14" })),
         left: React.createElement("path", { d: "m15 18-6-6 6-6" }),
         right: React.createElement("path", { d: "m9 18 6-6-6-6" }),
+        up: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "m18 15-6-6-6 6" }),
+            React.createElement("path", { d: "M12 9v12" })),
+        down: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "m6 9 6 6 6-6" }),
+            React.createElement("path", { d: "M12 3v12" })),
         user: React.createElement(React.Fragment, null,
             React.createElement("circle", { cx: "12", cy: "8", r: "4" }),
             React.createElement("path", { d: "M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6" })),
@@ -773,16 +781,16 @@ function StoreDetailCard({ detail }) {
         ['Email Store', detail.emailStore || '-'],
         ['Alamat', detail.address || detail.storeAddress || '-']
     ];
-    return (React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
-        React.createElement("div", { className: "mb-4 flex items-center justify-between gap-3" },
-            React.createElement("div", null,
+    return (React.createElement("div", { className: "store-detail-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
+        React.createElement("div", { className: "mb-4 flex min-w-0 items-center justify-between gap-3" },
+            React.createElement("div", { className: "min-w-0" },
                 React.createElement("p", { className: "text-xs font-bold uppercase tracking-[0.2em] text-audit-primary" }, "Detail Store"),
-                React.createElement("h3", { className: "mt-1 text-xl font-extrabold text-slate-950" }, detail.siteDescr || detail.storeName || 'Store belum dipilih')),
+                React.createElement("h3", { className: "mt-1 break-words text-lg font-extrabold leading-tight text-slate-950 md:text-xl" }, detail.siteDescr || detail.storeName || 'Store belum dipilih')),
             React.createElement("div", { className: "hidden h-12 w-12 place-items-center rounded-2xl bg-slate-900 text-white md:grid" },
                 React.createElement(Icon, { name: "store", className: "h-6 w-6" }))),
-        React.createElement("div", { className: "grid gap-3 sm:grid-cols-2 xl:grid-cols-4" }, items.map(([label, value]) => (React.createElement("div", { key: label, className: cx('rounded-2xl border border-slate-200 bg-slate-50 p-3', label === 'Alamat' ? 'sm:col-span-2 xl:col-span-2' : '') },
+        React.createElement("div", { className: "grid gap-3 sm:grid-cols-2 xl:grid-cols-4" }, items.map(([label, value]) => (React.createElement("div", { key: label, className: cx('store-detail-item rounded-2xl border border-slate-200 bg-slate-50 p-3', label === 'Alamat' ? 'sm:col-span-2 xl:col-span-2' : '') },
             React.createElement("p", { className: "text-[11px] font-bold uppercase tracking-wide text-slate-500" }, label),
-            React.createElement("p", { className: "mt-1 text-sm font-semibold leading-5 text-slate-800" }, value)))))));
+            React.createElement("p", { className: "mt-1 min-w-0 break-words text-sm font-semibold leading-5 text-slate-800" }, value)))))));
 }
 function loadImageElement(src) {
     return new Promise((resolve, reject) => {
@@ -830,13 +838,33 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
     useEffect(() => {
         if (!open)
             return undefined;
-        const previousOverflow = document.body.style.overflow;
-        const previousTouchAction = document.body.style.touchAction;
-        document.body.style.overflow = 'hidden';
-        document.body.style.touchAction = 'none';
+        const body = document.body;
+        const html = document.documentElement;
+        const previous = {
+            bodyOverflow: body.style.overflow,
+            bodyTouchAction: body.style.touchAction,
+            bodyOverscroll: body.style.overscrollBehavior,
+            htmlOverflow: html.style.overflow,
+            htmlOverscroll: html.style.overscrollBehavior
+        };
+        const preventBackgroundTouch = (event) => {
+            const panel = event.target && event.target.closest ? event.target.closest('.photo-editor-panel') : null;
+            if (!panel)
+                event.preventDefault();
+        };
+        body.style.overflow = 'hidden';
+        body.style.touchAction = 'none';
+        body.style.overscrollBehavior = 'none';
+        html.style.overflow = 'hidden';
+        html.style.overscrollBehavior = 'none';
+        document.addEventListener('touchmove', preventBackgroundTouch, { passive: false });
         return () => {
-            document.body.style.overflow = previousOverflow;
-            document.body.style.touchAction = previousTouchAction;
+            body.style.overflow = previous.bodyOverflow;
+            body.style.touchAction = previous.bodyTouchAction;
+            body.style.overscrollBehavior = previous.bodyOverscroll;
+            html.style.overflow = previous.htmlOverflow;
+            html.style.overscrollBehavior = previous.htmlOverscroll;
+            document.removeEventListener('touchmove', preventBackgroundTouch);
         };
     }, [open]);
     useEffect(() => {
@@ -1044,7 +1072,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
     }
     if (!open)
         return null;
-    return (React.createElement("div", { className: "photo-editor-overlay fixed inset-0 z-[95] grid place-items-center bg-slate-950/60 p-2 backdrop-blur-[2px]", role: "dialog", "aria-modal": "true" },
+    const modal = (React.createElement("div", { className: "photo-editor-overlay fixed inset-0 z-[95] grid place-items-center bg-slate-950/60 p-2 backdrop-blur-[2px]", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "photo-editor-panel w-full max-w-xl rounded-[24px] bg-white p-3 shadow-2xl md:p-4" },
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                 React.createElement("div", null,
@@ -1067,6 +1095,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
                 React.createElement("div", { className: cx('photo-editor-row flex flex-wrap items-center gap-2', mode !== 'marker' && 'opacity-70') },
                     React.createElement("p", { className: "text-xs font-bold uppercase tracking-[0.16em] text-slate-500" }, "Ukuran Marker"),
                     React.createElement("div", { className: "photo-editor-pill-group" }, markerSizeOptions.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('photo-editor-pill', markerSizeKey === item.key && 'active'), onClick: () => setMarkerSizeKey(item.key) }, item.label))))))));
+    return ReactDOM && ReactDOM.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
 function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, editorPreset = 'evidence' }) {
     const cameraRef = useRef(null);
@@ -1115,7 +1144,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { var _a; return (_a = cameraRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Ambil foto dari kamera" }),
             React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { var _a; return (_a = galleryRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Pilih foto dari galeri" })),
         React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, preset: editorPreset, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
@@ -1361,11 +1390,12 @@ function EvidenceSection({ visit, update }) {
     return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, content));
 }
 function RowJumpFloat({ onPrev, onNext, canPrev, canNext, label = 'Daftar' }) {
-    return (React.createElement("div", { className: "section-jump-float", "aria-label": label + ' navigation' },
-        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onPrev, disabled: !canPrev, "aria-label": "Row sebelumnya" },
-            React.createElement(Icon, { name: "left", className: "h-4 w-4 rotate-90" })),
-        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onNext, disabled: !canNext, "aria-label": "Row berikutnya" },
-            React.createElement(Icon, { name: "left", className: "h-4 w-4 -rotate-90" }))));
+    const controls = (React.createElement("div", { className: "section-jump-float", role: "navigation", "aria-label": label + ' navigation' },
+        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onPrev, disabled: !canPrev, title: "Row sebelumnya", "aria-label": "Row sebelumnya" },
+            React.createElement(Icon, { name: "up", className: "h-5 w-5" })),
+        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onNext, disabled: !canNext, title: "Row berikutnya", "aria-label": "Row berikutnya" },
+            React.createElement(Icon, { name: "down", className: "h-5 w-5" }))));
+    return ReactDOM && ReactDOM.createPortal ? ReactDOM.createPortal(controls, document.body) : controls;
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
