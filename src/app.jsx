@@ -2286,7 +2286,7 @@ function WelcomeOverlay({ config, onDone }) {
   const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
   const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
   useEffect(() => {
-    const timer = window.setTimeout(onDone, 3200);
+    const timer = window.setTimeout(onDone, 5000);
     return () => window.clearTimeout(timer);
   }, [onDone]);
   return (
@@ -2780,13 +2780,28 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp23').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp24').catch(() => {});
     }
   }, []);
 
   useEffect(() => {
-    const touchState = { target: null, x: 0, y: 0, moved: false };
-    const findTextTarget = (target) => target?.closest?.('input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]');
+    const touchState = { target: null, x: 0, y: 0, moved: false, startedAt: 0 };
+    const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]';
+    const findTextTarget = (target) => target?.closest?.(textTargetSelector) || null;
+    const movementLimit = () => (window.matchMedia?.('(pointer: coarse)')?.matches ? 16 : 11);
+    function canFocusOnTap(target) {
+      if (!target || target.disabled || target.readOnly) return false;
+      const tag = (target.tagName || '').toLowerCase();
+      if (tag === 'select') return false;
+      const type = String(target.getAttribute?.('type') || '').toLowerCase();
+      return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
+    }
+    function focusTapTarget(target) {
+      if (!canFocusOnTap(target) || document.activeElement === target) return;
+      window.setTimeout(() => {
+        try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (innerError) {} }
+      }, 0);
+    }
     function handleTouchStart(event) {
       const target = findTextTarget(event.target);
       if (!target || !event.touches?.[0]) return;
@@ -2794,29 +2809,43 @@ function App() {
       touchState.x = event.touches[0].clientX;
       touchState.y = event.touches[0].clientY;
       touchState.moved = false;
+      touchState.startedAt = Date.now();
     }
     function handleTouchMove(event) {
       if (!touchState.target || !event.touches?.[0]) return;
       const dx = Math.abs(event.touches[0].clientX - touchState.x);
       const dy = Math.abs(event.touches[0].clientY - touchState.y);
-      if (dx > 8 || dy > 8) touchState.moved = true;
+      const limit = movementLimit();
+      if (dy > limit || dx > limit + 6) touchState.moved = true;
     }
     function handleTouchEnd(event) {
-      if (touchState.target && touchState.moved) {
-        event.preventDefault();
+      const target = touchState.target;
+      const wasScroll = Boolean(target && touchState.moved);
+      if (wasScroll) {
+        if (event.cancelable) event.preventDefault();
         event.stopPropagation();
-        if (document.activeElement === touchState.target) touchState.target.blur?.();
+        if (document.activeElement === target) target.blur?.();
+      } else if (target) {
+        focusTapTarget(target);
       }
       touchState.target = null;
       touchState.moved = false;
+      touchState.startedAt = 0;
+    }
+    function handleTouchCancel() {
+      touchState.target = null;
+      touchState.moved = false;
+      touchState.startedAt = 0;
     }
     document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
     document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: true });
     document.addEventListener('touchend', handleTouchEnd, { capture: true, passive: false });
+    document.addEventListener('touchcancel', handleTouchCancel, { capture: true, passive: true });
     return () => {
       document.removeEventListener('touchstart', handleTouchStart, true);
       document.removeEventListener('touchmove', handleTouchMove, true);
       document.removeEventListener('touchend', handleTouchEnd, true);
+      document.removeEventListener('touchcancel', handleTouchCancel, true);
     };
   }, []);
 

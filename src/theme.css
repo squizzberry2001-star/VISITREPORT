@@ -62,6 +62,21 @@ textarea:focus-visible {
 }
 .form-control::placeholder { color: #64748b; }
 textarea.form-control { min-height: 92px; resize: vertical; line-height: 1.55; }
+input.form-control,
+textarea.form-control,
+select.form-control,
+.rich-editor-input {
+  touch-action: manipulation;
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: #0f766e;
+}
+input.form-control,
+textarea.form-control,
+.rich-editor-input {
+  -webkit-tap-highlight-color: rgba(15, 118, 110, .14);
+  scroll-margin-bottom: calc(130px + var(--safe-bottom));
+}
 
 .btn-primary,
 .btn-secondary,
@@ -1960,7 +1975,8 @@ select,
     linear-gradient(135deg, rgba(2, 6, 23, .90), rgba(15, 23, 42, .78));
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
-  animation: welcomeFade .42s ease both;
+  animation: welcomeFade 5s cubic-bezier(.22,.8,.2,1) both;
+  will-change: opacity, backdrop-filter;
 }
 .welcome-dream-overlay::before,
 .welcome-dream-overlay::after {
@@ -1978,13 +1994,13 @@ select,
   left: -12vmin;
   bottom: -10vmin;
   background: #14b8a6;
-  animation: welcomeDrift 5.8s ease-in-out infinite alternate;
+  animation: welcomeDrift 5s ease-in-out infinite alternate;
 }
 .welcome-dream-overlay::after {
   right: -10vmin;
   top: -12vmin;
   background: #60a5fa;
-  animation: welcomeDrift 6.4s ease-in-out infinite alternate-reverse;
+  animation: welcomeDrift 5s ease-in-out infinite alternate-reverse;
 }
 .welcome-dream-card {
   position: relative;
@@ -1999,7 +2015,8 @@ select,
   box-shadow: 0 32px 100px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255,255,255,.38);
   -webkit-backdrop-filter: blur(24px) saturate(1.25);
   backdrop-filter: blur(24px) saturate(1.25);
-  animation: welcomeCardIn .62s cubic-bezier(.2,.8,.2,1) both;
+  animation: welcomeCardIn 5s cubic-bezier(.22,.8,.2,1) both;
+  will-change: transform, opacity, filter;
 }
 .welcome-dream-card::before {
   content: '';
@@ -2007,7 +2024,7 @@ select,
   inset: -2px;
   background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.34) 45%, transparent 72%);
   transform: translateX(-100%);
-  animation: welcomeShine 2.8s ease .25s both;
+  animation: welcomeShine 4.2s ease .35s both;
 }
 .welcome-orb {
   position: absolute;
@@ -2073,12 +2090,16 @@ select,
   box-shadow: 0 18px 38px rgba(0,0,0,.20);
 }
 @keyframes welcomeFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  86% { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes welcomeCardIn {
-  from { opacity: 0; transform: translateY(24px) scale(.96); filter: blur(10px); }
-  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  0% { opacity: 0; transform: translateY(26px) scale(.96); filter: blur(12px); }
+  16% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  72% { opacity: 1; transform: translateY(-4px) scale(1.012); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-10px) scale(.985); filter: blur(10px); }
 }
 @keyframes welcomeDrift {
   from { transform: translate3d(0, 0, 0) scale(.96); }
