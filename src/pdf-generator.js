@@ -63,6 +63,119 @@
     return y + Math.max(1, lines.length) * lineHeight;
   }
 
+  function richTokens(value) {
+    const raw = value === undefined || value === null ? '' : String(value);
+    const tokens = [];
+    function push(value, style) {
+      const safe = String(value || '').replace(/\u00a0/g, ' ');
+      if (safe) tokens.push(Object.assign({ text: safe }, style || {}));
+    }
+    function newline() { tokens.push({ text: '\n' }); }
+    if (!/<[a-z][\s\S]*>/i.test(raw) || typeof document === 'undefined') {
+      text(raw, '').split('\n').forEach(function (line, index) {
+        if (index) newline();
+        push(line, {});
+      });
+      return tokens.length ? tokens : [{ text: '-' }];
+    }
+    const root = document.createElement('div');
+    root.innerHTML = raw;
+    function walk(node, style, list) {
+      if (node.nodeType === 3) { push(node.nodeValue, style); return; }
+      if (node.nodeType !== 1) return;
+      const tag = String(node.tagName || '').toLowerCase();
+      if (tag === 'br') { newline(); return; }
+      const nextStyle = Object.assign({}, style);
+      if (tag === 'b' || tag === 'strong') nextStyle.bold = true;
+      if (tag === 'i' || tag === 'em') nextStyle.italic = true;
+      if (tag === 'u') nextStyle.underline = true;
+      if (tag === 'ul' || tag === 'ol') {
+        Array.from(node.children || []).forEach(function (child, index) { walk(child, nextStyle, { type: tag, index: index + 1 }); });
+        newline();
+        return;
+      }
+      if (tag === 'li') {
+        if (tokens.length && tokens[tokens.length - 1].text !== '\n') newline();
+        push(list && list.type === 'ol' ? String(list.index || 1) + '. ' : '• ', nextStyle);
+        Array.from(node.childNodes || []).forEach(function (child) { walk(child, nextStyle, list); });
+        newline();
+        return;
+      }
+      const block = ['p', 'div'].indexOf(tag) !== -1;
+      if (block && tokens.length && tokens[tokens.length - 1].text !== '\n') newline();
+      Array.from(node.childNodes || []).forEach(function (child) { walk(child, nextStyle, list); });
+      if (block) newline();
+    }
+    Array.from(root.childNodes || []).forEach(function (child) { walk(child, {}, null); });
+    while (tokens.length && tokens[0].text === '\n') tokens.shift();
+    while (tokens.length && tokens[tokens.length - 1].text === '\n') tokens.pop();
+    return tokens.length ? tokens : [{ text: '-' }];
+  }
+
+  function setRichFont(doc, token, baseBold) {
+    const bold = Boolean(baseBold || token.bold);
+    const italic = Boolean(token.italic);
+    const style = bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal';
+    try { doc.setFont('helvetica', style); } catch (error) { doc.setFont('helvetica', bold ? 'bold' : 'normal'); }
+  }
+
+  function measureRich(doc, token, baseBold) {
+    setRichFont(doc, token, baseBold);
+    return doc.getTextWidth(token.text || '');
+  }
+
+  function splitRichTextToLines(doc, value, width, baseBold) {
+    const source = richTokens(value);
+    const lines = [[]];
+    function current() { return lines[lines.length - 1]; }
+    function lineWidth(line) { return line.reduce(function (sum, token) { return sum + measureRich(doc, token, baseBold); }, 0); }
+    function pushLine() { if (current().length || lines.length === 0) lines.push([]); }
+    source.forEach(function (token) {
+      String(token.text || '').replace(/\r/g, '').split(/(\n|\s+)/).forEach(function (piece) {
+        if (!piece) return;
+        if (piece === '\n') { pushLine(); return; }
+        const isSpace = /^\s+$/.test(piece);
+        if (isSpace) { if (!current().length) return; piece = ' '; }
+        const next = Object.assign({}, token, { text: piece });
+        if (!isSpace && current().length && lineWidth(current()) + measureRich(doc, next, baseBold) > width) pushLine();
+        current().push(next);
+      });
+    });
+    const clean = lines.filter(function (line) { return line.length; });
+    return clean.length ? clean : [[{ text: '-' }]];
+  }
+
+  function richLineToText(line) {
+    return (line || []).map(function (token) { return token.text || ''; }).join('').trim() || '-';
+  }
+
+  function drawRichLines(doc, lines, x, y, lineHeight, options) {
+    const opts = options || {};
+    const baseBold = Boolean(opts.bold);
+    const textColor = opts.textColor || null;
+    const fontSize = opts.fontSize || doc.getFontSize();
+    doc.setFontSize(fontSize);
+    if (textColor) doc.setTextColor.apply(doc, textColor);
+    (lines && lines.length ? lines : [[{ text: '-' }]]).forEach(function (line, lineIndex) {
+      let cx = x;
+      const cy = y + lineIndex * lineHeight;
+      line.forEach(function (token) {
+        const chunk = token.text || '';
+        if (!chunk) return;
+        setRichFont(doc, token, baseBold);
+        if (textColor) doc.setTextColor.apply(doc, textColor);
+        doc.text(chunk, cx, cy, opts.textOptions || {});
+        const w = doc.getTextWidth(chunk);
+        if (token.underline) {
+          doc.setDrawColor.apply(doc, textColor || [39, 39, 42]);
+          doc.setLineWidth(0.18);
+          doc.line(cx, cy + 0.8, cx + w, cy + 0.8);
+        }
+        cx += w;
+      });
+    });
+  }
+
   async function prepareImage(src) {
     return new Promise(function (resolve) {
       if (!src) return resolve(null);
@@ -156,13 +269,13 @@
     return (Array.isArray(rows) ? rows : [])
       .map(function (row) {
         return {
-          temuan: text(row && row.temuan, ''),
-          kondisiIdeal: text(row && row.kondisiIdeal, ''),
-          dampak: text(row && row.dampak, ''),
-          penyebab: text(row && row.penyebab, ''),
-          tindakan: text(row && row.tindakan, ''),
+          temuan: row && row.temuan !== undefined && row.temuan !== null ? String(row.temuan) : '',
+          kondisiIdeal: row && row.kondisiIdeal !== undefined && row.kondisiIdeal !== null ? String(row.kondisiIdeal) : '',
+          dampak: row && row.dampak !== undefined && row.dampak !== null ? String(row.dampak) : '',
+          penyebab: row && row.penyebab !== undefined && row.penyebab !== null ? String(row.penyebab) : '',
+          tindakan: row && row.tindakan !== undefined && row.tindakan !== null ? String(row.tindakan) : '',
           deadline: text(row && row.deadline, ''),
-          hasil: text(row && row.hasil, '')
+          hasil: row && row.hasil !== undefined && row.hasil !== null ? String(row.hasil) : ''
         };
       })
       .filter(function (row) {
@@ -176,7 +289,7 @@
   function normalizePhotos(photos) {
     return (Array.isArray(photos) ? photos : [])
       .map(function (photo) {
-        return { image: photo && photo.image ? photo.image : '', description: text(photo && photo.description, '') };
+        return { image: photo && photo.image ? photo.image : '', description: photo && photo.description !== undefined && photo.description !== null ? String(photo.description) : '' };
       })
       .filter(function (photo) { return photo.image || photo.description; });
   }
@@ -187,7 +300,7 @@
     const source = modern.length ? modern : legacy;
     return [0, 1].map(function (index) {
       const item = source[index] || {};
-      return { image: item.image || '', description: text(item.description, '') };
+      return { image: item.image || '', description: item.description !== undefined && item.description !== null ? String(item.description) : '' };
     });
   }
 
@@ -585,12 +698,14 @@
     ];
     const parts = [];
     defs.forEach(function (field) {
-      const sourceLines = doc.splitTextToSize(text(field.value, '-'), valueWidth);
-      const lines = sourceLines.length ? sourceLines : ['-'];
-      for (let i = 0; i < lines.length; i += maxLinesPerPart) {
+      const sourceRichLines = splitRichTextToLines(doc, field.value, valueWidth, field.boldValue);
+      const richLines = sourceRichLines.length ? sourceRichLines : [[{ text: '-' }]];
+      for (let i = 0; i < richLines.length; i += maxLinesPerPart) {
+        const chunk = richLines.slice(i, i + maxLinesPerPart);
         parts.push(Object.assign({}, field, {
           label: field.label + (i > 0 ? ' (lanjutan)' : ''),
-          lines: lines.slice(i, i + maxLinesPerPart)
+          richLines: chunk,
+          lines: chunk.map(richLineToText)
         }));
       }
     });
@@ -620,7 +735,7 @@
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
     doc.setFontSize(12.5);
     doc.setTextColor.apply(doc, valueText);
-    doc.text(field.lines && field.lines.length ? field.lines : ['-'], x + labelWidth + 4, y + 7.2, { lineHeightFactor: 1.06 });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + labelWidth + 4, y + 7.2, 5.3, { bold: field.boldValue, textColor: valueText, fontSize: 12.5 });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -728,14 +843,14 @@
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
-      const lines = doc.splitTextToSize(text(photo.description, '-'), cardWidth - 10);
-      const first = lines.slice(0, maxLinesWithImage);
-      items.push({ image: photo.image, lines: first, lineHeight: lineHeight, imageHeight: imageHeight, title: 'Foto ' + String(index + 1), continuation: false });
-      let rest = lines.slice(maxLinesWithImage);
+      const richLines = splitRichTextToLines(doc, photo.description, cardWidth - 10, false);
+      const first = richLines.slice(0, maxLinesWithImage);
+      items.push({ image: photo.image, richLines: first, lines: first.map(richLineToText), lineHeight: lineHeight, imageHeight: imageHeight, title: 'Foto ' + String(index + 1), continuation: false });
+      let rest = richLines.slice(maxLinesWithImage);
       let continuationIndex = 1;
       while (rest.length) {
         const chunk = rest.slice(0, maxLinesTextOnly);
-        items.push({ image: '', lines: chunk, lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
+        items.push({ image: '', richLines: chunk, lines: chunk.map(richLineToText), lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
         rest = rest.slice(maxLinesTextOnly);
         continuationIndex += 1;
       }
@@ -778,9 +893,9 @@
       descY += 4.8;
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.8);
+    doc.setFontSize(9.3);
     doc.setTextColor.apply(doc, palette.ink);
-    doc.text(item.lines, x + 7, descY + 2.8, { baseline: 'top' });
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 7, descY + 2.8, item.lineHeight || 4.15, { textColor: palette.ink, fontSize: 9.3, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {

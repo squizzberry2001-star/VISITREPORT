@@ -11,6 +11,12 @@ const MANUAL_STORE_REQUEST_KEY = 'rbv_manual_store_requests_v6';
 const MANUAL_STORE_APPROVED_KEY = 'rbv_manual_store_approved_v6';
 const REPORT_DB_NAME = 'regional_bestie_visit_react_db';
 const REPORT_DB_STORE = 'visits';
+const WELCOME_CONFIG_KEY = 'rbv_welcome_config_v1';
+const WELCOME_SEEN_KEY = 'rbv_welcome_seen_v1';
+const DEFAULT_WELCOME_CONFIG = {
+    title: 'Hallo! Bestie',
+    subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”'
+};
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 function cx(...classes) {
     return classes.filter(Boolean).join(' ');
@@ -58,6 +64,26 @@ function saveJsonArray(key, items) {
     const safeItems = Array.isArray(items) ? items : [];
     localStorage.setItem(key, JSON.stringify(safeItems));
     return safeItems;
+}
+function readWelcomeConfig() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(WELCOME_CONFIG_KEY) || '{}');
+        return {
+            title: cleanText(parsed.title, DEFAULT_WELCOME_CONFIG.title),
+            subtitle: cleanText(parsed.subtitle, DEFAULT_WELCOME_CONFIG.subtitle)
+        };
+    }
+    catch (error) {
+        return { ...DEFAULT_WELCOME_CONFIG };
+    }
+}
+function saveWelcomeConfig(config) {
+    const next = {
+        title: cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title),
+        subtitle: cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle)
+    };
+    localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
+    return next;
 }
 function readManualStoreRequests() {
     return readJsonArray(MANUAL_STORE_REQUEST_KEY);
@@ -1095,7 +1121,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
         if (!canvas || !imageReady)
             return;
         drawEditorCanvas(canvas, { showGuide: false });
-        onSave(canvas.toDataURL('image/jpeg', 0.92));
+        onSave(canvas.toDataURL('image/jpeg', 0.92), { width: canvas.width, height: canvas.height, aspectRatio: canvas.width + ' / ' + canvas.height });
         onClose();
     }
     if (!open)
@@ -1140,7 +1166,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
                     React.createElement("span", null, "Simpan"))))));
     return (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -1150,7 +1176,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             return;
         try {
             const dataUrl = await fileToDataUrl(file);
-            onChange({ ...(value || blankPhoto()), image: dataUrl });
+            onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: '' });
             setEditorOpen(true);
         }
         catch (error) {
@@ -1166,7 +1192,9 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
         onChange({ ...(value || blankPhoto()), image: '' });
     }
     const description = (value === null || value === void 0 ? void 0 : value.description) || '';
-    return (React.createElement("div", { className: "photo-input-card surface-card overflow-hidden rounded-[26px]" },
+    const photoAspect = matchCropFrame && (value === null || value === void 0 ? void 0 : value.cropAspect) ? String(value.cropAspect) : '';
+    const cardStyle = photoAspect ? { '--photo-aspect': photoAspect } : undefined;
+    return (React.createElement("div", { className: cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame'), style: cardStyle },
         React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 px-4 py-3" },
             React.createElement("div", { className: "min-w-0" },
                 React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-900" },
@@ -1187,7 +1215,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { var _a; return (_a = cameraRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Ambil foto dari kamera" }),
             React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { var _a; return (_a = galleryRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Pilih foto dari galeri" })),
         React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: (meta === null || meta === void 0 ? void 0 : meta.aspectRatio) || (value === null || value === void 0 ? void 0 : value.cropAspect) || '' }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
@@ -1417,7 +1445,7 @@ function QscResultSection({ visit, update }) {
             "Kurang ",
             missing,
             " foto wajib.") : null,
-        React.createElement("div", { className: "grid gap-5 lg:grid-cols-2" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true }))))));
+        React.createElement("div", { className: "qsc-result-photo-grid grid gap-4" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, matchCropFrame: true, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true }))))));
 }
 function ObservationSection({ visit, update }) {
     const [tab, setTab] = useState('opi');
@@ -2150,6 +2178,24 @@ function exportJson(data, fileName) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     downloadBlob(blob, fileName);
 }
+
+function WelcomeOverlay({ config, onDone }) {
+    const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
+    const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
+    useEffect(() => {
+        const timer = window.setTimeout(onDone, 3200);
+        return () => window.clearTimeout(timer);
+    }, [onDone]);
+    return (React.createElement("div", { className: "welcome-dream-overlay", role: "dialog", "aria-modal": "true", onClick: onDone },
+        React.createElement("div", { className: "welcome-dream-card", onClick: (event) => event.stopPropagation() },
+            React.createElement("div", { className: "welcome-orb welcome-orb-a" }),
+            React.createElement("div", { className: "welcome-orb welcome-orb-b" }),
+            React.createElement("div", { className: "welcome-dream-content" },
+                React.createElement("p", { className: "welcome-kicker" }, "Bestie Visit"),
+                React.createElement("h1", null, title),
+                React.createElement("p", { className: "welcome-subtitle" }, subtitle),
+                React.createElement("button", { type: "button", className: "welcome-skip", onClick: onDone }, "Masuk")))));
+}
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
@@ -2189,7 +2235,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
             React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
             error ? React.createElement("p", { className: "mt-3 text-center text-sm font-bold text-rose-600" }, error) : null)));
 }
-function SecretMonitorPanel({ open, onClose, history }) {
+function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange }) {
     const [rows, setRows] = useState([]);
     const [source, setSource] = useState('local');
     const [query, setQuery] = useState('');
@@ -2197,6 +2243,14 @@ function SecretMonitorPanel({ open, onClose, history }) {
     const [manualRequests, setManualRequests] = useState([]);
     const [connectionState, setConnectionState] = useState('offline');
     const [lastSync, setLastSync] = useState('');
+    const [welcomeTitle, setWelcomeTitle] = useState(DEFAULT_WELCOME_CONFIG.title);
+    const [welcomeSubtitle, setWelcomeSubtitle] = useState(DEFAULT_WELCOME_CONFIG.subtitle);
+    function saveWelcomeSettings() {
+        const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle });
+        if (typeof onWelcomeConfigChange === 'function')
+            onWelcomeConfigChange(saved);
+        alert('Text welcome berhasil disimpan.');
+    }
     function localRows() {
         return (history || []).map((item) => ({
             bestie_name: item.bestieName,
@@ -2268,6 +2322,9 @@ function SecretMonitorPanel({ open, onClose, history }) {
     useEffect(() => {
         if (!open)
             return undefined;
+        const currentWelcome = welcomeConfig || readWelcomeConfig();
+        setWelcomeTitle(cleanText(currentWelcome.title, DEFAULT_WELCOME_CONFIG.title));
+        setWelcomeSubtitle(cleanText(currentWelcome.subtitle, DEFAULT_WELCOME_CONFIG.subtitle));
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
@@ -2398,6 +2455,17 @@ function SecretMonitorPanel({ open, onClose, history }) {
                 React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
                     React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
                     React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
+            React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
+                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Welcome Animation"),
+                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Edit Text Welcome")),
+                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveWelcomeSettings }, "Simpan Welcome")),
+                React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
+                    React.createElement(Field, { label: "Head title" },
+                        React.createElement(TextInput, { value: welcomeTitle, onChange: (event) => setWelcomeTitle(event.target.value), placeholder: DEFAULT_WELCOME_CONFIG.title })),
+                    React.createElement(Field, { label: "Sub title" },
+                        React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })))),
             React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
                 React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                     React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
@@ -2552,7 +2620,21 @@ function App() {
     const [newVisitOpen, setNewVisitOpen] = useState(false);
     const [pinOpen, setPinOpen] = useState(false);
     const [secretOpen, setSecretOpen] = useState(false);
+    const [welcomeConfig, setWelcomeConfig] = useState(() => readWelcomeConfig());
+    const [welcomeOpen, setWelcomeOpen] = useState(() => {
+        try { return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1'; }
+        catch (error) { return true; }
+    });
     const secretTapRef = useRef({ count: 0, timer: null });
+    function closeWelcome() {
+        try { sessionStorage.setItem(WELCOME_SEEN_KEY, '1'); }
+        catch (error) { }
+        setWelcomeOpen(false);
+    }
+    function applyWelcomeConfig(nextConfig) {
+        const saved = saveWelcomeConfig(nextConfig);
+        setWelcomeConfig(saved);
+    }
     async function updateStorageLabel() {
         var _a;
         const localBytes = calcLocalStorageBytes();
@@ -2573,7 +2655,7 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js?v=revamp22').catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=revamp23').catch(() => { });
         }
     }, []);
     useEffect(() => {
@@ -2738,9 +2820,10 @@ function App() {
             React.createElement(MobileTopBar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }),
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
             React.createElement(MobileBottomNav, { screen: screen, setScreen: setScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData })),
+        welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
         React.createElement(NewVisitModal, { open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
-        React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history })));
+        React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig })));
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App, null));

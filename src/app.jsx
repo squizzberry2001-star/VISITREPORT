@@ -12,6 +12,12 @@ const MANUAL_STORE_REQUEST_KEY = 'rbv_manual_store_requests_v6';
 const MANUAL_STORE_APPROVED_KEY = 'rbv_manual_store_approved_v6';
 const REPORT_DB_NAME = 'regional_bestie_visit_react_db';
 const REPORT_DB_STORE = 'visits';
+const WELCOME_CONFIG_KEY = 'rbv_welcome_config_v1';
+const WELCOME_SEEN_KEY = 'rbv_welcome_seen_v1';
+const DEFAULT_WELCOME_CONFIG = {
+  title: 'Hallo! Bestie',
+  subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”'
+};
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 function cx(...classes) {
@@ -65,6 +71,27 @@ function saveJsonArray(key, items) {
   const safeItems = Array.isArray(items) ? items : [];
   localStorage.setItem(key, JSON.stringify(safeItems));
   return safeItems;
+}
+
+function readWelcomeConfig() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(WELCOME_CONFIG_KEY) || '{}');
+    return {
+      title: cleanText(parsed.title, DEFAULT_WELCOME_CONFIG.title),
+      subtitle: cleanText(parsed.subtitle, DEFAULT_WELCOME_CONFIG.subtitle)
+    };
+  } catch (error) {
+    return { ...DEFAULT_WELCOME_CONFIG };
+  }
+}
+
+function saveWelcomeConfig(config) {
+  const next = {
+    title: cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title),
+    subtitle: cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle)
+  };
+  localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
+  return next;
 }
 
 function readManualStoreRequests() {
@@ -1167,7 +1194,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     const canvas = canvasRef.current;
     if (!canvas || !imageReady) return;
     drawEditorCanvas(canvas, { showGuide: false });
-    onSave(canvas.toDataURL('image/jpeg', 0.92));
+    onSave(canvas.toDataURL('image/jpeg', 0.92), { width: canvas.width, height: canvas.height, aspectRatio: canvas.width + ' / ' + canvas.height });
     onClose();
   }
 
@@ -1236,7 +1263,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
 
 }
 
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false }) {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1246,7 +1273,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
     if (!file) return;
     try {
       const dataUrl = await fileToDataUrl(file);
-      onChange({ ...(value || blankPhoto()), image: dataUrl });
+      onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: '' });
       setEditorOpen(true);
     } catch (error) {
       alert('Foto gagal dibaca. Coba pilih ulang foto.');
@@ -1261,9 +1288,11 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
   }
 
   const description = value?.description || '';
+  const photoAspect = matchCropFrame && value?.cropAspect ? String(value.cropAspect) : '';
+  const cardStyle = photoAspect ? { '--photo-aspect': photoAspect } : undefined;
 
   return (
-    <div className="photo-input-card surface-card overflow-hidden rounded-[26px]">
+    <div className={cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame')} style={cardStyle}>
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{label}{required ? <span className="ml-1 text-rose-600">*</span> : null}</p></div>
         <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => setEditorOpen(true)} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
@@ -1275,7 +1304,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
       <div className="border-t border-slate-200 p-3">
         {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
-      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} onClose={() => setEditorOpen(false)} onSave={(editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage })} />
+      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} onClose={() => setEditorOpen(false)} onSave={(editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || '' })} />
     </div>
   );
 }
@@ -1547,7 +1576,7 @@ function QscResultSection({ visit, update }) {
   const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
   return (
     <SectionShell title="QSC / FAMITRACK Result" actions={<Toggle checked={enabled} onChange={(value) => update({ showQSCResult: value })} label={enabled ? 'Hide slide' : 'Unhide slide'} />}>
-      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
+      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="qsc-result-photo-grid grid gap-4">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} matchCropFrame onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
     </SectionShell>
   );
 }
@@ -2252,6 +2281,30 @@ function exportJson(data, fileName) {
   downloadBlob(blob, fileName);
 }
 
+
+function WelcomeOverlay({ config, onDone }) {
+  const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
+  const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
+  useEffect(() => {
+    const timer = window.setTimeout(onDone, 3200);
+    return () => window.clearTimeout(timer);
+  }, [onDone]);
+  return (
+    <div className="welcome-dream-overlay" role="dialog" aria-modal="true" onClick={onDone}>
+      <div className="welcome-dream-card" onClick={(event) => event.stopPropagation()}>
+        <div className="welcome-orb welcome-orb-a" />
+        <div className="welcome-orb welcome-orb-b" />
+        <div className="welcome-dream-content">
+          <p className="welcome-kicker">Bestie Visit</p>
+          <h1>{title}</h1>
+          <p className="welcome-subtitle">{subtitle}</p>
+          <button type="button" className="welcome-skip" onClick={onDone}>Masuk</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SecretPinModal({ open, onClose, onUnlock }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -2303,7 +2356,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
   );
 }
 
-function SecretMonitorPanel({ open, onClose, history }) {
+function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange }) {
   const [rows, setRows] = useState([]);
   const [source, setSource] = useState('local');
   const [query, setQuery] = useState('');
@@ -2311,6 +2364,14 @@ function SecretMonitorPanel({ open, onClose, history }) {
   const [manualRequests, setManualRequests] = useState([]);
   const [connectionState, setConnectionState] = useState('offline');
   const [lastSync, setLastSync] = useState('');
+  const [welcomeTitle, setWelcomeTitle] = useState(DEFAULT_WELCOME_CONFIG.title);
+  const [welcomeSubtitle, setWelcomeSubtitle] = useState(DEFAULT_WELCOME_CONFIG.subtitle);
+
+  function saveWelcomeSettings() {
+    const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle });
+    if (typeof onWelcomeConfigChange === 'function') onWelcomeConfigChange(saved);
+    alert('Text welcome berhasil disimpan.');
+  }
 
   function localRows() {
     return (history || []).map((item) => ({
@@ -2382,6 +2443,9 @@ function SecretMonitorPanel({ open, onClose, history }) {
 
   useEffect(() => {
     if (!open) return undefined;
+    const currentWelcome = welcomeConfig || readWelcomeConfig();
+    setWelcomeTitle(cleanText(currentWelcome.title, DEFAULT_WELCOME_CONFIG.title));
+    setWelcomeSubtitle(cleanText(currentWelcome.subtitle, DEFAULT_WELCOME_CONFIG.subtitle));
     let cancelled = false;
     let unsubscribeRows = null;
     let unsubscribeRequests = null;
@@ -2507,6 +2571,24 @@ function SecretMonitorPanel({ open, onClose, history }) {
           <div className="rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100"><p className="text-xs font-bold uppercase">Total Visit</p><p className="mt-2 text-3xl font-black">{rows.length}</p></div>
           <div className="rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100"><p className="text-xs font-bold uppercase">Bestie Unik</p><p className="mt-2 text-3xl font-black">{uniqueBesties}</p></div>
           <div className="rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200"><p className="text-xs font-bold uppercase text-slate-500">Visit Hari Ini</p><p className="mt-2 text-3xl font-black">{todayVisits}</p></div>
+        </div>
+
+        <div className="mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Welcome Animation</p>
+              <h3 className="text-lg font-black text-slate-950">Edit Text Welcome</h3>
+            </div>
+            <Button variant="secondary" icon="check" onClick={saveWelcomeSettings}>Simpan Welcome</Button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Head title">
+              <TextInput value={welcomeTitle} onChange={(event) => setWelcomeTitle(event.target.value)} placeholder={DEFAULT_WELCOME_CONFIG.title} />
+            </Field>
+            <Field label="Sub title">
+              <TextArea value={welcomeSubtitle} onChange={(event) => setWelcomeSubtitle(event.target.value)} minRows={2} placeholder={DEFAULT_WELCOME_CONFIG.subtitle} />
+            </Field>
+          </div>
         </div>
 
         <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -2662,7 +2744,21 @@ function App() {
   const [newVisitOpen, setNewVisitOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [secretOpen, setSecretOpen] = useState(false);
+  const [welcomeConfig, setWelcomeConfig] = useState(() => readWelcomeConfig());
+  const [welcomeOpen, setWelcomeOpen] = useState(() => {
+    try { return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1'; } catch (error) { return true; }
+  });
   const secretTapRef = useRef({ count: 0, timer: null });
+
+  function closeWelcome() {
+    try { sessionStorage.setItem(WELCOME_SEEN_KEY, '1'); } catch (error) {}
+    setWelcomeOpen(false);
+  }
+
+  function applyWelcomeConfig(nextConfig) {
+    const saved = saveWelcomeConfig(nextConfig);
+    setWelcomeConfig(saved);
+  }
 
   async function updateStorageLabel() {
     const localBytes = calcLocalStorageBytes();
@@ -2684,7 +2780,7 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp22').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp23').catch(() => {});
     }
   }, []);
 
@@ -2851,9 +2947,10 @@ function App() {
         <div className="min-w-0 flex-1">{content}</div>
         <MobileBottomNav screen={screen} setScreen={setScreen} visit={visit} onNewVisit={() => setNewVisitOpen(true)} onClearData={clearCurrentData} />
       </div>
+      {welcomeOpen ? <WelcomeOverlay config={welcomeConfig} onDone={closeWelcome} /> : null}
       <NewVisitModal open={newVisitOpen} onClose={() => setNewVisitOpen(false)} onCreate={createNewVisit} />
       <SecretPinModal open={pinOpen} onClose={() => setPinOpen(false)} onUnlock={() => { setPinOpen(false); setSecretOpen(true); }} />
-      <SecretMonitorPanel open={secretOpen} onClose={() => setSecretOpen(false)} history={history} />
+      <SecretMonitorPanel open={secretOpen} onClose={() => setSecretOpen(false)} history={history} welcomeConfig={welcomeConfig} onWelcomeConfigChange={applyWelcomeConfig} />
     </div>
   );
 }
