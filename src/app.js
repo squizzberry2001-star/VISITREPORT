@@ -1044,8 +1044,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
     }
     if (!open)
         return null;
-    return (React.createElement("div", { className: "photo-editor-overlay fixed inset-0 z-[95] grid place-items-center bg-slate-950/60 p-3 backdrop-blur-[2px]", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "photo-editor-panel w-full max-w-2xl rounded-[28px] bg-white p-4 shadow-2xl md:p-5" },
+    return (React.createElement("div", { className: "photo-editor-overlay fixed inset-0 z-[95] grid place-items-center bg-slate-950/60 p-2 backdrop-blur-[2px]", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "photo-editor-panel w-full max-w-xl rounded-[24px] bg-white p-3 shadow-2xl md:p-4" },
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Crop & Marker"),
@@ -1055,7 +1055,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
             React.createElement("div", { className: "photo-editor-canvas-shell overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2" },
                 React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, className: "mx-auto block w-full touch-none rounded-xl bg-white", style: { aspectRatio: String(canvasSize.width) + ' / ' + String(canvasSize.height) }, onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
             React.createElement("div", { className: "mt-3 flex flex-col gap-2" },
-                React.createElement("div", { className: "photo-editor-row flex flex-wrap items-center justify-between gap-2" },
+                React.createElement("div", { className: "photo-editor-row flex flex-wrap items-center gap-2" },
                     React.createElement("div", { className: "photo-editor-pill-group" }, aspectOptions.map((option) => React.createElement("button", { key: option.key, type: "button", className: cx('photo-editor-pill', aspectKey === option.key && 'active'), onClick: () => setAspectKey(option.key) }, option.label))),
                     React.createElement("div", { className: "photo-editor-hint text-xs font-bold text-slate-500" }, mode === 'marker' ? 'Tap foto untuk menaruh marker.' : 'Cubit untuk zoom, geser untuk atur posisi.'),
                     React.createElement("div", { className: "flex flex-wrap items-center justify-end gap-2" },
@@ -1064,7 +1064,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
                         React.createElement(Button, { variant: "secondary", icon: "left", onClick: () => setMarkers((current) => current.slice(0, -1)), "aria-label": "Undo marker" }),
                         React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: () => { setZoom(1); setOffset({ x: 0, y: 0 }); setMarkers([]); }, "aria-label": "Reset foto" }),
                         React.createElement(Button, { icon: "check", onClick: saveEditedImage }, "Simpan"))),
-                React.createElement("div", { className: cx('photo-editor-row flex flex-wrap items-center justify-between gap-2', mode !== 'marker' && 'opacity-70') },
+                React.createElement("div", { className: cx('photo-editor-row flex flex-wrap items-center gap-2', mode !== 'marker' && 'opacity-70') },
                     React.createElement("p", { className: "text-xs font-bold uppercase tracking-[0.16em] text-slate-500" }, "Ukuran Marker"),
                     React.createElement("div", { className: "photo-editor-pill-group" }, markerSizeOptions.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('photo-editor-pill', markerSizeKey === item.key && 'active'), onClick: () => setMarkerSizeKey(item.key) }, item.label))))))));
 }
@@ -1180,6 +1180,8 @@ function CrewEditor({ visit, update }) {
 }
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = (rows === null || rows === void 0 ? void 0 : rows.length) ? rows : [blankObservationRow()];
+    const rowRefs = useRef([]);
+    const [activeIndex, setActiveIndex] = useState(0);
     const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
     const addRow = () => onChange([...safeRows, blankObservationRow()]);
     const removeRow = (index) => {
@@ -1187,13 +1189,22 @@ function ObservationCards({ title, rows, onChange }) {
             return;
         const next = safeRows.filter((_, rowIndex) => rowIndex !== index);
         onChange(next.length ? next : [blankObservationRow()]);
+        setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, next.length - 1))));
+    };
+    const jumpToRow = (index) => {
+        const safeIndex = Math.max(0, Math.min(safeRows.length - 1, index));
+        setActiveIndex(safeIndex);
+        const node = rowRefs.current[safeIndex];
+        if (node) {
+            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     };
     const richField = (label, key, row, index, placeholder) => (React.createElement(Field, { label: label },
         React.createElement(RichTextInput, { value: row[key] || '', onChange: (value) => updateRow(index, { [key]: value }), placeholder: placeholder })));
-    return (React.createElement("div", { className: "grid gap-4" },
+    return (React.createElement("div", { className: "relative grid gap-4" },
         React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
             React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title)),
-        safeRows.map((row, index) => (React.createElement("article", { key: index, className: "surface-card rounded-[28px] p-4 md:p-5" },
+        safeRows.map((row, index) => (React.createElement("article", { key: index, ref: (node) => rowRefs.current[index] = node, onFocusCapture: () => setActiveIndex(index), onPointerDown: () => setActiveIndex(index), className: cx("surface-card rounded-[28px] p-4 md:p-5", activeIndex === index && 'ring-2 ring-emerald-200') },
             React.createElement("div", { className: "mb-4 flex items-center justify-between gap-3" },
                 React.createElement(Badge, { tone: isMeaningfulObservation(row) ? 'success' : 'default' },
                     "Row ",
@@ -1211,10 +1222,13 @@ function ObservationCards({ title, rows, onChange }) {
                         React.createElement(DateInput, { value: row.deadline || '', onChange: (e) => updateRow(index, { deadline: e.target.value }) })),
                     richField('Hasil', 'hasil', row, index, 'Hasil tindakan...')))))),
         React.createElement("div", { className: "flex justify-end" },
-            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row"))));
+            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row")),
+        safeRows.length > 1 ? React.createElement(RowJumpFloat, { onPrev: () => jumpToRow(activeIndex - 1), onNext: () => jumpToRow(activeIndex + 1), canPrev: activeIndex > 0, canNext: activeIndex < safeRows.length - 1, label: "Observation row" }) : null));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
     const safePhotos = (photos === null || photos === void 0 ? void 0 : photos.length) ? photos : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()];
+    const cardRefs = useRef([]);
+    const [activeIndex, setActiveIndex] = useState(0);
     const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
     const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
     const removeEmpty = () => {
@@ -1222,16 +1236,27 @@ function PhotoGrid({ photos, onChange, prefix }) {
             return;
         const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
         onChange(meaningful.length ? meaningful : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
+        setActiveIndex(0);
     };
-    return (React.createElement("div", { className: "grid gap-4" },
+    const jumpToCard = (index) => {
+        const safeIndex = Math.max(0, Math.min(safePhotos.length - 1, index));
+        setActiveIndex(safeIndex);
+        const node = cardRefs.current[safeIndex];
+        if (node) {
+            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+    return (React.createElement("div", { className: "relative grid gap-4" },
         React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
             React.createElement("p", { className: "text-sm font-bold text-slate-900" },
                 safePhotos.length,
                 " slot foto")),
-        React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: `${prefix} ${index + 1}`, value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, editorPreset: 'evidence' })))),
+        React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement("div", { key: index, ref: (node) => cardRefs.current[index] = node, onPointerDown: () => setActiveIndex(index), className: cx(activeIndex === index && 'photo-card-active') },
+            React.createElement(PhotoInput, { label: `${prefix} ${index + 1}`, value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, editorPreset: 'evidence' }))))),
         React.createElement("div", { className: "flex flex-wrap justify-end gap-2" },
             React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: removeEmpty }, "Rapikan Slot Kosong"),
-            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addFour }, "Tambah 4 Slot"))));
+            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addFour }, "Tambah 4 Slot")),
+        safePhotos.length > 1 ? React.createElement(RowJumpFloat, { onPrev: () => jumpToCard(activeIndex - 1), onNext: () => jumpToCard(activeIndex + 1), canPrev: activeIndex > 0, canNext: activeIndex < safePhotos.length - 1, label: "Evidence row" }) : null));
 }
 const SECTION_DEFS = [
     { id: 'setup', label: 'Visit', title: 'Visit Setup', icon: 'store', hint: 'Bestie & store' },
@@ -1293,19 +1318,15 @@ function QscResultSection({ visit, update }) {
 }
 function ObservationSection({ visit, update }) {
     const [tab, setTab] = useState('opi');
-    const sectionRef = useRef(null);
     const listRef = useRef(null);
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
-    function jumpToTop() {
-        var _a;
-        (_a = sectionRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    function jumpToList() {
-        var _a;
-        (_a = listRef.current) === null || _a === void 0 ? void 0 : _a.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    const content = !enabled
+        ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' })
+        : React.createElement("div", { ref: listRef }, tab === 'opi'
+            ? React.createElement(ObservationCards, { title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) })
+            : React.createElement(ObservationCards, { title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) }));
     const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
         React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
             React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
@@ -1315,15 +1336,19 @@ function ObservationSection({ visit, update }) {
                 React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
                 " QSC Observation")),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement("div", { ref: sectionRef, className: "relative" },
-        React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : React.createElement("div", { ref: listRef }, tab === 'opi' ? React.createElement(ObservationCards, { title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) }))),
-        enabled ? React.createElement(SectionJumpFloat, { onTop: jumpToTop, onList: jumpToList, label: "Observation" }) : null));
+    return (React.createElement("div", { className: "relative" },
+        React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, content)));
 }
 function EvidenceSection({ visit, update }) {
     const [tab, setTab] = useState('finding');
     const enabled = tab === 'finding' ? visit.showFindingEvidence === true : visit.showCorrectiveAction === true;
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
+    const content = !enabled
+        ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' })
+        : tab === 'finding'
+            ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) })
+            : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) });
     const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
         React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
             React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), onClick: () => setTab('finding') },
@@ -1333,16 +1358,15 @@ function EvidenceSection({ visit, update }) {
                 React.createElement(Icon, { name: "image", className: "h-4 w-4" }),
                 " Corrective Action")),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, content));
 }
-function SectionJumpFloat({ onTop, onList, label = 'Daftar' }) {
+function RowJumpFloat({ onPrev, onNext, canPrev, canNext, label = 'Daftar' }) {
     return (React.createElement("div", { className: "section-jump-float", "aria-label": label + ' navigation' },
-        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onTop, "aria-label": "Scroll ke atas" },
+        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onPrev, disabled: !canPrev, "aria-label": "Row sebelumnya" },
             React.createElement(Icon, { name: "left", className: "h-4 w-4 rotate-90" })),
-        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onList, "aria-label": "Scroll ke daftar" },
+        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onNext, disabled: !canNext, "aria-label": "Row berikutnya" },
             React.createElement(Icon, { name: "left", className: "h-4 w-4 -rotate-90" }))));
 }
-
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
         React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
