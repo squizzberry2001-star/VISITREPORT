@@ -1,15 +1,15 @@
-const CACHE_NAME = 'bestie-visit-v24-welcome-5s-input-fix';
+const CACHE_NAME = 'bestie-visit-v25-welcome-duration-admin';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './src/theme.css?v=revamp24',
+  './src/theme.css?v=revamp25',
   './src/tailwind.generated.css',
-  './src/app.js?v=revamp24',
-  './src/pdf-generator.js?v=revamp24',
+  './src/app.js?v=revamp25',
+  './src/pdf-generator.js?v=revamp25',
   './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
-  './ca-assignment-export.js?v=revamp24',
+  './ca-assignment-export.js?v=revamp25',
   './jszip.min.js',
   './convex-config.js',
   './manifest.webmanifest',
