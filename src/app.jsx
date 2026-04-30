@@ -1347,9 +1347,12 @@ function ObservationCards({ title, rows, onChange }) {
         <Button variant="secondary" icon="plus" onClick={addRow}>Tambah Row</Button>
       </div>
       <div className="observation-mobile-nav" aria-label="Navigasi temuan observation">
-        <button type="button" className="observation-nav-button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya"><Icon name="left" className="h-5 w-5" /></button>
-        <button type="button" className="observation-nav-add" onClick={addRow} aria-label="Tambah temuan"><Icon name="plus" className="h-5 w-5" /></button>
-        <button type="button" className="observation-nav-button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya"><Icon name="right" className="h-5 w-5" /></button>
+        <div className="observation-nav-status">Temuan {activeRowNumber} / {safeRows.length}</div>
+        <div className="observation-nav-controls">
+          <button type="button" className="observation-nav-button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya"><Icon name="left" className="h-5 w-5" /></button>
+          <button type="button" className="observation-nav-add" onClick={addRow} aria-label="Tambah temuan"><Icon name="plus" className="h-5 w-5" /></button>
+          <button type="button" className="observation-nav-button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya"><Icon name="right" className="h-5 w-5" /></button>
+        </div>
       </div>
     </div>
   );
@@ -2595,7 +2598,7 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp18').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp19').catch(() => {});
     }
   }, []);
 

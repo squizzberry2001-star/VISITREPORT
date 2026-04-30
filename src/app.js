@@ -1248,12 +1248,18 @@ function ObservationCards({ title, rows, onChange }) {
         React.createElement("div", { className: "observation-desktop-add flex justify-end" },
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row")),
         React.createElement("div", { className: "observation-mobile-nav", "aria-label": "Navigasi temuan observation" },
-            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya" },
-                React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
-            React.createElement("button", { type: "button", className: "observation-nav-add", onClick: addRow, "aria-label": "Tambah temuan" },
-                React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
-            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya" },
-                React.createElement(Icon, { name: "right", className: "h-5 w-5" })))));
+            React.createElement("div", { className: "observation-nav-status" },
+                "Temuan ",
+                activeRowNumber,
+                " / ",
+                safeRows.length),
+            React.createElement("div", { className: "observation-nav-controls" },
+                React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya" },
+                    React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
+                React.createElement("button", { type: "button", className: "observation-nav-add", onClick: addRow, "aria-label": "Tambah temuan" },
+                    React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
+                React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya" },
+                    React.createElement(Icon, { name: "right", className: "h-5 w-5" }))))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
     const minSlots = 8;
@@ -2496,7 +2502,7 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js?v=revamp18').catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=revamp19').catch(() => { });
         }
     }, []);
     useEffect(() => {
