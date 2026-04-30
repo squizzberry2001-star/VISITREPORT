@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bestie-visit-v7';
+const CACHE_NAME = 'bestie-visit-v16-row-jump-crop';
 const CORE_ASSETS = [
   './',
   './index.html',
