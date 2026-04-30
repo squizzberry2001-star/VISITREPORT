@@ -1339,8 +1339,28 @@ function AssignmentSection({ visit, update, onPreview }) {
                 React.createElement(Button, { icon: "eye", onClick: onPreview }, "Preview PDF")))));
 }
 function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
-    const isAndroid = /android/i.test(navigator.userAgent || '');
+    const ua = navigator.userAgent || '';
+    const isIos = /iphone|ipad|ipod/i.test(ua);
+    const isAndroid = /android/i.test(ua);
+    const [guideMode, setGuideMode] = useState(isIos || isAndroid ? 'mobile' : 'desktop');
+    useEffect(() => {
+        if (open)
+            setGuideMode(isIos || isAndroid ? 'mobile' : 'desktop');
+    }, [open, isIos, isAndroid]);
+    const mobileGuides = [
+        { browser: 'Chrome Android', steps: 'Buka menu tiga titik, pilih “Install app” atau “Tambahkan ke layar utama”, lalu konfirmasi install.' },
+        { browser: 'Samsung Internet', steps: 'Buka menu ≡, pilih “Add page to”, lalu pilih “Home screen” atau “Apps screen”.' },
+        { browser: 'Microsoft Edge Android', steps: 'Buka menu bawah, pilih “Add to phone” atau “Install app”, lalu ikuti konfirmasi.' },
+        { browser: 'Firefox Android', steps: 'Buka menu tiga titik, pilih “Install” bila tersedia. Jika tidak ada, pilih “Add to Home screen”.' },
+        { browser: 'iPhone / iPad Safari', steps: 'Tekan tombol Share, pilih “Add to Home Screen”, lalu tekan “Add”.' },
+        { browser: 'iPhone Chrome / Edge / Firefox', steps: 'Di iPhone tidak ada auto install. Buka menu Share browser, lalu pilih “Add to Home Screen”.' }
+    ];
+    const desktopGuides = [
+        { browser: 'Chrome Desktop', steps: 'Klik icon install di address bar, atau buka menu ⋮ lalu pilih “Install app”.' },
+        { browser: 'Microsoft Edge', steps: 'Buka menu ⋯ lalu pilih “Apps” → “Install this site as an app”.' },
+        { browser: 'Firefox Desktop', steps: 'Gunakan menu browser lalu pilih “Install” bila tersedia. Jika tidak ada, buat shortcut manual di desktop/bookmarks.' },
+        { browser: 'Safari macOS', steps: 'Buka File → Add to Dock atau gunakan Share / Shortcut sesuai versi macOS.' }
+    ];
     async function installNow() {
         if (!deferredPrompt)
             return;
@@ -1356,36 +1376,28 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
     }
     if (!open)
         return null;
+    const canAutoInstall = Boolean(deferredPrompt) && !isIos;
+    const guideItems = guideMode === 'mobile' ? mobileGuides : desktopGuides;
     return (React.createElement("div", { className: "fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-lg md:rounded-[30px] md:p-6" },
+        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[30px] md:p-6" },
             React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
                 React.createElement("div", { className: "flex items-center gap-3" },
                     React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
                         React.createElement(Icon, { name: "spark" })),
                     React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Install App"),
-                        React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Tambahkan ke layar depan"))),
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Install Apps"),
+                        React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Tambahkan Bestie Visit ke perangkat"))),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            deferredPrompt && isAndroid ? React.createElement(Button, { className: "mb-4 w-full", icon: "download", onClick: installNow }, "Tambahkan Sekarang") : null,
-            React.createElement("div", { className: "grid gap-3 text-sm leading-6 text-slate-700" },
-                React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" },
-                    React.createElement("strong", null, "Android Chrome:"),
-                    " buka menu tiga titik, pilih ",
-                    React.createElement("strong", null, "Tambahkan ke layar utama"),
-                    ", lalu tekan ",
-                    React.createElement("strong", null, "Install"),
-                    "."),
-                React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" },
-                    React.createElement("strong", null, "iPhone Safari:"),
-                    " tekan tombol ",
-                    React.createElement("strong", null, "Share"),
-                    ", pilih ",
-                    React.createElement("strong", null, "Add to Home Screen"),
-                    ", lalu tekan ",
-                    React.createElement("strong", null, "Add"),
-                    "."),
-                !isIos && !isAndroid ? React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" }, "Desktop: gunakan menu browser, lalu pilih install atau create shortcut.") : null))));
+            React.createElement("div", { className: "mb-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200" },
+                React.createElement("div", { className: "install-guide-tabs" },
+                    React.createElement("button", { type: "button", className: cx('install-guide-tab', guideMode === 'mobile' && 'active'), onClick: () => setGuideMode('mobile') }, "Tutorial Mobile"),
+                    React.createElement("button", { type: "button", className: cx('install-guide-tab', guideMode === 'desktop' && 'active'), onClick: () => setGuideMode('desktop') }, "Tutorial Desktop")),
+                React.createElement("p", { className: "mt-3 text-xs font-semibold leading-5 text-slate-500" }, canAutoInstall ? 'Browser ini mendukung auto install. Gunakan tombol di bawah untuk menambahkan aplikasi dengan cepat.' : isIos ? 'Di iPhone / iPad auto install tidak didukung, jadi gunakan tutorial manual sesuai browser.' : 'Jika browser tidak menampilkan prompt install otomatis, gunakan langkah manual sesuai browser yang Anda pakai.')),
+            canAutoInstall ? React.createElement(Button, { className: "mb-4 w-full", icon: "download", onClick: installNow }, "Auto Add to Home / Install App") : null,
+            React.createElement("div", { className: "install-guide-grid" }, guideItems.map((item) => (React.createElement("div", { key: item.browser, className: "install-guide-card" },
+                React.createElement("strong", null, item.browser),
+                React.createElement("p", null, item.steps))))))));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
@@ -1405,8 +1417,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("span", { className: "inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100" }, "Dashboard"),
                     React.createElement("h1", { className: "mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl" }, "Regional Bestie Visit Report")),
-                React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info tambah ke layar depan" },
-                    React.createElement(Icon, { name: "spark", className: "h-5 w-5" }))),
+                React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                    React.createElement("span", { className: "install-info-button__icon" },
+                        React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
+                    React.createElement("span", { className: "install-info-button__text" }, "Install Apps"))),
             React.createElement("div", { className: "mt-4 grid grid-cols-2 gap-2" },
                 React.createElement(Button, { icon: "plus", onClick: onNewVisit }, "Buat Kunjungan Baru"),
                 React.createElement(Button, { variant: "danger", icon: "trash", onClick: onClearHistory }, "Hapus Semua History")),

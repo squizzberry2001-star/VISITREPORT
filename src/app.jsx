@@ -1463,8 +1463,31 @@ function AssignmentSection({ visit, update, onPreview }) {
 }
 
 function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
-  const isAndroid = /android/i.test(navigator.userAgent || '');
+  const ua = navigator.userAgent || '';
+  const isIos = /iphone|ipad|ipod/i.test(ua);
+  const isAndroid = /android/i.test(ua);
+  const [guideMode, setGuideMode] = useState(isIos || isAndroid ? 'mobile' : 'desktop');
+
+  useEffect(() => {
+    if (open) setGuideMode(isIos || isAndroid ? 'mobile' : 'desktop');
+  }, [open, isIos, isAndroid]);
+
+  const mobileGuides = [
+    { browser: 'Chrome Android', steps: 'Buka menu tiga titik, pilih “Install app” atau “Tambahkan ke layar utama”, lalu konfirmasi install.' },
+    { browser: 'Samsung Internet', steps: 'Buka menu ≡, pilih “Add page to”, lalu pilih “Home screen” atau “Apps screen”.' },
+    { browser: 'Microsoft Edge Android', steps: 'Buka menu bawah, pilih “Add to phone” atau “Install app”, lalu ikuti konfirmasi.' },
+    { browser: 'Firefox Android', steps: 'Buka menu tiga titik, pilih “Install” bila tersedia. Jika tidak ada, pilih “Add to Home screen”.' },
+    { browser: 'iPhone / iPad Safari', steps: 'Tekan tombol Share, pilih “Add to Home Screen”, lalu tekan “Add”.' },
+    { browser: 'iPhone Chrome / Edge / Firefox', steps: 'Di iPhone tidak ada auto install. Buka menu Share browser, lalu pilih “Add to Home Screen”.' }
+  ];
+
+  const desktopGuides = [
+    { browser: 'Chrome Desktop', steps: 'Klik icon install di address bar, atau buka menu ⋮ lalu pilih “Install app”.' },
+    { browser: 'Microsoft Edge', steps: 'Buka menu ⋯ lalu pilih “Apps” → “Install this site as an app”.' },
+    { browser: 'Firefox Desktop', steps: 'Gunakan menu browser lalu pilih “Install” bila tersedia. Jika tidak ada, buat shortcut manual di desktop/bookmarks.' },
+    { browser: 'Safari macOS', steps: 'Buka File → Add to Dock atau gunakan Share / Shortcut sesuai versi macOS.' }
+  ];
+
   async function installNow() {
     if (!deferredPrompt) return;
     try {
@@ -1476,22 +1499,45 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
       onPromptUsed?.();
     }
   }
+
   if (!open) return null;
+
+  const canAutoInstall = Boolean(deferredPrompt) && !isIos;
+  const guideItems = guideMode === 'mobile' ? mobileGuides : desktopGuides;
+
   return (
     <div className="fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6" role="dialog" aria-modal="true">
-      <div className="w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-lg md:rounded-[30px] md:p-6">
+      <div className="w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[30px] md:p-6">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary"><Icon name="spark" /></span>
-            <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Install App</p><h2 className="text-xl font-black text-slate-950">Tambahkan ke layar depan</h2></div>
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Install Apps</p>
+              <h2 className="text-xl font-black text-slate-950">Tambahkan Bestie Visit ke perangkat</h2>
+            </div>
           </div>
           <Button variant="icon" onClick={onClose} aria-label="Tutup"><Icon name="close" className="h-4 w-4" /></Button>
         </div>
-        {deferredPrompt && isAndroid ? <Button className="mb-4 w-full" icon="download" onClick={installNow}>Tambahkan Sekarang</Button> : null}
-        <div className="grid gap-3 text-sm leading-6 text-slate-700">
-          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200"><strong>Android Chrome:</strong> buka menu tiga titik, pilih <strong>Tambahkan ke layar utama</strong>, lalu tekan <strong>Install</strong>.</div>
-          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200"><strong>iPhone Safari:</strong> tekan tombol <strong>Share</strong>, pilih <strong>Add to Home Screen</strong>, lalu tekan <strong>Add</strong>.</div>
-          {!isIos && !isAndroid ? <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">Desktop: gunakan menu browser, lalu pilih install atau create shortcut.</div> : null}
+
+        <div className="mb-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+          <div className="install-guide-tabs">
+            <button type="button" className={cx('install-guide-tab', guideMode === 'mobile' && 'active')} onClick={() => setGuideMode('mobile')}>Tutorial Mobile</button>
+            <button type="button" className={cx('install-guide-tab', guideMode === 'desktop' && 'active')} onClick={() => setGuideMode('desktop')}>Tutorial Desktop</button>
+          </div>
+          <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
+            {canAutoInstall ? 'Browser ini mendukung auto install. Gunakan tombol di bawah untuk menambahkan aplikasi dengan cepat.' : isIos ? 'Di iPhone / iPad auto install tidak didukung, jadi gunakan tutorial manual sesuai browser.' : 'Jika browser tidak menampilkan prompt install otomatis, gunakan langkah manual sesuai browser yang Anda pakai.'}
+          </p>
+        </div>
+
+        {canAutoInstall ? <Button className="mb-4 w-full" icon="download" onClick={installNow}>Auto Add to Home / Install App</Button> : null}
+
+        <div className="install-guide-grid">
+          {guideItems.map((item) => (
+            <div key={item.browser} className="install-guide-card">
+              <strong>{item.browser}</strong>
+              <p>{item.steps}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1518,7 +1564,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100">Dashboard</span>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl">Regional Bestie Visit Report</h1>
           </button>
-          <button type="button" className="install-info-button" onClick={() => setInstallOpen(true)} aria-label="Info tambah ke layar depan"><Icon name="spark" className="h-5 w-5" /></button>
+          <button type="button" className="install-info-button" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
+            <span className="install-info-button__icon"><Icon name="spark" className="h-5 w-5" /></span>
+            <span className="install-info-button__text">Install Apps</span>
+          </button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>
