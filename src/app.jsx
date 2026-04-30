@@ -846,111 +846,298 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   const [markers, setMarkers] = useState([]);
   const [mode, setMode] = useState('move');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
+  const [imageReady, setImageReady] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    const previousTouchAction = document.body.style.touchAction;
-    const previousPosition = document.body.style.position;
-    const previousWidth = document.body.style.width;
-    const previousTop = document.body.style.top;
-    const lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.top = `-${lockedScrollY}px`;
+    const body = document.body;
+    const html = document.documentElement;
+    const lockedScrollY = window.scrollY || html.scrollTop || 0;
+    const previous = {
+      bodyOverflow: body.style.overflow,
+      bodyTouchAction: body.style.touchAction,
+      bodyPosition: body.style.position,
+      bodyWidth: body.style.width,
+      bodyTop: body.style.top,
+      htmlOverflow: html.style.overflow
+    };
+    body.style.overflow = 'hidden';
+    body.style.touchAction = 'none';
+    body.style.position = 'fixed';
+    body.style.width = '100%';
+    body.style.top = `-${lockedScrollY}px`;
+    html.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.touchAction = previousTouchAction;
-      document.body.style.position = previousPosition;
-      document.body.style.width = previousWidth;
-      document.body.style.top = previousTop;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.touchAction = previous.bodyTouchAction;
+      body.style.position = previous.bodyPosition;
+      body.style.width = previous.bodyWidth;
+      body.style.top = previous.bodyTop;
+      html.style.overflow = previous.htmlOverflow;
       window.requestAnimationFrame(() => window.scrollTo(0, lockedScrollY));
     };
   }, [open]);
 
+  useEffect(() => () => { if (rafRef.current) window.cancelAnimationFrame(rafRef.current); }, []);
+
   useEffect(() => {
     if (!open || !image) return;
     let cancelled = false;
+    setImageReady(false);
     setZoom(1);
     setOffset({ x: 0, y: 0 });
     setMarkers([]);
     setMode('move');
+    pinchRef.current = null;
+    dragRef.current = null;
     loadImageElement(image).then((loaded) => {
       if (cancelled) return;
       imgRef.current = loaded;
       setCanvasSize(getEditorCanvasSize(loaded));
-      window.requestAnimationFrame(() => drawEditorCanvas());
-    }).catch(() => {});
+      setImageReady(true);
+      window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
+    }).catch(() => {
+      if (!cancelled) setImageReady(false);
+    });
     return () => { cancelled = true; };
   }, [open, image]);
 
-  function scheduleDraw() { if (rafRef.current) window.cancelAnimationFrame(rafRef.current); rafRef.current = window.requestAnimationFrame(() => drawEditorCanvas()); }
-  useEffect(() => { if (!open) return; scheduleDraw(); }, [zoom, offset, markers, mode, open, canvasSize]);
+  function scheduleDraw(showGuide = true) {
+    if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
+    rafRef.current = window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide }));
+  }
 
-  function drawEditorCanvas(targetCanvas) {
+  useEffect(() => { if (!open) return; scheduleDraw(true); }, [zoom, offset, markers, mode, open, canvasSize, imageReady]);
+
+  function getDrawMetrics(nextZoom = zoom, nextOffset = offset) {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return null;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const baseScale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+    const scale = baseScale * nextZoom;
+    const iw = img.naturalWidth * scale;
+    const ih = img.naturalHeight * scale;
+    return {
+      cw,
+      ch,
+      scale,
+      iw,
+      ih,
+      x: (cw - iw) / 2 + nextOffset.x,
+      y: (ch - ih) / 2 + nextOffset.y,
+      centerX: cw / 2,
+      centerY: ch / 2
+    };
+  }
+
+  function clampOffset(nextOffset, nextZoom = zoom) {
+    const metrics = getDrawMetrics(nextZoom, nextOffset);
+    if (!metrics) return nextOffset;
+    const maxX = Math.max(0, (metrics.iw - metrics.cw) / 2);
+    const maxY = Math.max(0, (metrics.ih - metrics.ch) / 2);
+    return {
+      x: clamp(nextOffset.x, -maxX, maxX),
+      y: clamp(nextOffset.y, -maxY, maxY)
+    };
+  }
+
+  function drawEditorCanvas(targetCanvas, options = {}) {
+    const { showGuide = true } = options;
     const canvas = targetCanvas || canvasRef.current;
     const img = imgRef.current;
     if (!canvas || !img) return;
     const ctx = canvas.getContext('2d');
-    const cw = canvas.width;
-    const ch = canvas.height;
-    ctx.clearRect(0, 0, cw, ch);
+    const metrics = getDrawMetrics();
+    if (!metrics) return;
+    ctx.clearRect(0, 0, metrics.cw, metrics.ch);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, cw, ch);
-    const baseScale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
-    const scale = baseScale * zoom;
-    const iw = img.naturalWidth * scale;
-    const ih = img.naturalHeight * scale;
-    const x = (cw - iw) / 2 + offset.x;
-    const y = (ch - ih) / 2 + offset.y;
+    ctx.fillRect(0, 0, metrics.cw, metrics.ch);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, x, y, iw, ih);
-    ctx.lineWidth = 7;
+    ctx.drawImage(img, metrics.x, metrics.y, metrics.iw, metrics.ih);
+
+    ctx.save();
+    ctx.lineWidth = Math.max(5, Math.round(Math.min(metrics.cw, metrics.ch) * 0.006));
     ctx.strokeStyle = '#ef4444';
     ctx.shadowColor = 'rgba(0,0,0,0.22)';
     ctx.shadowBlur = 5;
-    markers.forEach((marker) => { ctx.beginPath(); ctx.arc(marker.x, marker.y, marker.r || 54, 0, Math.PI * 2); ctx.stroke(); });
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = mode === 'marker' ? 'rgba(239,68,68,0.95)' : 'rgba(15,118,110,0.85)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 8]);
-    ctx.strokeRect(8, 8, cw - 16, ch - 16);
-    ctx.setLineDash([]);
+    markers.forEach((marker) => {
+      ctx.beginPath();
+      ctx.arc(marker.x, marker.y, marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045), 0, Math.PI * 2);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    if (showGuide) {
+      ctx.save();
+      ctx.strokeStyle = mode === 'marker' ? 'rgba(239,68,68,0.95)' : 'rgba(15,118,110,0.9)';
+      ctx.lineWidth = Math.max(2, Math.round(Math.min(metrics.cw, metrics.ch) * 0.002));
+      ctx.setLineDash([Math.max(10, metrics.cw * 0.01), Math.max(8, metrics.cw * 0.008)]);
+      ctx.strokeRect(10, 10, metrics.cw - 20, metrics.ch - 20);
+      ctx.restore();
+    }
   }
 
   function canvasPointFromClient(clientX, clientY) {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
+    return {
+      x: (clientX - rect.left) * (canvas.width / Math.max(1, rect.width)),
+      y: (clientY - rect.top) * (canvas.height / Math.max(1, rect.height))
+    };
   }
+
   function canvasPoint(event) { return canvasPointFromClient(event.clientX, event.clientY); }
-  function touchCenter(touches) { const first = touches[0]; const second = touches[1]; return canvasPointFromClient((first.clientX + second.clientX) / 2, (first.clientY + second.clientY) / 2); }
+  function touchCenter(touches) {
+    const first = touches[0];
+    const second = touches[1];
+    return canvasPointFromClient((first.clientX + second.clientX) / 2, (first.clientY + second.clientY) / 2);
+  }
+
+  function applyZoomAt(point, nextZoom, baseZoom = zoom, baseOffset = offset) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ratio = nextZoom / Math.max(0.001, baseZoom);
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const nextOffset = {
+      x: (1 - ratio) * (point.x - centerX) + ratio * baseOffset.x,
+      y: (1 - ratio) * (point.y - centerY) + ratio * baseOffset.y
+    };
+    setZoom(nextZoom);
+    setOffset(clampOffset(nextOffset, nextZoom));
+  }
 
   function handlePointerDown(event) {
+    if (!canvasRef.current || !imageReady || pinchRef.current) return;
     event.preventDefault();
-    if (!canvasRef.current) return;
-    if (mode === 'marker') { const point = canvasPoint(event); setMarkers((current) => [...current, { x: point.x, y: point.y, r: 54 }]); return; }
+    if (mode === 'marker') {
+      const point = canvasPoint(event);
+      const r = Math.max(34, Math.min(canvasRef.current.width, canvasRef.current.height) * 0.045);
+      setMarkers((current) => [...current, { x: point.x, y: point.y, r }]);
+      return;
+    }
     const point = canvasPoint(event);
-    dragRef.current = { x: point.x, y: point.y, offsetX: offset.x, offsetY: offset.y };
+    dragRef.current = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: offset.x, offsetY: offset.y };
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch (error) {}
   }
-  function handlePointerMove(event) { if (!dragRef.current || mode !== 'move') return; event.preventDefault(); const point = canvasPoint(event); setOffset({ x: dragRef.current.offsetX + (point.x - dragRef.current.x), y: dragRef.current.offsetY + (point.y - dragRef.current.y) }); }
-  function handlePointerUp() { dragRef.current = null; }
-  function handleTouchStart(event) { if (event.touches.length === 2) { event.preventDefault(); pinchRef.current = { distance: distanceBetweenTouches(event.touches), zoom, offset, center: touchCenter(event.touches) }; } }
-  function handleTouchMove(event) { if (event.touches.length === 2 && pinchRef.current) { event.preventDefault(); const distance = distanceBetweenTouches(event.touches); const nextZoom = clamp(pinchRef.current.zoom * (distance / Math.max(1, pinchRef.current.distance)), 1, 4); const center = touchCenter(event.touches); const ratio = nextZoom / Math.max(0.001, pinchRef.current.zoom); setZoom(nextZoom); setOffset({ x: center.x - (pinchRef.current.center.x - pinchRef.current.offset.x) * ratio, y: center.y - (pinchRef.current.center.y - pinchRef.current.offset.y) * ratio }); } }
-  function handleWheel(event) { event.preventDefault(); const point = canvasPoint(event); const nextZoom = clamp(zoom * (event.deltaY < 0 ? 1.08 : 0.92), 1, 4); const ratio = nextZoom / Math.max(0.001, zoom); setZoom(nextZoom); setOffset({ x: point.x - (point.x - offset.x) * ratio, y: point.y - (point.y - offset.y) * ratio }); }
-  function saveEditedImage() { const canvas = canvasRef.current; if (!canvas) return; drawEditorCanvas(canvas); onSave(canvas.toDataURL('image/jpeg', 0.9)); onClose(); }
+
+  function handlePointerMove(event) {
+    if (!dragRef.current || mode !== 'move' || dragRef.current.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const point = canvasPoint(event);
+    const next = {
+      x: dragRef.current.offsetX + (point.x - dragRef.current.x),
+      y: dragRef.current.offsetY + (point.y - dragRef.current.y)
+    };
+    setOffset(clampOffset(next, zoom));
+  }
+
+  function handlePointerUp(event) {
+    if (dragRef.current?.pointerId === event?.pointerId) dragRef.current = null;
+    else dragRef.current = null;
+  }
+
+  function handleTouchStart(event) {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      dragRef.current = null;
+      pinchRef.current = { distance: distanceBetweenTouches(event.touches), zoom, offset, center: touchCenter(event.touches) };
+    }
+  }
+
+  function handleTouchMove(event) {
+    if (event.touches.length === 2 && pinchRef.current) {
+      event.preventDefault();
+      const distance = distanceBetweenTouches(event.touches);
+      const nextZoom = clamp(pinchRef.current.zoom * (distance / Math.max(1, pinchRef.current.distance)), 1, 4);
+      const currentCenter = touchCenter(event.touches);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ratio = nextZoom / Math.max(0.001, pinchRef.current.zoom);
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const nextOffset = {
+        x: currentCenter.x - centerX - ratio * (pinchRef.current.center.x - centerX - pinchRef.current.offset.x),
+        y: currentCenter.y - centerY - ratio * (pinchRef.current.center.y - centerY - pinchRef.current.offset.y)
+      };
+      setZoom(nextZoom);
+      setOffset(clampOffset(nextOffset, nextZoom));
+    }
+  }
+
+  function handleTouchEnd(event) {
+    if (!event.touches || event.touches.length < 2) pinchRef.current = null;
+  }
+
+  function handleWheel(event) {
+    if (!imageReady) return;
+    event.preventDefault();
+    const point = canvasPoint(event);
+    const nextZoom = clamp(zoom * (event.deltaY < 0 ? 1.08 : 0.92), 1, 4);
+    applyZoomAt(point, nextZoom);
+  }
+
+  function resetEditor() {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setMarkers([]);
+    setMode('move');
+  }
+
+  function saveEditedImage() {
+    const canvas = canvasRef.current;
+    if (!canvas || !imageReady) return;
+    drawEditorCanvas(canvas, { showGuide: false });
+    onSave(canvas.toDataURL('image/jpeg', 0.92));
+    onClose();
+  }
 
   if (!open) return null;
+  const hasMarkers = markers.length > 0;
   return (
-    <div className="photo-editor-overlay fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-[2px]" role="dialog" aria-modal="true">
-      <div className="photo-editor-panel w-full rounded-[24px] bg-white p-3 shadow-2xl md:p-4">
-        <div className="photo-editor-header flex shrink-0 items-center justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary">Crop & Marker</p><h3 className="truncate text-base font-black text-slate-950">{title}</h3></div><Button variant="icon" onClick={onClose} aria-label="Tutup editor"><Icon name="close" className="h-4 w-4" /></Button></div>
-        <div className="photo-editor-canvas-shell mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2"><canvas ref={canvasRef} width={canvasSize.width} height={canvasSize.height} style={{ aspectRatio: `${canvasSize.width} / ${canvasSize.height}` }} className="block max-h-full max-w-full touch-none rounded-xl bg-white" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onWheel={handleWheel} /></div>
-        <div className="photo-editor-actions mt-3 flex shrink-0 flex-wrap items-center justify-end gap-2"><Button variant={mode === 'move' ? 'primary' : 'secondary'} icon="crop" onClick={() => setMode('move')} aria-label="Mode geser dan crop" /><Button variant={mode === 'marker' ? 'primary' : 'secondary'} icon="marker" onClick={() => setMode('marker')} aria-label="Mode marker" /><Button variant="secondary" icon="left" onClick={() => setMarkers((current) => current.slice(0, -1))} aria-label="Undo marker" /><Button variant="secondary" icon="eraser" onClick={() => confirmAction('Hapus semua marker pada foto ini?') && setMarkers([])} aria-label="Clear marker" /><Button icon="check" onClick={saveEditedImage}>Simpan</Button></div>
+    <div className="photo-editor-overlay photo-editor-v9 fixed inset-0 z-[95] bg-slate-950/78 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="photo-editor-panel photo-editor-v9-panel bg-white shadow-2xl">
+        <div className="photo-editor-header photo-editor-v9-header">
+          <div className="min-w-0">
+            <p className="photo-editor-eyebrow">Edit Foto</p>
+            <h3>{title}</h3>
+          </div>
+          <button type="button" className="photo-editor-close" onClick={onClose} aria-label="Tutup editor"><Icon name="close" className="h-5 w-5" /></button>
+        </div>
+
+        <div className="photo-editor-v9-toolbar" role="toolbar" aria-label="Toolbar edit foto">
+          <button type="button" className={cx('photo-editor-tool', mode === 'move' && 'active')} onClick={() => setMode('move')} aria-pressed={mode === 'move'}><Icon name="crop" className="h-4 w-4" /><span>Geser</span></button>
+          <button type="button" className={cx('photo-editor-tool', mode === 'marker' && 'active')} onClick={() => setMode('marker')} aria-pressed={mode === 'marker'}><Icon name="marker" className="h-4 w-4" /><span>Marker</span></button>
+          <button type="button" className="photo-editor-tool" onClick={() => setMarkers((current) => current.slice(0, -1))} disabled={!hasMarkers}><Icon name="left" className="h-4 w-4" /><span>Undo</span></button>
+          <button type="button" className="photo-editor-tool" onClick={resetEditor}><Icon name="eraser" className="h-4 w-4" /><span>Reset</span></button>
+        </div>
+
+        <div className="photo-editor-canvas-shell photo-editor-v9-stage">
+          {!imageReady ? <div className="photo-editor-loading">Memuat foto...</div> : null}
+          <canvas
+            ref={canvasRef}
+            width={canvasSize.width}
+            height={canvasSize.height}
+            style={{ aspectRatio: `${canvasSize.width} / ${canvasSize.height}` }}
+            className="photo-editor-canvas"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onWheel={handleWheel}
+          />
+        </div>
+
+        <div className="photo-editor-v9-footer">
+          <div className="photo-editor-hint"><span>{mode === 'marker' ? 'Tap area foto untuk membuat lingkaran merah.' : 'Cubit untuk zoom, geser untuk atur posisi.'}</span></div>
+          <button type="button" className="photo-editor-save" onClick={saveEditedImage} disabled={!imageReady}><Icon name="check" className="h-5 w-5" /><span>Simpan</span></button>
+        </div>
       </div>
     </div>
   );
