@@ -1,11 +1,11 @@
-const CACHE_NAME = 'bestie-visit-v19-mobile-pdf-compact';
+const CACHE_NAME = 'bestie-visit-v20-focused-photo-pdf';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './src/theme.css?v=revamp19',
+  './src/theme.css?v=revamp20',
   './src/tailwind.generated.css',
-  './src/app.js?v=revamp19',
-  './src/pdf-generator.js?v=revamp19',
+  './src/app.js?v=revamp20',
+  './src/pdf-generator.js?v=revamp20',
   './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
