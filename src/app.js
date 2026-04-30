@@ -15,7 +15,8 @@ const WELCOME_CONFIG_KEY = 'rbv_welcome_config_v1';
 const WELCOME_SEEN_KEY = 'rbv_welcome_seen_v1';
 const DEFAULT_WELCOME_CONFIG = {
     title: 'Hallo! Bestie',
-    subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”'
+    subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”',
+    durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 function cx(...classes) {
@@ -65,12 +66,19 @@ function saveJsonArray(key, items) {
     localStorage.setItem(key, JSON.stringify(safeItems));
     return safeItems;
 }
+function normalizeWelcomeDurationSeconds(value, fallback = DEFAULT_WELCOME_CONFIG.durationSeconds) {
+    const number = Number(value);
+    if (!Number.isFinite(number))
+        return fallback;
+    return Math.min(15, Math.max(1, number));
+}
 function readWelcomeConfig() {
     try {
         const parsed = JSON.parse(localStorage.getItem(WELCOME_CONFIG_KEY) || '{}');
         return {
             title: cleanText(parsed.title, DEFAULT_WELCOME_CONFIG.title),
-            subtitle: cleanText(parsed.subtitle, DEFAULT_WELCOME_CONFIG.subtitle)
+            subtitle: cleanText(parsed.subtitle, DEFAULT_WELCOME_CONFIG.subtitle),
+            durationSeconds: normalizeWelcomeDurationSeconds(parsed.durationSeconds)
         };
     }
     catch (error) {
@@ -80,7 +88,8 @@ function readWelcomeConfig() {
 function saveWelcomeConfig(config) {
     const next = {
         title: cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title),
-        subtitle: cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle)
+        subtitle: cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle),
+        durationSeconds: normalizeWelcomeDurationSeconds(config && config.durationSeconds)
     };
     localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
     return next;
@@ -2182,11 +2191,13 @@ function exportJson(data, fileName) {
 function WelcomeOverlay({ config, onDone }) {
     const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
     const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
+    const durationSeconds = normalizeWelcomeDurationSeconds(config && config.durationSeconds);
+    const durationMs = Math.round(durationSeconds * 1000);
     useEffect(() => {
-        const timer = window.setTimeout(onDone, 5000);
+        const timer = window.setTimeout(onDone, durationMs);
         return () => window.clearTimeout(timer);
-    }, [onDone]);
-    return (React.createElement("div", { className: "welcome-dream-overlay", role: "dialog", "aria-modal": "true", onClick: onDone },
+    }, [onDone, durationMs]);
+    return (React.createElement("div", { className: "welcome-dream-overlay", role: "dialog", "aria-modal": "true", style: { '--welcome-duration': String(durationSeconds) + 's' }, onClick: onDone },
         React.createElement("div", { className: "welcome-dream-card", onClick: (event) => event.stopPropagation() },
             React.createElement("div", { className: "welcome-orb welcome-orb-a" }),
             React.createElement("div", { className: "welcome-orb welcome-orb-b" }),
@@ -2245,8 +2256,9 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [lastSync, setLastSync] = useState('');
     const [welcomeTitle, setWelcomeTitle] = useState(DEFAULT_WELCOME_CONFIG.title);
     const [welcomeSubtitle, setWelcomeSubtitle] = useState(DEFAULT_WELCOME_CONFIG.subtitle);
+    const [welcomeDurationSeconds, setWelcomeDurationSeconds] = useState(DEFAULT_WELCOME_CONFIG.durationSeconds);
     function saveWelcomeSettings() {
-        const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle });
+        const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
             onWelcomeConfigChange(saved);
         alert('Text welcome berhasil disimpan.');
@@ -2325,6 +2337,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         const currentWelcome = welcomeConfig || readWelcomeConfig();
         setWelcomeTitle(cleanText(currentWelcome.title, DEFAULT_WELCOME_CONFIG.title));
         setWelcomeSubtitle(cleanText(currentWelcome.subtitle, DEFAULT_WELCOME_CONFIG.subtitle));
+        setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(currentWelcome.durationSeconds));
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
@@ -2459,13 +2472,15 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                     React.createElement("div", null,
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Welcome Animation"),
-                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Edit Text Welcome")),
+                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Edit Welcome")),
                     React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveWelcomeSettings }, "Simpan Welcome")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
+                React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
                     React.createElement(Field, { label: "Head title" },
                         React.createElement(TextInput, { value: welcomeTitle, onChange: (event) => setWelcomeTitle(event.target.value), placeholder: DEFAULT_WELCOME_CONFIG.title })),
                     React.createElement(Field, { label: "Sub title" },
-                        React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })))),
+                        React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })),
+                    React.createElement(Field, { label: "Durasi (detik)", helper: "Bisa diisi 1 sampai 15 detik." },
+                        React.createElement(TextInput, { type: "number", min: "1", max: "15", step: "0.5", value: welcomeDurationSeconds, onChange: (event) => setWelcomeDurationSeconds(event.target.value), onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds)) })))),
             React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
                 React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                     React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),

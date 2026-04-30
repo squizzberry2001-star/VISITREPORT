@@ -1975,7 +1975,7 @@ select,
     linear-gradient(135deg, rgba(2, 6, 23, .90), rgba(15, 23, 42, .78));
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
-  animation: welcomeFade 5s cubic-bezier(.22,.8,.2,1) both;
+  animation: welcomeFade var(--welcome-duration, 5s) cubic-bezier(.22,.8,.2,1) both;
   will-change: opacity, backdrop-filter;
 }
 .welcome-dream-overlay::before,
@@ -2015,7 +2015,7 @@ select,
   box-shadow: 0 32px 100px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255,255,255,.38);
   -webkit-backdrop-filter: blur(24px) saturate(1.25);
   backdrop-filter: blur(24px) saturate(1.25);
-  animation: welcomeCardIn 5s cubic-bezier(.22,.8,.2,1) both;
+  animation: welcomeCardIn var(--welcome-duration, 5s) cubic-bezier(.22,.8,.2,1) both;
   will-change: transform, opacity, filter;
 }
 .welcome-dream-card::before {
