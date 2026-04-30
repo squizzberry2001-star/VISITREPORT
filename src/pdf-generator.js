@@ -355,7 +355,6 @@
       return text(item && item.name, '') || text(item && item.level, '');
     }) : [];
     const rows = [
-      ['Visitor', text(data && data.nama, '-'), '-'],
       ['Store Leader', text(data && data.storeLeader, '-'), text(data && data.storeLeaderLevel, '-')],
       ['Shift Leader', text(data && data.shiftLeader, '-'), text(data && data.shiftLeaderLevel, '-')]
     ];
@@ -723,15 +722,15 @@
   }
 
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
-    const lineHeight = 3.65;
-    const imageSize = Math.max(44, Math.min(cardWidth - 10, cardHeight - 22));
-    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageSize - 13) / lineHeight));
+    const lineHeight = 4.15;
+    const imageHeight = Math.max(34, Math.min(cardHeight * 0.55, cardHeight - 24));
+    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 13) / lineHeight));
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
       const lines = doc.splitTextToSize(text(photo.description, '-'), cardWidth - 10);
       const first = lines.slice(0, maxLinesWithImage);
-      items.push({ image: photo.image, lines: first, lineHeight: lineHeight, imageHeight: imageSize, imageSize: imageSize, title: 'Foto ' + String(index + 1), continuation: false });
+      items.push({ image: photo.image, lines: first, lineHeight: lineHeight, imageHeight: imageHeight, title: 'Foto ' + String(index + 1), continuation: false });
       let rest = lines.slice(maxLinesWithImage);
       let continuationIndex = 1;
       while (rest.length) {
@@ -752,19 +751,20 @@
     let descY = y + 7;
     let descHeight = height - 10;
     if (item.image) {
-      const imgSize = Math.min(item.imageSize || item.imageHeight || 46, width - 8, height - 22);
-      const imgX = x + (width - imgSize) / 2;
+      const imgX = x + 4;
       const imgY = y + 4;
-      const added = await addImageInBox(doc, item.image, imgX, imgY, imgSize, imgSize, 'coverCrop');
+      const imgW = Math.max(20, width - 8);
+      const imgH = Math.max(28, Math.min(item.imageHeight || 42, height - 22));
+      const added = await addImageInBox(doc, item.image, imgX, imgY, imgW, imgH, 'coverCrop');
       if (!added) {
         doc.setFillColor(248, 250, 252);
-        doc.roundedRect(imgX, imgY, imgSize, imgSize, 3, 3, 'F');
+        doc.roundedRect(imgX, imgY, imgW, imgH, 3, 3, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.8);
         doc.setTextColor(148, 163, 184);
-        doc.text('No photo', x + width / 2, imgY + imgSize / 2, { align: 'center' });
+        doc.text('No photo', x + width / 2, imgY + imgH / 2, { align: 'center' });
       }
-      descY = imgY + imgSize + 5;
+      descY = imgY + imgH + 5;
       descHeight = height - (descY - y) - 4;
     }
 
@@ -772,13 +772,13 @@
     doc.roundedRect(x + 4, descY - 2, width - 8, Math.max(10, descHeight), 3, 3, 'F');
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.7);
+      doc.setFontSize(8.2);
       doc.setTextColor.apply(doc, palette.primary);
       doc.text(item.title, x + 7, descY + 2.7, { baseline: 'top' });
       descY += 4.8;
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.7);
+    doc.setFontSize(8.8);
     doc.setTextColor.apply(doc, palette.ink);
     doc.text(item.lines, x + 7, descY + 2.8, { baseline: 'top' });
   }

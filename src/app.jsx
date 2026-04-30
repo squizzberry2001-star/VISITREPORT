@@ -654,7 +654,6 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         aria-multiline="true"
         data-placeholder={placeholder}
         tabIndex={0}
-        onPointerDown={focusEditor}
         onClick={focusEditor}
         onInput={emit}
         onBlur={emit}
@@ -848,15 +847,46 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function getEditorCanvasSize(imageElement) {
-  const width = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
-  const height = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
+const PHOTO_EDITOR_RATIOS = [
+  { key: 'original', label: 'Asli', w: 0, h: 0 },
+  { key: '1-1', label: '1:1', w: 1, h: 1 },
+  { key: '4-3', label: '4:3', w: 4, h: 3 },
+  { key: '3-4', label: '3:4', w: 3, h: 4 },
+  { key: '16-9', label: '16:9', w: 16, h: 9 },
+  { key: '9-16', label: '9:16', w: 9, h: 16 }
+];
+
+const MARKER_SIZE_OPTIONS = [
+  { key: 'small', label: 'Kecil', scale: 0.034 },
+  { key: 'medium', label: 'Sedang', scale: 0.045 },
+  { key: 'large', label: 'Besar', scale: 0.064 }
+];
+
+function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
+  const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
+  const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
   const maxSide = 1400;
-  const scale = Math.min(1, maxSide / Math.max(width, height));
+  if (ratio?.w && ratio?.h) {
+    const targetRatio = ratio.w / ratio.h;
+    let width = maxSide;
+    let height = Math.round(width / targetRatio);
+    if (height > maxSide) {
+      height = maxSide;
+      width = Math.round(height * targetRatio);
+    }
+    return { width: Math.max(360, width), height: Math.max(360, height) };
+  }
+  const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
   return {
-    width: Math.max(360, Math.round(width * scale)),
-    height: Math.max(360, Math.round(height * scale))
+    width: Math.max(360, Math.round(sourceWidth * scale)),
+    height: Math.max(360, Math.round(sourceHeight * scale))
   };
+}
+
+function getMarkerRadius(canvas, markerSize) {
+  const selected = MARKER_SIZE_OPTIONS.find((item) => item.key === markerSize) || MARKER_SIZE_OPTIONS[1];
+  const minSide = Math.min(canvas?.width || 1080, canvas?.height || 1080);
+  return Math.max(24, Math.round(minSide * selected.scale));
 }
 
 function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
@@ -869,6 +899,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [markers, setMarkers] = useState([]);
   const [mode, setMode] = useState('move');
+  const [selectedRatio, setSelectedRatio] = useState(PHOTO_EDITOR_RATIOS[0]);
+  const [markerSize, setMarkerSize] = useState('medium');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
   const [imageReady, setImageReady] = useState(false);
 
@@ -884,19 +916,29 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     };
     const stopBackgroundScroll = (event) => {
       const panel = event.target?.closest?.('.photo-editor-v10-panel');
-      if (!panel) event.preventDefault();
+      if ((event.touches && event.touches.length > 1) || !panel) event.preventDefault();
+    };
+    const stopGestureZoom = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
     };
     body.style.overflow = 'hidden';
     body.style.overscrollBehavior = 'none';
     html.style.overflow = 'hidden';
     html.style.overscrollBehavior = 'none';
     document.addEventListener('touchmove', stopBackgroundScroll, { passive: false });
+    document.addEventListener('gesturestart', stopGestureZoom, { passive: false });
+    document.addEventListener('gesturechange', stopGestureZoom, { passive: false });
+    document.addEventListener('gestureend', stopGestureZoom, { passive: false });
     return () => {
       body.style.overflow = previous.bodyOverflow;
       body.style.overscrollBehavior = previous.bodyOverscroll;
       html.style.overflow = previous.htmlOverflow;
       html.style.overscrollBehavior = previous.htmlOverscroll;
       document.removeEventListener('touchmove', stopBackgroundScroll);
+      document.removeEventListener('gesturestart', stopGestureZoom);
+      document.removeEventListener('gesturechange', stopGestureZoom);
+      document.removeEventListener('gestureend', stopGestureZoom);
     };
   }, [open]);
 
@@ -910,12 +952,14 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     setOffset({ x: 0, y: 0 });
     setMarkers([]);
     setMode('move');
+    setSelectedRatio(PHOTO_EDITOR_RATIOS[0]);
+    setMarkerSize('medium');
     pinchRef.current = null;
     dragRef.current = null;
     loadImageElement(image).then((loaded) => {
       if (cancelled) return;
       imgRef.current = loaded;
-      setCanvasSize(getEditorCanvasSize(loaded));
+      setCanvasSize(getEditorCanvasSize(loaded, PHOTO_EDITOR_RATIOS[0]));
       setImageReady(true);
       window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
     }).catch(() => {
@@ -1037,7 +1081,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     event.preventDefault();
     if (mode === 'marker') {
       const point = canvasPoint(event);
-      const r = Math.max(34, Math.min(canvasRef.current.width, canvasRef.current.height) * 0.045);
+      const r = getMarkerRadius(canvasRef.current, markerSize);
       setMarkers((current) => [...current, { x: point.x, y: point.y, r }]);
       return;
     }
@@ -1065,6 +1109,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   function handleTouchStart(event) {
     if (event.touches.length === 2) {
       event.preventDefault();
+      event.stopPropagation();
       dragRef.current = null;
       pinchRef.current = { distance: distanceBetweenTouches(event.touches), zoom, offset, center: touchCenter(event.touches) };
     }
@@ -1073,6 +1118,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   function handleTouchMove(event) {
     if (event.touches.length === 2 && pinchRef.current) {
       event.preventDefault();
+      event.stopPropagation();
       const distance = distanceBetweenTouches(event.touches);
       const nextZoom = clamp(pinchRef.current.zoom * (distance / Math.max(1, pinchRef.current.distance)), 1, 4);
       const currentCenter = touchCenter(event.touches);
@@ -1109,6 +1155,14 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     setMode('move');
   }
 
+  function changeRatio(nextRatio) {
+    setSelectedRatio(nextRatio);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setMarkers([]);
+    if (imgRef.current) setCanvasSize(getEditorCanvasSize(imgRef.current, nextRatio));
+  }
+
   function saveEditedImage() {
     const canvas = canvasRef.current;
     if (!canvas || !imageReady) return;
@@ -1137,13 +1191,28 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
           <button type="button" className="photo-editor-tool" onClick={resetEditor}><Icon name="eraser" className="h-4 w-4" /><span>Reset</span></button>
         </div>
 
+        <div className="photo-editor-options" aria-label="Pengaturan crop dan marker">
+          <div className="photo-editor-option-row">
+            <span>Ratio</span>
+            <div className="photo-editor-chip-group">
+              {PHOTO_EDITOR_RATIOS.map((ratio) => <button key={ratio.key} type="button" className={cx('photo-editor-chip', selectedRatio.key === ratio.key && 'active')} onClick={() => changeRatio(ratio)}>{ratio.label}</button>)}
+            </div>
+          </div>
+          <div className="photo-editor-option-row">
+            <span>Marker</span>
+            <div className="photo-editor-chip-group">
+              {MARKER_SIZE_OPTIONS.map((option) => <button key={option.key} type="button" className={cx('photo-editor-chip', markerSize === option.key && 'active')} onClick={() => setMarkerSize(option.key)}>{option.label}</button>)}
+            </div>
+          </div>
+        </div>
+
         <div className="photo-editor-canvas-shell photo-editor-v10-stage">
           {!imageReady ? <div className="photo-editor-loading">Memuat foto...</div> : null}
           <canvas
             ref={canvasRef}
             width={canvasSize.width}
             height={canvasSize.height}
-            style={{ aspectRatio: canvasSize.width + ' / ' + canvasSize.height }}
+            style={{ aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }}
             className="photo-editor-canvas"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -2615,8 +2684,44 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp21').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp22').catch(() => {});
     }
+  }, []);
+
+  useEffect(() => {
+    const touchState = { target: null, x: 0, y: 0, moved: false };
+    const findTextTarget = (target) => target?.closest?.('input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]');
+    function handleTouchStart(event) {
+      const target = findTextTarget(event.target);
+      if (!target || !event.touches?.[0]) return;
+      touchState.target = target;
+      touchState.x = event.touches[0].clientX;
+      touchState.y = event.touches[0].clientY;
+      touchState.moved = false;
+    }
+    function handleTouchMove(event) {
+      if (!touchState.target || !event.touches?.[0]) return;
+      const dx = Math.abs(event.touches[0].clientX - touchState.x);
+      const dy = Math.abs(event.touches[0].clientY - touchState.y);
+      if (dx > 8 || dy > 8) touchState.moved = true;
+    }
+    function handleTouchEnd(event) {
+      if (touchState.target && touchState.moved) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (document.activeElement === touchState.target) touchState.target.blur?.();
+      }
+      touchState.target = null;
+      touchState.moved = false;
+    }
+    document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { capture: true, passive: false });
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart, true);
+      document.removeEventListener('touchmove', handleTouchMove, true);
+      document.removeEventListener('touchend', handleTouchEnd, true);
+    };
   }, []);
 
   useEffect(() => {
