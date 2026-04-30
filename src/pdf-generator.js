@@ -48,11 +48,13 @@
     return sanitizeFileName('Regional_Bestie_Visit_Report_' + text(data && data.store, 'Store')) + '.pdf';
   }
 
-  function getStoreDetail(storeName) {
+  function getStoreDetail(storeName, data) {
+    let detail = {};
     if (typeof window.getStoreWebDetail === 'function') {
-      try { return window.getStoreWebDetail(storeName) || {}; } catch (error) {}
+      try { detail = window.getStoreWebDetail(storeName) || {}; } catch (error) { detail = {}; }
     }
-    return {};
+    const manual = data && data.manualStoreDetail && typeof data.manualStoreDetail === 'object' ? data.manualStoreDetail : {};
+    return Object.assign({}, detail, manual);
   }
 
   function addWrapped(doc, value, x, y, width, lineHeight, options) {
@@ -257,7 +259,6 @@
     doc.text('Regional Bestie Visit Report', margin + 2, 126);
 
     const storeCode = detail.siteCode4 || detail.siteCode || detail.storeCode || data.storeCode || '-';
-    const address = detail.address || detail.storeAddress || data.storeAddress || '-';
     const storeHead = text(data && data.storeLeader, '-');
 
     const leftX = margin + 2;
@@ -297,11 +298,7 @@
       doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
     });
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(100, 116, 139);
-    const addrLines = doc.splitTextToSize('Alamat: ' + text(address), pageWidth - margin * 2 - 4);
-    doc.text(addrLines.slice(0, 2), margin + 2, pageHeight - 10);
+    // Alamat sengaja tidak ditampilkan pada hasil PDF.
   }
 
   async function drawQscResultSlide(doc, data, palette, pageWidth, pageHeight, margin) {
@@ -575,78 +572,154 @@
     doc.text(field.lines.length ? field.lines : ['-'], valueX, valueY, { lineHeightFactor: 1.0 });
   }
 
-  function drawObservationCompactCard(doc, title, row, rowIndex, totalRows, x, y, width, height, palette) {
-    const pad = 4.2;
-    const labelW = Math.min(37, width * .32);
+  function makeObservationFieldParts(doc, row, contentWidth, labelWidth) {
+    const valueWidth = Math.max(45, contentWidth - labelWidth - 8);
+    const maxLinesPerPart = 18;
+    const defs = [
+      { label: 'Temuan', value: row.temuan || '-' },
+      { label: 'Kondisi Ideal', value: row.kondisiIdeal || '-' },
+      { label: 'Dampak', value: row.dampak || '-' },
+      { label: 'Penyebab', value: row.penyebab || '-' },
+      { label: 'Tindakan Perbaikan', value: row.tindakan || '-' },
+      { label: 'Deadline', value: row.deadline ? formatDate(row.deadline) : '-', highlight: deadlineHighlight(row.deadline), boldValue: true },
+      { label: 'Hasil', value: row.hasil || '-' }
+    ];
+    const parts = [];
+    defs.forEach(function (field) {
+      const sourceLines = doc.splitTextToSize(text(field.value, '-'), valueWidth);
+      const lines = sourceLines.length ? sourceLines : ['-'];
+      for (let i = 0; i < lines.length; i += maxLinesPerPart) {
+        parts.push(Object.assign({}, field, {
+          label: field.label + (i > 0 ? ' (lanjutan)' : ''),
+          lines: lines.slice(i, i + maxLinesPerPart)
+        }));
+      }
+    });
+    return parts;
+  }
+
+  function observationFieldHeight(field) {
+    const lineHeight = 5.3;
+    return Math.max(11, 6.4 + Math.max(1, (field.lines || ['-']).length) * lineHeight);
+  }
+
+  function drawObservationVerticalField(doc, field, x, y, width, labelWidth, rowHeight, palette, fillColor) {
+    const valueFill = field.highlight ? field.highlight.fill : fillColor;
+    const valueText = field.highlight ? field.highlight.text : palette.ink;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.22);
+    doc.setFillColor(236, 253, 245);
+    doc.roundedRect(x, y, labelWidth, rowHeight, 2.2, 2.2, 'FD');
+    doc.setFillColor.apply(doc, valueFill);
+    doc.roundedRect(x + labelWidth, y, width - labelWidth, rowHeight, 2.2, 2.2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.6);
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.text(doc.splitTextToSize(field.label, labelWidth - 5.5), x + 3.2, y + 6.5, { lineHeightFactor: 1.05 });
+
+    doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
+    doc.setFontSize(12.5);
+    doc.setTextColor.apply(doc, valueText);
+    doc.text(field.lines && field.lines.length ? field.lines : ['-'], x + labelWidth + 4, y + 7.2, { lineHeightFactor: 1.06 });
+  }
+
+  function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    drawTopBar(doc, title, palette, pageWidth);
+    return 27;
+  }
+
+  function drawObservationVerticalSegment(doc, title, row, rowIndex, totalRows, fields, x, y, width, palette, continuation) {
+    const pad = 4.6;
+    const labelWidth = Math.min(54, width * .25);
+    const fieldGap = 1.55;
+    const headerLines = doc.splitTextToSize(String(rowIndex + 1) + '. ' + text(row.temuan, 'Temuan ' + String(rowIndex + 1)), width - pad * 2);
+    const visibleHeaderLines = headerLines.slice(0, 2);
+    const headerH = Math.max(15, 8.6 + visibleHeaderLines.length * 5.2);
+    let fieldHeightTotal = 0;
+    fields.forEach(function (field, index) {
+      fieldHeightTotal += observationFieldHeight(field) + (index ? fieldGap : 0);
+    });
+    const height = headerH + 5 + fieldHeightTotal + pad;
+
     doc.setDrawColor(203, 213, 225);
     doc.setLineWidth(0.3);
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x, y, width, height, 4, 4, 'FD');
 
-    const headerH = 17.5;
     doc.setFillColor.apply(doc, palette.primary);
     doc.roundedRect(x, y, width, headerH, 4, 4, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.8);
     doc.setTextColor(230, 255, 255);
-    doc.text(title + ' • Temuan ' + String(rowIndex + 1) + '/' + String(totalRows), x + pad, y + 5.6);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x + pad, y + 5.6);
     doc.setFontSize(12.5);
     doc.setTextColor(255, 255, 255);
-    const titleLines = fitLinesToBox(doc, String(rowIndex + 1) + '. ' + text(row.temuan, 'Temuan ' + String(rowIndex + 1)), width - pad * 2, 2);
-    doc.text(titleLines, x + pad, y + 11.1, { lineHeightFactor: 1.0 });
+    doc.text(visibleHeaderLines, x + pad, y + 11.3, { lineHeightFactor: 1.02 });
 
-    const contentX = x + pad;
-    const contentY = y + headerH + 3.2;
-    const contentW = width - pad * 2;
-    const gap = 1.35;
-    const fieldDefs = [
-      { label: 'Temuan', value: row.temuan || '-', lines: 2 },
-      { label: 'Kondisi Ideal', value: row.kondisiIdeal || '-', lines: 2 },
-      { label: 'Dampak', value: row.dampak || '-', lines: 2 },
-      { label: 'Penyebab', value: row.penyebab || '-', lines: 2 },
-      { label: 'Tindakan Perbaikan', value: row.tindakan || '-', lines: 2 },
-      { label: 'Deadline', value: row.deadline ? formatDate(row.deadline) : '-', lines: 1, highlight: deadlineHighlight(row.deadline), boldValue: true },
-      { label: 'Hasil', value: row.hasil || '-', lines: 2 }
-    ];
-    const lineHeight = 4.55;
-    const minRowH = 9.4;
-    let cy = contentY;
-    const availableBottom = y + height - 4;
-    fieldDefs.forEach(function (field, fieldIndex) {
-      const remainingFields = fieldDefs.length - fieldIndex;
-      const maxAllowedH = Math.max(minRowH, (availableBottom - cy - gap * (remainingFields - 1)) / remainingFields);
-      const wantedLines = Math.max(1, Math.min(field.lines || 2, Math.floor((maxAllowedH - 4.6) / lineHeight)));
-      const lines = fitLinesToBox(doc, field.value, contentW - labelW - 7, wantedLines);
-      const rowH = Math.max(minRowH, 4.8 + lines.length * lineHeight);
-      drawObservationCompactField(doc, Object.assign({}, field, { lines: lines }), contentX, cy, contentW, labelW, rowH, palette, fieldIndex % 2 ? [248, 250, 252] : [255, 255, 255]);
-      cy += rowH + gap;
+    let cy = y + headerH + 3.2;
+    fields.forEach(function (field, index) {
+      if (index) cy += fieldGap;
+      const rowH = observationFieldHeight(field);
+      drawObservationVerticalField(doc, field, x + pad, cy, width - pad * 2, labelWidth, rowH, palette, index % 2 ? [248, 250, 252] : [255, 255, 255]);
+      cy += rowH;
     });
+    return height;
   }
 
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
-    const gap = 7;
-    const cardTop = 31;
-    const cardBottom = pageHeight - 13;
-    const cardW = (pageWidth - margin * 2 - gap) / 2;
-    const cardH = cardBottom - cardTop;
-    for (let i = 0; i < cleanRows.length; i += 2) {
-      doc.addPage();
-      doc.setFillColor(255, 255, 255);
-      doc.rect(0, 0, pageWidth, pageHeight, 'F');
-      drawTopBar(doc, title, palette, pageWidth);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(100, 116, 139);
-      doc.text('Format card ringkas • 2 temuan per slide • font 12,5', margin, 24.5);
-      [0, 1].forEach(function (slot) {
-        const row = cleanRows[i + slot];
-        if (!row) return;
-        const x = margin + slot * (cardW + gap);
-        drawObservationCompactCard(doc, title, row, i + slot, cleanRows.length, x, cardTop, cardW, cardH, palette);
-      });
-    }
+    const x = margin;
+    const width = pageWidth - margin * 2;
+    const bottom = pageHeight - 13;
+    const gap = 5;
+    const labelWidth = Math.min(54, width * .25);
+    const contentWidth = width - 9.2;
+    let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
+
+    cleanRows.forEach(function (row, rowIndex) {
+      const parts = makeObservationFieldParts(doc, row, contentWidth, labelWidth);
+      let remaining = parts.slice();
+      let continuation = false;
+      while (remaining.length) {
+        const headerLines = doc.splitTextToSize(String(rowIndex + 1) + '. ' + text(row.temuan, 'Temuan ' + String(rowIndex + 1)), width - 9.2);
+        const headerH = Math.max(15, 8.6 + Math.min(2, headerLines.length) * 5.2);
+        const padAndHeader = headerH + 5 + 4.6;
+        const available = Math.max(42, bottom - y);
+        let used = padAndHeader;
+        const segment = [];
+        for (let i = 0; i < remaining.length; i += 1) {
+          const h = observationFieldHeight(remaining[i]) + (segment.length ? 1.55 : 0);
+          if (segment.length && used + h > available) break;
+          segment.push(remaining[i]);
+          used += h;
+          if (used > available) break;
+        }
+        if (!segment.length) {
+          y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
+          continue;
+        }
+        const predictedHeight = used;
+        if (y + predictedHeight > bottom && y > 29) {
+          y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
+          continue;
+        }
+        const drawnHeight = drawObservationVerticalSegment(doc, title, row, rowIndex, cleanRows.length, segment, x, y, width, palette, continuation);
+        y += drawnHeight + gap;
+        remaining = remaining.slice(segment.length);
+        continuation = true;
+        if (remaining.length && y > bottom - 18) {
+          y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
+        }
+      }
+      if (y > bottom - 35 && rowIndex < cleanRows.length - 1) {
+        y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
+      }
+    });
   }
 
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
@@ -784,7 +857,7 @@
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 14;
     const palette = { primary: [0, 153, 166], accent: [249, 115, 22], ink: [39, 39, 42] };
-    const detail = getStoreDetail(data && data.store);
+    const detail = getStoreDetail(data && data.store, data || {});
 
     drawCover(doc, data || {}, detail, palette, pageWidth, pageHeight, margin);
     await drawQscResultSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);

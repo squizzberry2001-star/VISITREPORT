@@ -1113,7 +1113,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
         onChange({ ...(value || blankPhoto()), image: '' });
     }
     const description = (value === null || value === void 0 ? void 0 : value.description) || '';
-    return (React.createElement("div", { className: "surface-card overflow-hidden rounded-[26px]" },
+    return (React.createElement("div", { className: "photo-input-card surface-card overflow-hidden rounded-[26px]" },
         React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 px-4 py-3" },
             React.createElement("div", { className: "min-w-0" },
                 React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-900" },
@@ -1224,7 +1224,7 @@ function ObservationCards({ title, rows, onChange }) {
         React.createElement("div", { className: "observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
             React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
             React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-800" },
-                "Mobile: 1 temuan per card \u2022 Temuan ",
+                "Temuan ",
                 activeRowNumber,
                 " dari ",
                 safeRows.length)),
@@ -1300,15 +1300,21 @@ function ProgressBar({ value }) {
 }
 function VisitSetupSection({ visit, update }) {
     const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label })), [visit.nama]);
-    const detail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
+    const baseDetail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
+    const manualDetail = visit.manualStoreDetail || {};
+    const detail = useMemo(() => ({ ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr }), [baseDetail, manualDetail, visit.store]);
     const progress = visitProgress(visit);
+    const detailValue = (key, fallback = '') => { var _a, _b; return (_b = (_a = manualDetail[key]) !== null && _a !== void 0 ? _a : fallback) !== null && _b !== void 0 ? _b : ''; };
     function handleBestieChange(value) {
         var _a;
         const stores = getStoresForBestie(value);
-        update({ nama: value, store: ((_a = stores[0]) === null || _a === void 0 ? void 0 : _a.label) || '' });
+        update({ nama: value, store: ((_a = stores[0]) === null || _a === void 0 ? void 0 : _a.label) || '', manualStoreDetail: {} });
     }
     function handleStoreChange(value) {
-        update({ store: value });
+        update({ store: value, manualStoreDetail: {} });
+    }
+    function updateStoreDetail(key, value) {
+        update({ manualStoreDetail: { ...(visit.manualStoreDetail || {}), [key]: value } });
     }
     return (React.createElement(SectionShell, { title: "Mulai visit" },
         React.createElement("div", { className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5" },
@@ -1322,7 +1328,22 @@ function VisitSetupSection({ visit, update }) {
                             React.createElement("p", { className: "text-sm font-black" },
                                 progress,
                                 "%")),
-                        React.createElement(ProgressBar, { value: progress })))),
+                        React.createElement(ProgressBar, { value: progress })),
+                    React.createElement("div", { className: "visit-detail-edit rounded-2xl border border-slate-200 bg-white/80 p-3" },
+                        React.createElement("p", { className: "mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-audit-primary" }, "Edit detail visit"),
+                        React.createElement("div", { className: "grid gap-3 sm:grid-cols-2" },
+                            React.createElement(Field, { label: "Kode Store" },
+                                React.createElement(TextInput, { value: detailValue('siteCode4', baseDetail.siteCode4 || baseDetail.siteCode || baseDetail.storeCode || ''), onChange: (event) => updateStoreDetail('siteCode4', event.target.value), placeholder: "Kode store" })),
+                            React.createElement(Field, { label: "Store Head" },
+                                React.createElement(TextInput, { value: detailValue('storeHead', baseDetail.storeHead || ''), onChange: (event) => updateStoreDetail('storeHead', event.target.value), placeholder: "Store head" })),
+                            React.createElement(Field, { label: "Area Manager" },
+                                React.createElement(TextInput, { value: detailValue('areaManager', baseDetail.areaManager || ''), onChange: (event) => updateStoreDetail('areaManager', event.target.value), placeholder: "Area manager" })),
+                            React.createElement(Field, { label: "Regional Manager" },
+                                React.createElement(TextInput, { value: detailValue('regionalManager', baseDetail.regionalManager || ''), onChange: (event) => updateStoreDetail('regionalManager', event.target.value), placeholder: "Regional manager" })),
+                            React.createElement(Field, { label: "Email Store" },
+                                React.createElement(TextInput, { value: detailValue('emailStore', baseDetail.emailStore || ''), onChange: (event) => updateStoreDetail('emailStore', event.target.value), placeholder: "Email store" })),
+                            React.createElement(Field, { label: "Alamat" },
+                                React.createElement(TextInput, { value: detailValue('address', baseDetail.address || baseDetail.storeAddress || ''), onChange: (event) => updateStoreDetail('address', event.target.value), placeholder: "Alamat" })))))),
             React.createElement(StoreDetailCard, { detail: detail }))));
 }
 function GeneralInfoSection({ visit, update }) {
@@ -1670,13 +1691,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => renderPdf(false), 420);
         }
-        if (window.ResizeObserver && scrollRef.current) {
-            observer = new ResizeObserver(scheduleRender);
-            observer.observe(scrollRef.current);
-        }
-        else {
-            window.addEventListener('resize', scheduleRender, { passive: true });
-        }
+        // Hindari ResizeObserver pada container preview karena perubahan canvas dapat memicu render ulang berulang (blinking/stuck scroll).
+        window.addEventListener('resize', scheduleRender, { passive: true });
         window.addEventListener('orientationchange', scheduleRender);
         return () => {
             cancelled = true;

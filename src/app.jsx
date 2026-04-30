@@ -1194,7 +1194,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
   const description = value?.description || '';
 
   return (
-    <div className="surface-card overflow-hidden rounded-[26px]">
+    <div className="photo-input-card surface-card overflow-hidden rounded-[26px]">
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{label}{required ? <span className="ml-1 text-rose-600">*</span> : null}</p></div>
         <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => setEditorOpen(true)} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
@@ -1322,7 +1322,7 @@ function ObservationCards({ title, rows, onChange }) {
     <div className="observation-card-system grid gap-4">
       <div className="observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
         <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
-        <p className="mt-1 text-xs font-bold text-emerald-800">Mobile: 1 temuan per card • Temuan {activeRowNumber} dari {safeRows.length}</p>
+        <p className="mt-1 text-xs font-bold text-emerald-800">Temuan {activeRowNumber} dari {safeRows.length}</p>
       </div>
       {safeRows.map((row, index) => (
         <article key={index} className={cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active')}>
@@ -1409,14 +1409,20 @@ function ProgressBar({ value }) {
 
 function VisitSetupSection({ visit, update }) {
   const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label })), [visit.nama]);
-  const detail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
+  const baseDetail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
+  const manualDetail = visit.manualStoreDetail || {};
+  const detail = useMemo(() => ({ ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr }), [baseDetail, manualDetail, visit.store]);
   const progress = visitProgress(visit);
+  const detailValue = (key, fallback = '') => manualDetail[key] ?? fallback ?? '';
   function handleBestieChange(value) {
     const stores = getStoresForBestie(value);
-    update({ nama: value, store: stores[0]?.label || '' });
+    update({ nama: value, store: stores[0]?.label || '', manualStoreDetail: {} });
   }
   function handleStoreChange(value) {
-    update({ store: value });
+    update({ store: value, manualStoreDetail: {} });
+  }
+  function updateStoreDetail(key, value) {
+    update({ manualStoreDetail: { ...(visit.manualStoreDetail || {}), [key]: value } });
   }
   return (
     <SectionShell title="Mulai visit">
@@ -1428,6 +1434,17 @@ function VisitSetupSection({ visit, update }) {
             <div className="visit-progress-card rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100">
               <div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{progress}%</p></div>
               <ProgressBar value={progress} />
+            </div>
+            <div className="visit-detail-edit rounded-2xl border border-slate-200 bg-white/80 p-3">
+              <p className="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-audit-primary">Edit detail visit</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Kode Store"><TextInput value={detailValue('siteCode4', baseDetail.siteCode4 || baseDetail.siteCode || baseDetail.storeCode || '')} onChange={(event) => updateStoreDetail('siteCode4', event.target.value)} placeholder="Kode store" /></Field>
+                <Field label="Store Head"><TextInput value={detailValue('storeHead', baseDetail.storeHead || '')} onChange={(event) => updateStoreDetail('storeHead', event.target.value)} placeholder="Store head" /></Field>
+                <Field label="Area Manager"><TextInput value={detailValue('areaManager', baseDetail.areaManager || '')} onChange={(event) => updateStoreDetail('areaManager', event.target.value)} placeholder="Area manager" /></Field>
+                <Field label="Regional Manager"><TextInput value={detailValue('regionalManager', baseDetail.regionalManager || '')} onChange={(event) => updateStoreDetail('regionalManager', event.target.value)} placeholder="Regional manager" /></Field>
+                <Field label="Email Store"><TextInput value={detailValue('emailStore', baseDetail.emailStore || '')} onChange={(event) => updateStoreDetail('emailStore', event.target.value)} placeholder="Email store" /></Field>
+                <Field label="Alamat"><TextInput value={detailValue('address', baseDetail.address || baseDetail.storeAddress || '')} onChange={(event) => updateStoreDetail('address', event.target.value)} placeholder="Alamat" /></Field>
+              </div>
             </div>
           </div>
         </div>
@@ -1823,12 +1840,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => renderPdf(false), 420);
     }
-    if (window.ResizeObserver && scrollRef.current) {
-      observer = new ResizeObserver(scheduleRender);
-      observer.observe(scrollRef.current);
-    } else {
-      window.addEventListener('resize', scheduleRender, { passive: true });
-    }
+    // Hindari ResizeObserver pada container preview karena perubahan canvas dapat memicu render ulang berulang (blinking/stuck scroll).
+    window.addEventListener('resize', scheduleRender, { passive: true });
     window.addEventListener('orientationchange', scheduleRender);
     return () => {
       cancelled = true;
