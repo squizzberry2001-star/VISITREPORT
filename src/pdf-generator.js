@@ -469,39 +469,127 @@
     }, {});
   }
 
+  function parseDeadlineDate(value) {
+    const raw = text(value, '');
+    if (!raw || raw === '-') return null;
+    const isoLike = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + 'T00:00:00' : raw;
+    const date = new Date(isoLike);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function deadlineHighlight(value) {
+    const due = parseDeadlineDate(value);
+    if (!due) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+    if (days <= 3) return { fill: [254, 226, 226], text: [153, 27, 27] };
+    if (days <= 7) return { fill: [220, 252, 231], text: [22, 101, 52] };
+    return { fill: [219, 234, 254], text: [30, 64, 175] };
+  }
+
+  function drawObservationStackPageHeader(doc, title, rowIndex, totalRows, row, palette, pageWidth, pageHeight, margin, continuation) {
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    drawTopBar(doc, title, palette, pageWidth);
+
+    const cardX = margin;
+    const cardW = pageWidth - margin * 2;
+    let y = 29;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), cardX, 25.2);
+
+    const titleLines = doc.splitTextToSize(text(row.temuan, 'Temuan ' + String(rowIndex + 1)), cardW - 18).slice(0, 3);
+    const titleH = Math.max(14, 8 + titleLines.length * 5.1);
+    doc.setFillColor.apply(doc, palette.primary);
+    doc.roundedRect(cardX, y, cardW, titleH, 4, 4, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.text(String(rowIndex + 1) + '. ' + titleLines[0], cardX + 7, y + 8.5);
+    if (titleLines.length > 1) {
+      doc.setFontSize(10.5);
+      doc.text(titleLines.slice(1), cardX + 7, y + 13.5);
+    }
+    return y + titleH + 5;
+  }
+
+  function drawObservationStackRow(doc, label, lines, x, y, width, labelWidth, rowHeight, palette, options) {
+    const opts = options || {};
+    const valueFill = opts.valueFill || [255, 255, 255];
+    const valueText = opts.valueText || palette.ink;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.22);
+    doc.setFillColor(236, 253, 245);
+    doc.roundedRect(x, y, labelWidth, rowHeight, 2.4, 2.4, 'FD');
+    doc.setFillColor.apply(doc, valueFill);
+    doc.roundedRect(x + labelWidth, y, width - labelWidth, rowHeight, 2.4, 2.4, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.2);
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.text(doc.splitTextToSize(label, labelWidth - 6), x + 3.2, y + 6.3);
+
+    doc.setFont('helvetica', opts.boldValue ? 'bold' : 'normal');
+    doc.setFontSize(8.8);
+    doc.setTextColor.apply(doc, valueText);
+    doc.text(lines.length ? lines : ['-'], x + labelWidth + 4, y + 6.1);
+  }
+
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
-    doc.addPage();
-    doc.autoTable({
-      startY: 30,
-      head: [['Temuan', 'Kondisi Ideal', 'Dampak', 'Penyebab', 'Tindakan Perbaikan', 'Tanggal Perbaikan/ Deadline', 'Hasil']],
-      body: cleanRows.map(function (row) {
-        return [row.temuan || '-', row.kondisiIdeal || '-', row.dampak || '-', row.penyebab || '-', row.tindakan || '-', row.deadline ? formatDate(row.deadline) : '-', row.hasil || '-'];
-      }),
-      theme: 'grid',
-      styles: {
-        font: 'helvetica',
-        fontSize: 12.5,
-        cellPadding: 2.5,
-        overflow: 'linebreak',
-        valign: 'top',
-        textColor: palette.ink,
-        lineColor: [203, 213, 225],
-        lineWidth: 0.25,
-        minCellHeight: 11
-      },
-      headStyles: { fillColor: palette.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12.5, halign: 'center', valign: 'middle' },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: calcObservationColumnStyles(doc, cleanRows, pageWidth, margin),
-      margin: { left: margin, right: margin, top: 30, bottom: 14 },
-      tableWidth: pageWidth - margin * 2,
-      showHead: 'everyPage',
-      pageBreak: 'auto',
-      rowPageBreak: 'auto',
-      didDrawPage: function () {
-        drawTopBar(doc, title, palette, pageWidth);
-      }
+    const cardX = margin;
+    const cardW = pageWidth - margin * 2;
+    const labelW = 52;
+    const valueW = cardW - labelW;
+    const bottomY = pageHeight - 13;
+    const lineHeight = 4.15;
+
+    cleanRows.forEach(function (row, rowIndex) {
+      const fields = [
+        { label: 'Temuan', value: row.temuan || '-' },
+        { label: 'Kondisi Ideal', value: row.kondisiIdeal || '-' },
+        { label: 'Dampak', value: row.dampak || '-' },
+        { label: 'Penyebab', value: row.penyebab || '-' },
+        { label: 'Tindakan Perbaikan', value: row.tindakan || '-' },
+        { label: 'Deadline Perbaikan', value: row.deadline ? formatDate(row.deadline) : '-', highlight: deadlineHighlight(row.deadline), boldValue: true },
+        { label: 'Hasil', value: row.hasil || '-' }
+      ];
+      let y = drawObservationStackPageHeader(doc, title, rowIndex, cleanRows.length, row, palette, pageWidth, pageHeight, margin, false);
+      fields.forEach(function (field) {
+        let allLines = doc.splitTextToSize(text(field.value, '-'), valueW - 9);
+        if (!allLines.length) allLines = ['-'];
+        let firstChunk = true;
+        while (allLines.length) {
+          const availableH = bottomY - y;
+          const maxLines = Math.max(1, Math.floor((availableH - 6) / lineHeight));
+          if (maxLines <= 1 && y > 42) {
+            y = drawObservationStackPageHeader(doc, title, rowIndex, cleanRows.length, row, palette, pageWidth, pageHeight, margin, true);
+            continue;
+          }
+          const chunk = allLines.splice(0, Math.max(1, Math.min(maxLines, allLines.length)));
+          const rowH = Math.max(12, 6.8 + chunk.length * lineHeight);
+          if (y + rowH > bottomY && y > 42) {
+            allLines = chunk.concat(allLines);
+            y = drawObservationStackPageHeader(doc, title, rowIndex, cleanRows.length, row, palette, pageWidth, pageHeight, margin, true);
+            continue;
+          }
+          const hi = field.highlight;
+          drawObservationStackRow(doc, firstChunk ? field.label : field.label + ' (lanjutan)', chunk, cardX, y, cardW, labelW, rowH, palette, {
+            valueFill: hi ? hi.fill : (rowIndex % 2 ? [248, 250, 252] : [255, 255, 255]),
+            valueText: hi ? hi.text : palette.ink,
+            boldValue: field.boldValue
+          });
+          y += rowH + 2.1;
+          firstChunk = false;
+        }
+      });
     });
   }
 

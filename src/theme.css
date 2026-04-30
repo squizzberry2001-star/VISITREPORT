@@ -1164,209 +1164,219 @@ select.form-control.select-control.has-leading-icon { padding-left: 2.75rem; }
   }
 }
 
-/* Focus fixes Apr 2026: precise mobile visit layout, crop modal, and row jump controls */
-.visit-setup-grid,
-.visit-setup-grid > *,
-.visit-setup-card,
-.store-detail-card,
-.store-detail-item {
-  min-width: 0;
-  max-width: 100%;
+/* Revamp focus v18: full desktop workspace, Huawei tablet orientation, mobile observation/evidence, preview scroll stability */
+html,
+body,
+#root {
+  min-height: 100%;
 }
-.store-detail-card {
+.audit-shell,
+.workspace-page,
+.preview-page {
+  width: 100% !important;
+  max-width: none !important;
+}
+.workspace-page,
+.preview-page {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.form-control,
+.rich-editor,
+.rich-editor-input,
+textarea,
+input,
+select,
+[contenteditable="true"] {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+.rich-editor-input {
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.preview-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
-.store-detail-card p,
-.store-detail-card h3,
-.store-detail-item p {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+.preview-modal-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
 }
-@media (max-width: 767px) {
-  .workspace-page {
-    overflow-x: hidden;
-  }
-  .visit-setup-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: .85rem !important;
-  }
-  .visit-setup-card,
-  .store-detail-card {
-    width: 100%;
-    border-radius: 22px !important;
-    padding: .9rem !important;
-  }
-  .visit-progress-card {
-    padding: .85rem !important;
-  }
+.preview-frame-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
-.photo-editor-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
-  min-height: 100dvh !important;
-  display: grid !important;
-  place-items: center !important;
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
-  touch-action: none !important;
-  z-index: 95 !important;
-}
-.photo-editor-panel {
-  width: min(calc(100vw - 16px), 620px) !important;
-  max-height: calc(100dvh - 16px) !important;
-  min-height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-}
-.photo-editor-canvas-shell {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  max-width: 100% !important;
-}
-.photo-editor-panel canvas,
-.photo-editor-canvas {
-  display: block !important;
-  width: auto !important;
-  max-width: 100% !important;
-  height: auto !important;
-  max-height: min(calc(100dvh - 300px), 56vw, 440px) !important;
-  object-fit: contain !important;
-}
-.photo-editor-pill-group {
-  max-width: 100%;
-}
-.photo-editor-pill {
-  white-space: nowrap;
-}
-@media (max-width: 767px) {
-  .photo-editor-overlay {
-    padding: 6px !important;
-  }
-  .photo-editor-panel {
-    width: calc(100vw - 12px) !important;
-    max-height: calc(100dvh - 12px) !important;
-    padding: .6rem !important;
-  }
-  .photo-editor-panel canvas,
-  .photo-editor-canvas {
-    max-height: min(calc(100dvh - 310px), calc(100vw - 34px), 360px) !important;
-  }
-  .photo-editor-row {
-    align-items: center !important;
-  }
-  .photo-editor-hint {
-    order: 3;
-    flex-basis: 100% !important;
-  }
-}
-.section-jump-float {
-  position: fixed !important;
-  right: max(10px, env(safe-area-inset-right, 0px) + 10px) !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  z-index: 70 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: .58rem !important;
-  pointer-events: auto !important;
-}
-.section-jump-button {
-  width: 46px !important;
-  height: 46px !important;
-  display: grid !important;
-  place-items: center !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(15, 118, 110, .18) !important;
-  background: rgba(255, 255, 255, .94) !important;
-  color: #0f766e !important;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, .22), 0 0 0 6px rgba(15, 118, 110, .07) !important;
-  backdrop-filter: blur(14px) !important;
-  transition: transform .18s var(--ease), opacity .18s var(--ease), box-shadow .18s var(--ease) !important;
-}
-.section-jump-button:not(:disabled):active {
-  transform: scale(.94) !important;
-}
-.section-jump-button:disabled {
-  opacity: .34 !important;
-  pointer-events: none !important;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, .12) !important;
-}
-@media (max-width: 767px) {
-  .section-jump-float {
-    right: max(8px, env(safe-area-inset-right, 0px) + 8px) !important;
-    gap: .48rem !important;
-  }
-  .section-jump-button {
-    width: 42px !important;
-    height: 42px !important;
-  }
-}
-
-/* Focus fix v2: source JSX parity + cache-busted controls */
-.photo-editor-ratio-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .45rem;
-  align-items: center;
-  padding: .35rem 0 .5rem;
-  max-width: 100%;
-  overflow-x: auto;
+.pdf-canvas-scroll,
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: auto !important;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
-.photo-editor-ratio-row .photo-editor-pill {
-  flex: 0 0 auto;
+.pdf-canvas-pages {
+  align-content: start;
+  justify-items: center;
+  min-height: auto;
+  padding: 12px;
 }
-.row-jump-float {
-  position: fixed !important;
-  right: max(10px, env(safe-area-inset-right, 0px) + 10px) !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  z-index: 70 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: .58rem !important;
-  pointer-events: auto !important;
+.pdf-preview-page-canvas {
+  max-width: 100%;
+  height: auto !important;
 }
-.row-jump-button {
-  width: 46px !important;
-  height: 46px !important;
-  display: grid !important;
-  place-items: center !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(15, 118, 110, .18) !important;
-  background: rgba(255, 255, 255, .94) !important;
-  color: #0f766e !important;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, .22), 0 0 0 6px rgba(15, 118, 110, .07) !important;
-  backdrop-filter: blur(14px) !important;
-  transition: transform .18s var(--ease), opacity .18s var(--ease), box-shadow .18s var(--ease) !important;
+.observation-mobile-nav {
+  display: none;
 }
-.row-jump-button:not(:disabled):active {
-  transform: scale(.94) !important;
+.observation-nav-button,
+.observation-nav-add {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, .34);
+  background: rgba(255, 255, 255, .72);
+  color: #0f172a;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, .18);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
-.row-jump-button:disabled {
-  opacity: .34 !important;
-  pointer-events: none !important;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, .12) !important;
+.observation-nav-add {
+  width: 54px;
+  height: 54px;
+  background: rgba(15, 118, 110, .82);
+  color: #fff;
+  border-color: rgba(15, 118, 110, .4);
+  box-shadow: 0 18px 38px rgba(15, 118, 110, .28);
 }
-.observation-row-card,
-.evidence-row-card {
-  scroll-margin-block: 96px;
+.observation-nav-button:disabled {
+  opacity: .38;
+  pointer-events: none;
+}
+.observation-nav-button:active,
+.observation-nav-add:active {
+  transform: scale(.96);
+}
+.evidence-photo-grid {
   min-width: 0;
 }
-@media (max-width: 767px) {
-  .row-jump-float {
-    right: max(8px, env(safe-area-inset-right, 0px) + 8px) !important;
-    gap: .48rem !important;
+.evidence-photo-grid > * {
+  min-width: 0;
+}
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1180px) {
+  .audit-shell {
+    display: block !important;
+    grid-template-columns: none !important;
   }
-  .row-jump-button {
-    width: 42px !important;
-    height: 42px !important;
+  .desktop-sidebar,
+  .desktop-section-card {
+    display: none !important;
   }
-  .photo-editor-ratio-row {
-    padding-block: .25rem .4rem;
-    gap: .35rem;
+  .mobile-quick-section,
+  .mobile-system-nav {
+    display: block !important;
+  }
+  .dashboard-page,
+  .workspace-page,
+  .preview-page {
+    padding-left: .75rem !important;
+    padding-right: .75rem !important;
+    padding-bottom: calc(6.1rem + var(--safe-bottom)) !important;
+  }
+  .workspace-page {
+    padding-top: .9rem !important;
+  }
+  .observation-card-system {
+    padding-bottom: calc(4.6rem + var(--safe-bottom));
+  }
+  .observation-summary-card {
+    padding: .85rem !important;
+  }
+  .observation-item-card {
+    display: none;
+  }
+  .observation-item-card.mobile-active {
+    display: block;
+  }
+  .observation-desktop-add {
+    display: none !important;
+  }
+  .observation-mobile-nav {
+    position: fixed;
+    left: 50%;
+    bottom: calc(5.45rem + var(--safe-bottom));
+    z-index: 75;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .75rem;
+    transform: translateX(-50%);
+    pointer-events: auto;
+  }
+  .evidence-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .7rem !important;
+  }
+  .evidence-photo-grid .surface-card {
+    border-radius: 18px !important;
+  }
+  .evidence-photo-grid .photo-frame {
+    min-height: 118px !important;
+  }
+  .evidence-photo-grid .rich-editor-input {
+    min-height: 76px !important;
+    max-height: 34svh;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .evidence-photo-grid .photo-actions {
+    padding: .45rem !important;
+  }
+  .evidence-photo-grid .btn-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+  .preview-page {
+    height: calc(100dvh - 5.4rem - var(--safe-bottom));
+  }
+  .preview-header {
+    flex: 0 0 auto;
+  }
+  .preview-toolbar {
+    flex: 0 0 auto;
+  }
+  .pdf-canvas-pages {
+    padding: 7px;
+    gap: 9px;
+  }
+}
+@media (orientation: landscape) and (min-width: 768px) {
+  .desktop-sidebar {
+    display: flex !important;
+  }
+  .mobile-quick-section,
+  .mobile-system-nav {
+    display: none !important;
+  }
+  .desktop-section-card {
+    display: block !important;
+  }
+  .observation-item-card {
+    display: block;
+  }
+  .observation-desktop-add {
+    display: flex !important;
+  }
+  .observation-mobile-nav {
+    display: none !important;
   }
 }

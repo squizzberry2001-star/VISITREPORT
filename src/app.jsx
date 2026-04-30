@@ -264,31 +264,6 @@ function blankPhoto() {
   return { image: '', description: '' };
 }
 
-const PHOTO_EDITOR_PRESETS = {
-  evidence: {
-    defaultAspect: 'original',
-    aspectOptions: [
-      { key: 'original', label: 'Original', auto: true },
-      { key: 'landscape', label: '4:3', width: 4, height: 3 },
-      { key: 'square', label: '1:1', width: 1, height: 1 },
-      { key: 'portrait', label: '3:4', width: 3, height: 4 }
-    ]
-  },
-  qsc: {
-    defaultAspect: 'landscape',
-    aspectOptions: [
-      { key: 'landscape', label: '4:3', width: 4, height: 3 },
-      { key: 'wide', label: '16:9', width: 16, height: 9 },
-      { key: 'square', label: '1:1', width: 1, height: 1 },
-      { key: 'portrait', label: '3:4', width: 3, height: 4 }
-    ]
-  }
-};
-
-function getPhotoEditorPreset(name) {
-  return PHOTO_EDITOR_PRESETS[name] || PHOTO_EDITOR_PRESETS.evidence;
-}
-
 function normalizeQscPhotos(visit) {
   const legacy = visit?.qscResultPhoto ? [visit.qscResultPhoto] : [];
   const source = Array.isArray(visit?.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
@@ -315,8 +290,8 @@ function createVisit(bestieName = '', storeName = '') {
     qscResultPhotos: [blankPhoto(), blankPhoto()],
     opiData: [blankObservationRow()],
     qscData: [blankObservationRow()],
-    findingEvidencePhotos: [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()],
-    correctiveActionPhotos: [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()],
+    findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
+    correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
     storeAssignmentLink: 'https://tinyurl.com/store-caassignment',
     showQSCResult: false,
     showOPITable: false,
@@ -328,6 +303,12 @@ function createVisit(bestieName = '', storeName = '') {
 
 function isMeaningfulObservation(row) {
   return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row?.[key]));
+}
+
+function isEditableTarget(target) {
+  const node = target instanceof Element ? target : null;
+  if (!node) return false;
+  return Boolean(node.closest('input, textarea, select, [contenteditable="true"], .rich-editor-input, .form-control'));
 }
 
 function visitProgress(visit) {
@@ -463,8 +444,6 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
     plus: <><path d="M12 5v14"/><path d="M5 12h14"/></>,
     left: <path d="m15 18-6-6 6-6"/>,
     right: <path d="m9 18 6-6-6-6"/>,
-    up: <><path d="m18 15-6-6-6 6"/><path d="M12 9v12"/></>,
-    down: <><path d="m6 9 6 6 6-6"/><path d="M12 3v12"/></>,
     user: <><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"/></>,
     store: <><path d="M4 9h16l-1.5-5h-13L4 9Z"/><path d="M5 9v12h14V9"/><path d="M9 21v-6h6v6"/><path d="M4 9c.8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0"/></>,
     calendar: <><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M4 10h16"/></>,
@@ -658,6 +637,12 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
     { command: 'insertOrderedList', label: '1.', title: 'Number', className: 'rich-tool-number' }
   ];
 
+  function focusEditor() {
+    const editor = editorRef.current;
+    if (!editor || document.activeElement === editor) return;
+    editor.focus({ preventScroll: true });
+  }
+
   return (
     <div className={cx('rich-editor rounded-2xl border border-slate-200 bg-white', className)}>
       <div
@@ -668,6 +653,9 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         role="textbox"
         aria-multiline="true"
         data-placeholder={placeholder}
+        tabIndex={0}
+        onPointerDown={focusEditor}
+        onClick={focusEditor}
         onInput={emit}
         onBlur={emit}
         onKeyDown={handleKeyDown}
@@ -860,27 +848,18 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function getEditorCanvasSize(imageElement, aspectOption) {
-  const naturalWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
-  const naturalHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
+function getEditorCanvasSize(imageElement) {
+  const width = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
+  const height = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
   const maxSide = 1400;
-  if (!aspectOption || aspectOption.auto || !aspectOption.width || !aspectOption.height) {
-    const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
-    return {
-      width: Math.max(360, Math.round(naturalWidth * scale)),
-      height: Math.max(360, Math.round(naturalHeight * scale))
-    };
-  }
-  const ratio = aspectOption.width / aspectOption.height;
-  if (ratio >= 1) {
-    const width = maxSide;
-    return { width, height: Math.max(360, Math.round(width / ratio)) };
-  }
-  const height = maxSide;
-  return { width: Math.max(360, Math.round(height * ratio)), height };
+  const scale = Math.min(1, maxSide / Math.max(width, height));
+  return {
+    width: Math.max(360, Math.round(width * scale)),
+    height: Math.max(360, Math.round(height * scale))
+  };
 }
 
-function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', preset = 'evidence' }) {
+function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const dragRef = useRef(null);
@@ -892,10 +871,6 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
   const [mode, setMode] = useState('move');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
   const [imageReady, setImageReady] = useState(false);
-  const presetConfig = getPhotoEditorPreset(preset);
-  const aspectOptions = presetConfig.aspectOptions || PHOTO_EDITOR_PRESETS.evidence.aspectOptions;
-  const [aspectKey, setAspectKey] = useState(presetConfig.defaultAspect);
-  const activeAspect = aspectOptions.find((option) => option.key === aspectKey) || aspectOptions[0];
 
   useEffect(() => {
     if (!open) return undefined;
@@ -928,10 +903,6 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
   useEffect(() => () => { if (rafRef.current) window.cancelAnimationFrame(rafRef.current); }, []);
 
   useEffect(() => {
-    if (open) setAspectKey(getPhotoEditorPreset(preset).defaultAspect);
-  }, [open, preset]);
-
-  useEffect(() => {
     if (!open || !image) return;
     let cancelled = false;
     setImageReady(false);
@@ -944,14 +915,14 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
     loadImageElement(image).then((loaded) => {
       if (cancelled) return;
       imgRef.current = loaded;
-      setCanvasSize(getEditorCanvasSize(loaded, activeAspect));
+      setCanvasSize(getEditorCanvasSize(loaded));
       setImageReady(true);
       window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
     }).catch(() => {
       if (!cancelled) setImageReady(false);
     });
     return () => { cancelled = true; };
-  }, [open, image, aspectKey, preset]);
+  }, [open, image]);
 
   function scheduleDraw(showGuide = true) {
     if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
@@ -1166,16 +1137,6 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
           <button type="button" className="photo-editor-tool" onClick={resetEditor}><Icon name="eraser" className="h-4 w-4" /><span>Reset</span></button>
         </div>
 
-        {aspectOptions.length > 1 ? (
-          <div className="photo-editor-ratio-row" aria-label="Pilihan ratio crop">
-            {aspectOptions.map((option) => (
-              <button key={option.key} type="button" className={cx('photo-editor-pill', aspectKey === option.key && 'active')} onClick={() => { setAspectKey(option.key); setZoom(1); setOffset({ x: 0, y: 0 }); }}>
-                {option.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
         <div className="photo-editor-canvas-shell photo-editor-v10-stage">
           {!imageReady ? <div className="photo-editor-loading">Memuat foto...</div> : null}
           <canvas
@@ -1206,7 +1167,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
 
 }
 
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, editorPreset = 'evidence' }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1245,7 +1206,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
       <div className="border-t border-slate-200 p-3">
         {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
-      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} preset={editorPreset} onClose={() => setEditorOpen(false)} onSave={(editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage })} />
+      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} onClose={() => setEditorOpen(false)} onSave={(editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage })} />
     </div>
   );
 }
@@ -1331,41 +1292,42 @@ function CrewEditor({ visit, update }) {
 
 function ObservationCards({ title, rows, onChange }) {
   const safeRows = rows?.length ? rows : [blankObservationRow()];
-  const rowRefs = useRef([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const activeRowNumber = Math.min(activeIndex + 1, safeRows.length);
+
+  useEffect(() => {
+    setActiveIndex((current) => Math.max(0, Math.min(current, safeRows.length - 1)));
+  }, [safeRows.length]);
+
   const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
-  const addRow = () => onChange([...safeRows, blankObservationRow()]);
+  const addRow = () => {
+    onChange([...safeRows, blankObservationRow()]);
+    setActiveIndex(safeRows.length);
+  };
   const removeRow = (index) => {
     if (!confirmAction('Hapus row observation ini?')) return;
     const next = safeRows.filter((_, rowIndex) => rowIndex !== index);
     onChange(next.length ? next : [blankObservationRow()]);
+    setActiveIndex(Math.max(0, Math.min(index, (next.length ? next.length : 1) - 1)));
   };
+  const goPrev = () => setActiveIndex((current) => Math.max(0, current - 1));
+  const goNext = () => setActiveIndex((current) => Math.min(safeRows.length - 1, current + 1));
   const richField = (label, key, row, index, placeholder) => (
     <Field label={label}>
       <RichTextInput value={row[key] || ''} onChange={(value) => updateRow(index, { [key]: value })} placeholder={placeholder} />
     </Field>
   );
 
-  useEffect(() => {
-    rowRefs.current = rowRefs.current.slice(0, safeRows.length);
-    setActiveIndex((current) => Math.min(current, Math.max(0, safeRows.length - 1)));
-  }, [safeRows.length]);
-
-  function jumpToRow(targetIndex) {
-    const nextIndex = clamp(targetIndex, 0, safeRows.length - 1);
-    setActiveIndex(nextIndex);
-    rowRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
   return (
-    <div className="grid gap-4">
-      <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
+    <div className="observation-card-system grid gap-4">
+      <div className="observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
         <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
+        <p className="mt-1 text-xs font-bold text-emerald-800">Mobile: 1 temuan per card • Temuan {activeRowNumber} dari {safeRows.length}</p>
       </div>
       {safeRows.map((row, index) => (
-        <article key={index} ref={(element) => { rowRefs.current[index] = element; }} className="observation-row-card surface-card rounded-[28px] p-4 md:p-5">
+        <article key={index} className={cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active')}>
           <div className="mb-4 flex items-center justify-between gap-3">
-            <Badge tone={isMeaningfulObservation(row) ? 'success' : 'default'}>Row {index + 1}</Badge>
+            <Badge tone={isMeaningfulObservation(row) ? 'success' : 'default'}>Temuan {index + 1}</Badge>
             <Button variant="icon" onClick={() => removeRow(index)} aria-label="Hapus row"><Icon name="trash" className="h-4 w-4" /></Button>
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
@@ -1381,63 +1343,47 @@ function ObservationCards({ title, rows, onChange }) {
           </div>
         </article>
       ))}
-      <div className="flex justify-end">
+      <div className="observation-desktop-add flex justify-end">
         <Button variant="secondary" icon="plus" onClick={addRow}>Tambah Row</Button>
       </div>
-      {safeRows.length > 1 ? <RowJumpFloat onPrev={() => jumpToRow(activeIndex - 1)} onNext={() => jumpToRow(activeIndex + 1)} canPrev={activeIndex > 0} canNext={activeIndex < safeRows.length - 1} label="Observation row" /> : null}
+      <div className="observation-mobile-nav" aria-label="Navigasi temuan observation">
+        <button type="button" className="observation-nav-button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya"><Icon name="left" className="h-5 w-5" /></button>
+        <button type="button" className="observation-nav-add" onClick={addRow} aria-label="Tambah temuan"><Icon name="plus" className="h-5 w-5" /></button>
+        <button type="button" className="observation-nav-button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya"><Icon name="right" className="h-5 w-5" /></button>
+      </div>
     </div>
   );
 }
 
 function PhotoGrid({ photos, onChange, prefix }) {
-  const safePhotos = photos?.length ? photos : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()];
-  const cardRefs = useRef([]);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const minSlots = 8;
+  const sourcePhotos = Array.isArray(photos) ? photos : [];
+  const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
+  const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
   const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
   const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
   const removeEmpty = () => {
     if (!confirmAction('Rapikan dan hapus slot foto kosong?')) return;
     const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
-    onChange(meaningful.length ? meaningful : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
+    const next = meaningful.length ? meaningful : blankSet();
+    onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
   };
-  useEffect(() => {
-    cardRefs.current = cardRefs.current.slice(0, safePhotos.length);
-    setActiveIndex((current) => Math.min(current, Math.max(0, safePhotos.length - 1)));
-  }, [safePhotos.length]);
-  function jumpToCard(targetIndex) {
-    const nextIndex = clamp(targetIndex, 0, safePhotos.length - 1);
-    setActiveIndex(nextIndex);
-    cardRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
   return (
-    <div className="grid gap-4">
+    <div className="photo-grid-system grid gap-4">
       <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
         <p className="text-sm font-bold text-slate-900">{safePhotos.length} slot foto</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
-          <div key={index} ref={(element) => { cardRefs.current[index] = element; }} className="evidence-row-card min-w-0">
-            <PhotoInput label={`${prefix} ${index + 1}`} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich editorPreset="evidence" />
-          </div>
+          <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich />
         ))}
       </div>
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="secondary" icon="eraser" onClick={removeEmpty}>Rapikan Slot Kosong</Button>
         <Button variant="secondary" icon="plus" onClick={addFour}>Tambah 4 Slot</Button>
       </div>
-      {safePhotos.length > 1 ? <RowJumpFloat onPrev={() => jumpToCard(activeIndex - 1)} onNext={() => jumpToCard(activeIndex + 1)} canPrev={activeIndex > 0} canNext={activeIndex < safePhotos.length - 1} label="Evidence row" /> : null}
     </div>
   );
-}
-
-function RowJumpFloat({ onPrev, onNext, canPrev, canNext, label = 'Daftar' }) {
-  const controls = (
-    <div className="row-jump-float" role="group" aria-label={label}>
-      <button type="button" className="row-jump-button" onClick={onPrev} disabled={!canPrev} aria-label="Lompat ke row sebelumnya"><Icon name="up" className="h-5 w-5" /></button>
-      <button type="button" className="row-jump-button" onClick={onNext} disabled={!canNext} aria-label="Lompat ke row berikutnya"><Icon name="down" className="h-5 w-5" /></button>
-    </div>
-  );
-  return ReactDOM?.createPortal ? ReactDOM.createPortal(controls, document.body) : controls;
 }
 
 const SECTION_DEFS = [
@@ -1508,7 +1454,7 @@ function QscResultSection({ visit, update }) {
   const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
   return (
     <SectionShell title="QSC / FAMITRACK Result" actions={<Toggle checked={enabled} onChange={(value) => update({ showQSCResult: value })} label={enabled ? 'Hide slide' : 'Unhide slide'} />}>
-      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required editorPreset="qsc" />)}</div></>}
+      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
     </SectionShell>
   );
 }
@@ -1521,7 +1467,7 @@ function ObservationSection({ visit, update }) {
   const preTitle = <div className="section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex gap-2 overflow-x-auto pb-1"><button type="button" className={cx('subnav-chip prominent', tab === 'opi' && 'active')} onClick={() => setTab('opi')}><Icon name="clipboard" className="h-4 w-4" /> OPI Project</button><button type="button" className={cx('subnav-chip prominent', tab === 'qsc' && 'active')} onClick={() => setTab('qsc')}><Icon name="clipboard" className="h-4 w-4" /> QSC Observation</button></div><Toggle checked={enabled} onChange={setEnabled} label={toggleLabel} /></div>;
   return (
     <SectionShell title="Observation & Root Cause Analysis" preTitle={preTitle}>
-      {!enabled ? <InactiveSection title={(tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan'} /> : tab === 'opi' ? <ObservationCards title="OPI Project Observation" rows={visit.opiData} onChange={(opiData) => update({ opiData })} /> : <ObservationCards title="QSC Observation" rows={visit.qscData} onChange={(qscData) => update({ qscData })} />}
+      {!enabled ? <InactiveSection title={(tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan'} /> : tab === 'opi' ? <ObservationCards key="opi" title="OPI Project Observation" rows={visit.opiData} onChange={(opiData) => update({ opiData })} /> : <ObservationCards key="qsc" title="QSC Observation" rows={visit.qscData} onChange={(qscData) => update({ qscData })} />}
     </SectionShell>
   );
 }
@@ -1798,6 +1744,7 @@ function downloadBlob(blob, fileName) {
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
   const pagesRef = useRef(null);
+  const scrollRef = useRef(null);
   const [fallback, setFallback] = useState(false);
   const [renderStatus, setRenderStatus] = useState('');
   const renderSeqRef = useRef(0);
@@ -1806,12 +1753,14 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
   useEffect(() => {
     let cancelled = false;
     let resizeTimer = null;
+    let observer = null;
 
     async function renderPdf(force = false) {
       const target = pagesRef.current;
+      const scroller = scrollRef.current;
       if (!target || !blob) return;
-      const measuredWidth = Math.max(280, Math.floor(target.clientWidth || target.getBoundingClientRect().width || 360));
-      if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 24 && target.childElementCount) return;
+      const measuredWidth = Math.max(280, Math.floor((scroller?.clientWidth || target.clientWidth || 360) - 16));
+      if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 18 && target.childElementCount) return;
       lastWidthRef.current = measuredWidth;
       const seq = renderSeqRef.current + 1;
       renderSeqRef.current = seq;
@@ -1823,14 +1772,15 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
       try {
         setFallback(false);
         setRenderStatus('Memuat preview...');
-        if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        if (pdfjsLib.GlobalWorkerOptions) {
           pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
+        const scrollTop = scroller?.scrollTop || 0;
         const data = await blob.arrayBuffer();
         if (cancelled || renderSeqRef.current !== seq) return;
         const pdf = await pdfjsLib.getDocument({ data }).promise;
         const fragment = document.createDocumentFragment();
-        const maxWidth = Math.max(260, Math.min(measuredWidth - 12, 1120));
+        const maxWidth = Math.max(260, Math.min(measuredWidth, 1180));
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           if (cancelled || renderSeqRef.current !== seq) return;
           const page = await pdf.getPage(pageNumber);
@@ -1842,8 +1792,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
           pageWrap.className = 'pdf-preview-page-wrap';
           const canvas = document.createElement('canvas');
           canvas.className = 'pdf-preview-page-canvas';
-          canvas.width = Math.floor(viewport.width * outputScale);
-          canvas.height = Math.floor(viewport.height * outputScale);
+          canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
+          canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
           canvas.style.width = Math.floor(viewport.width) + 'px';
           canvas.style.height = Math.floor(viewport.height) + 'px';
           pageWrap.appendChild(canvas);
@@ -1853,6 +1803,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
         }
         if (cancelled || renderSeqRef.current !== seq) return;
         target.replaceChildren(fragment);
+        if (scroller) scroller.scrollTop = Math.min(scrollTop, Math.max(0, scroller.scrollHeight - scroller.clientHeight));
         setRenderStatus('');
       } catch (error) {
         console.warn('PDF canvas preview gagal:', error);
@@ -1867,22 +1818,28 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     function scheduleRender() {
       if (!blob) return;
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => renderPdf(false), 360);
+      resizeTimer = setTimeout(() => renderPdf(false), 420);
     }
-    window.addEventListener('resize', scheduleRender, { passive: true });
+    if (window.ResizeObserver && scrollRef.current) {
+      observer = new ResizeObserver(scheduleRender);
+      observer.observe(scrollRef.current);
+    } else {
+      window.addEventListener('resize', scheduleRender, { passive: true });
+    }
     window.addEventListener('orientationchange', scheduleRender);
     return () => {
       cancelled = true;
       clearTimeout(resizeTimer);
-      renderSeqRef.current += 1;
+      if (observer) observer.disconnect();
       window.removeEventListener('resize', scheduleRender);
       window.removeEventListener('orientationchange', scheduleRender);
+      renderSeqRef.current += 1;
     };
   }, [blob]);
 
   if (!blob) return <div className="grid min-h-[52vh] place-items-center p-8 text-center text-slate-600">{status}</div>;
-  if (fallback && pdfUrl) return <iframe className="preview-frame" src={pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0&view=Fit'} title="Preview Regional Bestie PDF" />;
-  return <div className="pdf-canvas-scroll"><div ref={pagesRef} className="pdf-canvas-pages" />{renderStatus ? <div className="pdf-render-status">{renderStatus}</div> : null}</div>;
+  if (fallback && pdfUrl) return <iframe className="preview-frame" src={pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH'} title="Preview Regional Bestie PDF" />;
+  return <div ref={scrollRef} className="pdf-canvas-scroll"><div ref={pagesRef} className="pdf-canvas-pages" />{renderStatus ? <div className="pdf-render-status">{renderStatus}</div> : null}</div>;
 }
 
 function PreviewPage({ visit, onBack }) {
@@ -1916,10 +1873,10 @@ function PreviewPage({ visit, onBack }) {
   async function handleDownloadPdf() { if (!visit) return; setBusy(true); try { await window.ReportVisitPDF.save(visit); } catch (error) { alert(error?.message || 'Gagal download PDF.'); } finally { setBusy(false); } }
   async function handleExportExcel() { if (!visit) return; if (!window.__caAssignmentExport?.buildWorkbook) { alert('Mesin export Excel belum siap.'); return; } setBusy(true); try { const blob = await window.__caAssignmentExport.buildWorkbook(visit); const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx'; downloadBlob(blob, fileName); } catch (error) { alert(error?.message || 'Gagal export Excel CA Assignment.'); } finally { setBusy(false); } }
 
-  if (!visit) return <main className="preview-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
+  if (!visit) return <main className="preview-page w-full px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
 
   return (
-    <main className="preview-page mx-auto w-full max-w-7xl px-4 py-4 md:px-8 md:py-8">
+    <main className="preview-page w-full px-4 py-4 md:px-8 md:py-8">
       <div className="preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Preview PDF</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Review Report</h1></div><div className="preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{visitProgress(visit)}%</p></div><ProgressBar value={visitProgress(visit)} /></div></div>
       <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon="download" onClick={handleDownloadPdf} disabled={busy}>Download PDF</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
     </main>
@@ -2510,7 +2467,7 @@ function SecretMonitorPanel({ open, onClose, history }) {
 
 function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onClearData, onTitleTap }) {
   return (
-    <aside className="hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col">
+    <aside className="desktop-sidebar hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col">
       <button type="button" onClick={onTitleTap} className="mb-6 rounded-[28px] bg-slate-950 p-5 text-left text-white transition hover:-translate-y-0.5">
         <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/10"><Icon name="spark" /></div>
         <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200">Bestie Audit</p>
@@ -2586,18 +2543,22 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
 
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
   useEffect(() => {
-    function handleKey(event) { if (event.key === 'ArrowRight') goSection(activeSection + 1); if (event.key === 'ArrowLeft') goSection(activeSection - 1); }
+    function handleKey(event) {
+      if (isEditableTarget(event.target)) return;
+      if (event.key === 'ArrowRight') goSection(activeSection + 1);
+      if (event.key === 'ArrowLeft') goSection(activeSection - 1);
+    }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [activeSection]);
 
-  if (!visit) return <main className="workspace-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8"><EmptyState icon="clipboard" title="Belum ada visit aktif" /></main>;
+  if (!visit) return <main className="workspace-page w-full px-4 py-8 md:px-8"><EmptyState icon="clipboard" title="Belum ada visit aktif" /></main>;
 
   const screens = [<VisitSetupSection visit={visit} update={update} />, <GeneralInfoSection visit={visit} update={update} />, <QscResultSection visit={visit} update={update} />, <ObservationSection visit={visit} update={update} />, <EvidenceSection visit={visit} update={update} />, <AssignmentSection visit={visit} update={update} onPreview={onPreview} />];
 
   return (
-    <main className="workspace-page mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-8">
-      <div className="mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="hidden gap-2 sm:flex"><Button variant="icon" onClick={() => goSection(activeSection - 1)} disabled={activeSection <= 0} aria-label="Section sebelumnya"><Icon name="left" className="h-5 w-5" /></Button><Button variant="icon" onClick={() => goSection(activeSection + 1)} disabled={activeSection >= SECTION_DEFS.length - 1} aria-label="Section berikutnya"><Icon name="right" className="h-5 w-5" /></Button></div></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sub menu section">{SECTION_DEFS.map((section, index) => <button key={section.id} type="button" className={cx('subnav-chip', activeSection === index && 'active')} onClick={() => goSection(index)}><Icon name={section.icon} className="h-4 w-4" /> {section.label}</button>)}</div></div>
+    <main className="workspace-page w-full px-4 py-5 md:px-8 md:py-8">
+      <div className="desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="hidden gap-2 sm:flex"><Button variant="icon" onClick={() => goSection(activeSection - 1)} disabled={activeSection <= 0} aria-label="Section sebelumnya"><Icon name="left" className="h-5 w-5" /></Button><Button variant="icon" onClick={() => goSection(activeSection + 1)} disabled={activeSection >= SECTION_DEFS.length - 1} aria-label="Section berikutnya"><Icon name="right" className="h-5 w-5" /></Button></div></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sub menu section">{SECTION_DEFS.map((section, index) => <button key={section.id} type="button" className={cx('subnav-chip', activeSection === index && 'active')} onClick={() => goSection(index)}><Icon name={section.icon} className="h-4 w-4" /> {section.label}</button>)}</div></div>
       <div key={SECTION_DEFS[activeSection]?.id || activeSection}>{screens[activeSection]}</div>
     </main>
   );
@@ -2634,9 +2595,7 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=20260430-focusfix2')
-        .then((registration) => { if (registration?.update) registration.update().catch(() => {}); })
-        .catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp18').catch(() => {});
     }
   }, []);
 

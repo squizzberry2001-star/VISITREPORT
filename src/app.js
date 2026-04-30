@@ -85,6 +85,7 @@ function createManualStoreRequest(payload) {
         note: cleanText(payload.note)
     };
     saveManualStoreRequests([request, ...readManualStoreRequests()]);
+    syncManualRequestToConvex(request);
     return request;
 }
 function approveManualStoreRequest(id) {
@@ -110,12 +111,22 @@ function approveManualStoreRequest(id) {
                 approvedAt: now,
                 requestedBy: approved.bestieName
             }, ...readApprovedManualStores()]);
+        syncManualRequestStatusToConvex(approved);
     }
     return approved;
 }
 function rejectManualStoreRequest(id) {
     const now = Date.now();
-    saveManualStoreRequests(readManualStoreRequests().map((item) => item.id === id ? { ...item, status: 'rejected', updatedAt: now } : item));
+    let rejected = null;
+    const nextRequests = readManualStoreRequests().map((item) => {
+        if (item.id !== id)
+            return item;
+        rejected = { ...item, status: 'rejected', updatedAt: now };
+        return rejected;
+    });
+    saveManualStoreRequests(nextRequests);
+    if (rejected)
+        syncManualRequestStatusToConvex(rejected);
 }
 function findApprovedManualStore(storeName) {
     const key = normalize(storeName);
@@ -240,40 +251,6 @@ function blankObservationRow() {
 function blankPhoto() {
     return { image: '', description: '' };
 }
-const PHOTO_EDITOR_PRESETS = {
-    evidence: {
-        defaultAspect: 'square',
-        aspectOptions: [{ key: 'square', label: '1:1', width: 1, height: 1 }],
-        defaultMarkerSize: 'md'
-    },
-    qsc: {
-        defaultAspect: 'landscape',
-        aspectOptions: [
-            { key: 'landscape', label: '4:3', width: 4, height: 3 },
-            { key: 'wide', label: '16:9', width: 16, height: 9 },
-            { key: 'square', label: '1:1', width: 1, height: 1 },
-            { key: 'portrait', label: '3:4', width: 3, height: 4 }
-        ],
-        defaultMarkerSize: 'md'
-    }
-};
-const PHOTO_MARKER_SIZES = [
-    { key: 'sm', label: 'Marker S', radius: 34 },
-    { key: 'md', label: 'Marker M', radius: 54 },
-    { key: 'lg', label: 'Marker L', radius: 74 }
-];
-function getPhotoEditorPreset(name) {
-    return PHOTO_EDITOR_PRESETS[name] || PHOTO_EDITOR_PRESETS.evidence;
-}
-function getCanvasSizeForAspect(option) {
-    const safe = option || { width: 1, height: 1 };
-    const wideBase = 1200;
-    const tallBase = 900;
-    if (safe.width >= safe.height) {
-        return { width: wideBase, height: Math.max(360, Math.round(wideBase * safe.height / safe.width)) };
-    }
-    return { width: tallBase, height: Math.max(360, Math.round(tallBase * safe.height / safe.width)) };
-}
 function normalizeQscPhotos(visit) {
     const legacy = (visit === null || visit === void 0 ? void 0 : visit.qscResultPhoto) ? [visit.qscResultPhoto] : [];
     const source = Array.isArray(visit === null || visit === void 0 ? void 0 : visit.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
@@ -299,8 +276,8 @@ function createVisit(bestieName = '', storeName = '') {
         qscResultPhotos: [blankPhoto(), blankPhoto()],
         opiData: [blankObservationRow()],
         qscData: [blankObservationRow()],
-        findingEvidencePhotos: [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()],
-        correctiveActionPhotos: [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()],
+        findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
+        correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
         storeAssignmentLink: 'https://tinyurl.com/store-caassignment',
         showQSCResult: false,
         showOPITable: false,
@@ -311,6 +288,12 @@ function createVisit(bestieName = '', storeName = '') {
 }
 function isMeaningfulObservation(row) {
     return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row === null || row === void 0 ? void 0 : row[key]));
+}
+function isEditableTarget(target) {
+    const node = target instanceof Element ? target : null;
+    if (!node)
+        return false;
+    return Boolean(node.closest('input, textarea, select, [contenteditable="true"], .rich-editor-input, .form-control'));
 }
 function visitProgress(visit) {
     if (!visit)
@@ -475,12 +458,6 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M5 12h14" })),
         left: React.createElement("path", { d: "m15 18-6-6 6-6" }),
         right: React.createElement("path", { d: "m9 18 6-6-6-6" }),
-        up: React.createElement(React.Fragment, null,
-            React.createElement("path", { d: "m18 15-6-6-6 6" }),
-            React.createElement("path", { d: "M12 9v12" })),
-        down: React.createElement(React.Fragment, null,
-            React.createElement("path", { d: "m6 9 6 6 6-6" }),
-            React.createElement("path", { d: "M12 3v12" })),
         user: React.createElement(React.Fragment, null,
             React.createElement("circle", { cx: "12", cy: "8", r: "4" }),
             React.createElement("path", { d: "M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6" })),
@@ -565,7 +542,6 @@ function DateInput({ className = '', ...props }) {
 }
 function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
     const ref = useRef(null);
-    const resizeFrameRef = useRef(null);
     function resize() {
         const el = ref.current;
         if (!el)
@@ -573,19 +549,8 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
         el.style.height = 'auto';
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
-    function scheduleResize() {
-        if (resizeFrameRef.current)
-            window.cancelAnimationFrame(resizeFrameRef.current);
-        resizeFrameRef.current = window.requestAnimationFrame(resize);
-    }
-    useEffect(() => {
-        scheduleResize();
-        return () => {
-            if (resizeFrameRef.current)
-                window.cancelAnimationFrame(resizeFrameRef.current);
-        };
-    }, [value]);
-    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, spellCheck: false, autoCorrect: 'off', autoCapitalize: 'sentences', onChange: (event) => { onChange === null || onChange === void 0 ? void 0 : onChange(event); }, onInput: scheduleResize, ...props }));
+    useEffect(() => { resize(); }, [value]);
+    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange === null || onChange === void 0 ? void 0 : onChange(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
@@ -690,8 +655,14 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         { command: 'insertUnorderedList', label: '•', title: 'Bullet', className: 'rich-tool-bullet' },
         { command: 'insertOrderedList', label: '1.', title: 'Number', className: 'rich-tool-number' }
     ];
+    function focusEditor() {
+        const editor = editorRef.current;
+        if (!editor || document.activeElement === editor)
+            return;
+        editor.focus({ preventScroll: true });
+    }
     return (React.createElement("div", { className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className) },
-        React.createElement("div", { ref: editorRef, className: "rich-editor-input px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, onInput: emit, onBlur: emit, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
+        React.createElement("div", { ref: editorRef, className: "rich-editor-input px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onPointerDown: focusEditor, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
         React.createElement("div", { className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
 }
 function SelectInput({ children, className = '', ...props }) {
@@ -810,31 +781,28 @@ function distanceBetweenTouches(touches) {
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
-function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', preset = 'evidence' }) {
+function getEditorCanvasSize(imageElement) {
+    const width = Math.max(1, (imageElement === null || imageElement === void 0 ? void 0 : imageElement.naturalWidth) || (imageElement === null || imageElement === void 0 ? void 0 : imageElement.width) || 1080);
+    const height = Math.max(1, (imageElement === null || imageElement === void 0 ? void 0 : imageElement.naturalHeight) || (imageElement === null || imageElement === void 0 ? void 0 : imageElement.height) || 1080);
+    const maxSide = 1400;
+    const scale = Math.min(1, maxSide / Math.max(width, height));
+    return {
+        width: Math.max(360, Math.round(width * scale)),
+        height: Math.max(360, Math.round(height * scale))
+    };
+}
+function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
     const canvasRef = useRef(null);
     const imgRef = useRef(null);
     const dragRef = useRef(null);
     const pinchRef = useRef(null);
     const rafRef = useRef(null);
-    const presetConfig = getPhotoEditorPreset(preset);
-    const [aspectKey, setAspectKey] = useState(presetConfig.defaultAspect || 'square');
-    const [markerSizeKey, setMarkerSizeKey] = useState(presetConfig.defaultMarkerSize || 'md');
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [markers, setMarkers] = useState([]);
     const [mode, setMode] = useState('move');
-    const [canvasSize, setCanvasSize] = useState(getCanvasSizeForAspect((presetConfig.aspectOptions || [])[0] || { width: 1, height: 1 }));
+    const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
     const [imageReady, setImageReady] = useState(false);
-    const aspectOptions = presetConfig.aspectOptions || [{ key: 'square', label: '1:1', width: 1, height: 1 }];
-    const markerSizeOptions = PHOTO_MARKER_SIZES;
-    const markerRadius = (markerSizeOptions.find((item) => item.key === markerSizeKey) || markerSizeOptions[1]).radius;
-    function currentAspect() {
-        return aspectOptions.find((item) => item.key === aspectKey) || aspectOptions[0];
-    }
-    useEffect(() => {
-        setAspectKey(presetConfig.defaultAspect || ((presetConfig.aspectOptions || [])[0] || {}).key || 'square');
-        setMarkerSizeKey(presetConfig.defaultMarkerSize || 'md');
-    }, [preset]);
     useEffect(() => {
         if (!open)
             return undefined;
@@ -842,31 +810,31 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         const html = document.documentElement;
         const previous = {
             bodyOverflow: body.style.overflow,
-            bodyTouchAction: body.style.touchAction,
             bodyOverscroll: body.style.overscrollBehavior,
             htmlOverflow: html.style.overflow,
             htmlOverscroll: html.style.overscrollBehavior
         };
-        const preventBackgroundTouch = (event) => {
-            const panel = event.target && event.target.closest ? event.target.closest('.photo-editor-panel') : null;
+        const stopBackgroundScroll = (event) => {
+            var _a, _b;
+            const panel = (_b = (_a = event.target) === null || _a === void 0 ? void 0 : _a.closest) === null || _b === void 0 ? void 0 : _b.call(_a, '.photo-editor-v10-panel');
             if (!panel)
                 event.preventDefault();
         };
         body.style.overflow = 'hidden';
-        body.style.touchAction = 'none';
         body.style.overscrollBehavior = 'none';
         html.style.overflow = 'hidden';
         html.style.overscrollBehavior = 'none';
-        document.addEventListener('touchmove', preventBackgroundTouch, { passive: false });
+        document.addEventListener('touchmove', stopBackgroundScroll, { passive: false });
         return () => {
             body.style.overflow = previous.bodyOverflow;
-            body.style.touchAction = previous.bodyTouchAction;
             body.style.overscrollBehavior = previous.bodyOverscroll;
             html.style.overflow = previous.htmlOverflow;
             html.style.overscrollBehavior = previous.htmlOverscroll;
-            document.removeEventListener('touchmove', preventBackgroundTouch);
+            document.removeEventListener('touchmove', stopBackgroundScroll);
         };
     }, [open]);
+    useEffect(() => () => { if (rafRef.current)
+        window.cancelAnimationFrame(rafRef.current); }, []);
     useEffect(() => {
         if (!open || !image)
             return;
@@ -876,32 +844,28 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         setOffset({ x: 0, y: 0 });
         setMarkers([]);
         setMode('move');
-        dragRef.current = null;
         pinchRef.current = null;
-        const nextCanvasSize = getCanvasSizeForAspect(currentAspect());
-        setCanvasSize(nextCanvasSize);
+        dragRef.current = null;
         loadImageElement(image).then((loaded) => {
             if (cancelled)
                 return;
             imgRef.current = loaded;
+            setCanvasSize(getEditorCanvasSize(loaded));
             setImageReady(true);
-            window.requestAnimationFrame(() => drawEditorCanvas(undefined, true));
+            window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
         }).catch(() => {
             if (!cancelled)
                 setImageReady(false);
         });
         return () => { cancelled = true; };
-    }, [open, image, aspectKey, preset]);
+    }, [open, image]);
     function scheduleDraw(showGuide = true) {
         if (rafRef.current)
             window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = window.requestAnimationFrame(() => drawEditorCanvas(undefined, showGuide));
+        rafRef.current = window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide }));
     }
-    useEffect(() => {
-        if (!open)
-            return;
-        scheduleDraw(true);
-    }, [zoom, offset, markers, mode, open, canvasSize, imageReady, markerSizeKey]);
+    useEffect(() => { if (!open)
+        return; scheduleDraw(true); }, [zoom, offset, markers, mode, open, canvasSize, imageReady]);
     function getDrawMetrics(nextZoom = zoom, nextOffset = offset) {
         const canvas = canvasRef.current;
         const img = imgRef.current;
@@ -916,6 +880,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         return {
             cw,
             ch,
+            scale,
             iw,
             ih,
             x: (cw - iw) / 2 + nextOffset.x,
@@ -935,7 +900,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
             y: clamp(nextOffset.y, -maxY, maxY)
         };
     }
-    function drawEditorCanvas(targetCanvas, showGuide = true) {
+    function drawEditorCanvas(targetCanvas, options = {}) {
+        const { showGuide = true } = options;
         const canvas = targetCanvas || canvasRef.current;
         const img = imgRef.current;
         if (!canvas || !img)
@@ -957,23 +923,26 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         ctx.shadowBlur = 5;
         markers.forEach((marker) => {
             ctx.beginPath();
-            ctx.arc(marker.x, marker.y, marker.r || markerRadius, 0, Math.PI * 2);
+            ctx.arc(marker.x, marker.y, marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045), 0, Math.PI * 2);
             ctx.stroke();
         });
         ctx.restore();
         if (showGuide) {
             ctx.save();
-            ctx.strokeStyle = mode === 'marker' ? 'rgba(239,68,68,0.95)' : 'rgba(15,118,110,0.85)';
+            ctx.strokeStyle = mode === 'marker' ? 'rgba(239,68,68,0.95)' : 'rgba(15,118,110,0.9)';
             ctx.lineWidth = Math.max(2, Math.round(Math.min(metrics.cw, metrics.ch) * 0.002));
             ctx.setLineDash([Math.max(10, metrics.cw * 0.01), Math.max(8, metrics.cw * 0.008)]);
-            ctx.strokeRect(8, 8, metrics.cw - 16, metrics.ch - 16);
+            ctx.strokeRect(10, 10, metrics.cw - 20, metrics.ch - 20);
             ctx.restore();
         }
     }
     function canvasPointFromClient(clientX, clientY) {
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
-        return { x: (clientX - rect.left) * (canvas.width / Math.max(1, rect.width)), y: (clientY - rect.top) * (canvas.height / Math.max(1, rect.height)) };
+        return {
+            x: (clientX - rect.left) * (canvas.width / Math.max(1, rect.width)),
+            y: (clientY - rect.top) * (canvas.height / Math.max(1, rect.height))
+        };
     }
     function canvasPoint(event) { return canvasPointFromClient(event.clientX, event.clientY); }
     function touchCenter(touches) {
@@ -985,7 +954,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         const canvas = canvasRef.current;
         if (!canvas)
             return;
-        const ratio = nextZoom / Math.max(.001, baseZoom);
+        const ratio = nextZoom / Math.max(0.001, baseZoom);
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const nextOffset = {
@@ -1001,7 +970,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         event.preventDefault();
         if (mode === 'marker') {
             const point = canvasPoint(event);
-            setMarkers((current) => [...current, { x: point.x, y: point.y, r: markerRadius }]);
+            const r = Math.max(34, Math.min(canvasRef.current.width, canvasRef.current.height) * 0.045);
+            setMarkers((current) => [...current, { x: point.x, y: point.y, r }]);
             return;
         }
         const point = canvasPoint(event);
@@ -1016,11 +986,17 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
             return;
         event.preventDefault();
         const point = canvasPoint(event);
-        const next = { x: dragRef.current.offsetX + (point.x - dragRef.current.x), y: dragRef.current.offsetY + (point.y - dragRef.current.y) };
+        const next = {
+            x: dragRef.current.offsetX + (point.x - dragRef.current.x),
+            y: dragRef.current.offsetY + (point.y - dragRef.current.y)
+        };
         setOffset(clampOffset(next, zoom));
     }
     function handlePointerUp(event) {
-        if (dragRef.current && (!event || dragRef.current.pointerId === event.pointerId))
+        var _a;
+        if (((_a = dragRef.current) === null || _a === void 0 ? void 0 : _a.pointerId) === (event === null || event === void 0 ? void 0 : event.pointerId))
+            dragRef.current = null;
+        else
             dragRef.current = null;
     }
     function handleTouchStart(event) {
@@ -1039,7 +1015,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
             const canvas = canvasRef.current;
             if (!canvas)
                 return;
-            const ratio = nextZoom / Math.max(.001, pinchRef.current.zoom);
+            const ratio = nextZoom / Math.max(0.001, pinchRef.current.zoom);
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
             const nextOffset = {
@@ -1062,42 +1038,56 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', p
         const nextZoom = clamp(zoom * (event.deltaY < 0 ? 1.08 : 0.92), 1, 4);
         applyZoomAt(point, nextZoom);
     }
+    function resetEditor() {
+        setZoom(1);
+        setOffset({ x: 0, y: 0 });
+        setMarkers([]);
+        setMode('move');
+    }
     function saveEditedImage() {
         const canvas = canvasRef.current;
         if (!canvas || !imageReady)
             return;
-        drawEditorCanvas(canvas, false);
-        onSave(canvas.toDataURL('image/jpeg', .92));
+        drawEditorCanvas(canvas, { showGuide: false });
+        onSave(canvas.toDataURL('image/jpeg', 0.92));
         onClose();
     }
     if (!open)
         return null;
-    const modal = (React.createElement("div", { className: "photo-editor-overlay fixed inset-0 z-[95] grid place-items-center bg-slate-950/60 p-2 backdrop-blur-[2px]", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "photo-editor-panel w-full max-w-xl rounded-[24px] bg-white p-3 shadow-2xl md:p-4" },
-            React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                React.createElement("div", null,
-                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Crop & Marker"),
-                    React.createElement("h3", { className: "text-lg font-black text-slate-950" }, title)),
-                React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup editor" },
-                    React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("div", { className: "photo-editor-canvas-shell overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2" },
-                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, className: "mx-auto block w-full touch-none rounded-xl bg-white", style: { aspectRatio: String(canvasSize.width) + ' / ' + String(canvasSize.height) }, onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
-            React.createElement("div", { className: "mt-3 flex flex-col gap-2" },
-                React.createElement("div", { className: "photo-editor-row flex flex-wrap items-center gap-2" },
-                    React.createElement("div", { className: "photo-editor-pill-group" }, aspectOptions.map((option) => React.createElement("button", { key: option.key, type: "button", className: cx('photo-editor-pill', aspectKey === option.key && 'active'), onClick: () => setAspectKey(option.key) }, option.label))),
-                    React.createElement("div", { className: "photo-editor-hint text-xs font-bold text-slate-500" }, mode === 'marker' ? 'Tap foto untuk menaruh marker.' : 'Cubit untuk zoom, geser untuk atur posisi.'),
-                    React.createElement("div", { className: "flex flex-wrap items-center justify-end gap-2" },
-                        React.createElement(Button, { variant: mode === 'move' ? 'primary' : 'secondary', icon: "crop", onClick: () => setMode('move'), "aria-label": "Mode geser dan crop" }),
-                        React.createElement(Button, { variant: mode === 'marker' ? 'primary' : 'secondary', icon: "marker", onClick: () => setMode('marker'), "aria-label": "Mode marker" }),
-                        React.createElement(Button, { variant: "secondary", icon: "left", onClick: () => setMarkers((current) => current.slice(0, -1)), "aria-label": "Undo marker" }),
-                        React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: () => { setZoom(1); setOffset({ x: 0, y: 0 }); setMarkers([]); }, "aria-label": "Reset foto" }),
-                        React.createElement(Button, { icon: "check", onClick: saveEditedImage }, "Simpan"))),
-                React.createElement("div", { className: cx('photo-editor-row flex flex-wrap items-center gap-2', mode !== 'marker' && 'opacity-70') },
-                    React.createElement("p", { className: "text-xs font-bold uppercase tracking-[0.16em] text-slate-500" }, "Ukuran Marker"),
-                    React.createElement("div", { className: "photo-editor-pill-group" }, markerSizeOptions.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('photo-editor-pill', markerSizeKey === item.key && 'active'), onClick: () => setMarkerSizeKey(item.key) }, item.label))))))));
-    return ReactDOM && ReactDOM.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
+    const hasMarkers = markers.length > 0;
+    const modal = (React.createElement("div", { className: "photo-editor-overlay photo-editor-v10", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "photo-editor-panel photo-editor-v10-panel bg-white shadow-2xl", onClick: (event) => event.stopPropagation() },
+            React.createElement("div", { className: "photo-editor-header photo-editor-v10-header" },
+                React.createElement("div", { className: "min-w-0" },
+                    React.createElement("p", { className: "photo-editor-eyebrow" }, "Edit Foto"),
+                    React.createElement("h3", null, title)),
+                React.createElement("button", { type: "button", className: "photo-editor-close", onClick: onClose, "aria-label": "Tutup editor" },
+                    React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
+            React.createElement("div", { className: "photo-editor-v10-toolbar", role: "toolbar", "aria-label": "Toolbar edit foto" },
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => setMode('move'), "aria-pressed": mode === 'move' },
+                    React.createElement(Icon, { name: "crop", className: "h-4 w-4" }),
+                    React.createElement("span", null, "Geser")),
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'marker' && 'active'), onClick: () => setMode('marker'), "aria-pressed": mode === 'marker' },
+                    React.createElement(Icon, { name: "marker", className: "h-4 w-4" }),
+                    React.createElement("span", null, "Marker")),
+                React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: () => setMarkers((current) => current.slice(0, -1)), disabled: !hasMarkers },
+                    React.createElement(Icon, { name: "left", className: "h-4 w-4" }),
+                    React.createElement("span", null, "Undo")),
+                React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: resetEditor },
+                    React.createElement(Icon, { name: "eraser", className: "h-4 w-4" }),
+                    React.createElement("span", null, "Reset"))),
+            React.createElement("div", { className: "photo-editor-canvas-shell photo-editor-v10-stage" },
+                !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
+                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
+            React.createElement("div", { className: "photo-editor-v10-footer" },
+                React.createElement("div", { className: "photo-editor-hint" },
+                    React.createElement("span", null, mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.')),
+                React.createElement("button", { type: "button", className: "photo-editor-save", onClick: saveEditedImage, disabled: !imageReady },
+                    React.createElement(Icon, { name: "check", className: "h-5 w-5" }),
+                    React.createElement("span", null, "Simpan"))))));
+    return (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, editorPreset = 'evidence' }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -1144,7 +1134,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { var _a; return (_a = cameraRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Ambil foto dari kamera" }),
             React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { var _a; return (_a = galleryRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Pilih foto dari galeri" })),
         React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, preset: editorPreset, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
@@ -1209,34 +1199,39 @@ function CrewEditor({ visit, update }) {
 }
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = (rows === null || rows === void 0 ? void 0 : rows.length) ? rows : [blankObservationRow()];
-    const rowRefs = useRef([]);
     const [activeIndex, setActiveIndex] = useState(0);
+    const activeRowNumber = Math.min(activeIndex + 1, safeRows.length);
+    useEffect(() => {
+        setActiveIndex((current) => Math.max(0, Math.min(current, safeRows.length - 1)));
+    }, [safeRows.length]);
     const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
-    const addRow = () => onChange([...safeRows, blankObservationRow()]);
+    const addRow = () => {
+        onChange([...safeRows, blankObservationRow()]);
+        setActiveIndex(safeRows.length);
+    };
     const removeRow = (index) => {
         if (!confirmAction('Hapus row observation ini?'))
             return;
         const next = safeRows.filter((_, rowIndex) => rowIndex !== index);
         onChange(next.length ? next : [blankObservationRow()]);
-        setActiveIndex((current) => Math.max(0, Math.min(current, Math.max(0, next.length - 1))));
+        setActiveIndex(Math.max(0, Math.min(index, (next.length ? next.length : 1) - 1)));
     };
-    const jumpToRow = (index) => {
-        const safeIndex = Math.max(0, Math.min(safeRows.length - 1, index));
-        setActiveIndex(safeIndex);
-        const node = rowRefs.current[safeIndex];
-        if (node) {
-            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    };
+    const goPrev = () => setActiveIndex((current) => Math.max(0, current - 1));
+    const goNext = () => setActiveIndex((current) => Math.min(safeRows.length - 1, current + 1));
     const richField = (label, key, row, index, placeholder) => (React.createElement(Field, { label: label },
         React.createElement(RichTextInput, { value: row[key] || '', onChange: (value) => updateRow(index, { [key]: value }), placeholder: placeholder })));
-    return (React.createElement("div", { className: "relative grid gap-4" },
-        React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-            React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title)),
-        safeRows.map((row, index) => (React.createElement("article", { key: index, ref: (node) => rowRefs.current[index] = node, onFocusCapture: () => setActiveIndex(index), onPointerDown: () => setActiveIndex(index), className: cx("surface-card rounded-[28px] p-4 md:p-5", activeIndex === index && 'ring-2 ring-emerald-200') },
+    return (React.createElement("div", { className: "observation-card-system grid gap-4" },
+        React.createElement("div", { className: "observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
+            React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
+            React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-800" },
+                "Mobile: 1 temuan per card \u2022 Temuan ",
+                activeRowNumber,
+                " dari ",
+                safeRows.length)),
+        safeRows.map((row, index) => (React.createElement("article", { key: index, className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active') },
             React.createElement("div", { className: "mb-4 flex items-center justify-between gap-3" },
                 React.createElement(Badge, { tone: isMeaningfulObservation(row) ? 'success' : 'default' },
-                    "Row ",
+                    "Temuan ",
                     index + 1),
                 React.createElement(Button, { variant: "icon", onClick: () => removeRow(index), "aria-label": "Hapus row" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))),
@@ -1250,42 +1245,39 @@ function ObservationCards({ title, rows, onChange }) {
                     React.createElement(Field, { label: "Deadline" },
                         React.createElement(DateInput, { value: row.deadline || '', onChange: (e) => updateRow(index, { deadline: e.target.value }) })),
                     richField('Hasil', 'hasil', row, index, 'Hasil tindakan...')))))),
-        React.createElement("div", { className: "flex justify-end" },
+        React.createElement("div", { className: "observation-desktop-add flex justify-end" },
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row")),
-        safeRows.length > 1 ? React.createElement(RowJumpFloat, { onPrev: () => jumpToRow(activeIndex - 1), onNext: () => jumpToRow(activeIndex + 1), canPrev: activeIndex > 0, canNext: activeIndex < safeRows.length - 1, label: "Observation row" }) : null));
+        React.createElement("div", { className: "observation-mobile-nav", "aria-label": "Navigasi temuan observation" },
+            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya" },
+                React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
+            React.createElement("button", { type: "button", className: "observation-nav-add", onClick: addRow, "aria-label": "Tambah temuan" },
+                React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
+            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya" },
+                React.createElement(Icon, { name: "right", className: "h-5 w-5" })))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
-    const safePhotos = (photos === null || photos === void 0 ? void 0 : photos.length) ? photos : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()];
-    const cardRefs = useRef([]);
-    const [activeIndex, setActiveIndex] = useState(0);
+    const minSlots = 8;
+    const sourcePhotos = Array.isArray(photos) ? photos : [];
+    const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
+    const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
     const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
     const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
     const removeEmpty = () => {
         if (!confirmAction('Rapikan dan hapus slot foto kosong?'))
             return;
         const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
-        onChange(meaningful.length ? meaningful : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
-        setActiveIndex(0);
+        const next = meaningful.length ? meaningful : blankSet();
+        onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
     };
-    const jumpToCard = (index) => {
-        const safeIndex = Math.max(0, Math.min(safePhotos.length - 1, index));
-        setActiveIndex(safeIndex);
-        const node = cardRefs.current[safeIndex];
-        if (node) {
-            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    };
-    return (React.createElement("div", { className: "relative grid gap-4" },
+    return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
         React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
             React.createElement("p", { className: "text-sm font-bold text-slate-900" },
                 safePhotos.length,
                 " slot foto")),
-        React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement("div", { key: index, ref: (node) => cardRefs.current[index] = node, onPointerDown: () => setActiveIndex(index), className: cx(activeIndex === index && 'photo-card-active') },
-            React.createElement(PhotoInput, { label: `${prefix} ${index + 1}`, value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, editorPreset: 'evidence' }))))),
+        React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true })))),
         React.createElement("div", { className: "flex flex-wrap justify-end gap-2" },
             React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: removeEmpty }, "Rapikan Slot Kosong"),
-            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addFour }, "Tambah 4 Slot")),
-        safePhotos.length > 1 ? React.createElement(RowJumpFloat, { onPrev: () => jumpToCard(activeIndex - 1), onNext: () => jumpToCard(activeIndex + 1), canPrev: activeIndex > 0, canNext: activeIndex < safePhotos.length - 1, label: "Evidence row" }) : null));
+            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addFour }, "Tambah 4 Slot"))));
 }
 const SECTION_DEFS = [
     { id: 'setup', label: 'Visit', title: 'Visit Setup', icon: 'store', hint: 'Bestie & store' },
@@ -1313,8 +1305,8 @@ function VisitSetupSection({ visit, update }) {
         update({ store: value });
     }
     return (React.createElement(SectionShell, { title: "Mulai visit" },
-        React.createElement("div", { className: "visit-setup-grid grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-5" },
-            React.createElement("div", { className: "visit-setup-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
+        React.createElement("div", { className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5" },
+            React.createElement("div", { className: "visit-setup-card surface-card min-w-0 rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
                 React.createElement("div", { className: "grid gap-4 md:gap-5" },
                     React.createElement(SelectField, { label: "Nama Bestie", required: true, value: visit.nama || '', options: BESTIE_NAMES, onChange: handleBestieChange, placeholder: "Pilih nama bestie", icon: "user" }),
                     React.createElement(SelectField, { label: "Store", required: true, value: visit.store || '', options: storeOptions, onChange: handleStoreChange, placeholder: "Pilih store", icon: "store" }),
@@ -1343,19 +1335,13 @@ function QscResultSection({ visit, update }) {
             "Kurang ",
             missing,
             " foto wajib.") : null,
-        React.createElement("div", { className: "grid gap-5 lg:grid-cols-2" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true, editorPreset: 'qsc' }))))));
+        React.createElement("div", { className: "grid gap-5 lg:grid-cols-2" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true }))))));
 }
 function ObservationSection({ visit, update }) {
     const [tab, setTab] = useState('opi');
-    const listRef = useRef(null);
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
-    const content = !enabled
-        ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' })
-        : React.createElement("div", { ref: listRef }, tab === 'opi'
-            ? React.createElement(ObservationCards, { title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) })
-            : React.createElement(ObservationCards, { title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) }));
     const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
         React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
             React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
@@ -1365,19 +1351,13 @@ function ObservationSection({ visit, update }) {
                 React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
                 " QSC Observation")),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement("div", { className: "relative" },
-        React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, content)));
+    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
 }
 function EvidenceSection({ visit, update }) {
     const [tab, setTab] = useState('finding');
     const enabled = tab === 'finding' ? visit.showFindingEvidence === true : visit.showCorrectiveAction === true;
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
-    const content = !enabled
-        ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' })
-        : tab === 'finding'
-            ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) })
-            : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) });
     const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
         React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
             React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), onClick: () => setTab('finding') },
@@ -1387,15 +1367,7 @@ function EvidenceSection({ visit, update }) {
                 React.createElement(Icon, { name: "image", className: "h-4 w-4" }),
                 " Corrective Action")),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, content));
-}
-function RowJumpFloat({ onPrev, onNext, canPrev, canNext, label = 'Daftar' }) {
-    const controls = (React.createElement("div", { className: "section-jump-float", role: "navigation", "aria-label": label + ' navigation' },
-        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onPrev, disabled: !canPrev, title: "Row sebelumnya", "aria-label": "Row sebelumnya" },
-            React.createElement(Icon, { name: "up", className: "h-5 w-5" })),
-        React.createElement("button", { type: "button", className: "section-jump-button", onClick: onNext, disabled: !canNext, title: "Row berikutnya", "aria-label": "Row berikutnya" },
-            React.createElement(Icon, { name: "down", className: "h-5 w-5" }))));
-    return ReactDOM && ReactDOM.createPortal ? ReactDOM.createPortal(controls, document.body) : controls;
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
@@ -1406,8 +1378,28 @@ function AssignmentSection({ visit, update, onPreview }) {
                 React.createElement(Button, { icon: "eye", onClick: onPreview }, "Preview PDF")))));
 }
 function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
-    const isAndroid = /android/i.test(navigator.userAgent || '');
+    const ua = navigator.userAgent || '';
+    const isIos = /iphone|ipad|ipod/i.test(ua);
+    const isAndroid = /android/i.test(ua);
+    const [guideMode, setGuideMode] = useState(isIos || isAndroid ? 'mobile' : 'desktop');
+    useEffect(() => {
+        if (open)
+            setGuideMode(isIos || isAndroid ? 'mobile' : 'desktop');
+    }, [open, isIos, isAndroid]);
+    const mobileGuides = [
+        { browser: 'Chrome Android', steps: 'Buka menu tiga titik, pilih “Install app” atau “Tambahkan ke layar utama”, lalu konfirmasi install.' },
+        { browser: 'Samsung Internet', steps: 'Buka menu ≡, pilih “Add page to”, lalu pilih “Home screen” atau “Apps screen”.' },
+        { browser: 'Microsoft Edge Android', steps: 'Buka menu bawah, pilih “Add to phone” atau “Install app”, lalu ikuti konfirmasi.' },
+        { browser: 'Firefox Android', steps: 'Buka menu tiga titik, pilih “Install” bila tersedia. Jika tidak ada, pilih “Add to Home screen”.' },
+        { browser: 'iPhone / iPad Safari', steps: 'Tekan tombol Share, pilih “Add to Home Screen”, lalu tekan “Add”.' },
+        { browser: 'iPhone Chrome / Edge / Firefox', steps: 'Di iPhone tidak ada auto install. Buka menu Share browser, lalu pilih “Add to Home Screen”.' }
+    ];
+    const desktopGuides = [
+        { browser: 'Chrome Desktop', steps: 'Klik icon install di address bar, atau buka menu ⋮ lalu pilih “Install app”.' },
+        { browser: 'Microsoft Edge', steps: 'Buka menu ⋯ lalu pilih “Apps” → “Install this site as an app”.' },
+        { browser: 'Firefox Desktop', steps: 'Gunakan menu browser lalu pilih “Install” bila tersedia. Jika tidak ada, buat shortcut manual di desktop/bookmarks.' },
+        { browser: 'Safari macOS', steps: 'Buka File → Add to Dock atau gunakan Share / Shortcut sesuai versi macOS.' }
+    ];
     async function installNow() {
         if (!deferredPrompt)
             return;
@@ -1423,36 +1415,28 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
     }
     if (!open)
         return null;
+    const canAutoInstall = Boolean(deferredPrompt) && !isIos;
+    const guideItems = guideMode === 'mobile' ? mobileGuides : desktopGuides;
     return (React.createElement("div", { className: "fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-lg md:rounded-[30px] md:p-6" },
+        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[30px] md:p-6" },
             React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
                 React.createElement("div", { className: "flex items-center gap-3" },
                     React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
                         React.createElement(Icon, { name: "spark" })),
                     React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Install App"),
-                        React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Tambahkan ke layar depan"))),
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Install Apps"),
+                        React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Tambahkan Bestie Visit ke perangkat"))),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            deferredPrompt && isAndroid ? React.createElement(Button, { className: "mb-4 w-full", icon: "download", onClick: installNow }, "Tambahkan Sekarang") : null,
-            React.createElement("div", { className: "grid gap-3 text-sm leading-6 text-slate-700" },
-                React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" },
-                    React.createElement("strong", null, "Android Chrome:"),
-                    " buka menu tiga titik, pilih ",
-                    React.createElement("strong", null, "Tambahkan ke layar utama"),
-                    ", lalu tekan ",
-                    React.createElement("strong", null, "Install"),
-                    "."),
-                React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" },
-                    React.createElement("strong", null, "iPhone Safari:"),
-                    " tekan tombol ",
-                    React.createElement("strong", null, "Share"),
-                    ", pilih ",
-                    React.createElement("strong", null, "Add to Home Screen"),
-                    ", lalu tekan ",
-                    React.createElement("strong", null, "Add"),
-                    "."),
-                !isIos && !isAndroid ? React.createElement("div", { className: "rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200" }, "Desktop: gunakan menu browser, lalu pilih install atau create shortcut.") : null))));
+            React.createElement("div", { className: "mb-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200" },
+                React.createElement("div", { className: "install-guide-tabs" },
+                    React.createElement("button", { type: "button", className: cx('install-guide-tab', guideMode === 'mobile' && 'active'), onClick: () => setGuideMode('mobile') }, "Tutorial Mobile"),
+                    React.createElement("button", { type: "button", className: cx('install-guide-tab', guideMode === 'desktop' && 'active'), onClick: () => setGuideMode('desktop') }, "Tutorial Desktop")),
+                React.createElement("p", { className: "mt-3 text-xs font-semibold leading-5 text-slate-500" }, canAutoInstall ? 'Browser ini mendukung auto install. Gunakan tombol di bawah untuk menambahkan aplikasi dengan cepat.' : isIos ? 'Di iPhone / iPad auto install tidak didukung, jadi gunakan tutorial manual sesuai browser.' : 'Jika browser tidak menampilkan prompt install otomatis, gunakan langkah manual sesuai browser yang Anda pakai.')),
+            canAutoInstall ? React.createElement(Button, { className: "mb-4 w-full", icon: "download", onClick: installNow }, "Auto Add to Home / Install App") : null,
+            React.createElement("div", { className: "install-guide-grid" }, guideItems.map((item) => (React.createElement("div", { key: item.browser, className: "install-guide-card" },
+                React.createElement("strong", null, item.browser),
+                React.createElement("p", null, item.steps))))))));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
@@ -1472,8 +1456,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("span", { className: "inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100" }, "Dashboard"),
                     React.createElement("h1", { className: "mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl" }, "Regional Bestie Visit Report")),
-                React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info tambah ke layar depan" },
-                    React.createElement(Icon, { name: "spark", className: "h-5 w-5" }))),
+                React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                    React.createElement("span", { className: "install-info-button__icon" },
+                        React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
+                    React.createElement("span", { className: "install-info-button__text" }, "Install Apps"))),
             React.createElement("div", { className: "mt-4 grid grid-cols-2 gap-2" },
                 React.createElement(Button, { icon: "plus", onClick: onNewVisit }, "Buat Kunjungan Baru"),
                 React.createElement(Button, { variant: "danger", icon: "trash", onClick: onClearHistory }, "Hapus Semua History")),
@@ -1597,6 +1583,7 @@ function downloadBlob(blob, fileName) {
 }
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const pagesRef = useRef(null);
+    const scrollRef = useRef(null);
     const [fallback, setFallback] = useState(false);
     const [renderStatus, setRenderStatus] = useState('');
     const renderSeqRef = useRef(0);
@@ -1604,12 +1591,14 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     useEffect(() => {
         let cancelled = false;
         let resizeTimer = null;
+        let observer = null;
         async function renderPdf(force = false) {
             const target = pagesRef.current;
+            const scroller = scrollRef.current;
             if (!target || !blob)
                 return;
-            const measuredWidth = Math.max(280, Math.floor(target.clientWidth || target.getBoundingClientRect().width || 360));
-            if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 24 && target.childElementCount)
+            const measuredWidth = Math.max(280, Math.floor(((scroller === null || scroller === void 0 ? void 0 : scroller.clientWidth) || target.clientWidth || 360) - 16));
+            if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 18 && target.childElementCount)
                 return;
             lastWidthRef.current = measuredWidth;
             const seq = renderSeqRef.current + 1;
@@ -1622,15 +1611,16 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             try {
                 setFallback(false);
                 setRenderStatus('Memuat preview...');
-                if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                if (pdfjsLib.GlobalWorkerOptions) {
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                 }
+                const scrollTop = (scroller === null || scroller === void 0 ? void 0 : scroller.scrollTop) || 0;
                 const data = await blob.arrayBuffer();
                 if (cancelled || renderSeqRef.current !== seq)
                     return;
                 const pdf = await pdfjsLib.getDocument({ data }).promise;
                 const fragment = document.createDocumentFragment();
-                const maxWidth = Math.max(260, Math.min(measuredWidth - 12, 1120));
+                const maxWidth = Math.max(260, Math.min(measuredWidth, 1180));
                 for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
                     if (cancelled || renderSeqRef.current !== seq)
                         return;
@@ -1643,8 +1633,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     pageWrap.className = 'pdf-preview-page-wrap';
                     const canvas = document.createElement('canvas');
                     canvas.className = 'pdf-preview-page-canvas';
-                    canvas.width = Math.floor(viewport.width * outputScale);
-                    canvas.height = Math.floor(viewport.height * outputScale);
+                    canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
+                    canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
                     canvas.style.width = Math.floor(viewport.width) + 'px';
                     canvas.style.height = Math.floor(viewport.height) + 'px';
                     pageWrap.appendChild(canvas);
@@ -1655,6 +1645,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 if (cancelled || renderSeqRef.current !== seq)
                     return;
                 target.replaceChildren(fragment);
+                if (scroller)
+                    scroller.scrollTop = Math.min(scrollTop, Math.max(0, scroller.scrollHeight - scroller.clientHeight));
                 setRenderStatus('');
             }
             catch (error) {
@@ -1670,23 +1662,31 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             if (!blob)
                 return;
             clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => renderPdf(false), 360);
+            resizeTimer = setTimeout(() => renderPdf(false), 420);
         }
-        window.addEventListener('resize', scheduleRender, { passive: true });
+        if (window.ResizeObserver && scrollRef.current) {
+            observer = new ResizeObserver(scheduleRender);
+            observer.observe(scrollRef.current);
+        }
+        else {
+            window.addEventListener('resize', scheduleRender, { passive: true });
+        }
         window.addEventListener('orientationchange', scheduleRender);
         return () => {
             cancelled = true;
             clearTimeout(resizeTimer);
-            renderSeqRef.current += 1;
+            if (observer)
+                observer.disconnect();
             window.removeEventListener('resize', scheduleRender);
             window.removeEventListener('orientationchange', scheduleRender);
+            renderSeqRef.current += 1;
         };
     }, [blob]);
     if (!blob)
         return React.createElement("div", { className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600" }, status);
     if (fallback && pdfUrl)
-        return React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0&view=Fit', title: "Preview Regional Bestie PDF" });
-    return React.createElement("div", { className: "pdf-canvas-scroll" },
+        return React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH', title: "Preview Regional Bestie PDF" });
+    return React.createElement("div", { ref: scrollRef, className: "pdf-canvas-scroll" },
         React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages" }),
         renderStatus ? React.createElement("div", { className: "pdf-render-status" }, renderStatus) : null);
 }
@@ -1746,9 +1746,9 @@ function PreviewPage({ visit, onBack }) {
         setBusy(false);
     } }
     if (!visit)
-        return React.createElement("main", { className: "preview-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8" },
+        return React.createElement("main", { className: "preview-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif", action: React.createElement(Button, { variant: "secondary", onClick: onBack }, "Kembali") }));
-    return (React.createElement("main", { className: "preview-page mx-auto w-full max-w-7xl px-4 py-4 md:px-8 md:py-8" },
+    return (React.createElement("main", { className: "preview-page w-full px-4 py-4 md:px-8 md:py-8" },
         React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
             React.createElement("div", null,
                 React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
@@ -1781,25 +1781,157 @@ function PreviewPage({ visit, onBack }) {
 // =============================================================
 // Secret monitor helpers
 // =============================================================
+let RB_CONVEX_BUNDLE_PROMISE = null;
+let RB_CONVEX_CLIENT = null;
+let RB_CONVEX_CLIENT_URL = '';
 function getConvexConfig() {
     return window.RB_CONVEX_CONFIG || {};
+}
+function getConvexDeploymentUrl() {
+    const config = getConvexConfig();
+    return cleanText(config.deploymentUrl || config.convexUrl || config.url || config.cloudUrl);
+}
+function getConvexHttpUrl() {
+    const config = getConvexConfig();
+    return cleanText(config.httpUrl || config.siteUrl);
 }
 function buildVisitKey(visit) {
     return [visit === null || visit === void 0 ? void 0 : visit.nama, visit === null || visit === void 0 ? void 0 : visit.store, visit === null || visit === void 0 ? void 0 : visit.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || (visit === null || visit === void 0 ? void 0 : visit.id) || SESSION_ID;
 }
 function convexUrl(path) {
     const config = getConvexConfig();
-    if (!config.enabled || !config.httpUrl)
+    const httpUrl = getConvexHttpUrl();
+    if (!config.enabled || !httpUrl)
         return '';
-    return String(config.httpUrl).replace(/\/$/, '') + '/' + String(path || '').replace(/^\//, '');
+    return String(httpUrl).replace(/\/$/, '') + '/' + String(path || '').replace(/^\//, '');
 }
-async function upsertMonitorVisit(visit) {
+function convexEnabled() {
     const config = getConvexConfig();
-    const endpoint = convexUrl(config.upsertPath || 'monitor/upsertVisit');
-    if (!endpoint || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
-        return;
+    return Boolean(config.enabled && (getConvexDeploymentUrl() || getConvexHttpUrl()));
+}
+function getConvexBundleUrl() {
+    const config = getConvexConfig();
+    return config.bundleUrl || 'https://unpkg.com/convex@latest/dist/browser.bundle.js';
+}
+function loadConvexBundle() {
+    var _a;
+    if ((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient)
+        return Promise.resolve(window.convex);
+    if (RB_CONVEX_BUNDLE_PROMISE)
+        return RB_CONVEX_BUNDLE_PROMISE;
+    RB_CONVEX_BUNDLE_PROMISE = new Promise((resolve, reject) => {
+        const existing = document.getElementById('rbv-convex-client-bundle');
+        if (existing) {
+            existing.addEventListener('load', () => resolve(window.convex), { once: true });
+            existing.addEventListener('error', () => reject(new Error('Convex client gagal dimuat.')), { once: true });
+            return;
+        }
+        const script = document.createElement('script');
+        script.id = 'rbv-convex-client-bundle';
+        script.src = getConvexBundleUrl();
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.onload = () => { var _a; return ((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient) ? resolve(window.convex) : reject(new Error('Convex client tidak tersedia.')); };
+        script.onerror = () => reject(new Error('Convex client gagal dimuat.'));
+        document.head.appendChild(script);
+    });
+    return RB_CONVEX_BUNDLE_PROMISE;
+}
+async function getConvexRealtimeClient() {
+    var _a, _b;
+    const config = getConvexConfig();
+    const deploymentUrl = getConvexDeploymentUrl();
+    if (!config.enabled || !deploymentUrl)
+        return null;
+    await loadConvexBundle();
+    if (!((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient))
+        return null;
+    if (!RB_CONVEX_CLIENT || RB_CONVEX_CLIENT_URL !== deploymentUrl) {
+        try {
+            (_b = RB_CONVEX_CLIENT === null || RB_CONVEX_CLIENT === void 0 ? void 0 : RB_CONVEX_CLIENT.close) === null || _b === void 0 ? void 0 : _b.call(RB_CONVEX_CLIENT);
+        }
+        catch (error) { }
+        RB_CONVEX_CLIENT = new window.convex.ConvexClient(deploymentUrl);
+        RB_CONVEX_CLIENT_URL = deploymentUrl;
+    }
+    return RB_CONVEX_CLIENT;
+}
+async function runConvexQuery(functionName, args = {}) {
+    const client = await getConvexRealtimeClient();
+    if (!client || !functionName)
+        return null;
+    return client.query(functionName, args);
+}
+async function runConvexMutation(functionName, args = {}) {
+    const client = await getConvexRealtimeClient();
+    if (!client || !functionName)
+        return null;
+    return client.mutation(functionName, args);
+}
+async function subscribeConvexQuery(functionName, args, onData, onError) {
+    const client = await getConvexRealtimeClient();
+    if (!client || !functionName || typeof client.onUpdate !== 'function')
+        return null;
+    const unsubscribe = client.onUpdate(functionName, args || {}, onData, onError);
+    return () => {
+        if (typeof unsubscribe === 'function')
+            unsubscribe();
+        else if (typeof (unsubscribe === null || unsubscribe === void 0 ? void 0 : unsubscribe.unsubscribe) === 'function')
+            unsubscribe.unsubscribe();
+    };
+}
+function normalizeMonitorRows(rows) {
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
+    return safeRows.map((row) => ({
+        id: row._id || row.id || row.visit_key || `${row.bestie_name || row.bestieName}-${row.store_name || row.storeName}-${row.visit_date || row.visitDate}`,
+        bestie_name: row.bestie_name || row.bestieName || row.nama || '-',
+        store_name: row.store_name || row.storeName || row.store || '-',
+        store_code: row.store_code || row.storeCode || '',
+        visit_date: row.visit_date || row.visitDate || row.tanggal || '',
+        total_visits: row.total_visits || row.totalVisits || 1,
+        updated_at: row.updated_at || row.updatedAt || row.last_visit_at || row.lastVisitAt || '',
+        session_id: row.session_id || row.sessionId || '-'
+    }));
+}
+function normalizeManualRequestRows(rows) {
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
+    return safeRows.map((item) => ({
+        id: item.request_id || item.requestId || item.id || item._id,
+        status: item.status || 'pending',
+        createdAt: item.created_at || item.createdAt || Date.now(),
+        updatedAt: item.updated_at || item.updatedAt || item.created_at || item.createdAt || Date.now(),
+        bestieName: item.bestie_name || item.bestieName || '',
+        storeName: item.store_name || item.storeName || item.siteDescr || '',
+        storeCode: item.store_code || item.storeCode || item.siteCode || '',
+        address: item.address || '',
+        note: item.note || ''
+    })).filter((item) => item.id && item.storeName);
+}
+function persistManualRequestsFromRemote(items) {
+    const normalized = normalizeManualRequestRows(items);
+    if (!normalized.length)
+        return normalized;
+    saveManualStoreRequests(normalized);
+    const approvedStores = normalized
+        .filter((item) => item.status === 'approved')
+        .map((item) => ({
+        siteDescr: item.storeName,
+        storeName: item.storeName,
+        siteCode: item.storeCode,
+        siteCode4: item.storeCode,
+        address: item.address,
+        city: '',
+        source: 'convex-approved',
+        approvedAt: item.updatedAt,
+        requestedBy: item.bestieName
+    }));
+    if (approvedStores.length)
+        saveApprovedManualStores([...approvedStores, ...readApprovedManualStores()]);
+    return normalized;
+}
+function monitorPayloadFromVisit(visit) {
     const detail = getStoreWebDetail(visit.store);
-    const payload = {
+    return {
         visit_key: buildVisitKey(visit),
         bestie_name: cleanText(visit.nama, '-'),
         store_name: cleanText(visit.store, '-'),
@@ -1813,6 +1945,24 @@ async function upsertMonitorVisit(visit) {
         page_url: location.href,
         user_agent: navigator.userAgent
     };
+}
+async function upsertMonitorVisit(visit) {
+    const config = getConvexConfig();
+    if (!convexEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
+        return;
+    const payload = monitorPayloadFromVisit(visit);
+    try {
+        const mutationName = config.upsertMutation || 'monitor:upsertVisit';
+        const result = await runConvexMutation(mutationName, { payload });
+        if (result !== null)
+            return;
+    }
+    catch (error) {
+        console.warn('Convex realtime mutation gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.upsertPath || 'monitor/upsertVisit');
+    if (!endpoint)
+        return;
     try {
         await fetch(endpoint, {
             method: 'POST',
@@ -1826,6 +1976,17 @@ async function upsertMonitorVisit(visit) {
 }
 async function fetchMonitorRowsFromConvex() {
     const config = getConvexConfig();
+    if (!convexEnabled())
+        return null;
+    try {
+        const queryName = config.monitorQuery || 'monitor:listVisits';
+        const rows = await runConvexQuery(queryName, {});
+        if (rows !== null)
+            return normalizeMonitorRows(rows);
+    }
+    catch (error) {
+        console.warn('Convex realtime query gagal, fallback HTTP:', error);
+    }
     const endpoint = convexUrl(config.listPath || 'monitor/listVisits');
     if (!endpoint)
         return null;
@@ -1836,7 +1997,77 @@ async function fetchMonitorRowsFromConvex() {
     if (!response.ok)
         throw new Error('Convex monitor gagal dibaca.');
     const payload = await response.json();
-    return Array.isArray(payload) ? payload : (payload.rows || payload.data || []);
+    return normalizeMonitorRows(payload);
+}
+async function fetchManualRequestsFromConvex() {
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return null;
+    try {
+        const queryName = config.manualRequestsQuery || 'monitor:listManualStoreRequests';
+        const rows = await runConvexQuery(queryName, {});
+        if (rows !== null)
+            return persistManualRequestsFromRemote(rows);
+    }
+    catch (error) {
+        console.warn('Convex manual request query gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.listManualRequestsPath || 'monitor/listManualStoreRequests');
+    if (!endpoint)
+        return null;
+    const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
+    });
+    if (!response.ok)
+        throw new Error('Convex request toko gagal dibaca.');
+    const payload = await response.json();
+    return persistManualRequestsFromRemote(payload);
+}
+async function syncManualRequestToConvex(request) {
+    const config = getConvexConfig();
+    if (!convexEnabled() || !request)
+        return;
+    const payload = {
+        request_id: request.id,
+        status: request.status || 'pending',
+        created_at: request.createdAt || Date.now(),
+        updated_at: request.updatedAt || Date.now(),
+        bestie_name: cleanText(request.bestieName),
+        store_name: cleanText(request.storeName),
+        store_code: cleanText(request.storeCode),
+        address: cleanText(request.address),
+        note: cleanText(request.note),
+        session_id: SESSION_ID,
+        page_url: location.href,
+        user_agent: navigator.userAgent
+    };
+    try {
+        const result = await runConvexMutation(config.upsertManualRequestMutation || 'monitor:upsertManualStoreRequest', { payload });
+        if (result !== null)
+            return;
+    }
+    catch (error) {
+        console.warn('Convex request toko gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.upsertManualRequestPath || 'monitor/upsertManualStoreRequest');
+    if (!endpoint)
+        return;
+    try {
+        await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
+            body: JSON.stringify(payload)
+        });
+    }
+    catch (error) {
+        console.warn('HTTP request toko gagal:', error);
+    }
+}
+async function syncManualRequestStatusToConvex(request) {
+    if (!request)
+        return;
+    syncManualRequestToConvex(request);
 }
 function exportJson(data, fileName) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1887,50 +2118,60 @@ function SecretMonitorPanel({ open, onClose, history }) {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [manualRequests, setManualRequests] = useState([]);
-    async function refresh() {
-        setLoading(true);
+    const [connectionState, setConnectionState] = useState('offline');
+    const [lastSync, setLastSync] = useState('');
+    function localRows() {
+        return (history || []).map((item) => ({
+            bestie_name: item.bestieName,
+            store_name: item.storeName,
+            store_code: item.storeCode,
+            visit_date: item.visitDate,
+            total_visits: 1,
+            updated_at: item.updatedAt,
+            session_id: '-'
+        }));
+    }
+    function applyRows(nextRows, nextSource) {
+        setRows(normalizeMonitorRows(nextRows));
+        setSource(nextSource);
+        setLastSync(new Date().toISOString());
+    }
+    function applyManualRequests(nextRequests) {
+        const normalized = persistManualRequestsFromRemote(nextRequests);
+        setManualRequests(normalized);
+        setLastSync(new Date().toISOString());
+    }
+    async function refresh(options = {}) {
+        const quiet = Boolean(options.quiet);
+        if (!quiet)
+            setLoading(true);
         try {
-            const remoteRows = await fetchMonitorRowsFromConvex();
-            if (remoteRows) {
-                setSource('convex');
-                setRows(remoteRows.map((row) => ({
-                    bestie_name: row.bestie_name,
-                    store_name: row.store_name,
-                    store_code: row.store_code,
-                    visit_date: row.visit_date,
-                    total_visits: row.total_visits,
-                    updated_at: row.updated_at || row.last_visit_at,
-                    session_id: row.session_id
-                })));
+            const [remoteRowsResult, remoteRequestsResult] = await Promise.allSettled([
+                fetchMonitorRowsFromConvex(),
+                fetchManualRequestsFromConvex()
+            ]);
+            const remoteRows = remoteRowsResult.status === 'fulfilled' ? remoteRowsResult.value : null;
+            const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
+            if (remoteRows !== null) {
+                applyRows(remoteRows, source === 'convex realtime' ? 'convex realtime' : 'convex');
             }
             else {
-                setSource('local');
-                setRows((history || []).map((item) => ({
-                    bestie_name: item.bestieName,
-                    store_name: item.storeName,
-                    store_code: item.storeCode,
-                    visit_date: item.visitDate,
-                    total_visits: 1,
-                    updated_at: item.updatedAt,
-                    session_id: '-'
-                })));
+                applyRows(localRows(), 'local');
+            }
+            if (remoteRequests !== null) {
+                setManualRequests(remoteRequests);
+            }
+            else {
+                setManualRequests(readManualStoreRequests());
             }
         }
         catch (error) {
-            setSource('local');
-            setRows((history || []).map((item) => ({
-                bestie_name: item.bestieName,
-                store_name: item.storeName,
-                store_code: item.storeCode,
-                visit_date: item.visitDate,
-                total_visits: 1,
-                updated_at: item.updatedAt,
-                session_id: '-'
-            })));
+            applyRows(localRows(), 'local');
+            setManualRequests(readManualStoreRequests());
         }
         finally {
-            setManualRequests(readManualStoreRequests());
-            setLoading(false);
+            if (!quiet)
+                setLoading(false);
         }
     }
     function approveRequest(id) {
@@ -1938,16 +2179,106 @@ function SecretMonitorPanel({ open, onClose, history }) {
             return;
         approveManualStoreRequest(id);
         setManualRequests(readManualStoreRequests());
+        refresh({ quiet: true });
     }
     function rejectRequest(id) {
         if (!confirmAction('Tolak request toko manual ini?'))
             return;
         rejectManualStoreRequest(id);
         setManualRequests(readManualStoreRequests());
+        refresh({ quiet: true });
     }
     useEffect(() => {
-        if (open)
-            refresh();
+        if (!open)
+            return undefined;
+        let cancelled = false;
+        let unsubscribeRows = null;
+        let unsubscribeRequests = null;
+        let unsubscribeConnection = null;
+        let pollId = null;
+        async function startRealtime() {
+            setLoading(true);
+            setManualRequests(readManualStoreRequests());
+            try {
+                const client = await getConvexRealtimeClient();
+                if (cancelled)
+                    return;
+                if (client) {
+                    setConnectionState('connecting');
+                    if (typeof client.subscribeToConnectionState === 'function') {
+                        unsubscribeConnection = client.subscribeToConnectionState((state) => {
+                            const status = (state === null || state === void 0 ? void 0 : state.hasInflightRequests) ? 'syncing' : (state === null || state === void 0 ? void 0 : state.isWebSocketConnected) ? 'online' : 'connecting';
+                            setConnectionState(status);
+                        });
+                    }
+                    unsubscribeRows = await subscribeConvexQuery(getConvexConfig().monitorQuery || 'monitor:listVisits', {}, (nextRows) => {
+                        if (cancelled)
+                            return;
+                        applyRows(nextRows, 'convex realtime');
+                        setConnectionState('online');
+                        setLoading(false);
+                    }, (error) => {
+                        console.warn('Realtime monitor rows gagal:', error);
+                        if (!cancelled) {
+                            setConnectionState('error');
+                            refresh({ quiet: true });
+                        }
+                    });
+                    unsubscribeRequests = await subscribeConvexQuery(getConvexConfig().manualRequestsQuery || 'monitor:listManualStoreRequests', {}, (nextRequests) => {
+                        if (cancelled)
+                            return;
+                        applyManualRequests(nextRequests);
+                        setConnectionState('online');
+                        setLoading(false);
+                    }, (error) => {
+                        console.warn('Realtime request toko gagal:', error);
+                        if (!cancelled) {
+                            setConnectionState('error');
+                            setManualRequests(readManualStoreRequests());
+                        }
+                    });
+                }
+                if (!unsubscribeRows && !unsubscribeRequests) {
+                    await refresh();
+                    const pollMs = Number(getConvexConfig().pollMs || 5000);
+                    pollId = window.setInterval(() => refresh({ quiet: true }), Math.max(2500, pollMs));
+                }
+                else {
+                    await refresh({ quiet: true });
+                }
+            }
+            catch (error) {
+                console.warn('Realtime Convex gagal, fallback refresh:', error);
+                if (!cancelled) {
+                    setConnectionState('fallback');
+                    await refresh();
+                    const pollMs = Number(getConvexConfig().pollMs || 5000);
+                    pollId = window.setInterval(() => refresh({ quiet: true }), Math.max(2500, pollMs));
+                }
+            }
+            finally {
+                if (!cancelled)
+                    setLoading(false);
+            }
+        }
+        startRealtime();
+        return () => {
+            cancelled = true;
+            if (pollId)
+                window.clearInterval(pollId);
+            try {
+                unsubscribeRows === null || unsubscribeRows === void 0 ? void 0 : unsubscribeRows();
+            }
+            catch (error) { }
+            try {
+                unsubscribeRequests === null || unsubscribeRequests === void 0 ? void 0 : unsubscribeRequests();
+            }
+            catch (error) { }
+            try {
+                unsubscribeConnection === null || unsubscribeConnection === void 0 ? void 0 : unsubscribeConnection();
+            }
+            catch (error) { }
+        };
     }, [open, history]);
     if (!open)
         return null;
@@ -1958,15 +2289,23 @@ function SecretMonitorPanel({ open, onClose, history }) {
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
     const todayVisits = rows.filter((row) => String(row.visit_date || '').slice(0, 10) === today).length;
+    const isLive = source === 'convex realtime';
+    const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
     return (React.createElement("div", { className: "fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7" },
             React.createElement("div", { className: "mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between" },
                 React.createElement("div", null,
-                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Monitor Admin"),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pantauan Visit Bestie & Store")),
+                    React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Monitor Admin"),
+                        React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, isLive ? 'Live Convex' : 'Manual refresh'),
+                        React.createElement(Badge, { tone: connectionTone }, connectionState)),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pantauan Visit Bestie & Store"),
+                    lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
+                        "Update terakhir: ",
+                        formatDateTime(lastSync)) : null),
                 React.createElement("div", { className: "flex flex-wrap gap-2" },
                     React.createElement(Button, { variant: "secondary", icon: "download", onClick: () => exportJson(rows, 'regional-bestie-monitor.json') }, "Export JSON"),
-                    React.createElement(Button, { variant: "secondary", icon: "spark", onClick: refresh, disabled: loading }, "Refresh"),
+                    React.createElement(Button, { variant: "secondary", icon: "spark", onClick: () => refresh(), disabled: loading }, loading ? 'Sync...' : 'Refresh'),
                     React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                         React.createElement(Icon, { name: "close", className: "h-4 w-4" })))),
             React.createElement("div", { className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" },
@@ -2028,7 +2367,7 @@ function SecretMonitorPanel({ open, onClose, history }) {
                         React.createElement("td", { colSpan: "6", className: "px-4 py-10 text-center text-slate-500" }, "Tidak ada data."))))))));
 }
 function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onClearData, onTitleTap }) {
-    return (React.createElement("aside", { className: "hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col" },
+    return (React.createElement("aside", { className: "desktop-sidebar hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col" },
         React.createElement("button", { type: "button", onClick: onTitleTap, className: "mb-6 rounded-[28px] bg-slate-950 p-5 text-left text-white transition hover:-translate-y-0.5" },
             React.createElement("div", { className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/10" },
                 React.createElement(Icon, { name: "spark" })),
@@ -2092,18 +2431,23 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
     var _a;
     useEffect(() => {
-        function handleKey(event) { if (event.key === 'ArrowRight')
-            goSection(activeSection + 1); if (event.key === 'ArrowLeft')
-            goSection(activeSection - 1); }
+        function handleKey(event) {
+            if (isEditableTarget(event.target))
+                return;
+            if (event.key === 'ArrowRight')
+                goSection(activeSection + 1);
+            if (event.key === 'ArrowLeft')
+                goSection(activeSection - 1);
+        }
         document.addEventListener('keydown', handleKey);
         return () => document.removeEventListener('keydown', handleKey);
     }, [activeSection]);
     if (!visit)
-        return React.createElement("main", { className: "workspace-page mx-auto w-full max-w-6xl px-4 py-8 md:px-8" },
+        return React.createElement("main", { className: "workspace-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
     const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update }), React.createElement(AssignmentSection, { visit: visit, update: update, onPreview: onPreview })];
-    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-8" },
-        React.createElement("div", { className: "mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block" },
+    return (React.createElement("main", { className: "workspace-page w-full px-4 py-5 md:px-8 md:py-8" },
+        React.createElement("div", { className: "desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block" },
             React.createElement("div", { className: "flex items-center justify-between gap-3" },
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-950" }, visit.store || 'Store belum dipilih'),
@@ -2152,9 +2496,7 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js?v=20260430-focusfix2')
-                .then((registration) => { if (registration && registration.update) registration.update().catch(() => { }); })
-                .catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=revamp18').catch(() => { });
         }
     }, []);
     useEffect(() => {
