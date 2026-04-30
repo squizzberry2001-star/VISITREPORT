@@ -785,29 +785,29 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
             return undefined;
         const body = document.body;
         const html = document.documentElement;
-        const lockedScrollY = window.scrollY || html.scrollTop || 0;
         const previous = {
             bodyOverflow: body.style.overflow,
-            bodyTouchAction: body.style.touchAction,
-            bodyPosition: body.style.position,
-            bodyWidth: body.style.width,
-            bodyTop: body.style.top,
-            htmlOverflow: html.style.overflow
+            bodyOverscroll: body.style.overscrollBehavior,
+            htmlOverflow: html.style.overflow,
+            htmlOverscroll: html.style.overscrollBehavior
+        };
+        const stopBackgroundScroll = (event) => {
+            var _a, _b;
+            const panel = (_b = (_a = event.target) === null || _a === void 0 ? void 0 : _a.closest) === null || _b === void 0 ? void 0 : _b.call(_a, '.photo-editor-v10-panel');
+            if (!panel)
+                event.preventDefault();
         };
         body.style.overflow = 'hidden';
-        body.style.touchAction = 'none';
-        body.style.position = 'fixed';
-        body.style.width = '100%';
-        body.style.top = `-${lockedScrollY}px`;
+        body.style.overscrollBehavior = 'none';
         html.style.overflow = 'hidden';
+        html.style.overscrollBehavior = 'none';
+        document.addEventListener('touchmove', stopBackgroundScroll, { passive: false });
         return () => {
             body.style.overflow = previous.bodyOverflow;
-            body.style.touchAction = previous.bodyTouchAction;
-            body.style.position = previous.bodyPosition;
-            body.style.width = previous.bodyWidth;
-            body.style.top = previous.bodyTop;
+            body.style.overscrollBehavior = previous.bodyOverscroll;
             html.style.overflow = previous.htmlOverflow;
-            window.requestAnimationFrame(() => window.scrollTo(0, lockedScrollY));
+            html.style.overscrollBehavior = previous.htmlOverscroll;
+            document.removeEventListener('touchmove', stopBackgroundScroll);
         };
     }, [open]);
     useEffect(() => () => { if (rafRef.current)
@@ -1032,15 +1032,15 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     if (!open)
         return null;
     const hasMarkers = markers.length > 0;
-    return (React.createElement("div", { className: "photo-editor-overlay photo-editor-v9 fixed inset-0 z-[95] bg-slate-950/78 backdrop-blur-sm", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "photo-editor-panel photo-editor-v9-panel bg-white shadow-2xl" },
-            React.createElement("div", { className: "photo-editor-header photo-editor-v9-header" },
+    const modal = (React.createElement("div", { className: "photo-editor-overlay photo-editor-v10", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "photo-editor-panel photo-editor-v10-panel bg-white shadow-2xl", onClick: (event) => event.stopPropagation() },
+            React.createElement("div", { className: "photo-editor-header photo-editor-v10-header" },
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("p", { className: "photo-editor-eyebrow" }, "Edit Foto"),
                     React.createElement("h3", null, title)),
                 React.createElement("button", { type: "button", className: "photo-editor-close", onClick: onClose, "aria-label": "Tutup editor" },
                     React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
-            React.createElement("div", { className: "photo-editor-v9-toolbar", role: "toolbar", "aria-label": "Toolbar edit foto" },
+            React.createElement("div", { className: "photo-editor-v10-toolbar", role: "toolbar", "aria-label": "Toolbar edit foto" },
                 React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => setMode('move'), "aria-pressed": mode === 'move' },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" }),
                     React.createElement("span", null, "Geser")),
@@ -1053,15 +1053,17 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
                 React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: resetEditor },
                     React.createElement(Icon, { name: "eraser", className: "h-4 w-4" }),
                     React.createElement("span", null, "Reset"))),
-            React.createElement("div", { className: "photo-editor-canvas-shell photo-editor-v9-stage" },
+            React.createElement("div", { className: "photo-editor-canvas-shell photo-editor-v10-stage" },
                 !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
-                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: `${canvasSize.width} / ${canvasSize.height}` }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
-            React.createElement("div", { className: "photo-editor-v9-footer" },
+                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
+            React.createElement("div", { className: "photo-editor-v10-footer" },
                 React.createElement("div", { className: "photo-editor-hint" },
-                    React.createElement("span", null, mode === 'marker' ? 'Tap area foto untuk membuat lingkaran merah.' : 'Cubit untuk zoom, geser untuk atur posisi.')),
+                    React.createElement("span", null, mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.')),
                 React.createElement("button", { type: "button", className: "photo-editor-save", onClick: saveEditedImage, disabled: !imageReady },
                     React.createElement(Icon, { name: "check", className: "h-5 w-5" }),
                     React.createElement("span", null, "Simpan"))))));
+    return (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(modal, document.body) : modal;
+
 }
 function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
     const cameraRef = useRef(null);

@@ -852,29 +852,27 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     if (!open) return undefined;
     const body = document.body;
     const html = document.documentElement;
-    const lockedScrollY = window.scrollY || html.scrollTop || 0;
     const previous = {
       bodyOverflow: body.style.overflow,
-      bodyTouchAction: body.style.touchAction,
-      bodyPosition: body.style.position,
-      bodyWidth: body.style.width,
-      bodyTop: body.style.top,
-      htmlOverflow: html.style.overflow
+      bodyOverscroll: body.style.overscrollBehavior,
+      htmlOverflow: html.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior
+    };
+    const stopBackgroundScroll = (event) => {
+      const panel = event.target?.closest?.('.photo-editor-v10-panel');
+      if (!panel) event.preventDefault();
     };
     body.style.overflow = 'hidden';
-    body.style.touchAction = 'none';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
-    body.style.top = `-${lockedScrollY}px`;
+    body.style.overscrollBehavior = 'none';
     html.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+    document.addEventListener('touchmove', stopBackgroundScroll, { passive: false });
     return () => {
       body.style.overflow = previous.bodyOverflow;
-      body.style.touchAction = previous.bodyTouchAction;
-      body.style.position = previous.bodyPosition;
-      body.style.width = previous.bodyWidth;
-      body.style.top = previous.bodyTop;
+      body.style.overscrollBehavior = previous.bodyOverscroll;
       html.style.overflow = previous.htmlOverflow;
-      window.requestAnimationFrame(() => window.scrollTo(0, lockedScrollY));
+      html.style.overscrollBehavior = previous.htmlOverscroll;
+      document.removeEventListener('touchmove', stopBackgroundScroll);
     };
   }, [open]);
 
@@ -1097,10 +1095,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
 
   if (!open) return null;
   const hasMarkers = markers.length > 0;
-  return (
-    <div className="photo-editor-overlay photo-editor-v9 fixed inset-0 z-[95] bg-slate-950/78 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="photo-editor-panel photo-editor-v9-panel bg-white shadow-2xl">
-        <div className="photo-editor-header photo-editor-v9-header">
+  const modal = (
+    <div className="photo-editor-overlay photo-editor-v10" role="dialog" aria-modal="true">
+      <div className="photo-editor-panel photo-editor-v10-panel bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="photo-editor-header photo-editor-v10-header">
           <div className="min-w-0">
             <p className="photo-editor-eyebrow">Edit Foto</p>
             <h3>{title}</h3>
@@ -1108,20 +1106,20 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
           <button type="button" className="photo-editor-close" onClick={onClose} aria-label="Tutup editor"><Icon name="close" className="h-5 w-5" /></button>
         </div>
 
-        <div className="photo-editor-v9-toolbar" role="toolbar" aria-label="Toolbar edit foto">
+        <div className="photo-editor-v10-toolbar" role="toolbar" aria-label="Toolbar edit foto">
           <button type="button" className={cx('photo-editor-tool', mode === 'move' && 'active')} onClick={() => setMode('move')} aria-pressed={mode === 'move'}><Icon name="crop" className="h-4 w-4" /><span>Geser</span></button>
           <button type="button" className={cx('photo-editor-tool', mode === 'marker' && 'active')} onClick={() => setMode('marker')} aria-pressed={mode === 'marker'}><Icon name="marker" className="h-4 w-4" /><span>Marker</span></button>
           <button type="button" className="photo-editor-tool" onClick={() => setMarkers((current) => current.slice(0, -1))} disabled={!hasMarkers}><Icon name="left" className="h-4 w-4" /><span>Undo</span></button>
           <button type="button" className="photo-editor-tool" onClick={resetEditor}><Icon name="eraser" className="h-4 w-4" /><span>Reset</span></button>
         </div>
 
-        <div className="photo-editor-canvas-shell photo-editor-v9-stage">
+        <div className="photo-editor-canvas-shell photo-editor-v10-stage">
           {!imageReady ? <div className="photo-editor-loading">Memuat foto...</div> : null}
           <canvas
             ref={canvasRef}
             width={canvasSize.width}
             height={canvasSize.height}
-            style={{ aspectRatio: `${canvasSize.width} / ${canvasSize.height}` }}
+            style={{ aspectRatio: canvasSize.width + ' / ' + canvasSize.height }}
             className="photo-editor-canvas"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -1134,13 +1132,15 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
           />
         </div>
 
-        <div className="photo-editor-v9-footer">
-          <div className="photo-editor-hint"><span>{mode === 'marker' ? 'Tap area foto untuk membuat lingkaran merah.' : 'Cubit untuk zoom, geser untuk atur posisi.'}</span></div>
+        <div className="photo-editor-v10-footer">
+          <div className="photo-editor-hint"><span>{mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.'}</span></div>
           <button type="button" className="photo-editor-save" onClick={saveEditedImage} disabled={!imageReady}><Icon name="check" className="h-5 w-5" /><span>Simpan</span></button>
         </div>
       </div>
     </div>
   );
+  return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
+
 }
 
 function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
