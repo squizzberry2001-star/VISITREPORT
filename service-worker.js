@@ -1,15 +1,15 @@
-const CACHE_NAME = 'bestie-visit-v21-fixed-observation-nav';
+const CACHE_NAME = 'bestie-visit-v22-focused-crop-pdf-excel';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './src/theme.css?v=revamp21',
+  './src/theme.css?v=revamp22',
   './src/tailwind.generated.css',
-  './src/app.js?v=revamp21',
-  './src/pdf-generator.js?v=revamp21',
+  './src/app.js?v=revamp22',
+  './src/pdf-generator.js?v=revamp22',
   './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
-  './ca-assignment-export.js',
+  './ca-assignment-export.js?v=revamp22',
   './jszip.min.js',
   './convex-config.js',
   './manifest.webmanifest',

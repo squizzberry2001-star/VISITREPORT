@@ -51,10 +51,11 @@
         if (!raw || raw === '-') return '';
         const date = new Date(raw);
         if (Number.isNaN(date.getTime())) return raw;
+        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const month = monthNames[date.getMonth()] || String(date.getMonth() + 1).padStart(2, '0');
         const year = String(date.getFullYear());
-        return day + '/' + month + '/' + year;
+        return day + ' ' + month + ' ' + year;
     }
 
     function sanitizeFileName(value) {
@@ -157,7 +158,7 @@
                 cellInline('B' + excelRow, isFirst ? 12 : 13, findingText),
                 cellBlank('C' + excelRow, 7),
                 cellBlank('D' + excelRow, 8),
-                cellInline('E' + excelRow, 5, deadline),
+                cellInline('E' + excelRow, 14, deadline),
                 cellBlank('F' + excelRow, 5)
             ]);
         });
@@ -205,9 +206,16 @@
         const findingStyleNext = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/>';
         const centeredWrappedFirst = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>';
         const centeredWrappedNext = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>';
-        return safeText(xml)
+        const deadlineBoldCenter = '<xf numFmtId="0" fontId="3" fillId="0" borderId="4" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>';
+        let nextXml = safeText(xml)
             .replace(findingStyleFirst, centeredWrappedFirst)
             .replace(findingStyleNext, centeredWrappedNext);
+        if (!nextXml.includes(deadlineBoldCenter)) {
+            nextXml = nextXml.replace(/<cellXfs count="(\d+)">/, function (match, count) {
+                return '<cellXfs count="' + (Number(count) + 1) + '">';
+            }).replace('</cellXfs>', deadlineBoldCenter + '</cellXfs>');
+        }
+        return nextXml;
     }
 
     function saveBlob(blob, fileName) {
