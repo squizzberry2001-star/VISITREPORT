@@ -1,15 +1,15 @@
-const CACHE_NAME = 'bestie-visit-v23-focused-ui-pdf-welcome';
+const CACHE_NAME = 'bestie-visit-v24-welcome-5s-input-fix';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './src/theme.css?v=revamp23',
+  './src/theme.css?v=revamp24',
   './src/tailwind.generated.css',
-  './src/app.js?v=revamp23',
-  './src/pdf-generator.js?v=revamp23',
+  './src/app.js?v=revamp24',
+  './src/pdf-generator.js?v=revamp24',
   './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
-  './ca-assignment-export.js?v=revamp23',
+  './ca-assignment-export.js?v=revamp24',
   './jszip.min.js',
   './convex-config.js',
   './manifest.webmanifest',
