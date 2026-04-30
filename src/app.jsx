@@ -264,6 +264,31 @@ function blankPhoto() {
   return { image: '', description: '' };
 }
 
+const PHOTO_EDITOR_PRESETS = {
+  evidence: {
+    defaultAspect: 'original',
+    aspectOptions: [
+      { key: 'original', label: 'Original', auto: true },
+      { key: 'landscape', label: '4:3', width: 4, height: 3 },
+      { key: 'square', label: '1:1', width: 1, height: 1 },
+      { key: 'portrait', label: '3:4', width: 3, height: 4 }
+    ]
+  },
+  qsc: {
+    defaultAspect: 'landscape',
+    aspectOptions: [
+      { key: 'landscape', label: '4:3', width: 4, height: 3 },
+      { key: 'wide', label: '16:9', width: 16, height: 9 },
+      { key: 'square', label: '1:1', width: 1, height: 1 },
+      { key: 'portrait', label: '3:4', width: 3, height: 4 }
+    ]
+  }
+};
+
+function getPhotoEditorPreset(name) {
+  return PHOTO_EDITOR_PRESETS[name] || PHOTO_EDITOR_PRESETS.evidence;
+}
+
 function normalizeQscPhotos(visit) {
   const legacy = visit?.qscResultPhoto ? [visit.qscResultPhoto] : [];
   const source = Array.isArray(visit?.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
@@ -438,6 +463,8 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
     plus: <><path d="M12 5v14"/><path d="M5 12h14"/></>,
     left: <path d="m15 18-6-6 6-6"/>,
     right: <path d="m9 18 6-6-6-6"/>,
+    up: <><path d="m18 15-6-6-6 6"/><path d="M12 9v12"/></>,
+    down: <><path d="m6 9 6 6 6-6"/><path d="M12 3v12"/></>,
     user: <><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"/></>,
     store: <><path d="M4 9h16l-1.5-5h-13L4 9Z"/><path d="M5 9v12h14V9"/><path d="M9 21v-6h6v6"/><path d="M4 9c.8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0"/></>,
     calendar: <><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M4 10h16"/></>,
@@ -833,18 +860,27 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function getEditorCanvasSize(imageElement) {
-  const width = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
-  const height = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
+function getEditorCanvasSize(imageElement, aspectOption) {
+  const naturalWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
+  const naturalHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
   const maxSide = 1400;
-  const scale = Math.min(1, maxSide / Math.max(width, height));
-  return {
-    width: Math.max(360, Math.round(width * scale)),
-    height: Math.max(360, Math.round(height * scale))
-  };
+  if (!aspectOption || aspectOption.auto || !aspectOption.width || !aspectOption.height) {
+    const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
+    return {
+      width: Math.max(360, Math.round(naturalWidth * scale)),
+      height: Math.max(360, Math.round(naturalHeight * scale))
+    };
+  }
+  const ratio = aspectOption.width / aspectOption.height;
+  if (ratio >= 1) {
+    const width = maxSide;
+    return { width, height: Math.max(360, Math.round(width / ratio)) };
+  }
+  const height = maxSide;
+  return { width: Math.max(360, Math.round(height * ratio)), height };
 }
 
-function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
+function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', preset = 'evidence' }) {
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const dragRef = useRef(null);
@@ -856,6 +892,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   const [mode, setMode] = useState('move');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
   const [imageReady, setImageReady] = useState(false);
+  const presetConfig = getPhotoEditorPreset(preset);
+  const aspectOptions = presetConfig.aspectOptions || PHOTO_EDITOR_PRESETS.evidence.aspectOptions;
+  const [aspectKey, setAspectKey] = useState(presetConfig.defaultAspect);
+  const activeAspect = aspectOptions.find((option) => option.key === aspectKey) || aspectOptions[0];
 
   useEffect(() => {
     if (!open) return undefined;
@@ -888,6 +928,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   useEffect(() => () => { if (rafRef.current) window.cancelAnimationFrame(rafRef.current); }, []);
 
   useEffect(() => {
+    if (open) setAspectKey(getPhotoEditorPreset(preset).defaultAspect);
+  }, [open, preset]);
+
+  useEffect(() => {
     if (!open || !image) return;
     let cancelled = false;
     setImageReady(false);
@@ -900,14 +944,14 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     loadImageElement(image).then((loaded) => {
       if (cancelled) return;
       imgRef.current = loaded;
-      setCanvasSize(getEditorCanvasSize(loaded));
+      setCanvasSize(getEditorCanvasSize(loaded, activeAspect));
       setImageReady(true);
       window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
     }).catch(() => {
       if (!cancelled) setImageReady(false);
     });
     return () => { cancelled = true; };
-  }, [open, image]);
+  }, [open, image, aspectKey, preset]);
 
   function scheduleDraw(showGuide = true) {
     if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
@@ -1122,6 +1166,16 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
           <button type="button" className="photo-editor-tool" onClick={resetEditor}><Icon name="eraser" className="h-4 w-4" /><span>Reset</span></button>
         </div>
 
+        {aspectOptions.length > 1 ? (
+          <div className="photo-editor-ratio-row" aria-label="Pilihan ratio crop">
+            {aspectOptions.map((option) => (
+              <button key={option.key} type="button" className={cx('photo-editor-pill', aspectKey === option.key && 'active')} onClick={() => { setAspectKey(option.key); setZoom(1); setOffset({ x: 0, y: 0 }); }}>
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <div className="photo-editor-canvas-shell photo-editor-v10-stage">
           {!imageReady ? <div className="photo-editor-loading">Memuat foto...</div> : null}
           <canvas
@@ -1152,7 +1206,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
 
 }
 
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, editorPreset = 'evidence' }) {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1191,7 +1245,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
       <div className="border-t border-slate-200 p-3">
         {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
-      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} onClose={() => setEditorOpen(false)} onSave={(editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage })} />
+      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} preset={editorPreset} onClose={() => setEditorOpen(false)} onSave={(editedImage) => onChange({ ...(value || blankPhoto()), image: editedImage })} />
     </div>
   );
 }
@@ -1277,6 +1331,8 @@ function CrewEditor({ visit, update }) {
 
 function ObservationCards({ title, rows, onChange }) {
   const safeRows = rows?.length ? rows : [blankObservationRow()];
+  const rowRefs = useRef([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
   const addRow = () => onChange([...safeRows, blankObservationRow()]);
   const removeRow = (index) => {
@@ -1290,13 +1346,24 @@ function ObservationCards({ title, rows, onChange }) {
     </Field>
   );
 
+  useEffect(() => {
+    rowRefs.current = rowRefs.current.slice(0, safeRows.length);
+    setActiveIndex((current) => Math.min(current, Math.max(0, safeRows.length - 1)));
+  }, [safeRows.length]);
+
+  function jumpToRow(targetIndex) {
+    const nextIndex = clamp(targetIndex, 0, safeRows.length - 1);
+    setActiveIndex(nextIndex);
+    rowRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   return (
     <div className="grid gap-4">
       <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
         <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
       </div>
       {safeRows.map((row, index) => (
-        <article key={index} className="surface-card rounded-[28px] p-4 md:p-5">
+        <article key={index} ref={(element) => { rowRefs.current[index] = element; }} className="observation-row-card surface-card rounded-[28px] p-4 md:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <Badge tone={isMeaningfulObservation(row) ? 'success' : 'default'}>Row {index + 1}</Badge>
             <Button variant="icon" onClick={() => removeRow(index)} aria-label="Hapus row"><Icon name="trash" className="h-4 w-4" /></Button>
@@ -1317,12 +1384,15 @@ function ObservationCards({ title, rows, onChange }) {
       <div className="flex justify-end">
         <Button variant="secondary" icon="plus" onClick={addRow}>Tambah Row</Button>
       </div>
+      {safeRows.length > 1 ? <RowJumpFloat onPrev={() => jumpToRow(activeIndex - 1)} onNext={() => jumpToRow(activeIndex + 1)} canPrev={activeIndex > 0} canNext={activeIndex < safeRows.length - 1} label="Observation row" /> : null}
     </div>
   );
 }
 
 function PhotoGrid({ photos, onChange, prefix }) {
   const safePhotos = photos?.length ? photos : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()];
+  const cardRefs = useRef([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
   const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
   const removeEmpty = () => {
@@ -1330,6 +1400,15 @@ function PhotoGrid({ photos, onChange, prefix }) {
     const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
     onChange(meaningful.length ? meaningful : [blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
   };
+  useEffect(() => {
+    cardRefs.current = cardRefs.current.slice(0, safePhotos.length);
+    setActiveIndex((current) => Math.min(current, Math.max(0, safePhotos.length - 1)));
+  }, [safePhotos.length]);
+  function jumpToCard(targetIndex) {
+    const nextIndex = clamp(targetIndex, 0, safePhotos.length - 1);
+    setActiveIndex(nextIndex);
+    cardRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
   return (
     <div className="grid gap-4">
       <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
@@ -1337,15 +1416,28 @@ function PhotoGrid({ photos, onChange, prefix }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
-          <PhotoInput key={index} label={`${prefix} ${index + 1}`} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich />
+          <div key={index} ref={(element) => { cardRefs.current[index] = element; }} className="evidence-row-card min-w-0">
+            <PhotoInput label={`${prefix} ${index + 1}`} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich editorPreset="evidence" />
+          </div>
         ))}
       </div>
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="secondary" icon="eraser" onClick={removeEmpty}>Rapikan Slot Kosong</Button>
         <Button variant="secondary" icon="plus" onClick={addFour}>Tambah 4 Slot</Button>
       </div>
+      {safePhotos.length > 1 ? <RowJumpFloat onPrev={() => jumpToCard(activeIndex - 1)} onNext={() => jumpToCard(activeIndex + 1)} canPrev={activeIndex > 0} canNext={activeIndex < safePhotos.length - 1} label="Evidence row" /> : null}
     </div>
   );
+}
+
+function RowJumpFloat({ onPrev, onNext, canPrev, canNext, label = 'Daftar' }) {
+  const controls = (
+    <div className="row-jump-float" role="group" aria-label={label}>
+      <button type="button" className="row-jump-button" onClick={onPrev} disabled={!canPrev} aria-label="Lompat ke row sebelumnya"><Icon name="up" className="h-5 w-5" /></button>
+      <button type="button" className="row-jump-button" onClick={onNext} disabled={!canNext} aria-label="Lompat ke row berikutnya"><Icon name="down" className="h-5 w-5" /></button>
+    </div>
+  );
+  return ReactDOM?.createPortal ? ReactDOM.createPortal(controls, document.body) : controls;
 }
 
 const SECTION_DEFS = [
@@ -1416,7 +1508,7 @@ function QscResultSection({ visit, update }) {
   const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
   return (
     <SectionShell title="QSC / FAMITRACK Result" actions={<Toggle checked={enabled} onChange={(value) => update({ showQSCResult: value })} label={enabled ? 'Hide slide' : 'Unhide slide'} />}>
-      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
+      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="grid gap-5 lg:grid-cols-2">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required editorPreset="qsc" />)}</div></>}
     </SectionShell>
   );
 }
@@ -2542,7 +2634,9 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=20260430-focusfix2')
+        .then((registration) => { if (registration?.update) registration.update().catch(() => {}); })
+        .catch(() => {});
     }
   }, []);
 

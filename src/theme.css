@@ -1304,3 +1304,69 @@ select.form-control.select-control.has-leading-icon { padding-left: 2.75rem; }
     height: 42px !important;
   }
 }
+
+/* Focus fix v2: source JSX parity + cache-busted controls */
+.photo-editor-ratio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  align-items: center;
+  padding: .35rem 0 .5rem;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.photo-editor-ratio-row .photo-editor-pill {
+  flex: 0 0 auto;
+}
+.row-jump-float {
+  position: fixed !important;
+  right: max(10px, env(safe-area-inset-right, 0px) + 10px) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 70 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: .58rem !important;
+  pointer-events: auto !important;
+}
+.row-jump-button {
+  width: 46px !important;
+  height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(15, 118, 110, .18) !important;
+  background: rgba(255, 255, 255, .94) !important;
+  color: #0f766e !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, .22), 0 0 0 6px rgba(15, 118, 110, .07) !important;
+  backdrop-filter: blur(14px) !important;
+  transition: transform .18s var(--ease), opacity .18s var(--ease), box-shadow .18s var(--ease) !important;
+}
+.row-jump-button:not(:disabled):active {
+  transform: scale(.94) !important;
+}
+.row-jump-button:disabled {
+  opacity: .34 !important;
+  pointer-events: none !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .12) !important;
+}
+.observation-row-card,
+.evidence-row-card {
+  scroll-margin-block: 96px;
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  .row-jump-float {
+    right: max(8px, env(safe-area-inset-right, 0px) + 8px) !important;
+    gap: .48rem !important;
+  }
+  .row-jump-button {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  .photo-editor-ratio-row {
+    padding-block: .25rem .4rem;
+    gap: .35rem;
+  }
+}

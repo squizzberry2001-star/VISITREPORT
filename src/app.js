@@ -2152,7 +2152,9 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js').catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=20260430-focusfix2')
+                .then((registration) => { if (registration && registration.update) registration.update().catch(() => { }); })
+                .catch(() => { });
         }
     }, []);
     useEffect(() => {
