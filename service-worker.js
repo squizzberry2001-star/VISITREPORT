@@ -1,11 +1,11 @@
-const CACHE_NAME = 'bestie-visit-v20-focused-photo-pdf';
+const CACHE_NAME = 'bestie-visit-v21-fixed-observation-nav';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './src/theme.css?v=revamp20',
+  './src/theme.css?v=revamp21',
   './src/tailwind.generated.css',
-  './src/app.js?v=revamp20',
-  './src/pdf-generator.js?v=revamp20',
+  './src/app.js?v=revamp21',
+  './src/pdf-generator.js?v=revamp21',
   './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
