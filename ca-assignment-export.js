@@ -199,6 +199,17 @@
             '</worksheet>';
     }
 
+
+    function enhanceCAStylesXml(xml) {
+        const findingStyleFirst = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>';
+        const findingStyleNext = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/>';
+        const centeredWrappedFirst = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>';
+        const centeredWrappedNext = '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>';
+        return safeText(xml)
+            .replace(findingStyleFirst, centeredWrappedFirst)
+            .replace(findingStyleNext, centeredWrappedNext);
+    }
+
     function saveBlob(blob, fileName) {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
@@ -215,6 +226,10 @@
             throw new Error('Mesin Excel belum siap. File jszip.min.js tidak ditemukan.');
         }
         const zip = await JSZip.loadAsync(TEMPLATE_BASE64, { base64: true });
+        const stylesFile = zip.file('xl/styles.xml');
+        if (stylesFile) {
+            zip.file('xl/styles.xml', enhanceCAStylesXml(await stylesFile.async('string')));
+        }
         zip.file(SHEET_PATH, createWorksheetXml(data || {}));
         return zip.generateAsync({
             type: 'blob',
