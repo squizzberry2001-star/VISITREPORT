@@ -20,7 +20,7 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp36-home-toolbar-minimal';
+const APP_BUILD_VERSION = 'revamp37-home-pill-clean-navbar';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1847,7 +1847,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
   }
 
   return (
-    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-8">
+    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-8 md:px-8 md:py-8 md:pb-8">
       <section className="dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5">
         <div className="flex items-start justify-between gap-3">
           <button type="button" onClick={onTitleTap} className="min-w-0 text-left">
@@ -1860,26 +1860,28 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
           </div>
         </div>
         <div className="mt-3 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none]">
-          <div className="flex min-w-max items-center gap-2" data-build="revamp36-home-toolbar-minimal">
+          <div className="flex min-w-max items-center gap-2" data-build="revamp37-home-pill-clean-navbar">
             <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
-            <button type="button" className="inline-flex h-11 items-center gap-2 rounded-full bg-audit-primary px-4 text-sm font-bold text-white shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onNewVisit}>
-              <Icon name="plus" className="h-4 w-4" />
-              <span>Buat Visit</span>
+            <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full bg-audit-primary px-3.5 text-xs font-extrabold text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onNewVisit}>
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-white">
+                <Icon name="plus" className="h-3.5 w-3.5 text-white" />
+              </span>
+              <span>Tambah</span>
             </button>
-            <button type="button" className={cx('inline-flex h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-sm font-bold text-slate-700 ring-1 ring-slate-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
-              <Icon name="download" className="h-4 w-4 text-audit-primary" />
+            <button type="button" className={cx('inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
+              <Icon name="download" className="h-3.5 w-3.5 text-audit-primary" />
               <span>Backup</span>
             </button>
-            <button type="button" className={cx('inline-flex h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-sm font-bold text-slate-700 ring-1 ring-slate-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
-              <Icon name="upload" className="h-4 w-4 text-audit-primary" />
+            <button type="button" className={cx('inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
+              <Icon name="upload" className="h-3.5 w-3.5 text-audit-primary" />
               <span>Restore</span>
             </button>
-            <button type="button" className="inline-flex h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-sm font-bold text-slate-700 ring-1 ring-slate-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
-              <Icon name="spark" className="h-4 w-4 text-audit-primary" />
+            <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
+              <Icon name="spark" className="h-3.5 w-3.5 text-audit-primary" />
               <span>Install</span>
             </button>
-            <button type="button" className="inline-flex h-11 items-center gap-2 rounded-full bg-rose-50 px-4 text-sm font-bold text-rose-600 ring-1 ring-rose-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
-              <Icon name="trash" className="h-4 w-4" />
+            <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
+              <Icon name="trash" className="h-3.5 w-3.5" />
               <span>Hapus</span>
             </button>
           </div>
@@ -3186,12 +3188,12 @@ function App() {
   }
 
   return (
-    <div className="audit-shell min-h-screen md:grid md:grid-cols-[300px_minmax(0,1fr)]">
-      <DesktopSidebar screen={screen} setScreen={setScreen} visit={visit} activeSection={activeSection} goSection={goSection} onNewVisit={() => setNewVisitOpen(true)} onClearData={clearCurrentData} onTitleTap={handleTitleTap} />
+    <div className={cx("audit-shell min-h-screen", screen !== 'dashboard' && "md:grid md:grid-cols-[300px_minmax(0,1fr)]")}>
+      {screen !== 'dashboard' ? <DesktopSidebar screen={screen} setScreen={setScreen} visit={visit} activeSection={activeSection} goSection={goSection} onNewVisit={() => setNewVisitOpen(true)} onClearData={clearCurrentData} onTitleTap={handleTitleTap} /> : null}
       <div className="flex min-h-screen min-w-0 flex-col">
         <MobileTopBar screen={screen} setScreen={setScreen} visit={visit} activeSection={activeSection} goSection={goSection} onNewVisit={() => setNewVisitOpen(true)} onTitleTap={handleTitleTap} />
         <div className="min-w-0 flex-1">{content}</div>
-        <MobileBottomNav screen={screen} setScreen={setScreen} visit={visit} onNewVisit={() => setNewVisitOpen(true)} onClearData={clearCurrentData} />
+        {screen !== 'dashboard' ? <MobileBottomNav screen={screen} setScreen={setScreen} visit={visit} onNewVisit={() => setNewVisitOpen(true)} onClearData={clearCurrentData} /> : null}
       </div>
       {welcomeOpen ? <WelcomeOverlay config={welcomeConfig} onDone={closeWelcome} /> : null}
       <NewVisitModal open={newVisitOpen} onClose={() => setNewVisitOpen(false)} onCreate={createNewVisit} />
