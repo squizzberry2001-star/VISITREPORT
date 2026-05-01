@@ -20,6 +20,10 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+const APP_BUILD_VERSION = 'revamp32-autosync-assets';
+const APP_VERSION_KEY = 'rbv_app_version_v1';
+const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
+const VERSION_ENDPOINT = 'version.json';
 
 function cx(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -1852,18 +1856,20 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl">Regional Bestie Visit Report</h1>
           </button>
           <div className="flex shrink-0 items-center gap-2">
-            <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
-            <button type="button" className={cx('grid h-12 w-12 place-items-center rounded-full bg-white/85 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
-              <Icon name="download" className="h-5 w-5" />
-            </button>
-            <button type="button" className={cx('grid h-12 w-12 place-items-center rounded-full bg-white/85 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
-              <Icon name="upload" className="h-5 w-5" />
-            </button>
             <button type="button" className="install-info-button" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
               <span className="install-info-button__icon"><Icon name="spark" className="h-5 w-5" /></span>
               <span className="install-info-button__text">Install Apps</span>
             </button>
           </div>
+        </div>
+        <div className="mt-4 flex items-center justify-end gap-2 md:justify-start" data-build="revamp31-backup-restore-toolbar">
+          <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
+          <button type="button" className={cx('grid h-12 w-12 place-items-center rounded-full bg-white/90 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
+            <Icon name="download" className="h-5 w-5" />
+          </button>
+          <button type="button" className={cx('grid h-12 w-12 place-items-center rounded-full bg-white/90 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
+            <Icon name="upload" className="h-5 w-5" />
+          </button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>
@@ -2922,9 +2928,73 @@ function App() {
 
   useEffect(() => {
     refreshHistory();
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp30').catch(() => {});
+    let cancelled = false;
+    let versionTimer = null;
+
+    function reloadWithVersion(version) {
+      if (cancelled || !version) return;
+      const now = Date.now();
+      const lastReload = Number(sessionStorage.getItem(APP_RELOAD_LOCK_KEY) || 0);
+      if (now - lastReload < 12000) return;
+      try {
+        sessionStorage.setItem(APP_RELOAD_LOCK_KEY, String(now));
+        localStorage.setItem(APP_VERSION_KEY, version);
+      } catch (error) {}
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', version);
+      url.searchParams.set('sync', String(now));
+      window.location.replace(url.toString());
     }
+
+    async function clearAppCaches() {
+      if (!('caches' in window)) return;
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter((key) => key.startsWith('bestie-visit-')).map((key) => caches.delete(key)));
+      } catch (error) {}
+    }
+
+    async function checkLatestVersion() {
+      try {
+        const response = await fetch(`${VERSION_ENDPOINT}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const info = await response.json();
+        const latest = String(info.version || info.build || '').trim();
+        if (!latest) return;
+        const saved = localStorage.getItem(APP_VERSION_KEY);
+        if (!saved) localStorage.setItem(APP_VERSION_KEY, APP_BUILD_VERSION);
+        if (latest !== APP_BUILD_VERSION) {
+          await clearAppCaches();
+          reloadWithVersion(latest);
+          return;
+        }
+        localStorage.setItem(APP_VERSION_KEY, latest);
+      } catch (error) {}
+    }
+
+    async function registerServiceWorker() {
+      if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+      try {
+        const registration = await navigator.serviceWorker.register(`service-worker.js?v=${APP_BUILD_VERSION}`);
+        registration.update().catch(() => {});
+        if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) reloadWithVersion(APP_BUILD_VERSION);
+          });
+        });
+      } catch (error) {}
+    }
+
+    registerServiceWorker();
+    checkLatestVersion();
+    versionTimer = window.setInterval(checkLatestVersion, 180000);
+    return () => {
+      cancelled = true;
+      if (versionTimer) window.clearInterval(versionTimer);
+    };
   }, []);
 
   useEffect(() => {
