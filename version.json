@@ -1,6 +1,6 @@
 {
-  "version": "revamp46-backup-restore-pdf-admin-welcome",
-  "build": "revamp46-backup-restore-pdf-admin-welcome",
+  "version": "revamp47-pdf-text-overflow-fix",
+  "build": "revamp47-pdf-text-overflow-fix",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }

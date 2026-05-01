@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp46-backup-restore-pdf-admin-welcome';
+const APP_VERSION = 'revamp47-pdf-text-overflow-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
