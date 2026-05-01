@@ -19,7 +19,7 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp42-linked-device-convex-rules';
+const APP_BUILD_VERSION = 'revamp43-floating-new-visit-fixed';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1873,7 +1873,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp42-linked-device-convex-rules" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp43-floating-new-visit-fixed" },
                 React.createElement("div", { className: "grid grid-cols-3 gap-2" },
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setLinkedOpen(true) },
                         React.createElement(Icon, { name: "qr", className: "h-4 w-4 shrink-0 text-audit-primary" }),
@@ -1904,7 +1904,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
                     React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
-        React.createElement("button", { type: "button", className: "fixed bottom-5 left-1/2 z-40 inline-flex h-14 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 items-center justify-center gap-2 rounded-full bg-audit-primary px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98] md:bottom-8 md:w-[360px]", onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
+        React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: { position: "fixed", left: "50%", bottom: "calc(18px + env(safe-area-inset-bottom, 0px))", transform: "translateX(-50%)", zIndex: 80, width: "min(360px, calc(100vw - 32px))", height: "56px", background: "#0f766e", opacity: 1, backdropFilter: "none", WebkitBackdropFilter: "none" }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
             React.createElement(Icon, { name: "plus", className: "h-5 w-5" }),
             React.createElement("span", null, "Kunjungan Baru")),
         React.createElement(LinkedDeviceModal, { open: linkedOpen, onClose: () => setLinkedOpen(false), historyCount: history.length }),
