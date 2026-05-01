@@ -19,7 +19,7 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp37-home-pill-clean-navbar';
+const APP_BUILD_VERSION = 'revamp39-home-buttons-grid-icons';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1707,23 +1707,22 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none]" },
-                React.createElement("div", { className: "flex min-w-max items-center gap-2", "data-build": "revamp37-home-pill-clean-navbar" },
-                    React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center gap-2 rounded-full bg-audit-primary px-3.5 text-xs font-extrabold text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onNewVisit },
-                        React.createElement("span", { className: "grid h-6 w-6 place-items-center rounded-full bg-white/20 text-white" },
-                            React.createElement(Icon, { name: "plus", className: "h-3.5 w-3.5 text-white" })),
+            React.createElement("div", { className: "mt-3", "data-build": "revamp39-home-buttons-grid-icons" },
+                React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
+                React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-5" },
+                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-audit-primary px-3 text-xs font-extrabold text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onNewVisit },
+                        React.createElement(Icon, { name: "plus", className: "h-3.5 w-3.5 text-white" }),
                         React.createElement("span", null, "Tambah")),
-                    React.createElement("button", { type: "button", className: cx('inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                    React.createElement("button", { type: "button", className: cx('inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-3.5 w-3.5 text-audit-primary" }),
                         React.createElement("span", null, "Backup")),
-                    React.createElement("button", { type: "button", className: cx('inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
+                    React.createElement("button", { type: "button", className: cx('inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-3.5 w-3.5 text-audit-primary" }),
                         React.createElement("span", null, "Restore")),
-                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-3.5 w-3.5 text-audit-primary" }),
                         React.createElement("span", null, "Install")),
-                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-3.5 text-xs font-extrabold text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
+                    React.createElement("button", { type: "button", className: "col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98] sm:col-span-1", onClick: onClearHistory },
                         React.createElement(Icon, { name: "trash", className: "h-3.5 w-3.5" }),
                         React.createElement("span", null, "Hapus"))))),
         React.createElement("section", null,
