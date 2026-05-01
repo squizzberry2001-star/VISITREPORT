@@ -20,7 +20,7 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp41-home-floating-linked-device';
+const APP_BUILD_VERSION = 'revamp42-linked-device-convex-rules';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1857,6 +1857,11 @@ function parseLinkedDevicePayload(raw) {
   return null;
 }
 
+
+function linkedDeviceQrFallbackUrl(payload) {
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=' + encodeURIComponent(payload);
+}
+
 function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [scanOpen, setScanOpen] = useState(false);
@@ -1883,9 +1888,9 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
     }
     const payload = buildLinkedDevicePayload();
     setQrText(payload);
-    setQrDataUrl('');
+    setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
     if (window.QRCode?.toDataURL) {
-      window.QRCode.toDataURL(payload, { width: 240, margin: 1, errorCorrectionLevel: 'M' }, (error, url) => {
+      window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
         if (!error && url) setQrDataUrl(url);
       });
     }
@@ -1957,13 +1962,12 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
 
   if (!open) return null;
 
-  return React.createElement('div', { className: 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/55 p-3 backdrop-blur-sm md:items-center' },
-    React.createElement('div', { className: 'w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' },
+  return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' },
+    React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' },
       React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' },
         React.createElement('div', null,
           React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
-          React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR ke Desktop'),
-          React.createElement('p', { className: 'mt-1 text-sm leading-5 text-slate-500' }, 'Model seperti WhatsApp: tampilkan QR di desktop, lalu scan dari HP untuk menandai device terhubung.')
+          React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')
         ),
         React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' },
           React.createElement(Icon, { name: 'close', className: 'h-5 w-5' })
@@ -1971,12 +1975,12 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
       ),
       React.createElement('div', { className: 'space-y-4 p-5' },
         React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
-          React.createElement('div', { className: 'mx-auto grid h-[260px] max-w-[260px] place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' },
+          React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' },
             qrDataUrl
-              ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain' })
-              : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'Membuat QR...')
+              ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
+              : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')
           ),
-          React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Di desktop: buka Home > Linked Device, tampilkan QR ini. Di HP: tekan Scan QR lalu arahkan kamera ke QR desktop.')
+          React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')
         ),
         React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
           React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner },
@@ -1988,11 +1992,11 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
             React.createElement('span', null, 'Salin Kode')
           )
         ),
-        scanOpen ? React.createElement('div', { className: 'overflow-hidden rounded-3xl bg-slate-950 p-2' },
-          React.createElement('video', { ref: videoRef, className: 'aspect-video w-full rounded-2xl object-cover', muted: true, playsInline: true })
+        scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' },
+          React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })
         ) : null,
-        React.createElement('div', { className: 'rounded-2xl bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800 ring-1 ring-amber-200' },
-          'Catatan: QR ini menandai perangkat terhubung secara lokal. Untuk auto-sync real-time antar device seperti WhatsApp sepenuhnya, tetap perlu server/backend sync.'
+        React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' },
+          'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'
         ),
         scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null,
         React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount))
@@ -2015,7 +2019,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
   }, []);
 
   return (
-    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-24 md:px-8 md:py-8 md:pb-24">
+    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-28">
       <section className="dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5">
         <div className="flex items-start justify-between gap-3">
           <button type="button" onClick={onTitleTap} className="min-w-0 text-left">
@@ -2027,7 +2031,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp41-home-floating-linked-device">
+        <div className="mt-3" data-build="revamp42-linked-device-convex-rules">
           <div className="grid grid-cols-3 gap-2">
             <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setLinkedOpen(true)}>
               <Icon name="qr" className="h-4 w-4 shrink-0 text-audit-primary" />
@@ -2073,7 +2077,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
           <EmptyState icon="clipboard" title="Belum ada history" />
         )}
       </section>
-      <button type="button" className="fixed inset-x-4 bottom-5 z-40 mx-auto inline-flex h-14 max-w-sm items-center justify-center gap-2 rounded-full bg-audit-primary px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98] md:bottom-8 md:left-auto md:right-8 md:mx-0 md:w-auto" onClick={onNewVisit} aria-label="Buat kunjungan baru">
+      <button type="button" className="fixed bottom-5 left-1/2 z-40 inline-flex h-14 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 items-center justify-center gap-2 rounded-full bg-audit-primary px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98] md:bottom-8 md:w-[360px]" onClick={onNewVisit} aria-label="Buat kunjungan baru">
         <Icon name="plus" className="h-5 w-5" />
         <span>Kunjungan Baru</span>
       </button>
