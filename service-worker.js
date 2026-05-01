@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp41-home-floating-linked-device';
+const APP_VERSION = 'revamp42-linked-device-convex-rules';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
