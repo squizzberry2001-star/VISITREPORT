@@ -662,11 +662,11 @@
   }
 
   function makeObservationCompactRows(doc, row, tableWidth) {
-    const cellGap = 1.2;
-    const cellPadX = 2.6;
+    const cellGap = 1.0;
+    const cellPadX = 2.2;
     const fullW = tableWidth;
     const halfW = (tableWidth - cellGap) / 2;
-    const valueFontSize = 9.4;
+    const valueFontSize = 8.6;
 
     function buildField(label, value, width, options) {
       const opts = options || {};
@@ -734,9 +734,9 @@
 
   function observationCompactCellHeight(field) {
     if (!field) return 0;
-    const lineHeight = 3.85;
+    const lineHeight = 3.45;
     const lineCount = Math.max(1, (field.lines || ['-']).length);
-    return Math.max(10, 5.2 + lineCount * lineHeight);
+    return Math.max(8.8, 4.8 + lineCount * lineHeight);
   }
 
   function observationCompactRowHeight(row) {
@@ -747,7 +747,7 @@
     if (!field) {
       doc.setDrawColor(226, 232, 240);
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(x, y, width, height, 1.6, 1.6, 'FD');
+      doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
       return;
     }
     const valueFill = field.highlight ? field.highlight.fill : fillColor;
@@ -755,17 +755,17 @@
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.16);
     doc.setFillColor.apply(doc, valueFill);
-    doc.roundedRect(x, y, width, height, 1.6, 1.6, 'FD');
+    doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.9);
+    doc.setFontSize(6.6);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text(field.label, x + 2.4, y + 3.7, { baseline: 'alphabetic' });
+    doc.text(field.label, x + 2.0, y + 3.3, { baseline: 'alphabetic' });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
-    doc.setFontSize(9.4);
+    doc.setFontSize(8.6);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.4, y + 7.8, 3.85, { bold: field.boldValue, textColor: valueText, fontSize: 9.4 });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 6.9, 3.45, { bold: field.boldValue, textColor: valueText, fontSize: 8.6 });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -773,14 +773,14 @@
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageWidth, pageHeight, 'F');
     drawTopBar(doc, title, palette, pageWidth);
-    return 24;
+    return 22;
   }
 
   function observationCompactSegmentHeight(rows) {
-    const titleH = 6.2;
-    const titleGap = 1.1;
-    const pad = 2.8;
-    const rowGap = 1.0;
+    const titleH = 5.4;
+    const titleGap = 0.8;
+    const pad = 2.2;
+    const rowGap = 0.75;
     let bodyH = pad * 2;
     rows.forEach(function (row, index) {
       bodyH += observationCompactRowHeight(row) + (index ? rowGap : 0);
@@ -789,11 +789,11 @@
   }
 
   function drawObservationCompactSegment(doc, rowIndex, totalRows, rows, x, y, width, palette, continuation) {
-    const titleH = 6.2;
-    const titleGap = 1.1;
-    const pad = 2.8;
-    const rowGap = 1.0;
-    const cellGap = 1.2;
+    const titleH = 5.4;
+    const titleGap = 0.8;
+    const pad = 2.2;
+    const rowGap = 0.75;
+    const cellGap = 1.0;
     const tableY = y + titleH + titleGap;
     const tableW = width;
     const innerW = tableW - pad * 2;
@@ -804,16 +804,16 @@
     });
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.2);
+    doc.setFontSize(9.2);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 4.8);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 4.2);
 
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.22);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x, tableY, tableW, bodyH, 3, 3, 'FD');
+    doc.roundedRect(x, tableY, tableW, bodyH, 2.2, 2.2, 'FD');
     doc.setFillColor.apply(doc, palette.primary);
-    doc.roundedRect(x, tableY, tableW, 1.0, 3, 3, 'F');
+    doc.roundedRect(x, tableY, tableW, 0.8, 2.2, 2.2, 'F');
 
     let cy = tableY + pad;
     rows.forEach(function (row, index) {
@@ -837,8 +837,8 @@
     const x = margin;
     const width = pageWidth - margin * 2;
     const bottom = pageHeight - 12;
-    const gap = 3.2;
-    const innerTableWidth = width - 5.6;
+    const gap = 2.4;
+    const innerTableWidth = width - 4.4;
     let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
 
     cleanRows.forEach(function (row, rowIndex) {

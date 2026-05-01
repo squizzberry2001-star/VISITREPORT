@@ -454,6 +454,91 @@ async function clearVisitRecords() {
   });
 }
 
+
+async function getAllVisitRecordsForBackup() {
+  try {
+    const db = await openDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(REPORT_DB_STORE, 'readonly');
+      const request = tx.objectStore(REPORT_DB_STORE).getAll();
+      request.onsuccess = () => resolve((request.result || []).map((item) => item?.data || item).filter(Boolean));
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.warn('Gagal membaca data backup IndexedDB:', error);
+    return [];
+  }
+}
+
+function readBackupFileText(file) {
+  if (file && typeof file.text === 'function') return file.text();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+async function backupVisitReportData() {
+  const localData = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index) || '';
+    if (key.indexOf('rbv_') === 0) localData[key] = localStorage.getItem(key);
+  }
+  const visits = await getAllVisitRecordsForBackup();
+  const payload = {
+    app: 'regional-bestie-visit-report',
+    type: 'device-transfer-backup',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    localStorage: localData,
+    visits
+  };
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  downloadBlob(blob, `bestie-visit-backup-${stamp}.json`);
+  return payload;
+}
+
+async function restoreVisitReportDataFromFile(file) {
+  const raw = await readBackupFileText(file);
+  const payload = JSON.parse(raw);
+  if (!payload || payload.app !== 'regional-bestie-visit-report') {
+    throw new Error('File backup tidak sesuai aplikasi ini.');
+  }
+  const visits = Array.isArray(payload.visits) ? payload.visits.filter((item) => item && item.id) : [];
+  const ok = confirmAction(`Restore data backup ini? Data lokal visit saat ini akan diganti.
+
+Jumlah visit backup: ${visits.length}`);
+  if (!ok) return false;
+
+  await clearVisitRecords();
+  for (const visit of visits) {
+    await putVisitRecord({ ...visit, updatedAt: visit.updatedAt || Date.now() });
+  }
+
+  if (payload.localStorage && typeof payload.localStorage === 'object') {
+    Object.entries(payload.localStorage).forEach(([key, value]) => {
+      if (key.indexOf('rbv_') === 0) localStorage.setItem(key, String(value ?? ''));
+    });
+  }
+
+  const backupMeta = (() => {
+    try {
+      const parsed = JSON.parse(String(payload.localStorage?.[HISTORY_META_KEY] || '[]'));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  })();
+  saveHistoryMeta(backupMeta.length ? backupMeta : visits.map(historyMetaFromVisit));
+  if (!localStorage.getItem(ACTIVE_VISIT_KEY) && visits[0]?.id) localStorage.setItem(ACTIVE_VISIT_KEY, visits[0].id);
+  alert('Restore data selesai. Aplikasi akan dimuat ulang.');
+  window.location.reload();
+  return true;
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -487,6 +572,7 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
     image: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 16 5-5 4 4 2-2 5 5"/></>,
     shield: <><path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z"/><path d="m9 12 2 2 4-5"/></>,
     download: <><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></>,
+    upload: <><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></>,
     eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="3"/></>,
     eraser: <><path d="m3 17 9-9 6 6-6 6H7l-4-3Z"/><path d="m14 6 4-4 4 4-4 4"/><path d="M12 20h9"/></>,
     close: <><path d="M6 6l12 12"/><path d="M18 6 6 18"/></>,
@@ -1717,6 +1803,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
   const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
   const [installOpen, setInstallOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const restoreInputRef = useRef(null);
   useEffect(() => {
     function handleBeforeInstallPrompt(event) {
       event.preventDefault();
@@ -1725,6 +1814,35 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
+
+  async function handleBackupData() {
+    if (backupBusy) return;
+    try {
+      setBackupBusy(true);
+      await backupVisitReportData();
+    } catch (error) {
+      console.warn('Backup data gagal:', error);
+      alert(error?.message || 'Backup data gagal.');
+    } finally {
+      setBackupBusy(false);
+    }
+  }
+
+  async function handleRestoreFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || restoreBusy) return;
+    try {
+      setRestoreBusy(true);
+      await restoreVisitReportDataFromFile(file);
+    } catch (error) {
+      console.warn('Restore data gagal:', error);
+      alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
+
   return (
     <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-8">
       <section className="dashboard-compact glass-panel overflow-hidden rounded-[26px] p-4 md:rounded-[30px] md:p-7">
@@ -1733,10 +1851,19 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100">Dashboard</span>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl">Regional Bestie Visit Report</h1>
           </button>
-          <button type="button" className="install-info-button" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
-            <span className="install-info-button__icon"><Icon name="spark" className="h-5 w-5" /></span>
-            <span className="install-info-button__text">Install Apps</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
+            <button type="button" className={cx('grid h-12 w-12 place-items-center rounded-full bg-white/85 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
+              <Icon name="download" className="h-5 w-5" />
+            </button>
+            <button type="button" className={cx('grid h-12 w-12 place-items-center rounded-full bg-white/85 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
+              <Icon name="upload" className="h-5 w-5" />
+            </button>
+            <button type="button" className="install-info-button" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
+              <span className="install-info-button__icon"><Icon name="spark" className="h-5 w-5" /></span>
+              <span className="install-info-button__text">Install Apps</span>
+            </button>
+          </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>
@@ -2796,7 +2923,7 @@ function App() {
   useEffect(() => {
     refreshHistory();
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('service-worker.js?v=revamp28').catch(() => {});
+      navigator.serviceWorker.register('service-worker.js?v=revamp30').catch(() => {});
     }
   }, []);
 

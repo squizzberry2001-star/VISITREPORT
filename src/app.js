@@ -432,6 +432,92 @@ async function clearVisitRecords() {
         tx.onerror = () => reject(tx.error);
     });
 }
+
+async function getAllVisitRecordsForBackup() {
+    try {
+        const db = await openDb();
+        return await new Promise((resolve, reject) => {
+            const tx = db.transaction(REPORT_DB_STORE, 'readonly');
+            const request = tx.objectStore(REPORT_DB_STORE).getAll();
+            request.onsuccess = () => resolve((request.result || []).map((item) => (item === null || item === void 0 ? void 0 : item.data) || item).filter(Boolean));
+            request.onerror = () => reject(request.error);
+        });
+    }
+    catch (error) {
+        console.warn('Gagal membaca data backup IndexedDB:', error);
+        return [];
+    }
+}
+function readBackupFileText(file) {
+    if (file && typeof file.text === 'function')
+        return file.text();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+async function backupVisitReportData() {
+    const localData = {};
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index) || '';
+        if (key.indexOf('rbv_') === 0)
+            localData[key] = localStorage.getItem(key);
+    }
+    const visits = await getAllVisitRecordsForBackup();
+    const payload = {
+        app: 'regional-bestie-visit-report',
+        type: 'device-transfer-backup',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        localStorage: localData,
+        visits
+    };
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    downloadBlob(blob, `bestie-visit-backup-${stamp}.json`);
+    return payload;
+}
+async function restoreVisitReportDataFromFile(file) {
+    var _a, _b;
+    const raw = await readBackupFileText(file);
+    const payload = JSON.parse(raw);
+    if (!payload || payload.app !== 'regional-bestie-visit-report') {
+        throw new Error('File backup tidak sesuai aplikasi ini.');
+    }
+    const visits = Array.isArray(payload.visits) ? payload.visits.filter((item) => item && item.id) : [];
+    const ok = confirmAction(`Restore data backup ini? Data lokal visit saat ini akan diganti.
+
+Jumlah visit backup: ${visits.length}`);
+    if (!ok)
+        return false;
+    await clearVisitRecords();
+    for (const visit of visits) {
+        await putVisitRecord(Object.assign(Object.assign({}, visit), { updatedAt: visit.updatedAt || Date.now() }));
+    }
+    if (payload.localStorage && typeof payload.localStorage === 'object') {
+        Object.entries(payload.localStorage).forEach(([key, value]) => {
+            if (key.indexOf('rbv_') === 0)
+                localStorage.setItem(key, String(value !== null && value !== void 0 ? value : ''));
+        });
+    }
+    const backupMeta = (() => {
+        try {
+            const parsed = JSON.parse(String(((_a = payload.localStorage) === null || _a === void 0 ? void 0 : _a[HISTORY_META_KEY]) || '[]'));
+            return Array.isArray(parsed) ? parsed : [];
+        }
+        catch (error) {
+            return [];
+        }
+    })();
+    saveHistoryMeta(backupMeta.length ? backupMeta : visits.map(historyMetaFromVisit));
+    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && ((_b = visits[0]) === null || _b === void 0 ? void 0 : _b.id))
+        localStorage.setItem(ACTIVE_VISIT_KEY, visits[0].id);
+    alert('Restore data selesai. Aplikasi akan dimuat ulang.');
+    window.location.reload();
+    return true;
+}
 function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -519,6 +605,10 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M12 3v12" }),
             React.createElement("path", { d: "m7 10 5 5 5-5" }),
             React.createElement("path", { d: "M5 21h14" })),
+        upload: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M12 21V9" }),
+            React.createElement("path", { d: "m7 14 5-5 5 5" }),
+            React.createElement("path", { d: "M5 3h14" })),
         eye: React.createElement(React.Fragment, null,
             React.createElement("path", { d: "M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" }),
             React.createElement("circle", { cx: "12", cy: "12", r: "3" })),
@@ -1561,6 +1651,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [backupBusy, setBackupBusy] = useState(false);
+    const [restoreBusy, setRestoreBusy] = useState(false);
+    const restoreInputRef = useRef(null);
     useEffect(() => {
         function handleBeforeInstallPrompt(event) {
             event.preventDefault();
@@ -1569,16 +1662,55 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
+    async function handleBackupData() {
+        if (backupBusy)
+            return;
+        try {
+            setBackupBusy(true);
+            await backupVisitReportData();
+        }
+        catch (error) {
+            console.warn('Backup data gagal:', error);
+            alert((error === null || error === void 0 ? void 0 : error.message) || 'Backup data gagal.');
+        }
+        finally {
+            setBackupBusy(false);
+        }
+    }
+    async function handleRestoreFile(event) {
+        var _a;
+        const file = (_a = event.target.files) === null || _a === void 0 ? void 0 : _a[0];
+        event.target.value = '';
+        if (!file || restoreBusy)
+            return;
+        try {
+            setRestoreBusy(true);
+            await restoreVisitReportDataFromFile(file);
+        }
+        catch (error) {
+            console.warn('Restore data gagal:', error);
+            alert((error === null || error === void 0 ? void 0 : error.message) || 'Restore data gagal. Pastikan file backup benar.');
+        }
+        finally {
+            setRestoreBusy(false);
+        }
+    }
     return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-8" },
         React.createElement("section", { className: "dashboard-compact glass-panel overflow-hidden rounded-[26px] p-4 md:rounded-[30px] md:p-7" },
             React.createElement("div", { className: "flex items-start justify-between gap-3" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("span", { className: "inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-audit-primary ring-1 ring-emerald-100" }, "Dashboard"),
                     React.createElement("h1", { className: "mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-5xl" }, "Regional Bestie Visit Report")),
-                React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
-                    React.createElement("span", { className: "install-info-button__icon" },
-                        React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
-                    React.createElement("span", { className: "install-info-button__text" }, "Install Apps"))),
+                React.createElement("div", { className: "flex shrink-0 items-center gap-2" },
+                    React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
+                    React.createElement("button", { type: "button", className: cx('grid h-12 w-12 place-items-center rounded-full bg-white/85 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                        React.createElement(Icon, { name: "download", className: "h-5 w-5" })),
+                    React.createElement("button", { type: "button", className: cx('grid h-12 w-12 place-items-center rounded-full bg-white/85 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
+                        React.createElement(Icon, { name: "upload", className: "h-5 w-5" })),
+                    React.createElement("button", { type: "button", className: "install-info-button", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement("span", { className: "install-info-button__icon" },
+                            React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
+                        React.createElement("span", { className: "install-info-button__text" }, "Install Apps")))),
             React.createElement("div", { className: "mt-4 grid grid-cols-2 gap-2" },
                 React.createElement(Button, { icon: "plus", onClick: onNewVisit }, "Buat Kunjungan Baru"),
                 React.createElement(Button, { variant: "danger", icon: "trash", onClick: onClearHistory }, "Hapus Semua History")),
@@ -2670,7 +2802,7 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js?v=revamp28').catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=revamp30').catch(() => { });
         }
     }, []);
     useEffect(() => {
