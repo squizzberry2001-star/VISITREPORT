@@ -686,7 +686,7 @@
 
   function makeObservationFieldParts(doc, row, contentWidth, labelWidth) {
     const valueWidth = Math.max(45, contentWidth - labelWidth - 8);
-    const maxLinesPerPart = 18;
+    const maxLinesPerPart = 26;
     const defs = [
       { label: 'Temuan', value: row.temuan || '-' },
       { label: 'Kondisi Ideal', value: row.kondisiIdeal || '-' },
@@ -713,29 +713,29 @@
   }
 
   function observationFieldHeight(field) {
-    const lineHeight = 5.3;
-    return Math.max(11, 6.4 + Math.max(1, (field.lines || ['-']).length) * lineHeight);
+    const lineHeight = 4.1;
+    return Math.max(8.8, 4.6 + Math.max(1, (field.lines || ['-']).length) * lineHeight);
   }
 
   function drawObservationVerticalField(doc, field, x, y, width, labelWidth, rowHeight, palette, fillColor) {
     const valueFill = field.highlight ? field.highlight.fill : fillColor;
     const valueText = field.highlight ? field.highlight.text : palette.ink;
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.22);
-    doc.setFillColor(236, 253, 245);
-    doc.roundedRect(x, y, labelWidth, rowHeight, 2.2, 2.2, 'FD');
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.18);
+    doc.setFillColor(240, 253, 250);
+    doc.roundedRect(x, y, labelWidth, rowHeight, 1.8, 1.8, 'FD');
     doc.setFillColor.apply(doc, valueFill);
-    doc.roundedRect(x + labelWidth, y, width - labelWidth, rowHeight, 2.2, 2.2, 'FD');
+    doc.roundedRect(x + labelWidth, y, width - labelWidth, rowHeight, 1.8, 1.8, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.6);
+    doc.setFontSize(7.6);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text(doc.splitTextToSize(field.label, labelWidth - 5.5), x + 3.2, y + 6.5, { lineHeightFactor: 1.05 });
+    doc.text(doc.splitTextToSize(field.label, labelWidth - 4.5), x + 2.5, y + 5.2, { lineHeightFactor: 1.0 });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
-    doc.setFontSize(12.5);
+    doc.setFontSize(10.1);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + labelWidth + 4, y + 7.2, 5.3, { bold: field.boldValue, textColor: valueText, fontSize: 12.5 });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + labelWidth + 3, y + 5.6, 4.1, { bold: field.boldValue, textColor: valueText, fontSize: 10.1 });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -746,39 +746,42 @@
     return 27;
   }
 
+  function observationSegmentChromeHeight() {
+    return 7.4 + 1.2 + 6.4;
+  }
+
   function drawObservationVerticalSegment(doc, title, row, rowIndex, totalRows, fields, x, y, width, palette, continuation) {
-    const pad = 4.6;
-    const labelWidth = Math.min(54, width * .25);
-    const fieldGap = 1.55;
-    const headerLines = doc.splitTextToSize(String(rowIndex + 1) + '. ' + text(row.temuan, 'Temuan ' + String(rowIndex + 1)), width - pad * 2);
-    const visibleHeaderLines = headerLines.slice(0, 2);
-    const headerH = Math.max(15, 8.6 + visibleHeaderLines.length * 5.2);
+    const pad = 3.2;
+    const labelWidth = Math.min(44, width * .22);
+    const fieldGap = 1.0;
+    const titleH = 7.4;
+    const titleGap = 1.2;
     let fieldHeightTotal = 0;
     fields.forEach(function (field, index) {
       fieldHeightTotal += observationFieldHeight(field) + (index ? fieldGap : 0);
     });
-    const height = headerH + 5 + fieldHeightTotal + pad;
+    const tableH = fieldHeightTotal + pad * 2;
+    const height = titleH + titleGap + tableH;
+    const tableY = y + titleH + titleGap;
 
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.3);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.4);
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 5.2);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.22);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x, y, width, height, 4, 4, 'FD');
+    doc.roundedRect(x, tableY, width, tableH, 3, 3, 'FD');
 
     doc.setFillColor.apply(doc, palette.primary);
-    doc.roundedRect(x, y, width, headerH, 4, 4, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.8);
-    doc.setTextColor(230, 255, 255);
-    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x + pad, y + 5.6);
-    doc.setFontSize(12.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text(visibleHeaderLines, x + pad, y + 11.3, { lineHeightFactor: 1.02 });
+    doc.roundedRect(x, tableY, width, 1.1, 3, 3, 'F');
 
-    let cy = y + headerH + 3.2;
+    let cy = tableY + pad;
     fields.forEach(function (field, index) {
       if (index) cy += fieldGap;
       const rowH = observationFieldHeight(field);
-      drawObservationVerticalField(doc, field, x + pad, cy, width - pad * 2, labelWidth, rowH, palette, index % 2 ? [248, 250, 252] : [255, 255, 255]);
+      drawObservationVerticalField(doc, field, x + pad, cy, width - pad * 2, labelWidth, rowH, palette, index % 2 ? [249, 250, 251] : [255, 255, 255]);
       cy += rowH;
     });
     return height;
@@ -790,9 +793,9 @@
     const x = margin;
     const width = pageWidth - margin * 2;
     const bottom = pageHeight - 13;
-    const gap = 5;
-    const labelWidth = Math.min(54, width * .25);
-    const contentWidth = width - 9.2;
+    const gap = 3.4;
+    const labelWidth = Math.min(44, width * .22);
+    const contentWidth = width - 6.4;
     let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
 
     cleanRows.forEach(function (row, rowIndex) {
@@ -800,11 +803,8 @@
       let remaining = parts.slice();
       let continuation = false;
       while (remaining.length) {
-        const headerLines = doc.splitTextToSize(String(rowIndex + 1) + '. ' + text(row.temuan, 'Temuan ' + String(rowIndex + 1)), width - 9.2);
-        const headerH = Math.max(15, 8.6 + Math.min(2, headerLines.length) * 5.2);
-        const padAndHeader = headerH + 5 + 4.6;
         const available = Math.max(42, bottom - y);
-        let used = padAndHeader;
+        let used = observationSegmentChromeHeight();
         const segment = [];
         for (let i = 0; i < remaining.length; i += 1) {
           const h = observationFieldHeight(remaining[i]) + (segment.length ? 1.55 : 0);
@@ -830,7 +830,7 @@
           y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
         }
       }
-      if (y > bottom - 35 && rowIndex < cleanRows.length - 1) {
+      if (y > bottom - 24 && rowIndex < cleanRows.length - 1) {
         y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
       }
     });
