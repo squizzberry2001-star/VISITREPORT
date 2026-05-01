@@ -1,0 +1,24 @@
+{
+  "name": "visitreport",
+  "version": "1.0.0",
+  "description": "Aplikasi audit Regional Bestie berbasis React + Tailwind CSS.",
+  "main": "ca-assignment-export.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/squizzberry2001-star/VISITREPORT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/squizzberry2001-star/VISITREPORT/issues"
+  },
+  "homepage": "https://github.com/squizzberry2001-star/VISITREPORT#readme",
+  "dependencies": {
+    "convex": "^1.37.0"
+  }
+}

@@ -82,27 +82,12 @@ export const listVisits = query({
     since: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const linkedDeviceIds = new Set([args.deviceId]);
-
-    const asSource = await ctx.db
-      .query("deviceLinks")
-      .withIndex("by_source_device", (q) => q.eq("sourceDeviceId", args.deviceId))
-      .collect();
-    const asTarget = await ctx.db
-      .query("deviceLinks")
-      .withIndex("by_target_device", (q) => q.eq("targetDeviceId", args.deviceId))
+    const rows = await ctx.db
+      .query("visits")
+      .withIndex("by_owner_device", (q) => q.eq("ownerDeviceId", args.deviceId))
       .collect();
 
-    for (const link of [...asSource, ...asTarget]) {
-      if (link.status !== "linked") continue;
-      if (link.sourceDeviceId) linkedDeviceIds.add(link.sourceDeviceId);
-      if (link.targetDeviceId) linkedDeviceIds.add(link.targetDeviceId);
-    }
-
-    const rows = await ctx.db.query("visits").collect();
     return rows
-      .filter((item) => linkedDeviceIds.has(item.ownerDeviceId))
-      .filter((item) => !item.deletedAt)
       .filter((item) => !args.since || item.updatedAt > args.since)
       .sort((a, b) => b.updatedAt - a.updatedAt);
   },
