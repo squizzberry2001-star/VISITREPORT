@@ -19,7 +19,7 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp44-convex-client-sync';
+const APP_BUILD_VERSION = 'revamp45-linked-device-modal-layout';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1903,14 +1903,14 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
       streamRef.current = stream;
       const video = videoRef.current;
       if (!video) return;
       video.srcObject = stream;
       video.setAttribute('playsInline', 'true');
       await video.play();
-      setScanStatus('Arahkan kamera ke QR desktop.');
+      setScanStatus('Kamera aktif. Posisikan QR tepat di tengah frame.');
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -1938,39 +1938,122 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
 
   if (!open) return null;
 
-  return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' },
-    React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' },
-      React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' },
-        React.createElement('div', null,
-          React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
-          React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')
+  return React.createElement('div', {
+    className: 'linked-device-overlay',
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 90,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '16px',
+      background: 'rgba(15, 23, 42, 0.62)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)'
+    }
+  },
+    React.createElement('div', {
+      className: 'linked-device-modal',
+      style: {
+        width: 'min(100%, 430px)',
+        maxHeight: 'min(92dvh, 720px)',
+        overflowY: 'auto',
+        borderRadius: '28px',
+        background: '#ffffff',
+        boxShadow: '0 24px 70px rgba(15, 23, 42, 0.35)',
+        border: '1px solid rgba(226, 232, 240, 0.95)'
+      }
+    },
+      React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-4' },
+        React.createElement('div', { className: 'min-w-0' },
+          React.createElement('p', { className: 'text-[10px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
+          React.createElement('h2', { className: 'mt-1 text-lg font-black text-slate-950' }, scanOpen ? 'Scan QR Desktop' : 'Hubungkan Device')
         ),
         React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' },
           React.createElement(Icon, { name: 'close', className: 'h-5 w-5' })
         )
       ),
-      React.createElement('div', { className: 'space-y-4 p-5' },
-        React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
-          React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' },
-            qrDataUrl
-              ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
-              : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')
-          ),
-          React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')
-        ),
+      React.createElement('div', { className: 'space-y-3 p-4' },
+        scanOpen
+          ? React.createElement('div', {
+              className: 'mx-auto w-full',
+              style: {
+                maxWidth: '320px',
+                marginLeft: 'auto',
+                marginRight: 'auto'
+              }
+            },
+              React.createElement('div', {
+                className: 'relative overflow-hidden bg-slate-950 shadow-inner',
+                style: {
+                  width: '100%',
+                  aspectRatio: '1 / 1',
+                  borderRadius: '24px',
+                  padding: '8px'
+                }
+              },
+                React.createElement('video', {
+                  ref: videoRef,
+                  className: 'block h-full w-full object-cover',
+                  style: {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                    borderRadius: '18px',
+                    background: '#020617'
+                  },
+                  muted: true,
+                  playsInline: true
+                }),
+                React.createElement('div', {
+                  className: 'pointer-events-none absolute inset-0 grid place-items-center',
+                  style: { padding: '36px' }
+                },
+                  React.createElement('div', {
+                    style: {
+                      width: '100%',
+                      aspectRatio: '1 / 1',
+                      border: '2px solid rgba(255,255,255,0.9)',
+                      borderRadius: '18px',
+                      boxShadow: '0 0 0 999px rgba(2, 6, 23, 0.20)'
+                    }
+                  })
+                )
+              ),
+              React.createElement('p', { className: 'mt-3 text-center text-xs font-bold leading-5 text-slate-500' }, 'Arahkan kamera ke QR desktop. Pastikan QR berada di dalam frame.'),
+              React.createElement('button', {
+                type: 'button',
+                className: 'mt-3 h-11 w-full rounded-2xl bg-slate-100 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200',
+                onClick: () => { stopScanner(); setScanOpen(false); setScanStatus('Scanner ditutup.'); }
+              }, 'Tutup Kamera')
+            )
+          : React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
+              React.createElement('div', {
+                className: 'mx-auto grid place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200',
+                style: {
+                  width: 'min(260px, 100%)',
+                  height: 'min(260px, calc(100vw - 96px))',
+                  minHeight: '220px'
+                }
+              },
+                qrDataUrl
+                  ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl(linkedDeviceQrFallbackUrl(qrText || buildLinkedDevicePayload())) })
+                  : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'Membuat QR...')
+              ),
+              React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')
+            ),
         React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
           React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner },
             React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }),
-            React.createElement('span', null, 'Scan QR')
+            React.createElement('span', null, scanOpen ? 'Scan Ulang' : 'Scan QR')
           ),
           React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } },
             React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }),
             React.createElement('span', null, 'Salin Kode')
           )
         ),
-        scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' },
-          React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })
-        ) : null,
         React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' },
           'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'
         ),
@@ -2002,7 +2085,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp44-convex-client-sync" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp45-linked-device-modal-layout" },
                 React.createElement("div", { className: "grid grid-cols-3 gap-2" },
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setLinkedOpen(true) },
                         React.createElement(Icon, { name: "qr", className: "h-4 w-4 shrink-0 text-audit-primary" }),
