@@ -661,81 +661,111 @@
     return clipped;
   }
 
-  function drawObservationCompactField(doc, field, x, y, width, labelW, rowH, palette, fillColor) {
-    const valueFill = field.highlight ? field.highlight.fill : fillColor;
-    const valueText = field.highlight ? field.highlight.text : palette.ink;
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.22);
-    doc.setFillColor(236, 253, 245);
-    doc.roundedRect(x, y, labelW, rowH, 1.8, 1.8, 'FD');
-    doc.setFillColor.apply(doc, valueFill);
-    doc.roundedRect(x + labelW, y, width - labelW, rowH, 1.8, 1.8, 'FD');
+  function makeObservationCompactRows(doc, row, tableWidth) {
+    const cellGap = 1.2;
+    const cellPadX = 2.6;
+    const fullW = tableWidth;
+    const halfW = (tableWidth - cellGap) / 2;
+    const valueFontSize = 9.4;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor.apply(doc, palette.primary);
-    doc.text(doc.splitTextToSize(field.label, labelW - 5).slice(0, 2), x + 3, y + 5.8);
+    function buildField(label, value, width, options) {
+      const opts = options || {};
+      doc.setFontSize(valueFontSize);
+      doc.setFont('helvetica', opts.boldValue ? 'bold' : 'normal');
+      const richLines = splitRichTextToLines(doc, value, width - cellPadX * 2, opts.boldValue);
+      return Object.assign({}, opts, {
+        label: label,
+        value: value,
+        richLines: richLines.length ? richLines : [[{ text: '-' }]],
+        lines: (richLines.length ? richLines : [[{ text: '-' }]]).map(richLineToText)
+      });
+    }
 
-    doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
-    doc.setFontSize(12.5);
-    doc.setTextColor.apply(doc, valueText);
-    const valueX = x + labelW + 3.5;
-    const valueY = y + 5.8;
-    doc.text(field.lines.length ? field.lines : ['-'], valueX, valueY, { lineHeightFactor: 1.0 });
-  }
-
-  function makeObservationFieldParts(doc, row, contentWidth, labelWidth) {
-    const valueWidth = Math.max(45, contentWidth - labelWidth - 8);
-    const maxLinesPerPart = 26;
-    const defs = [
-      { label: 'Temuan', value: row.temuan || '-' },
-      { label: 'Kondisi Ideal', value: row.kondisiIdeal || '-' },
-      { label: 'Dampak', value: row.dampak || '-' },
-      { label: 'Penyebab', value: row.penyebab || '-' },
-      { label: 'Tindakan Perbaikan', value: row.tindakan || '-' },
-      { label: 'Deadline', value: row.deadline ? formatDate(row.deadline) : '-', highlight: deadlineHighlight(row.deadline), boldValue: true },
-      { label: 'Hasil', value: row.hasil || '-' }
-    ];
-    const parts = [];
-    defs.forEach(function (field) {
-      const sourceRichLines = splitRichTextToLines(doc, field.value, valueWidth, field.boldValue);
-      const richLines = sourceRichLines.length ? sourceRichLines : [[{ text: '-' }]];
-      for (let i = 0; i < richLines.length; i += maxLinesPerPart) {
-        const chunk = richLines.slice(i, i + maxLinesPerPart);
-        parts.push(Object.assign({}, field, {
+    function chunkField(field, maxLines) {
+      const lines = field.richLines && field.richLines.length ? field.richLines : [[{ text: '-' }]];
+      const chunks = [];
+      for (let i = 0; i < lines.length; i += maxLines) {
+        chunks.push(Object.assign({}, field, {
           label: field.label + (i > 0 ? ' (lanjutan)' : ''),
-          richLines: chunk,
-          lines: chunk.map(richLineToText)
+          richLines: lines.slice(i, i + maxLines),
+          lines: lines.slice(i, i + maxLines).map(richLineToText)
         }));
       }
-    });
-    return parts;
+      return chunks.length ? chunks : [Object.assign({}, field, { richLines: [[{ text: '-' }]], lines: ['-'] })];
+    }
+
+    function addFull(rows, field, maxLines) {
+      chunkField(field, maxLines).forEach(function (chunk) {
+        rows.push({ cells: [chunk], full: true });
+      });
+    }
+
+    function addPair(rows, leftField, rightField, maxLines) {
+      const leftChunks = chunkField(leftField, maxLines);
+      const rightChunks = chunkField(rightField, maxLines);
+      const total = Math.max(leftChunks.length, rightChunks.length);
+      for (let i = 0; i < total; i += 1) {
+        rows.push({ cells: [leftChunks[i] || null, rightChunks[i] || null], full: false });
+      }
+    }
+
+    const rows = [];
+    addFull(rows, buildField('Temuan', row.temuan || '-', fullW), 5);
+    addPair(
+      rows,
+      buildField('Kondisi Ideal', row.kondisiIdeal || '-', halfW),
+      buildField('Dampak', row.dampak || '-', halfW),
+      5
+    );
+    addPair(
+      rows,
+      buildField('Penyebab', row.penyebab || '-', halfW),
+      buildField('Tindakan Perbaikan', row.tindakan || '-', halfW),
+      6
+    );
+    addPair(
+      rows,
+      buildField('Deadline', row.deadline ? formatDate(row.deadline) : '-', halfW, { highlight: deadlineHighlight(row.deadline), boldValue: true }),
+      buildField('Hasil', row.hasil || '-', halfW),
+      5
+    );
+    return rows;
   }
 
-  function observationFieldHeight(field) {
-    const lineHeight = 4.1;
-    return Math.max(8.8, 4.6 + Math.max(1, (field.lines || ['-']).length) * lineHeight);
+  function observationCompactCellHeight(field) {
+    if (!field) return 0;
+    const lineHeight = 3.85;
+    const lineCount = Math.max(1, (field.lines || ['-']).length);
+    return Math.max(10, 5.2 + lineCount * lineHeight);
   }
 
-  function drawObservationVerticalField(doc, field, x, y, width, labelWidth, rowHeight, palette, fillColor) {
+  function observationCompactRowHeight(row) {
+    return Math.max.apply(null, row.cells.map(observationCompactCellHeight));
+  }
+
+  function drawObservationCompactCell(doc, field, x, y, width, height, palette, fillColor) {
+    if (!field) {
+      doc.setDrawColor(226, 232, 240);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, y, width, height, 1.6, 1.6, 'FD');
+      return;
+    }
     const valueFill = field.highlight ? field.highlight.fill : fillColor;
     const valueText = field.highlight ? field.highlight.text : palette.ink;
     doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.18);
-    doc.setFillColor(240, 253, 250);
-    doc.roundedRect(x, y, labelWidth, rowHeight, 1.8, 1.8, 'FD');
+    doc.setLineWidth(0.16);
     doc.setFillColor.apply(doc, valueFill);
-    doc.roundedRect(x + labelWidth, y, width - labelWidth, rowHeight, 1.8, 1.8, 'FD');
+    doc.roundedRect(x, y, width, height, 1.6, 1.6, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.6);
+    doc.setFontSize(6.9);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text(doc.splitTextToSize(field.label, labelWidth - 4.5), x + 2.5, y + 5.2, { lineHeightFactor: 1.0 });
+    doc.text(field.label, x + 2.4, y + 3.7, { baseline: 'alphabetic' });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
-    doc.setFontSize(10.1);
+    doc.setFontSize(9.4);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + labelWidth + 3, y + 5.6, 4.1, { bold: field.boldValue, textColor: valueText, fontSize: 10.1 });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.4, y + 7.8, 3.85, { bold: field.boldValue, textColor: valueText, fontSize: 9.4 });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -743,48 +773,62 @@
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageWidth, pageHeight, 'F');
     drawTopBar(doc, title, palette, pageWidth);
-    return 27;
+    return 24;
   }
 
-  function observationSegmentChromeHeight() {
-    return 7.4 + 1.2 + 6.4;
-  }
-
-  function drawObservationVerticalSegment(doc, title, row, rowIndex, totalRows, fields, x, y, width, palette, continuation) {
-    const pad = 3.2;
-    const labelWidth = Math.min(44, width * .22);
-    const fieldGap = 1.0;
-    const titleH = 7.4;
-    const titleGap = 1.2;
-    let fieldHeightTotal = 0;
-    fields.forEach(function (field, index) {
-      fieldHeightTotal += observationFieldHeight(field) + (index ? fieldGap : 0);
+  function observationCompactSegmentHeight(rows) {
+    const titleH = 6.2;
+    const titleGap = 1.1;
+    const pad = 2.8;
+    const rowGap = 1.0;
+    let bodyH = pad * 2;
+    rows.forEach(function (row, index) {
+      bodyH += observationCompactRowHeight(row) + (index ? rowGap : 0);
     });
-    const tableH = fieldHeightTotal + pad * 2;
-    const height = titleH + titleGap + tableH;
+    return titleH + titleGap + bodyH;
+  }
+
+  function drawObservationCompactSegment(doc, rowIndex, totalRows, rows, x, y, width, palette, continuation) {
+    const titleH = 6.2;
+    const titleGap = 1.1;
+    const pad = 2.8;
+    const rowGap = 1.0;
+    const cellGap = 1.2;
     const tableY = y + titleH + titleGap;
+    const tableW = width;
+    const innerW = tableW - pad * 2;
+    const halfW = (innerW - cellGap) / 2;
+    let bodyH = pad * 2;
+    rows.forEach(function (row, index) {
+      bodyH += observationCompactRowHeight(row) + (index ? rowGap : 0);
+    });
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.4);
+    doc.setFontSize(10.2);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 5.2);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 4.8);
 
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.22);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x, tableY, width, tableH, 3, 3, 'FD');
-
+    doc.roundedRect(x, tableY, tableW, bodyH, 3, 3, 'FD');
     doc.setFillColor.apply(doc, palette.primary);
-    doc.roundedRect(x, tableY, width, 1.1, 3, 3, 'F');
+    doc.roundedRect(x, tableY, tableW, 1.0, 3, 3, 'F');
 
     let cy = tableY + pad;
-    fields.forEach(function (field, index) {
-      if (index) cy += fieldGap;
-      const rowH = observationFieldHeight(field);
-      drawObservationVerticalField(doc, field, x + pad, cy, width - pad * 2, labelWidth, rowH, palette, index % 2 ? [249, 250, 251] : [255, 255, 255]);
+    rows.forEach(function (row, index) {
+      if (index) cy += rowGap;
+      const rowH = observationCompactRowHeight(row);
+      const fill = index % 2 ? [249, 250, 251] : [255, 255, 255];
+      if (row.full) {
+        drawObservationCompactCell(doc, row.cells[0], x + pad, cy, innerW, rowH, palette, fill);
+      } else {
+        drawObservationCompactCell(doc, row.cells[0], x + pad, cy, halfW, rowH, palette, fill);
+        drawObservationCompactCell(doc, row.cells[1], x + pad + halfW + cellGap, cy, halfW, rowH, palette, fill);
+      }
       cy += rowH;
     });
-    return height;
+    return observationCompactSegmentHeight(rows);
   }
 
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
@@ -792,37 +836,36 @@
     if (!cleanRows.length) return;
     const x = margin;
     const width = pageWidth - margin * 2;
-    const bottom = pageHeight - 13;
-    const gap = 3.4;
-    const labelWidth = Math.min(44, width * .22);
-    const contentWidth = width - 6.4;
+    const bottom = pageHeight - 12;
+    const gap = 3.2;
+    const innerTableWidth = width - 5.6;
     let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
 
     cleanRows.forEach(function (row, rowIndex) {
-      const parts = makeObservationFieldParts(doc, row, contentWidth, labelWidth);
-      let remaining = parts.slice();
+      const allRows = makeObservationCompactRows(doc, row, innerTableWidth);
+      let remaining = allRows.slice();
       let continuation = false;
       while (remaining.length) {
-        const available = Math.max(42, bottom - y);
-        let used = observationSegmentChromeHeight();
+        const available = Math.max(36, bottom - y);
         const segment = [];
+        let used = observationCompactSegmentHeight(segment);
         for (let i = 0; i < remaining.length; i += 1) {
-          const h = observationFieldHeight(remaining[i]) + (segment.length ? 1.55 : 0);
-          if (segment.length && used + h > available) break;
+          const candidate = segment.concat([remaining[i]]);
+          const candidateHeight = observationCompactSegmentHeight(candidate);
+          if (segment.length && candidateHeight > available) break;
           segment.push(remaining[i]);
-          used += h;
+          used = candidateHeight;
           if (used > available) break;
         }
         if (!segment.length) {
           y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
           continue;
         }
-        const predictedHeight = used;
-        if (y + predictedHeight > bottom && y > 29) {
+        if (y + used > bottom && y > 26) {
           y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
           continue;
         }
-        const drawnHeight = drawObservationVerticalSegment(doc, title, row, rowIndex, cleanRows.length, segment, x, y, width, palette, continuation);
+        const drawnHeight = drawObservationCompactSegment(doc, rowIndex, cleanRows.length, segment, x, y, width, palette, continuation);
         y += drawnHeight + gap;
         remaining = remaining.slice(segment.length);
         continuation = true;
@@ -830,7 +873,7 @@
           y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
         }
       }
-      if (y > bottom - 24 && rowIndex < cleanRows.length - 1) {
+      if (y > bottom - 22 && rowIndex < cleanRows.length - 1) {
         y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
       }
     });

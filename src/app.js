@@ -2670,7 +2670,7 @@ function App() {
     useEffect(() => {
         refreshHistory();
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            navigator.serviceWorker.register('service-worker.js?v=revamp27').catch(() => { });
+            navigator.serviceWorker.register('service-worker.js?v=revamp28').catch(() => { });
         }
     }, []);
     useEffect(() => {
