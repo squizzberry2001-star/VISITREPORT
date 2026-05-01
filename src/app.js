@@ -19,7 +19,7 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp35-home-clean-welcome';
+const APP_BUILD_VERSION = 'revamp36-home-toolbar-minimal';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1652,7 +1652,6 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
                 React.createElement("p", null, item.steps))))))));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
-    const averageProgress = history.length ? Math.round(history.reduce((sum, item) => sum + Number(item.progress || 0), 0) / history.length) : 0;
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
@@ -1699,27 +1698,33 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             setRestoreBusy(false);
         }
     }
-    return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-8 md:px-8 md:py-8" },
-        React.createElement("section", { className: "dashboard-compact glass-panel overflow-hidden rounded-[26px] p-4 md:rounded-[30px] md:p-7" },
-            React.createElement("div", { className: "grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start" },
+    return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-8" },
+        React.createElement("section", { className: "dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5" },
+            React.createElement("div", { className: "flex items-start justify-between gap-3" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
-                    React.createElement("h1", { className: "text-2xl font-black tracking-tight text-slate-950 md:text-5xl" }, "Regional Bestie Visit Report")),
-                React.createElement("div", { className: "grid grid-cols-5 gap-2 sm:flex sm:flex-wrap sm:justify-end", "data-build": "revamp35-home-clean-toolbar" },
-                    React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                    React.createElement("button", { type: "button", className: "grid h-12 min-w-12 place-items-center rounded-full bg-white/90 px-3 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95", onClick: () => setInstallOpen(true), "aria-label": "Info install apps", title: "Install Apps" },
-                        React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
-                    React.createElement("button", { type: "button", className: cx('grid h-12 min-w-12 place-items-center rounded-full bg-white/90 px-3 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
-                        React.createElement(Icon, { name: "download", className: "h-5 w-5" })),
-                    React.createElement("button", { type: "button", className: cx('grid h-12 min-w-12 place-items-center rounded-full bg-white/90 px-3 text-audit-primary shadow-soft ring-1 ring-emerald-100 transition hover:-translate-y-0.5 hover:bg-white active:scale-95', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
-                        React.createElement(Icon, { name: "upload", className: "h-5 w-5" })),
-                    React.createElement("button", { type: "button", className: "grid h-12 min-w-12 place-items-center rounded-full bg-audit-primary px-3 text-white shadow-soft transition hover:-translate-y-0.5 active:scale-95", onClick: onNewVisit, "aria-label": "Buat kunjungan baru", title: "Buat kunjungan baru" },
-                        React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
-                    React.createElement("button", { type: "button", className: "grid h-12 min-w-12 place-items-center rounded-full bg-rose-50 px-3 text-rose-600 shadow-soft ring-1 ring-rose-100 transition hover:-translate-y-0.5 active:scale-95", onClick: onClearHistory, "aria-label": "Hapus semua history", title: "Hapus semua history" },
-                        React.createElement(Icon, { name: "trash", className: "h-5 w-5" })))),
-            React.createElement("div", { className: "mt-4 grid grid-cols-1 gap-2 sm:max-w-xs" },
-                React.createElement("div", { className: "dashboard-stat dark" },
+                    React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
+                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, "Home")),
+                React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
-                    React.createElement("strong", null, history.length)))),
+                    React.createElement("strong", null, history.length))),
+            React.createElement("div", { className: "mt-3 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none]" },
+                React.createElement("div", { className: "flex min-w-max items-center gap-2", "data-build": "revamp36-home-toolbar-minimal" },
+                    React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
+                    React.createElement("button", { type: "button", className: "inline-flex h-11 items-center gap-2 rounded-full bg-audit-primary px-4 text-sm font-bold text-white shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onNewVisit },
+                        React.createElement(Icon, { name: "plus", className: "h-4 w-4" }),
+                        React.createElement("span", null, "Buat Visit")),
+                    React.createElement("button", { type: "button", className: cx('inline-flex h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-sm font-bold text-slate-700 ring-1 ring-slate-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                        React.createElement(Icon, { name: "download", className: "h-4 w-4 text-audit-primary" }),
+                        React.createElement("span", null, "Backup")),
+                    React.createElement("button", { type: "button", className: cx('inline-flex h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-sm font-bold text-slate-700 ring-1 ring-slate-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
+                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 text-audit-primary" }),
+                        React.createElement("span", null, "Restore")),
+                    React.createElement("button", { type: "button", className: "inline-flex h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-sm font-bold text-slate-700 ring-1 ring-slate-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 text-audit-primary" }),
+                        React.createElement("span", null, "Install")),
+                    React.createElement("button", { type: "button", className: "inline-flex h-11 items-center gap-2 rounded-full bg-rose-50 px-4 text-sm font-bold text-rose-600 ring-1 ring-rose-200 shadow-soft transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" }),
+                        React.createElement("span", null, "Hapus"))))),
         React.createElement("section", null,
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
@@ -2330,7 +2335,8 @@ function WelcomeOverlay({ config, onDone }) {
             React.createElement("div", { className: "welcome-dream-content" },
                 React.createElement("p", { className: "welcome-kicker" }, "Bestie Visit"),
                 React.createElement("h1", null, title),
-                React.createElement("p", { className: "welcome-subtitle" }, subtitle)))));
+                React.createElement("p", { className: "welcome-subtitle" }, subtitle),
+                React.createElement("button", { type: "button", className: "welcome-skip", onClick: onDone }, "Masuk")))));
 }
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
@@ -3075,13 +3081,12 @@ function App() {
     else {
         content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: () => setScreen('preview') });
     }
-    const isHomeScreen = screen === 'dashboard';
-    return (React.createElement("div", { className: cx('audit-shell min-h-screen', !isHomeScreen && 'md:grid md:grid-cols-[300px_minmax(0,1fr)]') },
-        !isHomeScreen ? React.createElement(DesktopSidebar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
+    return (React.createElement("div", { className: "audit-shell min-h-screen md:grid md:grid-cols-[300px_minmax(0,1fr)]" },
+        React.createElement(DesktopSidebar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }),
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-col" },
-            !isHomeScreen ? React.createElement(MobileTopBar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
+            React.createElement(MobileTopBar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }),
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
-            !isHomeScreen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: setScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
+            React.createElement(MobileBottomNav, { screen: screen, setScreen: setScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData })),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
         React.createElement(NewVisitModal, { open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
