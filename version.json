@@ -1,6 +1,6 @@
 {
-  "version": "revamp37-home-pill-clean-navbar",
-  "build": "revamp37-home-pill-clean-navbar",
+  "version": "revamp39-home-buttons-grid-icons",
+  "build": "revamp39-home-buttons-grid-icons",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
