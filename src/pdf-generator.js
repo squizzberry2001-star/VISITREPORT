@@ -734,9 +734,9 @@
 
   function observationCompactCellHeight(field) {
     if (!field) return 0;
-    const lineHeight = 3.45;
+    const lineHeight = 3.8;
     const lineCount = Math.max(1, (field.lines || ['-']).length);
-    return Math.max(8.8, 4.8 + lineCount * lineHeight);
+    return Math.max(9.6, 5.2 + lineCount * lineHeight);
   }
 
   function observationCompactRowHeight(row) {
@@ -751,21 +751,21 @@
       return;
     }
     const valueFill = field.highlight ? field.highlight.fill : fillColor;
-    const valueText = field.highlight ? field.highlight.text : palette.ink;
+    const valueText = field.highlight ? field.highlight.text : [15, 23, 42];
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.16);
     doc.setFillColor.apply(doc, valueFill);
     doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.6);
-    doc.setTextColor.apply(doc, palette.primary);
-    doc.text(field.label, x + 2.0, y + 3.3, { baseline: 'alphabetic' });
+    doc.setFontSize(7.2);
+    doc.setTextColor(30, 64, 175);
+    doc.text(field.label, x + 2.0, y + 3.6, { baseline: 'alphabetic' });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
-    doc.setFontSize(8.6);
+    doc.setFontSize(9.4);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 6.9, 3.45, { bold: field.boldValue, textColor: valueText, fontSize: 8.6 });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 7.4, 3.8, { bold: field.boldValue, textColor: valueText, fontSize: 9.4 });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -880,8 +880,8 @@
   }
 
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
-    const lineHeight = 3.6;
-    const imageHeight = Math.max(23, Math.min(cardHeight * 0.48, cardHeight - 19));
+    const lineHeight = 4.0;
+    const imageHeight = Math.max(23, Math.min(cardHeight * 0.48, cardHeight - 20));
     const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 10) / lineHeight));
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 9) / lineHeight));
     const items = [];
@@ -919,7 +919,7 @@
       if (!added) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.8);
-        doc.setTextColor(148, 163, 184);
+        doc.setTextColor(100, 116, 139);
         doc.text('No photo', x + width / 2, imgY + imgH / 2, { align: 'center' });
       }
       descY = imgY + imgH + 3.2;
@@ -930,15 +930,15 @@
     doc.roundedRect(x + 3, descY - 1.4, width - 6, Math.max(8, descHeight), 2.5, 2.5, 'F');
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.1);
-      doc.setTextColor.apply(doc, palette.primary);
+      doc.setFontSize(7.6);
+      doc.setTextColor(30, 64, 175);
       doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
-      descY += 3.9;
+      descY += 4.2;
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.2);
-    doc.setTextColor.apply(doc, palette.ink);
-    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 1.9, item.lineHeight || 3.6, { textColor: palette.ink, fontSize: 8.2, textOptions: { baseline: 'top' } });
+    doc.setFontSize(8.9);
+    doc.setTextColor(15, 23, 42);
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 2.1, item.lineHeight || 4.0, { textColor: [15, 23, 42], fontSize: 8.9, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {
