@@ -1,6 +1,6 @@
 {
-  "version": "revamp32-autosync-assets",
-  "build": "revamp32-autosync-assets",
+  "version": "revamp33-pdf-evidence-grid",
+  "build": "revamp33-pdf-evidence-grid",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }

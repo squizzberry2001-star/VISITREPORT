@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp32-autosync-assets';
+const APP_VERSION = 'revamp33-pdf-evidence-grid';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
