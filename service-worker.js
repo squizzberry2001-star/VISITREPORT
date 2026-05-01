@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp47-pdf-text-overflow-fix';
+const APP_VERSION = 'revamp48-pdf-auto-height-text-full';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

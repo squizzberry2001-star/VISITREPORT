@@ -1,6 +1,6 @@
 {
-  "version": "revamp47-pdf-text-overflow-fix",
-  "build": "revamp47-pdf-text-overflow-fix",
+  "version": "revamp48-pdf-auto-height-text-full",
+  "build": "revamp48-pdf-auto-height-text-full",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
