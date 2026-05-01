@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp34-pdf-text-readability';
+const APP_VERSION = 'revamp35-home-clean-welcome';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

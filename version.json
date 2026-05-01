@@ -1,6 +1,6 @@
 {
-  "version": "revamp34-pdf-text-readability",
-  "build": "revamp34-pdf-text-readability",
+  "version": "revamp35-home-clean-welcome",
+  "build": "revamp35-home-clean-welcome",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
