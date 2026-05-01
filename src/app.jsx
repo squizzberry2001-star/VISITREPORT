@@ -19,8 +19,45 @@ const DEFAULT_WELCOME_CONFIG = {
   subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”',
   durationSeconds: 5
 };
+
+const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
+const DEFAULT_PDF_SETTINGS = {
+  tableFontSize: 9.4,
+  evidenceFontSize: 8.9,
+  tableExtraRows: 0
+};
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+}
+
+function normalizePdfSettings(value) {
+  const raw = value && typeof value === 'object' ? value : {};
+  return {
+    tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
+    evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
+    tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows))
+  };
+}
+
+function readPdfSettings() {
+  try {
+    return normalizePdfSettings(JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}'));
+  } catch (error) {
+    return { ...DEFAULT_PDF_SETTINGS };
+  }
+}
+
+function savePdfSettings(settings) {
+  const next = normalizePdfSettings(settings);
+  localStorage.setItem(PDF_SETTINGS_KEY, JSON.stringify(next));
+  return next;
+}
+
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp45-linked-device-modal-layout';
+const APP_BUILD_VERSION = 'revamp46-backup-restore-pdf-admin-welcome';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1927,14 +1964,14 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
       streamRef.current = stream;
       const video = videoRef.current;
       if (!video) return;
       video.srcObject = stream;
       video.setAttribute('playsInline', 'true');
       await video.play();
-      setScanStatus('Kamera aktif. Posisikan QR tepat di tengah frame.');
+      setScanStatus('Arahkan kamera ke QR desktop.');
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -1962,122 +1999,39 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
 
   if (!open) return null;
 
-  return React.createElement('div', {
-    className: 'linked-device-overlay',
-    style: {
-      position: 'fixed',
-      inset: 0,
-      zIndex: 90,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      background: 'rgba(15, 23, 42, 0.62)',
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)'
-    }
-  },
-    React.createElement('div', {
-      className: 'linked-device-modal',
-      style: {
-        width: 'min(100%, 430px)',
-        maxHeight: 'min(92dvh, 720px)',
-        overflowY: 'auto',
-        borderRadius: '28px',
-        background: '#ffffff',
-        boxShadow: '0 24px 70px rgba(15, 23, 42, 0.35)',
-        border: '1px solid rgba(226, 232, 240, 0.95)'
-      }
-    },
-      React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-4' },
-        React.createElement('div', { className: 'min-w-0' },
-          React.createElement('p', { className: 'text-[10px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
-          React.createElement('h2', { className: 'mt-1 text-lg font-black text-slate-950' }, scanOpen ? 'Scan QR Desktop' : 'Hubungkan Device')
+  return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' },
+    React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' },
+      React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' },
+        React.createElement('div', null,
+          React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
+          React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')
         ),
         React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' },
           React.createElement(Icon, { name: 'close', className: 'h-5 w-5' })
         )
       ),
-      React.createElement('div', { className: 'space-y-3 p-4' },
-        scanOpen
-          ? React.createElement('div', {
-              className: 'mx-auto w-full',
-              style: {
-                maxWidth: '320px',
-                marginLeft: 'auto',
-                marginRight: 'auto'
-              }
-            },
-              React.createElement('div', {
-                className: 'relative overflow-hidden bg-slate-950 shadow-inner',
-                style: {
-                  width: '100%',
-                  aspectRatio: '1 / 1',
-                  borderRadius: '24px',
-                  padding: '8px'
-                }
-              },
-                React.createElement('video', {
-                  ref: videoRef,
-                  className: 'block h-full w-full object-cover',
-                  style: {
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'center',
-                    borderRadius: '18px',
-                    background: '#020617'
-                  },
-                  muted: true,
-                  playsInline: true
-                }),
-                React.createElement('div', {
-                  className: 'pointer-events-none absolute inset-0 grid place-items-center',
-                  style: { padding: '36px' }
-                },
-                  React.createElement('div', {
-                    style: {
-                      width: '100%',
-                      aspectRatio: '1 / 1',
-                      border: '2px solid rgba(255,255,255,0.9)',
-                      borderRadius: '18px',
-                      boxShadow: '0 0 0 999px rgba(2, 6, 23, 0.20)'
-                    }
-                  })
-                )
-              ),
-              React.createElement('p', { className: 'mt-3 text-center text-xs font-bold leading-5 text-slate-500' }, 'Arahkan kamera ke QR desktop. Pastikan QR berada di dalam frame.'),
-              React.createElement('button', {
-                type: 'button',
-                className: 'mt-3 h-11 w-full rounded-2xl bg-slate-100 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200',
-                onClick: () => { stopScanner(); setScanOpen(false); setScanStatus('Scanner ditutup.'); }
-              }, 'Tutup Kamera')
-            )
-          : React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
-              React.createElement('div', {
-                className: 'mx-auto grid place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200',
-                style: {
-                  width: 'min(260px, 100%)',
-                  height: 'min(260px, calc(100vw - 96px))',
-                  minHeight: '220px'
-                }
-              },
-                qrDataUrl
-                  ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl(linkedDeviceQrFallbackUrl(qrText || buildLinkedDevicePayload())) })
-                  : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'Membuat QR...')
-              ),
-              React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')
-            ),
+      React.createElement('div', { className: 'space-y-4 p-5' },
+        React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
+          React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' },
+            qrDataUrl
+              ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
+              : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')
+          ),
+          React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')
+        ),
         React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
           React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner },
             React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }),
-            React.createElement('span', null, scanOpen ? 'Scan Ulang' : 'Scan QR')
+            React.createElement('span', null, 'Scan QR')
           ),
           React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } },
             React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }),
             React.createElement('span', null, 'Salin Kode')
           )
         ),
+        scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' },
+          React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })
+        ) : null,
         React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' },
           'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'
         ),
@@ -2090,8 +2044,10 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
 
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
   const [installOpen, setInstallOpen] = useState(false);
-  const [linkedOpen, setLinkedOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const restoreInputRef = useRef(null);
   useEffect(() => {
     function handleBeforeInstallPrompt(event) {
       event.preventDefault();
@@ -2100,6 +2056,34 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
+
+  async function handleBackupData() {
+    if (backupBusy) return;
+    try {
+      setBackupBusy(true);
+      await backupVisitReportData();
+    } catch (error) {
+      console.warn('Backup data gagal:', error);
+      alert(error?.message || 'Backup data gagal.');
+    } finally {
+      setBackupBusy(false);
+    }
+  }
+
+  async function handleRestoreFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || restoreBusy) return;
+    try {
+      setRestoreBusy(true);
+      await restoreVisitReportDataFromFile(file);
+    } catch (error) {
+      console.warn('Restore data gagal:', error);
+      alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
 
   return (
     <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-28">
@@ -2114,11 +2098,16 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp45-linked-device-modal-layout">
-          <div className="grid grid-cols-3 gap-2">
-            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setLinkedOpen(true)}>
-              <Icon name="qr" className="h-4 w-4 shrink-0 text-audit-primary" />
-              <span className="block max-w-full truncate">Linked</span>
+        <div className="mt-3" data-build="revamp46-backup-restore-pdf-admin-welcome">
+          <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
+          <div className="grid grid-cols-4 gap-2">
+            <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
+              <Icon name="download" className="h-4 w-4 shrink-0 text-audit-primary" />
+              <span className="block max-w-full truncate">Backup</span>
+            </button>
+            <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
+              <Icon name="upload" className="h-4 w-4 shrink-0 text-audit-primary" />
+              <span className="block max-w-full truncate">Restore</span>
             </button>
             <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
               <Icon name="spark" className="h-4 w-4 shrink-0 text-audit-primary" />
@@ -2182,7 +2171,6 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         <Icon name="plus" className="h-5 w-5" />
         <span>Kunjungan Baru</span>
       </button>
-      <LinkedDeviceModal open={linkedOpen} onClose={() => setLinkedOpen(false)} historyCount={history.length} />
       <InstallGuideModal open={installOpen} onClose={() => setInstallOpen(false)} deferredPrompt={deferredPrompt} onPromptUsed={() => setDeferredPrompt(null)} />
     </main>
   );
@@ -2707,15 +2695,14 @@ function WelcomeOverlay({ config, onDone }) {
     return () => window.clearTimeout(timer);
   }, [onDone, durationMs]);
   return (
-    <div className="welcome-dream-overlay" role="dialog" aria-modal="true" style={{ '--welcome-duration': String(durationSeconds) + 's' }} onClick={onDone}>
-      <div className="welcome-dream-card" onClick={(event) => event.stopPropagation()}>
+    <div className="welcome-dream-overlay" role="dialog" aria-modal="true" style={{ '--welcome-duration': String(durationSeconds) + 's', transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+      <div className="welcome-dream-card" style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
         <div className="welcome-orb welcome-orb-a" />
         <div className="welcome-orb welcome-orb-b" />
         <div className="welcome-dream-content">
           <p className="welcome-kicker">Bestie Visit</p>
           <h1>{title}</h1>
           <p className="welcome-subtitle">{subtitle}</p>
-          <button type="button" className="welcome-skip" onClick={onDone}>Masuk</button>
         </div>
       </div>
     </div>
@@ -2784,11 +2771,33 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
   const [welcomeTitle, setWelcomeTitle] = useState(DEFAULT_WELCOME_CONFIG.title);
   const [welcomeSubtitle, setWelcomeSubtitle] = useState(DEFAULT_WELCOME_CONFIG.subtitle);
   const [welcomeDurationSeconds, setWelcomeDurationSeconds] = useState(DEFAULT_WELCOME_CONFIG.durationSeconds);
+  const [pdfTableFontSize, setPdfTableFontSize] = useState(DEFAULT_PDF_SETTINGS.tableFontSize);
+  const [pdfEvidenceFontSize, setPdfEvidenceFontSize] = useState(DEFAULT_PDF_SETTINGS.evidenceFontSize);
+  const [pdfTableExtraRows, setPdfTableExtraRows] = useState(DEFAULT_PDF_SETTINGS.tableExtraRows);
 
   function saveWelcomeSettings() {
     const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
     if (typeof onWelcomeConfigChange === 'function') onWelcomeConfigChange(saved);
     alert('Text welcome berhasil disimpan.');
+  }
+
+  function applyPdfSettings(nextSettings, showAlert = false) {
+    const saved = savePdfSettings(nextSettings);
+    setPdfTableFontSize(saved.tableFontSize);
+    setPdfEvidenceFontSize(saved.evidenceFontSize);
+    setPdfTableExtraRows(saved.tableExtraRows);
+    window.dispatchEvent(new CustomEvent('rbv-pdf-settings-change', { detail: saved }));
+    if (showAlert) alert('Pengaturan PDF berhasil disimpan.');
+    return saved;
+  }
+
+  function adjustPdfSetting(key, delta) {
+    const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows });
+    applyPdfSettings({ ...current, [key]: Number(current[key]) + delta });
+  }
+
+  function resetPdfSettings() {
+    applyPdfSettings(DEFAULT_PDF_SETTINGS, true);
   }
 
   function localRows() {
@@ -2865,6 +2874,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     setWelcomeTitle(cleanText(currentWelcome.title, DEFAULT_WELCOME_CONFIG.title));
     setWelcomeSubtitle(cleanText(currentWelcome.subtitle, DEFAULT_WELCOME_CONFIG.subtitle));
     setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(currentWelcome.durationSeconds));
+    const currentPdfSettings = readPdfSettings();
+    setPdfTableFontSize(currentPdfSettings.tableFontSize);
+    setPdfEvidenceFontSize(currentPdfSettings.evidenceFontSize);
+    setPdfTableExtraRows(currentPdfSettings.tableExtraRows);
     let cancelled = false;
     let unsubscribeRows = null;
     let unsubscribeRequests = null;
@@ -3010,6 +3023,46 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             <Field label="Durasi (detik)" helper="Bisa diisi 1 sampai 15 detik.">
               <TextInput type="number" min="1" max="15" step="0.5" value={welcomeDurationSeconds} onChange={(event) => setWelcomeDurationSeconds(event.target.value)} onBlur={() => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds))} />
             </Field>
+          </div>
+        </div>
+
+        <div className="mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-black text-slate-950">Pengaturan PDF</h3>
+              <p className="text-xs font-semibold text-slate-500">Atur ukuran font table, deskripsi foto findings, dan jumlah row/card table per halaman PDF.</p>
+            </div>
+            <Badge tone="success">Auto Save</Badge>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Table PDF</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <Button variant="secondary" onClick={() => adjustPdfSetting('tableFontSize', -0.5)}>-</Button>
+                <strong className="text-lg text-slate-950">{Number(pdfTableFontSize).toFixed(1)}</strong>
+                <Button variant="secondary" onClick={() => adjustPdfSetting('tableFontSize', 0.5)}>+</Button>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Deskripsi Foto</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <Button variant="secondary" onClick={() => adjustPdfSetting('evidenceFontSize', -0.5)}>-</Button>
+                <strong className="text-lg text-slate-950">{Number(pdfEvidenceFontSize).toFixed(1)}</strong>
+                <Button variant="secondary" onClick={() => adjustPdfSetting('evidenceFontSize', 0.5)}>+</Button>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Add Row Table PDF</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <Button variant="secondary" onClick={() => adjustPdfSetting('tableExtraRows', -1)}>-</Button>
+                <strong className="text-lg text-slate-950">+{pdfTableExtraRows}</strong>
+                <Button variant="secondary" onClick={() => adjustPdfSetting('tableExtraRows', 1)}>+</Button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="secondary" icon="check" onClick={() => applyPdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows }, true)}>Simpan PDF Setting</Button>
+            <Button variant="secondary" icon="eraser" onClick={resetPdfSettings}>Reset Default</Button>
           </div>
         </div>
 

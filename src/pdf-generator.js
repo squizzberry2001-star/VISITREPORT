@@ -3,6 +3,45 @@
 
   const TEMPLATE = window.RBV_PDF_TEMPLATE_ASSETS || {};
 
+  const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
+  const DEFAULT_PDF_SETTINGS = {
+    tableFontSize: 9.4,
+    evidenceFontSize: 8.9,
+    tableExtraRows: 0
+  };
+
+  function clampNumber(value, min, max, fallback) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, number));
+  }
+
+  function readPdfSettings() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}') || {};
+      return {
+        tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
+        evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
+        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows))
+      };
+    } catch (error) {
+      return Object.assign({}, DEFAULT_PDF_SETTINGS);
+    }
+  }
+
+  function pdfTableFontSize() {
+    return readPdfSettings().tableFontSize;
+  }
+
+  function pdfEvidenceFontSize() {
+    return readPdfSettings().evidenceFontSize;
+  }
+
+  function pdfTableExtraRows() {
+    return readPdfSettings().tableExtraRows;
+  }
+
+
   function plainText(value, fallback) {
     let raw = value === undefined || value === null ? '' : String(value);
     raw = raw
@@ -406,7 +445,7 @@
       doc.setTextColor(100, 116, 139);
       doc.text(item[0].toUpperCase(), x, yy);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.2);
+      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.2, 8.8, 11.6, 9.2));
       doc.setTextColor.apply(doc, palette.ink);
       doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
     });
@@ -734,9 +773,10 @@
 
   function observationCompactCellHeight(field) {
     if (!field) return 0;
-    const lineHeight = 3.8;
+    const fontSize = pdfTableFontSize();
+    const lineHeight = Math.max(3.35, fontSize * 0.405);
     const lineCount = Math.max(1, (field.lines || ['-']).length);
-    return Math.max(9.6, 5.2 + lineCount * lineHeight);
+    return Math.max(fontSize + 0.3, 3.4 + lineCount * lineHeight);
   }
 
   function observationCompactRowHeight(row) {
@@ -757,15 +797,18 @@
     doc.setFillColor.apply(doc, valueFill);
     doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
 
+    const valueFontSize = pdfTableFontSize();
+    const labelFontSize = clampNumber(valueFontSize - 2.2, 6.4, 8.6, 7.2);
+    const lineHeight = Math.max(3.35, valueFontSize * 0.405);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.2);
+    doc.setFontSize(labelFontSize);
     doc.setTextColor(30, 64, 175);
     doc.text(field.label, x + 2.0, y + 3.6, { baseline: 'alphabetic' });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
-    doc.setFontSize(9.4);
+    doc.setFontSize(valueFontSize);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 7.4, 3.8, { bold: field.boldValue, textColor: valueText, fontSize: 9.4 });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 7.4, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -777,10 +820,11 @@
   }
 
   function observationCompactSegmentHeight(rows) {
-    const titleH = 5.4;
-    const titleGap = 0.8;
-    const pad = 2.2;
-    const rowGap = 0.75;
+    const density = pdfTableExtraRows();
+    const titleH = Math.max(4.4, 5.4 - density * 0.18);
+    const titleGap = Math.max(0.45, 0.8 - density * 0.06);
+    const pad = Math.max(1.45, 2.2 - density * 0.16);
+    const rowGap = Math.max(0.35, 0.75 - density * 0.08);
     let bodyH = pad * 2;
     rows.forEach(function (row, index) {
       bodyH += observationCompactRowHeight(row) + (index ? rowGap : 0);
@@ -789,10 +833,11 @@
   }
 
   function drawObservationCompactSegment(doc, rowIndex, totalRows, rows, x, y, width, palette, continuation) {
-    const titleH = 5.4;
-    const titleGap = 0.8;
-    const pad = 2.2;
-    const rowGap = 0.75;
+    const density = pdfTableExtraRows();
+    const titleH = Math.max(4.4, 5.4 - density * 0.18);
+    const titleGap = Math.max(0.45, 0.8 - density * 0.06);
+    const pad = Math.max(1.45, 2.2 - density * 0.16);
+    const rowGap = Math.max(0.35, 0.75 - density * 0.08);
     const cellGap = 1.0;
     const tableY = y + titleH + titleGap;
     const tableW = width;
@@ -836,8 +881,9 @@
     if (!cleanRows.length) return;
     const x = margin;
     const width = pageWidth - margin * 2;
-    const bottom = pageHeight - 12;
-    const gap = 2.4;
+    const density = pdfTableExtraRows();
+    const bottom = pageHeight - Math.max(5, 12 - density * 1.6);
+    const gap = Math.max(1.2, 2.4 - density * 0.22);
     const innerTableWidth = width - 4.4;
     let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
 
@@ -880,7 +926,8 @@
   }
 
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
-    const lineHeight = 4.0;
+    const evidenceFontSize = pdfEvidenceFontSize();
+    const lineHeight = Math.max(3.6, evidenceFontSize * 0.45);
     const imageHeight = Math.max(23, Math.min(cardHeight * 0.48, cardHeight - 20));
     const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 10) / lineHeight));
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 9) / lineHeight));
@@ -928,17 +975,19 @@
 
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(x + 3, descY - 1.4, width - 6, Math.max(8, descHeight), 2.5, 2.5, 'F');
+    const evidenceFontSize = pdfEvidenceFontSize();
+    const evidenceLineHeight = item.lineHeight || Math.max(3.6, evidenceFontSize * 0.45);
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.6);
+      doc.setFontSize(clampNumber(evidenceFontSize - 1.1, 7.2, 9.2, 7.6));
       doc.setTextColor(30, 64, 175);
       doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
-      descY += 4.2;
+      descY += Math.max(4.2, evidenceLineHeight);
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.9);
+    doc.setFontSize(evidenceFontSize);
     doc.setTextColor(15, 23, 42);
-    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 2.1, item.lineHeight || 4.0, { textColor: [15, 23, 42], fontSize: 8.9, textOptions: { baseline: 'top' } });
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 2.1, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {
