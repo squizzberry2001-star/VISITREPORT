@@ -20,7 +20,7 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp40-home-buttons-icons-clean';
+const APP_BUILD_VERSION = 'revamp41-home-floating-linked-device';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -582,6 +582,7 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
     close: <><path d="M6 6l12 12"/><path d="M18 6 6 18"/></>,
     search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>,
     menu: <><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></>,
+    qr: <><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2z"/><path d="M18 14h2v6h-6v-2h4z"/></>,
     check: <path d="m5 13 4 4L19 7"/>
   };
   return (
@@ -1803,12 +1804,207 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
   );
 }
 
+
+function getLinkedDeviceId() {
+  const key = 'rbv_linked_device_id';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = 'device-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function buildLinkedDevicePayload() {
+  const deviceId = getLinkedDeviceId();
+  const url = new URL(window.location.href);
+  url.searchParams.set('linkedDevice', '1');
+  url.hash = 'bestie-linked-device=' + encodeURIComponent(deviceId);
+  return JSON.stringify({
+    app: 'regional-bestie-visit-report',
+    type: 'linked-device',
+    deviceId,
+    url: url.toString(),
+    createdAt: new Date().toISOString()
+  });
+}
+
+function parseLinkedDevicePayload(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed?.app === 'regional-bestie-visit-report' && parsed?.type === 'linked-device' && parsed?.deviceId) return parsed;
+  } catch (error) {
+    // QR dari kamera bisa berupa URL, bukan JSON.
+  }
+  try {
+    const url = new URL(text);
+    const hash = decodeURIComponent(url.hash || '');
+    const match = hash.match(/bestie-linked-device=([^&]+)/);
+    if (match?.[1]) {
+      return {
+        app: 'regional-bestie-visit-report',
+        type: 'linked-device',
+        deviceId: match[1],
+        url: url.toString(),
+        createdAt: new Date().toISOString()
+      };
+    }
+  } catch (error) {
+    // Bukan URL valid.
+  }
+  return null;
+}
+
+function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanStatus, setScanStatus] = useState('');
+  const [qrText, setQrText] = useState('');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const rafRef = useRef(0);
+
+  const stopScanner = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
+
+  useEffect(() => {
+    if (!open) {
+      stopScanner();
+      return undefined;
+    }
+    const payload = buildLinkedDevicePayload();
+    setQrText(payload);
+    setQrDataUrl('');
+    if (window.QRCode?.toDataURL) {
+      window.QRCode.toDataURL(payload, { width: 240, margin: 1, errorCorrectionLevel: 'M' }, (error, url) => {
+        if (!error && url) setQrDataUrl(url);
+      });
+    }
+    return () => stopScanner();
+  }, [open]);
+
+  function saveLinkedDevice(payload) {
+    localStorage.setItem('rbv_linked_desktop_device', JSON.stringify({ ...payload, linkedAt: new Date().toISOString() }));
+    setScanStatus('Berhasil linked device. Data perangkat desktop sudah tersimpan di device ini.');
+    stopScanner();
+    setScanOpen(false);
+  }
+
+  function handleScanResult(raw) {
+    const payload = parseLinkedDevicePayload(raw);
+    if (!payload) {
+      setScanStatus('QR tidak sesuai aplikasi Bestie Visit.');
+      return false;
+    }
+    saveLinkedDevice(payload);
+    return true;
+  }
+
+  async function startScanner() {
+    try {
+      setScanStatus('Membuka kamera...');
+      setScanOpen(true);
+      stopScanner();
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setScanStatus('Kamera tidak tersedia di browser ini.');
+        return;
+      }
+      if (!window.jsQR) {
+        setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      streamRef.current = stream;
+      const video = videoRef.current;
+      if (!video) return;
+      video.srcObject = stream;
+      video.setAttribute('playsInline', 'true');
+      await video.play();
+      setScanStatus('Arahkan kamera ke QR desktop.');
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const scanFrame = () => {
+        if (!videoRef.current || !ctx) return;
+        const w = video.videoWidth || 0;
+        const h = video.videoHeight || 0;
+        if (w && h) {
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(video, 0, 0, w, h);
+          const imageData = ctx.getImageData(0, 0, w, h);
+          const code = window.jsQR(imageData.data, w, h);
+          if (code?.data && handleScanResult(code.data)) return;
+        }
+        rafRef.current = requestAnimationFrame(scanFrame);
+      };
+      rafRef.current = requestAnimationFrame(scanFrame);
+    } catch (error) {
+      console.warn('Scan QR gagal:', error);
+      setScanStatus('Tidak bisa membuka kamera. Pastikan izin kamera diberikan.');
+      stopScanner();
+    }
+  }
+
+  if (!open) return null;
+
+  return React.createElement('div', { className: 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/55 p-3 backdrop-blur-sm md:items-center' },
+    React.createElement('div', { className: 'w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' },
+      React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' },
+        React.createElement('div', null,
+          React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
+          React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR ke Desktop'),
+          React.createElement('p', { className: 'mt-1 text-sm leading-5 text-slate-500' }, 'Model seperti WhatsApp: tampilkan QR di desktop, lalu scan dari HP untuk menandai device terhubung.')
+        ),
+        React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' },
+          React.createElement(Icon, { name: 'close', className: 'h-5 w-5' })
+        )
+      ),
+      React.createElement('div', { className: 'space-y-4 p-5' },
+        React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
+          React.createElement('div', { className: 'mx-auto grid h-[260px] max-w-[260px] place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' },
+            qrDataUrl
+              ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain' })
+              : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'Membuat QR...')
+          ),
+          React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Di desktop: buka Home > Linked Device, tampilkan QR ini. Di HP: tekan Scan QR lalu arahkan kamera ke QR desktop.')
+        ),
+        React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
+          React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner },
+            React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }),
+            React.createElement('span', null, 'Scan QR')
+          ),
+          React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } },
+            React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }),
+            React.createElement('span', null, 'Salin Kode')
+          )
+        ),
+        scanOpen ? React.createElement('div', { className: 'overflow-hidden rounded-3xl bg-slate-950 p-2' },
+          React.createElement('video', { ref: videoRef, className: 'aspect-video w-full rounded-2xl object-cover', muted: true, playsInline: true })
+        ) : null,
+        React.createElement('div', { className: 'rounded-2xl bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800 ring-1 ring-amber-200' },
+          'Catatan: QR ini menandai perangkat terhubung secara lokal. Untuk auto-sync real-time antar device seperti WhatsApp sepenuhnya, tetap perlu server/backend sync.'
+        ),
+        scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null,
+        React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount))
+      )
+    )
+  );
+}
+
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
   const [installOpen, setInstallOpen] = useState(false);
+  const [linkedOpen, setLinkedOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [backupBusy, setBackupBusy] = useState(false);
-  const [restoreBusy, setRestoreBusy] = useState(false);
-  const restoreInputRef = useRef(null);
   useEffect(() => {
     function handleBeforeInstallPrompt(event) {
       event.preventDefault();
@@ -1818,36 +2014,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-  async function handleBackupData() {
-    if (backupBusy) return;
-    try {
-      setBackupBusy(true);
-      await backupVisitReportData();
-    } catch (error) {
-      console.warn('Backup data gagal:', error);
-      alert(error?.message || 'Backup data gagal.');
-    } finally {
-      setBackupBusy(false);
-    }
-  }
-
-  async function handleRestoreFile(event) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file || restoreBusy) return;
-    try {
-      setRestoreBusy(true);
-      await restoreVisitReportDataFromFile(file);
-    } catch (error) {
-      console.warn('Restore data gagal:', error);
-      alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
-    } finally {
-      setRestoreBusy(false);
-    }
-  }
-
   return (
-    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-8 md:px-8 md:py-8 md:pb-8">
+    <main className="dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-24 md:px-8 md:py-8 md:pb-24">
       <section className="dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5">
         <div className="flex items-start justify-between gap-3">
           <button type="button" onClick={onTitleTap} className="min-w-0 text-left">
@@ -1859,26 +2027,17 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp40-home-buttons-icons-clean">
-          <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-audit-primary px-1.5 text-[10px] font-extrabold leading-none text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onNewVisit}>
-              <Icon name="plus" className="h-4 w-4 shrink-0 text-white" />
-              <span className="block max-w-full truncate">Tambah</span>
+        <div className="mt-3" data-build="revamp41-home-floating-linked-device">
+          <div className="grid grid-cols-3 gap-2">
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setLinkedOpen(true)}>
+              <Icon name="qr" className="h-4 w-4 shrink-0 text-audit-primary" />
+              <span className="block max-w-full truncate">Linked</span>
             </button>
-            <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
-              <Icon name="download" className="h-4 w-4 shrink-0 text-audit-primary" />
-              <span className="block max-w-full truncate">Backup</span>
-            </button>
-            <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
-              <Icon name="upload" className="h-4 w-4 shrink-0 text-audit-primary" />
-              <span className="block max-w-full truncate">Restore</span>
-            </button>
-            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
               <Icon name="spark" className="h-4 w-4 shrink-0 text-audit-primary" />
               <span className="block max-w-full truncate">Install</span>
             </button>
-            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
               <Icon name="trash" className="h-4 w-4 shrink-0" />
               <span className="block max-w-full truncate">Hapus</span>
             </button>
@@ -1911,9 +2070,14 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             ))}
           </div>
         ) : (
-          <EmptyState icon="clipboard" title="Belum ada history" action={<Button icon="plus" onClick={onNewVisit}>Buat Kunjungan Baru</Button>} />
+          <EmptyState icon="clipboard" title="Belum ada history" />
         )}
       </section>
+      <button type="button" className="fixed inset-x-4 bottom-5 z-40 mx-auto inline-flex h-14 max-w-sm items-center justify-center gap-2 rounded-full bg-audit-primary px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98] md:bottom-8 md:left-auto md:right-8 md:mx-0 md:w-auto" onClick={onNewVisit} aria-label="Buat kunjungan baru">
+        <Icon name="plus" className="h-5 w-5" />
+        <span>Kunjungan Baru</span>
+      </button>
+      <LinkedDeviceModal open={linkedOpen} onClose={() => setLinkedOpen(false)} historyCount={history.length} />
       <InstallGuideModal open={installOpen} onClose={() => setInstallOpen(false)} deferredPrompt={deferredPrompt} onPromptUsed={() => setDeferredPrompt(null)} />
     </main>
   );
