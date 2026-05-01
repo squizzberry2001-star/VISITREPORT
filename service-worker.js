@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp44-convex-client-sync';
+const APP_VERSION = 'revamp45-linked-device-modal-layout';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

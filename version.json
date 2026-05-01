@@ -1,6 +1,6 @@
 {
-  "version": "revamp44-convex-client-sync",
-  "build": "revamp44-convex-client-sync",
+  "version": "revamp45-linked-device-modal-layout",
+  "build": "revamp45-linked-device-modal-layout",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
