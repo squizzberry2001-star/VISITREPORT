@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp43-floating-new-visit-fixed';
+const APP_VERSION = 'revamp44-convex-client-sync';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
