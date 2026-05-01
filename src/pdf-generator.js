@@ -215,6 +215,48 @@
     });
   }
 
+
+  function fitRichLinesToBox(doc, lines, maxLines, width, baseBold) {
+    const sourceLines = lines && lines.length ? lines : [[{ text: '-' }]];
+    const source = sourceLines.slice(0, Math.max(1, maxLines));
+    if (!source.length) return [[{ text: '-' }]];
+    const hasMore = sourceLines.length > source.length;
+    if (!hasMore) return source;
+    const last = (source[source.length - 1] || []).map(function (token) { return Object.assign({}, token); });
+    function lineWidth(line) {
+      return (line || []).reduce(function (sum, token) { return sum + measureRich(doc, token, baseBold); }, 0);
+    }
+    if (!last.length) {
+      source[source.length - 1] = [{ text: '…' }];
+      return source;
+    }
+    let lastToken = last[last.length - 1];
+    lastToken.text = String(lastToken.text || '').replace(/\s+$/g, '');
+    while (last.length && lineWidth(last) + doc.getTextWidth('…') > width) {
+      lastToken = last[last.length - 1];
+      const txt = String(lastToken.text || '');
+      if (txt.length > 1) {
+        lastToken.text = txt.slice(0, -1).replace(/\s+$/g, '');
+      } else {
+        last.pop();
+      }
+    }
+    if (!last.length) last.push({ text: '…' });
+    else last.push({ text: '…' });
+    source[source.length - 1] = last;
+    return source;
+  }
+
+  function drawRichLinesInBox(doc, lines, x, y, width, height, lineHeight, options) {
+    const opts = options || {};
+    const fontSize = opts.fontSize || doc.getFontSize();
+    doc.setFontSize(fontSize);
+    const usableHeight = Math.max(0, height || 0);
+    const maxLines = Math.max(1, Math.floor(usableHeight / Math.max(1, lineHeight)));
+    const fitted = fitRichLinesToBox(doc, lines, maxLines, width, Boolean(opts.bold));
+    drawRichLines(doc, fitted, x, y, lineHeight, opts);
+  }
+
   async function prepareImage(src) {
     return new Promise(function (resolve) {
       if (!src) return resolve(null);
@@ -715,6 +757,7 @@
       return Object.assign({}, opts, {
         label: label,
         value: value,
+        rawValue: value,
         richLines: richLines.length ? richLines : [[{ text: '-' }]],
         lines: (richLines.length ? richLines : [[{ text: '-' }]]).map(richLineToText)
       });
@@ -808,7 +851,9 @@
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
     doc.setFontSize(valueFontSize);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 7.4, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
+    const fieldText = field.value !== undefined ? field.value : (field.lines || ['-']).join('\n');
+    const fittedLines = splitRichTextToLines(doc, fieldText, Math.max(8, width - 4.4), field.boldValue);
+    drawRichLinesInBox(doc, fittedLines, x + 2.0, y + 7.4, Math.max(8, width - 4.4), Math.max(4, height - 7.7), lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -933,14 +978,16 @@
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 9) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
-      const richLines = splitRichTextToLines(doc, photo.description, cardWidth - 10, false);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(evidenceFontSize);
+      const richLines = splitRichTextToLines(doc, photo.description, Math.max(12, cardWidth - 12), false);
       const first = richLines.slice(0, maxLinesWithImage);
-      items.push({ image: photo.image, richLines: first, lines: first.map(richLineToText), lineHeight: lineHeight, imageHeight: imageHeight, title: 'Foto ' + String(index + 1), continuation: false });
+      items.push({ image: photo.image, rawDescription: photo.description, richLines: first, lines: first.map(richLineToText), lineHeight: lineHeight, imageHeight: imageHeight, title: 'Foto ' + String(index + 1), continuation: false });
       let rest = richLines.slice(maxLinesWithImage);
       let continuationIndex = 1;
       while (rest.length) {
         const chunk = rest.slice(0, maxLinesTextOnly);
-        items.push({ image: '', richLines: chunk, lines: chunk.map(richLineToText), lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
+        items.push({ image: '', rawDescription: chunk.map(richLineToText).join('\n'), richLines: chunk, lines: chunk.map(richLineToText), lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
         rest = rest.slice(maxLinesTextOnly);
         continuationIndex += 1;
       }
@@ -987,7 +1034,12 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(evidenceFontSize);
     doc.setTextColor(15, 23, 42);
-    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 2.1, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
+    const descBoxX = x + 5;
+    const descBoxY = descY + 2.1;
+    const descBoxW = Math.max(10, width - 10);
+    const descBoxH = Math.max(6, descHeight - 2.8);
+    const descLines = splitRichTextToLines(doc, item.rawDescription || richLineToText((item.richLines || [])[0] || [{ text: '-' }]), descBoxW, false);
+    drawRichLinesInBox(doc, descLines, descBoxX, descBoxY, descBoxW, descBoxH, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {
