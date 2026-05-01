@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp36-home-toolbar-minimal';
+const APP_VERSION = 'revamp37-home-pill-clean-navbar';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
