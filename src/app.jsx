@@ -20,7 +20,7 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp39-home-buttons-grid-icons';
+const APP_BUILD_VERSION = 'revamp40-home-buttons-icons-clean';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1859,28 +1859,28 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp39-home-buttons-grid-icons">
+        <div className="mt-3" data-build="revamp40-home-buttons-icons-clean">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-            <button type="button" className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-audit-primary px-3 text-xs font-extrabold text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onNewVisit}>
-              <Icon name="plus" className="h-3.5 w-3.5 text-white" />
-              <span>Tambah</span>
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-audit-primary px-1.5 text-[10px] font-extrabold leading-none text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onNewVisit}>
+              <Icon name="plus" className="h-4 w-4 shrink-0 text-white" />
+              <span className="block max-w-full truncate">Tambah</span>
             </button>
-            <button type="button" className={cx('inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
-              <Icon name="download" className="h-3.5 w-3.5 text-audit-primary" />
-              <span>Backup</span>
+            <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
+              <Icon name="download" className="h-4 w-4 shrink-0 text-audit-primary" />
+              <span className="block max-w-full truncate">Backup</span>
             </button>
-            <button type="button" className={cx('inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
-              <Icon name="upload" className="h-3.5 w-3.5 text-audit-primary" />
-              <span>Restore</span>
+            <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60')} onClick={() => restoreInputRef.current?.click()} aria-label="Restore data" title="Restore data">
+              <Icon name="upload" className="h-4 w-4 shrink-0 text-audit-primary" />
+              <span className="block max-w-full truncate">Restore</span>
             </button>
-            <button type="button" className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
-              <Icon name="spark" className="h-3.5 w-3.5 text-audit-primary" />
-              <span>Install</span>
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setInstallOpen(true)} aria-label="Info install apps">
+              <Icon name="spark" className="h-4 w-4 shrink-0 text-audit-primary" />
+              <span className="block max-w-full truncate">Install</span>
             </button>
-            <button type="button" className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98] sm:col-span-1" onClick={onClearHistory}>
-              <Icon name="trash" className="h-3.5 w-3.5" />
-              <span>Hapus</span>
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
+              <Icon name="trash" className="h-4 w-4 shrink-0" />
+              <span className="block max-w-full truncate">Hapus</span>
             </button>
           </div>
         </div>

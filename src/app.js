@@ -19,7 +19,7 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp39-home-buttons-grid-icons';
+const APP_BUILD_VERSION = 'revamp40-home-buttons-icons-clean';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1707,24 +1707,24 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp39-home-buttons-grid-icons" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp40-home-buttons-icons-clean" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-5" },
-                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-audit-primary px-3 text-xs font-extrabold text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onNewVisit },
-                        React.createElement(Icon, { name: "plus", className: "h-3.5 w-3.5 text-white" }),
-                        React.createElement("span", null, "Tambah")),
-                    React.createElement("button", { type: "button", className: cx('inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
-                        React.createElement(Icon, { name: "download", className: "h-3.5 w-3.5 text-audit-primary" }),
-                        React.createElement("span", null, "Backup")),
-                    React.createElement("button", { type: "button", className: cx('inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
-                        React.createElement(Icon, { name: "upload", className: "h-3.5 w-3.5 text-audit-primary" }),
-                        React.createElement("span", null, "Restore")),
-                    React.createElement("button", { type: "button", className: "inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
-                        React.createElement(Icon, { name: "spark", className: "h-3.5 w-3.5 text-audit-primary" }),
-                        React.createElement("span", null, "Install")),
-                    React.createElement("button", { type: "button", className: "col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-white/90 px-3 text-xs font-extrabold text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98] sm:col-span-1", onClick: onClearHistory },
-                        React.createElement(Icon, { name: "trash", className: "h-3.5 w-3.5" }),
-                        React.createElement("span", null, "Hapus"))))),
+                React.createElement("div", { className: "grid grid-cols-5 gap-1.5 sm:gap-2" },
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-audit-primary px-1.5 text-[10px] font-extrabold leading-none text-white shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onNewVisit },
+                        React.createElement(Icon, { name: "plus", className: "h-4 w-4 shrink-0 text-white" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Tambah")),
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Backup")),
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
+                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Restore")),
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Install")),
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-1.5 text-[10px] font-extrabold leading-none text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Hapus"))))),
         React.createElement("section", null,
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
