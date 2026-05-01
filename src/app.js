@@ -19,7 +19,7 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp43-floating-new-visit-fixed';
+const APP_BUILD_VERSION = 'revamp44-convex-client-sync';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1662,18 +1662,72 @@ function getLinkedDeviceId() {
   return id;
 }
 
-function buildLinkedDevicePayload() {
+function linkedDeviceFunctionName(configKey, fallback) {
+  const config = getConvexConfig();
+  return cleanText(config[configKey], fallback);
+}
+
+function linkedDevicePlatform() {
+  const ua = navigator.userAgent || '';
+  if (/iPhone|Android.*Mobile/i.test(ua)) return 'mobile';
+  if (/iPad|Tablet|Android/i.test(ua)) return 'tablet';
+  return 'desktop';
+}
+
+function linkedDeviceRole() {
+  const platform = linkedDevicePlatform();
+  return platform === 'desktop' ? 'desktop' : platform === 'tablet' ? 'tablet' : platform === 'mobile' ? 'mobile' : 'unknown';
+}
+
+async function registerCurrentDeviceToConvex() {
+  if (!convexEnabled()) return false;
+  const deviceId = getLinkedDeviceId();
+  await runConvexMutation(linkedDeviceFunctionName('registerDeviceMutation', 'linkedDevices:registerDevice'), {
+    deviceId,
+    deviceName: localStorage.getItem('rbv_device_name') || `${linkedDeviceRole()}-${deviceId.slice(-6)}`,
+    platform: linkedDevicePlatform(),
+    userAgent: navigator.userAgent || '',
+    role: linkedDeviceRole()
+  });
+  return true;
+}
+
+async function buildLinkedDevicePayload() {
   const deviceId = getLinkedDeviceId();
   const url = new URL(window.location.href);
   url.searchParams.set('linkedDevice', '1');
-  url.hash = 'bestie-linked-device=' + encodeURIComponent(deviceId);
-  return JSON.stringify({
+  const fallbackPayload = {
     app: 'regional-bestie-visit-report',
     type: 'linked-device',
     deviceId,
+    sourceDeviceId: deviceId,
     url: url.toString(),
-    createdAt: new Date().toISOString()
-  });
+    createdAt: new Date().toISOString(),
+    convex: false
+  };
+
+  if (convexEnabled()) {
+    try {
+      await registerCurrentDeviceToConvex();
+      const result = await runConvexMutation(linkedDeviceFunctionName('createLinkMutation', 'linkedDevices:createLinkCode'), { sourceDeviceId: deviceId });
+      const linkCode = cleanText(result && result.linkCode);
+      if (linkCode) {
+        url.hash = 'bestie-link-code=' + encodeURIComponent(linkCode);
+        return JSON.stringify({
+          ...fallbackPayload,
+          linkCode,
+          expiresAt: result.expiresAt || 0,
+          url: url.toString(),
+          convex: true
+        });
+      }
+    } catch (error) {
+      console.warn('Create Convex link code gagal, pakai fallback lokal:', error);
+    }
+  }
+
+  url.hash = 'bestie-linked-device=' + encodeURIComponent(deviceId);
+  return JSON.stringify({ ...fallbackPayload, url: url.toString() });
 }
 
 function parseLinkedDevicePayload(raw) {
@@ -1681,21 +1735,34 @@ function parseLinkedDevicePayload(raw) {
   if (!text) return null;
   try {
     const parsed = JSON.parse(text);
-    if (parsed?.app === 'regional-bestie-visit-report' && parsed?.type === 'linked-device' && parsed?.deviceId) return parsed;
+    if (parsed?.app === 'regional-bestie-visit-report' && parsed?.type === 'linked-device' && (parsed?.deviceId || parsed?.linkCode)) return parsed;
   } catch (error) {
     // QR dari kamera bisa berupa URL, bukan JSON.
   }
   try {
     const url = new URL(text);
     const hash = decodeURIComponent(url.hash || '');
+    const linkMatch = hash.match(/bestie-link-code=([^&]+)/);
+    if (linkMatch?.[1]) {
+      return {
+        app: 'regional-bestie-visit-report',
+        type: 'linked-device',
+        linkCode: linkMatch[1],
+        url: url.toString(),
+        createdAt: new Date().toISOString(),
+        convex: true
+      };
+    }
     const match = hash.match(/bestie-linked-device=([^&]+)/);
     if (match?.[1]) {
       return {
         app: 'regional-bestie-visit-report',
         type: 'linked-device',
         deviceId: match[1],
+        sourceDeviceId: match[1],
         url: url.toString(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        convex: false
       };
     }
   } catch (error) {
@@ -1707,6 +1774,56 @@ function parseLinkedDevicePayload(raw) {
 
 function linkedDeviceQrFallbackUrl(payload) {
   return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=' + encodeURIComponent(payload);
+}
+
+
+async function acceptLinkedDevicePayload(payload) {
+  if (!payload) return false;
+  if (payload.linkCode && convexEnabled()) {
+    await registerCurrentDeviceToConvex();
+    await runConvexMutation(linkedDeviceFunctionName('acceptLinkMutation', 'linkedDevices:acceptLinkCode'), {
+      linkCode: payload.linkCode,
+      targetDeviceId: getLinkedDeviceId()
+    });
+    return true;
+  }
+  return false;
+}
+
+async function upsertVisitToConvex(visit) {
+  if (!visit || !visit.id || !convexEnabled()) return false;
+  await registerCurrentDeviceToConvex();
+  await runConvexMutation(linkedDeviceFunctionName('visitUpsertMutation', 'visits:upsertVisit'), {
+    deviceId: getLinkedDeviceId(),
+    visitId: visit.id,
+    payload: { ...visit, progress: visitProgress(visit), updatedAt: visit.updatedAt || Date.now() }
+  });
+  return true;
+}
+
+async function deleteVisitFromConvex(visitId) {
+  if (!visitId || !convexEnabled()) return false;
+  await registerCurrentDeviceToConvex();
+  await runConvexMutation(linkedDeviceFunctionName('visitDeleteMutation', 'visits:deleteVisit'), {
+    deviceId: getLinkedDeviceId(),
+    visitId
+  });
+  return true;
+}
+
+async function pullVisitsFromConvexToLocal() {
+  if (!convexEnabled()) return { count: 0 };
+  await registerCurrentDeviceToConvex();
+  const rows = await runConvexQuery(linkedDeviceFunctionName('visitListQuery', 'visits:listVisits'), { deviceId: getLinkedDeviceId() });
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const visits = safeRows.map((row) => row && (row.payload || row.data || row.visit || row)).filter((item) => item && item.id);
+  for (const item of visits) {
+    await putVisitRecord({ ...item, updatedAt: item.updatedAt || Date.now() });
+  }
+  if (visits.length) {
+    saveHistoryMeta([...visits.map(historyMetaFromVisit), ...readHistoryMeta()]);
+  }
+  return { count: visits.length };
 }
 
 function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
@@ -1733,20 +1850,26 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
       stopScanner();
       return undefined;
     }
-    const payload = buildLinkedDevicePayload();
-    setQrText(payload);
-    setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
-    if (window.QRCode?.toDataURL) {
-      window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
-        if (!error && url) setQrDataUrl(url);
-      });
-    }
-    return () => stopScanner();
+    let active = true;
+    setQrText('');
+    setQrDataUrl('');
+    (async () => {
+      const payload = await buildLinkedDevicePayload();
+      if (!active) return;
+      setQrText(payload);
+      setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
+      if (window.QRCode?.toDataURL) {
+        window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
+          if (!error && url && active) setQrDataUrl(url);
+        });
+      }
+    })();
+    return () => { active = false; stopScanner(); };
   }, [open]);
 
   function saveLinkedDevice(payload) {
     localStorage.setItem('rbv_linked_desktop_device', JSON.stringify({ ...payload, linkedAt: new Date().toISOString() }));
-    setScanStatus('Berhasil linked device. Data perangkat desktop sudah tersimpan di device ini.');
+    setScanStatus(payload.linkCode ? 'Berhasil linked device ke Convex. Sync database siap digunakan.' : 'Berhasil linked device lokal.');
     stopScanner();
     setScanOpen(false);
   }
@@ -1757,7 +1880,13 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
       setScanStatus('QR tidak sesuai aplikasi Bestie Visit.');
       return false;
     }
-    saveLinkedDevice(payload);
+    setScanStatus('Menghubungkan device...');
+    acceptLinkedDevicePayload(payload)
+      .then(() => saveLinkedDevice(payload))
+      .catch((error) => {
+        console.warn('Accept linked device gagal:', error);
+        setScanStatus(error?.message || 'Gagal linked device ke Convex.');
+      });
     return true;
   }
 
@@ -1873,7 +2002,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp43-floating-new-visit-fixed" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp44-convex-client-sync" },
                 React.createElement("div", { className: "grid grid-cols-3 gap-2" },
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setLinkedOpen(true) },
                         React.createElement(Icon, { name: "qr", className: "h-4 w-4 shrink-0 text-audit-primary" }),
@@ -2963,6 +3092,7 @@ function App() {
     }
     useEffect(() => {
         refreshHistory();
+        pullVisitsFromConvexToLocal().then(() => refreshHistory()).catch((error) => console.warn('Pull Convex visits gagal:', error));
         let cancelled = false;
         let versionTimer = null;
         function reloadWithVersion(version) {
@@ -3141,6 +3271,7 @@ function App() {
                 setHistory(nextMeta);
                 updateStorageLabel();
                 upsertMonitorVisit(nextVisit);
+                upsertVisitToConvex(nextVisit).catch((error) => console.warn('Sync visit Convex gagal:', error));
             }
             catch (error) {
                 console.warn('Autosave gagal:', error);
@@ -3177,6 +3308,7 @@ function App() {
         localStorage.setItem(ACTIVE_VISIT_KEY, next.id);
         updateStorageLabel();
         upsertMonitorVisit(next);
+        upsertVisitToConvex(next).catch((error) => console.warn('Sync visit Convex gagal:', error));
     }
     async function openVisit(id) {
         try {
@@ -3199,6 +3331,7 @@ function App() {
         if (!ok)
             return;
         await deleteVisitRecord(id);
+        deleteVisitFromConvex(id).catch((error) => console.warn('Delete visit Convex gagal:', error));
         const nextMeta = saveHistoryMeta(readHistoryMeta().filter((item) => item.id !== id));
         setHistory(nextMeta);
         if ((visit === null || visit === void 0 ? void 0 : visit.id) === id) {
@@ -3212,6 +3345,8 @@ function App() {
         const ok = confirm('Hapus semua history kunjungan di perangkat ini?');
         if (!ok)
             return;
+        const deletedMeta = readHistoryMeta();
+        deletedMeta.forEach((item) => deleteVisitFromConvex(item.id).catch((error) => console.warn('Delete visit Convex gagal:', error)));
         await clearVisitRecords();
         saveHistoryMeta([]);
         localStorage.removeItem(ACTIVE_VISIT_KEY);

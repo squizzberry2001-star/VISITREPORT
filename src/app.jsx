@@ -20,7 +20,7 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp43-floating-new-visit-fixed';
+const APP_BUILD_VERSION = 'revamp44-convex-client-sync';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2031,7 +2031,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp43-floating-new-visit-fixed">
+        <div className="mt-3" data-build="revamp44-convex-client-sync">
           <div className="grid grid-cols-3 gap-2">
             <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setLinkedOpen(true)}>
               <Icon name="qr" className="h-4 w-4 shrink-0 text-audit-primary" />
