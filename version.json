@@ -1,6 +1,6 @@
 {
-  "version": "revamp39-home-buttons-grid-icons",
-  "build": "revamp39-home-buttons-grid-icons",
+  "version": "revamp40-home-buttons-icons-clean",
+  "build": "revamp40-home-buttons-icons-clean",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
