@@ -1,6 +1,6 @@
 {
-  "version": "revamp40-home-buttons-icons-clean",
-  "build": "revamp40-home-buttons-icons-clean",
+  "version": "revamp41-home-floating-linked-device",
+  "build": "revamp41-home-floating-linked-device",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
