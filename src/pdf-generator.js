@@ -747,7 +747,7 @@
     const cellPadX = 2.2;
     const fullW = tableWidth;
     const halfW = (tableWidth - cellGap) / 2;
-    const valueFontSize = 8.6;
+    const valueFontSize = pdfTableFontSize();
 
     function buildField(label, value, width, options) {
       const opts = options || {};
@@ -851,9 +851,7 @@
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
     doc.setFontSize(valueFontSize);
     doc.setTextColor.apply(doc, valueText);
-    const fieldText = field.value !== undefined ? field.value : (field.lines || ['-']).join('\n');
-    const fittedLines = splitRichTextToLines(doc, fieldText, Math.max(8, width - 4.4), field.boldValue);
-    drawRichLinesInBox(doc, fittedLines, x + 2.0, y + 7.4, Math.max(8, width - 4.4), Math.max(4, height - 7.7), lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 7.4, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -974,8 +972,8 @@
     const evidenceFontSize = pdfEvidenceFontSize();
     const lineHeight = Math.max(3.6, evidenceFontSize * 0.45);
     const imageHeight = Math.max(23, Math.min(cardHeight * 0.48, cardHeight - 20));
-    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 10) / lineHeight));
-    const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 9) / lineHeight));
+    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 14) / lineHeight));
+    const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
       doc.setFont('helvetica', 'normal');
@@ -1034,12 +1032,7 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(evidenceFontSize);
     doc.setTextColor(15, 23, 42);
-    const descBoxX = x + 5;
-    const descBoxY = descY + 2.1;
-    const descBoxW = Math.max(10, width - 10);
-    const descBoxH = Math.max(6, descHeight - 2.8);
-    const descLines = splitRichTextToLines(doc, item.rawDescription || richLineToText((item.richLines || [])[0] || [{ text: '-' }]), descBoxW, false);
-    drawRichLinesInBox(doc, descLines, descBoxX, descBoxY, descBoxW, descBoxH, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 2.1, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {
