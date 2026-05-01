@@ -880,10 +880,10 @@
   }
 
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
-    const lineHeight = 4.15;
-    const imageHeight = Math.max(34, Math.min(cardHeight * 0.55, cardHeight - 24));
-    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 13) / lineHeight));
-    const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
+    const lineHeight = 3.6;
+    const imageHeight = Math.max(23, Math.min(cardHeight * 0.48, cardHeight - 19));
+    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 10) / lineHeight));
+    const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 9) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
       const richLines = splitRichTextToLines(doc, photo.description, cardWidth - 10, false);
@@ -904,41 +904,41 @@
   async function drawPhotoGridCard(doc, item, x, y, width, height, palette) {
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(203, 213, 225);
-    doc.roundedRect(x, y, width, height, 4, 4, 'FD');
+    doc.roundedRect(x, y, width, height, 3, 3, 'FD');
 
-    let descY = y + 7;
-    let descHeight = height - 10;
+    let descY = y + 5;
+    let descHeight = height - 8;
     if (item.image) {
-      const imgX = x + 4;
-      const imgY = y + 4;
-      const imgW = Math.max(20, width - 8);
-      const imgH = Math.max(28, Math.min(item.imageHeight || 42, height - 22));
-      const added = await addImageInBox(doc, item.image, imgX, imgY, imgW, imgH, 'coverCrop');
+      const imgX = x + 3;
+      const imgY = y + 3;
+      const imgW = Math.max(18, width - 6);
+      const imgH = Math.max(22, Math.min(item.imageHeight || 34, height - 17));
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
+      const added = await addImageInBox(doc, item.image, imgX + 0.6, imgY + 0.6, imgW - 1.2, imgH - 1.2, 'contain');
       if (!added) {
-        doc.setFillColor(248, 250, 252);
-        doc.roundedRect(imgX, imgY, imgW, imgH, 3, 3, 'F');
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.8);
+        doc.setFontSize(7.8);
         doc.setTextColor(148, 163, 184);
         doc.text('No photo', x + width / 2, imgY + imgH / 2, { align: 'center' });
       }
-      descY = imgY + imgH + 5;
-      descHeight = height - (descY - y) - 4;
+      descY = imgY + imgH + 3.2;
+      descHeight = height - (descY - y) - 3;
     }
 
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(x + 4, descY - 2, width - 8, Math.max(10, descHeight), 3, 3, 'F');
+    doc.roundedRect(x + 3, descY - 1.4, width - 6, Math.max(8, descHeight), 2.5, 2.5, 'F');
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
+      doc.setFontSize(7.1);
       doc.setTextColor.apply(doc, palette.primary);
-      doc.text(item.title, x + 7, descY + 2.7, { baseline: 'top' });
-      descY += 4.8;
+      doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
+      descY += 3.9;
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.3);
+    doc.setFontSize(8.2);
     doc.setTextColor.apply(doc, palette.ink);
-    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 7, descY + 2.8, item.lineHeight || 4.15, { textColor: palette.ink, fontSize: 9.3, textOptions: { baseline: 'top' } });
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 1.9, item.lineHeight || 3.6, { textColor: palette.ink, fontSize: 8.2, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {
@@ -947,11 +947,11 @@
 
     drawStaticTitleSlide(doc, templateKey, title, subtitle, palette, pageWidth, pageHeight, margin);
 
-    const columns = 3;
+    const columns = 4;
     const rowsPerPage = 2;
     const maxPerPage = columns * rowsPerPage;
-    const gap = 5;
-    const contentTop = 24;
+    const gap = 3.2;
+    const contentTop = 23;
     const contentBottom = pageHeight - 10;
     const cardWidth = (pageWidth - margin * 2 - gap * (columns - 1)) / columns;
     const cardHeight = (contentBottom - contentTop - gap * (rowsPerPage - 1)) / rowsPerPage;
