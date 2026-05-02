@@ -77,7 +77,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp60-global-admin-welcome-notice';
+const APP_BUILD_VERSION = 'revamp62-netlify-blobs-sync';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1959,7 +1959,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         return null;
     return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' }, React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' }, React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' }, React.createElement('div', null, React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'), React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')), React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' }, React.createElement(Icon, { name: 'close', className: 'h-5 w-5' }))), React.createElement('div', { className: 'space-y-4 p-5' }, React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' }, React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' }, qrDataUrl
         ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
-        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { var _a; (_a = navigator.clipboard) === null || _a === void 0 ? void 0 : _a.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
+        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { var _a; (_a = navigator.clipboard) === null || _a === void 0 ? void 0 : _a.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Netlify untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
 }
 function HomeUpdateNotice({ config }) {
     const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
@@ -2199,8 +2199,45 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const scrollRef = useRef(null);
     const [fallback, setFallback] = useState(false);
     const [renderStatus, setRenderStatus] = useState('');
+    const [zoom, setZoom] = useState(1);
+    const [renderZoom, setRenderZoom] = useState(1);
+    const zoomRef = useRef(1);
+    const pinchRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
     const renderSeqRef = useRef(0);
     const lastWidthRef = useRef(0);
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+    function touchDistance(touches) {
+        if (!touches || touches.length < 2)
+            return 0;
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    function handlePreviewTouchStart(event) {
+        if (!event.touches || event.touches.length < 2)
+            return;
+        const distance = touchDistance(event.touches);
+        if (!distance)
+            return;
+        pinchRef.current = { active: true, startDistance: distance, startZoom: zoomRef.current || 1 };
+    }
+    function handlePreviewTouchMove(event) {
+        if (!pinchRef.current.active || !event.touches || event.touches.length < 2)
+            return;
+        event.preventDefault();
+        event.stopPropagation();
+        const distance = touchDistance(event.touches);
+        const ratio = distance / Math.max(1, pinchRef.current.startDistance);
+        const nextZoom = clampNumber(pinchRef.current.startZoom * ratio, 0.75, 2.6, 1);
+        zoomRef.current = nextZoom;
+        setZoom(nextZoom);
+    }
+    function finishPreviewPinch() {
+        if (!pinchRef.current.active)
+            return;
+        pinchRef.current.active = false;
+        setRenderZoom(zoomRef.current || 1);
+    }
     useEffect(() => {
         let cancelled = false;
         let resizeTimer = null;
@@ -2233,7 +2270,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     return;
                 const pdf = await pdfjsLib.getDocument({ data }).promise;
                 const fragment = document.createDocumentFragment();
-                const maxWidth = Math.max(260, Math.min(measuredWidth, 1180));
+                const maxWidth = Math.max(260, Math.min(measuredWidth * renderZoom, 1680));
                 for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
                     if (cancelled || renderSeqRef.current !== seq)
                         return;
@@ -2289,14 +2326,21 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             window.removeEventListener('orientationchange', scheduleRender);
             renderSeqRef.current += 1;
         };
-    }, [blob]);
+    }, [blob, renderZoom]);
+    const liveScale = renderZoom ? zoom / renderZoom : 1;
+    const zoomLabel = Math.round((zoom || 1) * 100);
     if (!blob)
         return React.createElement("div", { className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600" }, status);
     if (fallback && pdfUrl)
         return React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH', title: "Preview Regional Bestie PDF" });
-    return React.createElement("div", { ref: scrollRef, className: "pdf-canvas-scroll" },
-        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages" }),
-        renderStatus ? React.createElement("div", { className: "pdf-render-status" }, renderStatus) : null);
+    return (React.createElement("div", { ref: scrollRef, className: "pdf-canvas-scroll", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: finishPreviewPinch, onTouchCancel: finishPreviewPinch, style: { touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } },
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", style: { transform: `scale(${liveScale})`, transformOrigin: 'top left', transition: pinchRef.current.active ? 'none' : 'transform 120ms ease', willChange: 'transform' } }),
+        React.createElement("div", { "aria-hidden": "true", style: { position: 'sticky', bottom: 10, left: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' } },
+            React.createElement("span", { style: { borderRadius: 999, background: 'rgba(15,23,42,.72)', color: '#fff', padding: '5px 10px', fontSize: 11, fontWeight: 900, boxShadow: '0 10px 24px rgba(15,23,42,.18)' } },
+                "Zoom ",
+                zoomLabel,
+                "%")),
+        renderStatus ? React.createElement("div", { className: "pdf-render-status" }, renderStatus) : null));
 }
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
@@ -2529,13 +2573,373 @@ function persistManualRequestsFromRemote(items) {
         siteCode4: item.storeCode,
         address: item.address,
         city: '',
-        source: 'convex-approved',
+        source: netlifyEnabled() ? 'netlify-approved' : (supabaseEnabled() ? 'supabase-approved' : 'convex-approved'),
         approvedAt: item.updatedAt,
         requestedBy: item.bestieName
     }));
     if (approvedStores.length)
         saveApprovedManualStores([...approvedStores, ...readApprovedManualStores()]);
     return normalized;
+}
+// =============================================================
+// Netlify backend helpers
+// =============================================================
+function getNetlifyConfig() {
+    const config = window.RB_NETLIFY_CONFIG && typeof window.RB_NETLIFY_CONFIG === 'object' ? window.RB_NETLIFY_CONFIG : {};
+    return config;
+}
+function netlifyEnabled() {
+    const config = getNetlifyConfig();
+    const path = cleanText(config.functionPath || '/.netlify/functions/rbv-data');
+    return config.enabled !== false && Boolean(path);
+}
+function getNetlifyFunctionUrl() {
+    const config = getNetlifyConfig();
+    const path = cleanText(config.functionPath || '/.netlify/functions/rbv-data');
+    const baseUrl = cleanText(config.baseUrl || '');
+    if (/^https?:\/\//i.test(path))
+        return path;
+    if (baseUrl)
+        return baseUrl.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
+    return path.startsWith('/') ? path : '/' + path;
+}
+function normalizeNetlifyError(error, label) {
+    if (!error)
+        return '';
+    return `${label || 'Netlify'}: ${error.message || error.details || error.hint || 'gagal diproses'}`;
+}
+async function netlifyRequest(action, options = {}) {
+    if (!netlifyEnabled() || !action)
+        return null;
+    const method = options.method || 'GET';
+    const url = new URL(getNetlifyFunctionUrl(), window.location.origin);
+    url.searchParams.set('action', action);
+    if (options.params && typeof options.params === 'object') {
+        Object.entries(options.params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '')
+                url.searchParams.set(key, String(value));
+        });
+    }
+    const config = getNetlifyConfig();
+    const headers = { Accept: 'application/json' };
+    if (options.body !== undefined)
+        headers['Content-Type'] = 'application/json';
+    if (cleanText(config.adminToken))
+        headers['X-Admin-Token'] = cleanText(config.adminToken);
+    const response = await fetch(url.toString(), {
+        method,
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        cache: 'no-store'
+    });
+    let payload = null;
+    try {
+        payload = await response.json();
+    }
+    catch (error) { }
+    if (!response.ok) {
+        throw new Error((payload === null || payload === void 0 ? void 0 : payload.error) || (payload === null || payload === void 0 ? void 0 : payload.message) || `Netlify request gagal (${response.status})`);
+    }
+    return payload;
+}
+async function upsertMonitorVisitToNetlify(visit) {
+    if (!netlifyEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
+        return false;
+    try {
+        await netlifyRequest('upsertMonitorVisit', { method: 'POST', body: monitorPayloadFromVisit(visit) });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify monitor upsert'));
+        return false;
+    }
+}
+async function fetchMonitorRowsFromNetlify() {
+    if (!netlifyEnabled())
+        return null;
+    try {
+        const payload = await netlifyRequest('listMonitorVisits', { params: { limit: getNetlifyConfig().monitorLimit || 500 } });
+        return normalizeMonitorRows((payload === null || payload === void 0 ? void 0 : payload.rows) || (payload === null || payload === void 0 ? void 0 : payload.data) || []);
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify monitor read'));
+        return null;
+    }
+}
+async function fetchManualRequestsFromNetlify() {
+    if (!netlifyEnabled())
+        return null;
+    try {
+        const payload = await netlifyRequest('listManualRequests');
+        return persistManualRequestsFromRemote((payload === null || payload === void 0 ? void 0 : payload.rows) || (payload === null || payload === void 0 ? void 0 : payload.data) || []);
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify request toko read'));
+        return null;
+    }
+}
+async function syncManualRequestToNetlify(request) {
+    if (!netlifyEnabled() || !request)
+        return false;
+    try {
+        await netlifyRequest('upsertManualRequest', { method: 'POST', body: manualRequestPayload(request) });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify request toko sync'));
+        return false;
+    }
+}
+async function fetchAppConfigsFromNetlify() {
+    if (!netlifyEnabled())
+        return null;
+    try {
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice].join(',') } });
+        return normalizeRemoteAppConfigRows((payload === null || payload === void 0 ? void 0 : payload.rows) || (payload === null || payload === void 0 ? void 0 : payload.data) || []);
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify app config read'));
+        return null;
+    }
+}
+async function syncAppConfigToNetlify(key, payload) {
+    if (!netlifyEnabled() || !key)
+        return false;
+    try {
+        await netlifyRequest('setAppSetting', {
+            method: 'POST',
+            body: { key, payload, updatedBy: SESSION_ID }
+        });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify app config sync'));
+        return false;
+    }
+}
+function remoteSyncProvider() {
+    if (netlifyEnabled())
+        return 'netlify';
+    if (supabaseEnabled())
+        return 'supabase';
+    if (convexEnabled())
+        return 'convex';
+    return 'local';
+}
+// =============================================================
+// Supabase backend helpers
+// =============================================================
+let RB_SUPABASE_CLIENT = null;
+let RB_SUPABASE_BUNDLE_PROMISE = null;
+function getSupabaseConfig() {
+    const config = window.RB_SUPABASE_CONFIG && typeof window.RB_SUPABASE_CONFIG === 'object' ? window.RB_SUPABASE_CONFIG : {};
+    return config;
+}
+function getSupabaseKey() {
+    const config = getSupabaseConfig();
+    return cleanText(config.publishableKey || config.anonKey || config.key || '');
+}
+function supabaseEnabled() {
+    const config = getSupabaseConfig();
+    return Boolean(config.enabled && cleanText(config.url) && getSupabaseKey());
+}
+function getRemotePollMs() {
+    if (netlifyEnabled())
+        return Math.max(3500, Number(getNetlifyConfig().pollMs || 5000));
+    if (supabaseEnabled())
+        return Math.max(3500, Number(getSupabaseConfig().pollMs || 5000));
+    return Math.max(3500, Number(getConvexConfig().pollMs || 5000));
+}
+function getSupabaseTable(name, fallback) {
+    const config = getSupabaseConfig();
+    const tables = config.tables && typeof config.tables === 'object' ? config.tables : {};
+    return cleanText(tables[name] || config[name + 'Table'] || fallback);
+}
+function getSupabaseBundleUrl() {
+    const config = getSupabaseConfig();
+    return config.bundleUrl || 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+}
+function loadSupabaseBundle() {
+    var _a;
+    if ((_a = window.supabase) === null || _a === void 0 ? void 0 : _a.createClient)
+        return Promise.resolve(window.supabase);
+    if (RB_SUPABASE_BUNDLE_PROMISE)
+        return RB_SUPABASE_BUNDLE_PROMISE;
+    RB_SUPABASE_BUNDLE_PROMISE = new Promise((resolve, reject) => {
+        const existing = document.getElementById('rbv-supabase-client-bundle');
+        if (existing) {
+            existing.addEventListener('load', () => resolve(window.supabase), { once: true });
+            existing.addEventListener('error', () => reject(new Error('Supabase client gagal dimuat.')), { once: true });
+            return;
+        }
+        const script = document.createElement('script');
+        script.id = 'rbv-supabase-client-bundle';
+        script.src = getSupabaseBundleUrl();
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.onload = () => { var _a; return ((_a = window.supabase) === null || _a === void 0 ? void 0 : _a.createClient) ? resolve(window.supabase) : reject(new Error('Supabase client tidak tersedia.')); };
+        script.onerror = () => reject(new Error('Supabase client gagal dimuat.'));
+        document.head.appendChild(script);
+    });
+    return RB_SUPABASE_BUNDLE_PROMISE;
+}
+async function getSupabaseClient() {
+    if (!supabaseEnabled())
+        return null;
+    if (RB_SUPABASE_CLIENT)
+        return RB_SUPABASE_CLIENT;
+    const supabaseLib = await loadSupabaseBundle();
+    const config = getSupabaseConfig();
+    RB_SUPABASE_CLIENT = supabaseLib.createClient(cleanText(config.url), getSupabaseKey(), {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+        }
+    });
+    return RB_SUPABASE_CLIENT;
+}
+function normalizeSupabaseError(error, label) {
+    if (!error)
+        return '';
+    return `${label || 'Supabase'}: ${error.message || error.details || error.hint || 'gagal diproses'}`;
+}
+async function upsertMonitorVisitToSupabase(visit) {
+    if (!supabaseEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
+        return false;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return false;
+        const table = getSupabaseTable('monitor', 'monitor_visits');
+        const { error } = await client.from(table).upsert(monitorPayloadFromVisit(visit), { onConflict: 'visit_key' });
+        if (error)
+            throw error;
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase monitor upsert'));
+        return false;
+    }
+}
+async function fetchMonitorRowsFromSupabase() {
+    if (!supabaseEnabled())
+        return null;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return null;
+        const table = getSupabaseTable('monitor', 'monitor_visits');
+        const limit = Math.max(50, Number(getSupabaseConfig().monitorLimit || 500));
+        const { data, error } = await client.from(table).select('*').order('updated_at', { ascending: false }).limit(limit);
+        if (error)
+            throw error;
+        return normalizeMonitorRows(data || []);
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase monitor read'));
+        return null;
+    }
+}
+function manualRequestPayload(request) {
+    return {
+        request_id: request.id,
+        status: request.status || 'pending',
+        created_at: request.createdAt || Date.now(),
+        updated_at: request.updatedAt || Date.now(),
+        bestie_name: cleanText(request.bestieName),
+        store_name: cleanText(request.storeName),
+        store_code: cleanText(request.storeCode),
+        address: cleanText(request.address),
+        note: cleanText(request.note),
+        session_id: SESSION_ID,
+        page_url: location.href,
+        user_agent: navigator.userAgent
+    };
+}
+async function fetchManualRequestsFromSupabase() {
+    if (!supabaseEnabled())
+        return null;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return null;
+        const table = getSupabaseTable('manualRequests', 'manual_store_requests');
+        const { data, error } = await client.from(table).select('*').order('updated_at', { ascending: false }).limit(500);
+        if (error)
+            throw error;
+        return persistManualRequestsFromRemote(data || []);
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase request toko read'));
+        return null;
+    }
+}
+async function syncManualRequestToSupabase(request) {
+    if (!supabaseEnabled() || !request)
+        return false;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return false;
+        const table = getSupabaseTable('manualRequests', 'manual_store_requests');
+        const { error } = await client.from(table).upsert(manualRequestPayload(request), { onConflict: 'request_id' });
+        if (error)
+            throw error;
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase request toko sync'));
+        return false;
+    }
+}
+async function fetchAppConfigsFromSupabase() {
+    if (!supabaseEnabled())
+        return null;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return null;
+        const table = getSupabaseTable('appSettings', 'app_settings');
+        const { data, error } = await client
+            .from(table)
+            .select('config_key,payload,updated_at')
+            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice]);
+        if (error)
+            throw error;
+        return normalizeRemoteAppConfigRows((data || []).map((item) => ({
+            key: item.config_key,
+            payload: item.payload,
+            updatedAt: item.updated_at
+        })));
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase app config read'));
+        return null;
+    }
+}
+async function syncAppConfigToSupabase(key, payload) {
+    if (!supabaseEnabled() || !key)
+        return false;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return false;
+        const table = getSupabaseTable('appSettings', 'app_settings');
+        const { error } = await client.from(table).upsert({
+            config_key: key,
+            payload,
+            updated_at: new Date().toISOString(),
+            updated_by: SESSION_ID
+        }, { onConflict: 'config_key' });
+        if (error)
+            throw error;
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase app config sync'));
+        return false;
+    }
 }
 function monitorPayloadFromVisit(visit) {
     const detail = getStoreWebDetail(visit.store);
@@ -2555,6 +2959,10 @@ function monitorPayloadFromVisit(visit) {
     };
 }
 async function upsertMonitorVisit(visit) {
+    if (await upsertMonitorVisitToNetlify(visit))
+        return;
+    if (await upsertMonitorVisitToSupabase(visit))
+        return;
     const config = getConvexConfig();
     if (!convexEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
         return;
@@ -2583,6 +2991,12 @@ async function upsertMonitorVisit(visit) {
     }
 }
 async function fetchMonitorRowsFromConvex() {
+    const netlifyRows = await fetchMonitorRowsFromNetlify();
+    if (netlifyRows !== null)
+        return netlifyRows;
+    const supabaseRows = await fetchMonitorRowsFromSupabase();
+    if (supabaseRows !== null)
+        return supabaseRows;
     const config = getConvexConfig();
     if (!convexEnabled())
         return null;
@@ -2608,6 +3022,12 @@ async function fetchMonitorRowsFromConvex() {
     return normalizeMonitorRows(payload);
 }
 async function fetchManualRequestsFromConvex() {
+    const netlifyRows = await fetchManualRequestsFromNetlify();
+    if (netlifyRows !== null)
+        return netlifyRows;
+    const supabaseRows = await fetchManualRequestsFromSupabase();
+    if (supabaseRows !== null)
+        return supabaseRows;
     const config = getConvexConfig();
     if (!convexEnabled())
         return null;
@@ -2633,6 +3053,10 @@ async function fetchManualRequestsFromConvex() {
     return persistManualRequestsFromRemote(payload);
 }
 async function syncManualRequestToConvex(request) {
+    if (await syncManualRequestToNetlify(request))
+        return;
+    if (await syncManualRequestToSupabase(request))
+        return;
     const config = getConvexConfig();
     if (!convexEnabled() || !request)
         return;
@@ -2696,6 +3120,12 @@ function applyRemoteAppConfigRows(rows) {
     return normalized;
 }
 async function fetchAppConfigsFromConvex() {
+    const netlifyRows = await fetchAppConfigsFromNetlify();
+    if (netlifyRows !== null)
+        return netlifyRows;
+    const supabaseRows = await fetchAppConfigsFromSupabase();
+    if (supabaseRows !== null)
+        return supabaseRows;
     const config = getConvexConfig();
     if (!convexEnabled())
         return null;
@@ -2711,18 +3141,24 @@ async function fetchAppConfigsFromConvex() {
     return null;
 }
 async function syncAppConfigToConvex(key, payload) {
+    if (await syncAppConfigToNetlify(key, payload))
+        return true;
+    if (await syncAppConfigToSupabase(key, payload))
+        return true;
     const config = getConvexConfig();
     if (!convexEnabled() || !key)
-        return;
+        return false;
     try {
         await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
             key,
             payload,
             updatedBy: SESSION_ID
         });
+        return true;
     }
     catch (error) {
         console.warn('Convex app config sync gagal:', error);
+        return false;
     }
 }
 function syncWelcomeConfigToConvex(config) {
@@ -2882,8 +3318,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
             onWelcomeConfigChange(saved);
-        await syncWelcomeConfigToConvex(saved);
-        alert('Text welcome berhasil disimpan dan disinkronkan.');
+        const synced = await syncWelcomeConfigToConvex(saved);
+        alert(synced ? 'Text welcome berhasil disimpan dan disinkronkan ke Netlify.' : 'Text welcome tersimpan lokal, tapi Netlify belum aktif atau gagal sync.');
     }
     function saveAssignmentSettings() {
         const saved = saveAssignmentLinkConfig(assignmentLink);
@@ -2901,8 +3337,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setNoticeTitle(saved.title);
         setNoticeMessagesText(saved.messages.join('\n'));
         setNoticeIntervalSeconds(saved.intervalSeconds);
-        await syncUpdateNoticeConfigToConvex(saved);
-        alert('Informasi update HOME berhasil disimpan dan disinkronkan.');
+        const synced = await syncUpdateNoticeConfigToConvex(saved);
+        alert(synced ? 'Informasi update HOME berhasil disimpan dan disinkronkan ke Netlify.' : 'Informasi update tersimpan lokal, tapi Netlify belum aktif atau gagal sync.');
     }
     function applyPdfSettings(nextSettings, showAlert = false) {
         const saved = savePdfSettings(nextSettings);
@@ -2959,7 +3395,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             const remoteRows = remoteRowsResult.status === 'fulfilled' ? remoteRowsResult.value : null;
             const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
             if (remoteRows !== null) {
-                applyRows(remoteRows, source === 'convex realtime' ? 'convex realtime' : 'convex');
+                applyRows(remoteRows, netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : (source === 'convex realtime' ? 'convex realtime' : 'convex')));
             }
             else {
                 applyRows(localRows(), 'local');
@@ -3021,6 +3457,12 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setLoading(true);
             setManualRequests(readManualStoreRequests());
             try {
+                if (netlifyEnabled() || supabaseEnabled()) {
+                    setConnectionState('online');
+                    await refresh();
+                    pollId = window.setInterval(() => refresh({ quiet: true }), getRemotePollMs());
+                    return;
+                }
                 const client = await getConvexRealtimeClient();
                 if (cancelled)
                     return;
@@ -3061,8 +3503,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 }
                 if (!unsubscribeRows && !unsubscribeRequests) {
                     await refresh();
-                    const pollMs = Number(getConvexConfig().pollMs || 5000);
-                    pollId = window.setInterval(() => refresh({ quiet: true }), Math.max(2500, pollMs));
+                    pollId = window.setInterval(() => refresh({ quiet: true }), getRemotePollMs());
                 }
                 else {
                     await refresh({ quiet: true });
@@ -3073,8 +3514,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 if (!cancelled) {
                     setConnectionState('fallback');
                     await refresh();
-                    const pollMs = Number(getConvexConfig().pollMs || 5000);
-                    pollId = window.setInterval(() => refresh({ quiet: true }), Math.max(2500, pollMs));
+                    pollId = window.setInterval(() => refresh({ quiet: true }), getRemotePollMs());
                 }
             }
             finally {
@@ -3110,7 +3550,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
     const todayVisits = rows.filter((row) => String(row.visit_date || '').slice(0, 10) === today).length;
-    const isLive = source === 'convex realtime';
+    const isLive = source === 'netlify' || source === 'supabase' || source === 'convex realtime';
+    const sourceBadgeLabel = source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
     return (React.createElement("div", { className: "fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7" },
@@ -3118,7 +3559,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("div", null,
                     React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Monitor Admin"),
-                        React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, isLive ? 'Live Convex' : 'Manual refresh'),
+                        React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, sourceBadgeLabel),
                         React.createElement(Badge, { tone: connectionTone }, connectionState)),
                     React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pantauan Visit Bestie & Store"),
                     lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
@@ -3461,15 +3902,16 @@ function App() {
         async function startRemoteConfigSync() {
             try {
                 await refreshRemoteConfigs();
-                unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] }, (rows) => { if (!cancelled)
-                    applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
+                if (!netlifyEnabled() && !supabaseEnabled()) {
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] }, (rows) => { if (!cancelled)
+                        applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
+                }
             }
             catch (error) {
                 console.warn('Sync app config gagal:', error);
             }
             if (!cancelled && !unsubscribe) {
-                const pollMs = Math.max(3500, Number(getConvexConfig().pollMs || 5000));
-                pollId = window.setInterval(refreshRemoteConfigs, pollMs);
+                pollId = window.setInterval(refreshRemoteConfigs, getRemotePollMs());
             }
         }
         startRemoteConfigSync();
