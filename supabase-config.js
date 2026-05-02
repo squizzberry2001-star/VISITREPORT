@@ -12,7 +12,8 @@ window.RB_SUPABASE_CONFIG = {
   tables: {
     appSettings: 'app_settings',
     monitor: 'monitor_visits',
-    manualRequests: 'manual_store_requests'
+    manualRequests: 'manual_store_requests',
+    presence: 'monitor_presence'
   },
 
   // HOME info/welcome + monitor admin akan refresh berkala.

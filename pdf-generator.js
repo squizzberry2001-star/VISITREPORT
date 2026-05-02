@@ -8,6 +8,7 @@
   const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
   const DEFAULT_PDF_SETTINGS = {
     tableFontSize: 9.4,
+    tableTitleFontSize: 9.8,
     evidenceFontSize: 8.9,
     tableExtraRows: 0,
     photoGridPerPage: 6
@@ -31,6 +32,7 @@
       const raw = JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}') || {};
       return {
         tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
+        tableTitleFontSize: clampNumber(raw.tableTitleFontSize, 8, 14, DEFAULT_PDF_SETTINGS.tableTitleFontSize),
         evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
         tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows)),
         photoGridPerPage: normalizePdfPhotoGridPerPage(raw.photoGridPerPage, DEFAULT_PDF_SETTINGS.photoGridPerPage)
@@ -42,6 +44,10 @@
 
   function pdfTableFontSize() {
     return readPdfSettings().tableFontSize;
+  }
+
+  function pdfTableTitleFontSize() {
+    return readPdfSettings().tableTitleFontSize;
   }
 
   function pdfEvidenceFontSize() {
@@ -441,8 +447,8 @@
 
   function addFooter(doc, pageWidth, pageHeight) {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.setTextColor(188, 198, 208);
+    doc.setFontSize(11.5);
+    doc.setTextColor(148, 163, 184);
     doc.text('GENERATE BY BESTIE VISIT WEB REPORT', pageWidth / 2, pageHeight - 4.8, { align: 'center' });
   }
 
@@ -885,8 +891,9 @@
 
   function observationCompactSegmentHeight(rows) {
     const density = pdfTableExtraRows();
-    const titleH = Math.max(4.4, 5.4 - density * 0.18);
-    const titleGap = Math.max(0.45, 0.8 - density * 0.06);
+    const titleFontSize = pdfTableTitleFontSize();
+    const titleH = Math.max(5.8, titleFontSize * 0.62);
+    const titleGap = Math.max(1.6, 2.4 - density * 0.08);
     const pad = Math.max(1.45, 2.2 - density * 0.16);
     const rowGap = Math.max(0.35, 0.75 - density * 0.08);
     let bodyH = pad * 2;
@@ -898,8 +905,9 @@
 
   function drawObservationCompactSegment(doc, rowIndex, totalRows, rows, x, y, width, palette, continuation) {
     const density = pdfTableExtraRows();
-    const titleH = Math.max(4.4, 5.4 - density * 0.18);
-    const titleGap = Math.max(0.45, 0.8 - density * 0.06);
+    const titleFontSize = pdfTableTitleFontSize();
+    const titleH = Math.max(5.8, titleFontSize * 0.62);
+    const titleGap = Math.max(1.6, 2.4 - density * 0.08);
     const pad = Math.max(1.45, 2.2 - density * 0.16);
     const rowGap = Math.max(0.35, 0.75 - density * 0.08);
     const cellGap = 1.0;
@@ -913,9 +921,9 @@
     });
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.2);
+    doc.setFontSize(titleFontSize);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 4.2);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + Math.max(4.8, titleFontSize * 0.42));
 
     doc.setDrawColor(148, 163, 184);
     doc.setLineWidth(0.34);
@@ -943,8 +951,9 @@
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
-    const x = margin;
-    const width = pageWidth - margin * 2;
+    const tableMargin = 5.5;
+    const x = tableMargin;
+    const width = pageWidth - tableMargin * 2;
     const density = pdfTableExtraRows();
     const bottom = pageHeight - Math.max(5, 12 - density * 1.6);
     const gap = Math.max(1.2, 2.4 - density * 0.22);
@@ -1130,7 +1139,7 @@
     const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: [320, 180] });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 14;
+    const margin = 10;
     const palette = { primary: [0, 153, 166], accent: [249, 115, 22], ink: [39, 39, 42] };
     const detail = getStoreDetail(data && data.store, data || {});
 

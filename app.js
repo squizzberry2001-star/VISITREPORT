@@ -35,8 +35,11 @@ const DEFAULT_UPDATE_NOTICE_CONFIG = {
 const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
 const DEFAULT_ASSIGNMENT_LINK = 'https://tinyurl.com/store-caassignment';
 const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
+const PRESENCE_LOCAL_KEY = 'rbv_presence_rows_v1';
+const PRESENCE_STALE_MS = 70000;
 const DEFAULT_PDF_SETTINGS = {
     tableFontSize: 9.4,
+    tableTitleFontSize: 9.8,
     evidenceFontSize: 8.9,
     tableExtraRows: 0,
     photoGridPerPage: 6
@@ -58,6 +61,7 @@ function normalizePdfSettings(value) {
     const raw = value && typeof value === 'object' ? value : {};
     return {
         tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
+        tableTitleFontSize: clampNumber(raw.tableTitleFontSize, 8, 14, DEFAULT_PDF_SETTINGS.tableTitleFontSize),
         evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
         tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows)),
         photoGridPerPage: normalizePdfPhotoGridPerPage(raw.photoGridPerPage)
@@ -77,7 +81,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp64-sticky-quick-welcome-zoom';
+const APP_BUILD_VERSION = 'revamp65-focus-secret-presence-full-preview';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -599,19 +603,27 @@ async function restoreVisitReportDataFromFile(file) {
         throw new Error('File backup tidak sesuai aplikasi ini.');
     }
     const visits = Array.isArray(payload.visits) ? payload.visits.filter((item) => item && item.id) : [];
-    const ok = confirmAction(`Restore data backup ini? Data lokal visit saat ini akan diganti.
+    const currentVisits = await getAllVisitRecordsForBackup();
+    const ok = confirmAction(`Restore data backup ini? Data backup akan digabung dengan history di perangkat ini, bukan mengganti/menghapus data lama.
 
+History perangkat ini: ${currentVisits.length}
 Jumlah visit backup: ${visits.length}`);
     if (!ok)
         return false;
-    await clearVisitRecords();
-    for (const visit of visits) {
-        await putVisitRecord({ ...visit, updatedAt: visit.updatedAt || Date.now() });
+    const mergedVisits = uniqueBy([...visits, ...currentVisits].filter((item) => item && item.id), (item) => item.id)
+        .map((visit) => ({ ...visit, updatedAt: visit.updatedAt || Date.now() }));
+    for (const visit of mergedVisits) {
+        await putVisitRecord(visit);
     }
     if (payload.localStorage && typeof payload.localStorage === 'object') {
         Object.entries(payload.localStorage).forEach(([key, value]) => {
-            if (key.indexOf('rbv_') === 0)
-                localStorage.setItem(key, String(value ?? ''));
+            if (key.indexOf('rbv_') !== 0)
+                return;
+            if ([HISTORY_META_KEY, ACTIVE_VISIT_KEY].includes(key))
+                return;
+            if (key === PRESENCE_LOCAL_KEY)
+                return;
+            localStorage.setItem(key, String(value ?? ''));
         });
     }
     const backupMeta = (() => {
@@ -623,10 +635,12 @@ Jumlah visit backup: ${visits.length}`);
             return [];
         }
     })();
-    saveHistoryMeta(backupMeta.length ? backupMeta : visits.map(historyMetaFromVisit));
-    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && visits[0]?.id)
-        localStorage.setItem(ACTIVE_VISIT_KEY, visits[0].id);
-    alert('Restore data selesai. Aplikasi akan dimuat ulang.');
+    const currentMeta = readHistoryMeta();
+    const visitMeta = mergedVisits.map(historyMetaFromVisit);
+    saveHistoryMeta([...backupMeta, ...currentMeta, ...visitMeta]);
+    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && (visits[0]?.id || currentVisits[0]?.id))
+        localStorage.setItem(ACTIVE_VISIT_KEY, visits[0]?.id || currentVisits[0]?.id);
+    alert('Restore data selesai dan history lama tetap aman. Aplikasi akan dimuat ulang.');
     window.location.reload();
     return true;
 }
@@ -717,6 +731,10 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M12 3v12" }),
             React.createElement("path", { d: "m7 10 5 5 5-5" }),
             React.createElement("path", { d: "M5 21h14" })),
+        history: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M3 12a9 9 0 1 0 3-6.7" }),
+            React.createElement("path", { d: "M3 4v5h5" }),
+            React.createElement("path", { d: "M12 7v5l3 2" })),
         upload: React.createElement(React.Fragment, null,
             React.createElement("path", { d: "M12 21V9" }),
             React.createElement("path", { d: "m7 14 5-5 5 5" }),
@@ -1991,6 +2009,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
     const [restoreBusy, setRestoreBusy] = useState(false);
+    const [syncBusy, setSyncBusy] = useState(false);
+    const [syncMessage, setSyncMessage] = useState('');
     const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
     const restoreInputRef = useRef(null);
     useEffect(() => {
@@ -2011,11 +2031,16 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         };
     }, []);
     async function handleManualWebsiteSync() {
+        if (syncBusy)
+            return;
+        setSyncBusy(true);
+        setSyncMessage('Membersihkan cache...');
         try {
             if ('caches' in window) {
                 const keys = await caches.keys();
                 await Promise.all(keys.filter((key) => key.startsWith('bestie-visit-')).map((key) => caches.delete(key)));
             }
+            setSyncMessage('Mengambil update terbaru...');
             if (navigator.serviceWorker?.getRegistrations) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
                 registrations.forEach((registration) => {
@@ -2031,7 +2056,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         const url = new URL(window.location.href);
         url.searchParams.set('v', APP_BUILD_VERSION);
         url.searchParams.set('manualSync', String(Date.now()));
-        window.location.replace(url.toString());
+        setSyncMessage('Reload update...');
+        window.setTimeout(() => window.location.replace(url.toString()), 180);
     }
     async function handleBackupData() {
         if (backupBusy)
@@ -2073,13 +2099,15 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
                     React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, "Home")),
                 React.createElement("div", { className: "history-sync-wrap flex shrink-0 items-center gap-2" },
-                    React.createElement("div", { className: "dashboard-stat dark history-number-card min-w-[84px] px-3 py-2" },
+                    React.createElement("button", { type: "button", className: "dashboard-stat dark history-number-card history-secret-trigger min-w-[84px] px-3 py-2", onClick: onTitleTap, "aria-label": "History panel rahasia" },
+                        React.createElement("span", { className: "history-secret-icon" },
+                            React.createElement(Icon, { name: "history", className: "h-4 w-4" })),
                         React.createElement("p", null, "History"),
                         React.createElement("strong", null, history.length)),
-                    React.createElement("button", { type: "button", className: "manual-sync-button", onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website" },
-                        React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
-                        React.createElement("span", null, "Sync")))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp64-sticky-quick-welcome-zoom" },
+                    React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
+                        syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
+                        React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
+            React.createElement("div", { className: "mt-3", "data-build": "revamp65-focus-secret-presence-full-preview" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -2098,9 +2126,12 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                             boxShadow: '0 10px 22px rgba(185,28,28,0.24)'
                         }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "block max-w-full truncate", style: { color: '#ffffff' } }, "Hapus History"))))),
+                        React.createElement("span", { className: "block max-w-full truncate", style: { color: '#ffffff' } }, "Hapus History"))),
+                syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
+                    React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
+                    React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement(HomeUpdateNotice, { config: noticeConfig }),
-        React.createElement("section", null,
+        React.createElement("section", { className: "dashboard-history-section" },
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
             history.length ? (React.createElement("div", { className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
@@ -2209,6 +2240,34 @@ function NewVisitModal({ open, onClose, onCreate }) {
                 React.createElement(Button, { variant: "secondary", onClick: onClose }, "Tutup"),
                 React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, storeName), disabled: !bestieName || !storeName }, "Mulai Kunjungan")))));
 }
+function getPickerAccept(fileName) {
+    const lower = String(fileName || '').toLowerCase();
+    if (lower.endsWith('.pdf'))
+        return [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }];
+    if (lower.endsWith('.xlsx'))
+        return [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }];
+    if (lower.endsWith('.json'))
+        return [{ description: 'JSON Backup', accept: { 'application/json': ['.json'] } }];
+    return undefined;
+}
+async function saveBlobWithPicker(blob, fileName) {
+    if (window.showSaveFilePicker) {
+        try {
+            const pickerTypes = getPickerAccept(fileName);
+            const handle = await window.showSaveFilePicker({ suggestedName: fileName, ...(pickerTypes ? { types: pickerTypes } : {}) });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return true;
+        }
+        catch (error) {
+            if (error?.name === 'AbortError')
+                return 'cancelled';
+            console.warn('File picker gagal, fallback download:', error);
+        }
+    }
+    return false;
+}
 function downloadBlob(blob, fileName) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -2222,6 +2281,14 @@ function downloadBlob(blob, fileName) {
         window.open(url, '_blank', 'noopener');
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+async function downloadBlobManaged(blob, fileName) {
+    const saved = await saveBlobWithPicker(blob, fileName);
+    if (saved === 'cancelled')
+        return false;
+    if (!saved)
+        downloadBlob(blob, fileName);
+    return true;
 }
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const pagesRef = useRef(null);
@@ -2399,6 +2466,7 @@ function PreviewPage({ visit, onBack }) {
     const [pdfBlob, setPdfBlob] = useState(null);
     const [status, setStatus] = useState('Menyiapkan preview PDF...');
     const [busy, setBusy] = useState(false);
+    const [downloadMessage, setDownloadMessage] = useState('');
     useEffect(() => {
         let cancelled = false;
         let objectUrl = '';
@@ -2427,20 +2495,24 @@ function PreviewPage({ visit, onBack }) {
             URL.revokeObjectURL(objectUrl); };
     }, [visit]);
     async function handleDownloadPdf() {
-        if (!visit)
+        if (!visit || busy)
             return;
         setBusy(true);
+        setDownloadMessage('Menyiapkan PDF...');
         try {
             if (!window.ReportVisitPDF?.createBlob)
                 throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
             const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
             const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
-            downloadBlob(blob, fileName);
+            setDownloadMessage('Pilih lokasi simpan...');
+            const didSave = await downloadBlobManaged(blob, fileName);
+            setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
         }
         catch (error) {
             alert(error?.message || 'Gagal download PDF.');
         }
         finally {
+            window.setTimeout(() => setDownloadMessage(''), 500);
             setBusy(false);
         }
     }
@@ -2484,7 +2556,10 @@ function PreviewPage({ visit, onBack }) {
                         formatDate(visit.tanggal))),
                 React.createElement("div", { className: "preview-actions flex flex-wrap gap-2" },
                     React.createElement(Button, { variant: "secondary", icon: "left", onClick: onBack }, "Kembali"),
-                    React.createElement(Button, { icon: "download", onClick: handleDownloadPdf, disabled: busy }, "Download PDF"),
+                    React.createElement(Button, { icon: busy ? null : "download", onClick: handleDownloadPdf, disabled: busy }, busy ? React.createElement(React.Fragment, null,
+                        React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
+                        " ",
+                        downloadMessage || 'Loading...') : 'Download PDF'),
                     React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy, className: "excel-export-button" },
                         React.createElement("span", { className: "text-left leading-tight" },
                             React.createElement("span", { className: "block" }, "Export Excel CA Assigment"),
@@ -2641,6 +2716,70 @@ function persistManualRequestsFromRemote(items) {
         saveApprovedManualStores([...approvedStores, ...readApprovedManualStores()]);
     return normalized;
 }
+function getPresenceLastSeen(row) {
+    const raw = row?.last_seen_at || row?.lastSeenAt || row?.updated_at || row?.updatedAt || row?.last_visit_at || row?.lastVisitAt || 0;
+    if (typeof raw === 'number')
+        return raw;
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) ? parsed : Number(raw || 0) || 0;
+}
+function normalizePresenceRows(rows) {
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
+    const now = Date.now();
+    return safeRows.map((row) => {
+        const lastSeenMs = getPresenceLastSeen(row);
+        const sessionId = row.session_id || row.sessionId || row.id || '-';
+        return {
+            id: sessionId,
+            session_id: sessionId,
+            bestie_name: row.bestie_name || row.bestieName || row.nama || 'Belum pilih bestie',
+            store_name: row.store_name || row.storeName || row.store || 'Belum pilih store',
+            store_code: row.store_code || row.storeCode || '',
+            active_screen: row.active_screen || row.activeScreen || row.screen || 'home',
+            visit_id: row.visit_id || row.visitId || '',
+            page_url: row.page_url || row.pageUrl || '',
+            user_agent: row.user_agent || row.userAgent || '',
+            updated_at: row.updated_at || row.updatedAt || row.last_seen_at || row.lastSeenAt || '',
+            last_seen_at: row.last_seen_at || row.lastSeenAt || row.updated_at || row.updatedAt || '',
+            is_online: row.is_online === false ? false : Boolean(lastSeenMs && now - lastSeenMs <= PRESENCE_STALE_MS),
+            last_seen_ms: lastSeenMs
+        };
+    }).sort((a, b) => Number(b.last_seen_ms || 0) - Number(a.last_seen_ms || 0));
+}
+function readLocalPresenceRows() {
+    try {
+        return normalizePresenceRows(JSON.parse(localStorage.getItem(PRESENCE_LOCAL_KEY) || '[]'));
+    }
+    catch (error) {
+        return [];
+    }
+}
+function saveLocalPresenceRows(rows) {
+    const normalized = normalizePresenceRows(rows).slice(0, 80);
+    localStorage.setItem(PRESENCE_LOCAL_KEY, JSON.stringify(normalized));
+    return normalized;
+}
+function presencePayloadFromState(visit, screen) {
+    const detail = visit?.store ? getStoreWebDetail(visit.store) : {};
+    const now = new Date().toISOString();
+    return {
+        session_id: SESSION_ID,
+        bestie_name: cleanText(visit?.nama, 'Belum pilih bestie'),
+        store_name: cleanText(visit?.store, screen === 'dashboard' ? 'Home' : 'Belum pilih store'),
+        store_code: cleanText(detail.siteCode4 || detail.siteCode || detail.storeCode || visit?.storeCode, ''),
+        visit_id: visit?.id || '',
+        active_screen: screen || 'dashboard',
+        is_online: true,
+        last_seen_at: now,
+        updated_at: now,
+        page_url: location.href,
+        user_agent: navigator.userAgent
+    };
+}
+function persistPresenceLocal(payload) {
+    const rows = readLocalPresenceRows().filter((item) => item.session_id !== payload.session_id);
+    return saveLocalPresenceRows([payload, ...rows]);
+}
 // =============================================================
 // Netlify backend helpers
 // =============================================================
@@ -2723,6 +2862,30 @@ async function fetchMonitorRowsFromNetlify() {
     }
     catch (error) {
         console.warn(normalizeNetlifyError(error, 'Netlify monitor read'));
+        return null;
+    }
+}
+async function upsertPresenceToNetlify(payload) {
+    if (!netlifyEnabled() || !payload)
+        return false;
+    try {
+        await netlifyRequest('upsertPresence', { method: 'POST', body: payload });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify presence upsert'));
+        return false;
+    }
+}
+async function fetchPresenceRowsFromNetlify() {
+    if (!netlifyEnabled())
+        return null;
+    try {
+        const payload = await netlifyRequest('listPresence', { params: { limit: getNetlifyConfig().presenceLimit || 300 } });
+        return normalizePresenceRows(payload?.rows || payload?.data || []);
+    }
+    catch (error) {
+        console.warn(normalizeNetlifyError(error, 'Netlify presence read'));
         return null;
     }
 }
@@ -2900,6 +3063,43 @@ async function fetchMonitorRowsFromSupabase() {
         return null;
     }
 }
+async function upsertPresenceToSupabase(payload) {
+    if (!supabaseEnabled() || !payload)
+        return false;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return false;
+        const table = getSupabaseTable('presence', 'monitor_presence');
+        const { error } = await client.from(table).upsert(payload, { onConflict: 'session_id' });
+        if (error)
+            throw error;
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase presence upsert'));
+        return false;
+    }
+}
+async function fetchPresenceRowsFromSupabase() {
+    if (!supabaseEnabled())
+        return null;
+    try {
+        const client = await getSupabaseClient();
+        if (!client)
+            return null;
+        const table = getSupabaseTable('presence', 'monitor_presence');
+        const limit = Math.max(50, Number(getSupabaseConfig().presenceLimit || 300));
+        const { data, error } = await client.from(table).select('*').order('updated_at', { ascending: false }).limit(limit);
+        if (error)
+            throw error;
+        return normalizePresenceRows(data || []);
+    }
+    catch (error) {
+        console.warn(normalizeSupabaseError(error, 'Supabase presence read'));
+        return null;
+    }
+}
 function manualRequestPayload(request) {
     return {
         request_id: request.id,
@@ -3048,6 +3248,45 @@ async function upsertMonitorVisit(visit) {
     catch (error) {
         console.warn('Convex upsert gagal:', error);
     }
+}
+async function upsertPresence(payload) {
+    if (!payload)
+        return;
+    persistPresenceLocal(payload);
+    if (await upsertPresenceToNetlify(payload))
+        return;
+    if (await upsertPresenceToSupabase(payload))
+        return;
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return;
+    try {
+        await runConvexMutation(config.presenceUpsertMutation || 'monitor:upsertPresence', { payload });
+    }
+    catch (error) {
+        console.warn('Convex presence sync gagal:', error);
+    }
+}
+async function fetchPresenceRowsFromConvex() {
+    const netlifyRows = await fetchPresenceRowsFromNetlify();
+    if (netlifyRows !== null)
+        return netlifyRows;
+    const supabaseRows = await fetchPresenceRowsFromSupabase();
+    if (supabaseRows !== null)
+        return supabaseRows;
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return readLocalPresenceRows();
+    try {
+        const queryName = config.presenceQuery || 'monitor:listPresence';
+        const rows = await runConvexQuery(queryName, {});
+        if (rows !== null)
+            return normalizePresenceRows(rows);
+    }
+    catch (error) {
+        console.warn('Convex presence query gagal:', error);
+    }
+    return readLocalPresenceRows();
 }
 async function fetchMonitorRowsFromConvex() {
     const netlifyRows = await fetchMonitorRowsFromNetlify();
@@ -3237,41 +3476,31 @@ function exportJson(data, fileName) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     downloadBlob(blob, fileName);
 }
-function WelcomePromiseHandsSvg() {
-    return (React.createElement("svg", { className: "welcome-promise-svg", viewBox: "0 0 240 180", role: "img", "aria-label": "Index finger promise hands illustration" },
-        React.createElement("defs", null,
-            React.createElement("linearGradient", { id: "welcomeHandPink", x1: "0", y1: "0", x2: "1", y2: "1" },
-                React.createElement("stop", { offset: "0%", stopColor: "#ffc7d2" }),
-                React.createElement("stop", { offset: "100%", stopColor: "#f49ab0" })),
-            React.createElement("linearGradient", { id: "welcomeHandBlue", x1: "1", y1: "0", x2: "0", y2: "1" },
-                React.createElement("stop", { offset: "0%", stopColor: "#bfe2ff" }),
-                React.createElement("stop", { offset: "100%", stopColor: "#7ec8f5" })),
-            React.createElement("linearGradient", { id: "welcomeWarm", x1: "0", y1: "0", x2: "1", y2: "1" },
-                React.createElement("stop", { offset: "0%", stopColor: "#fff3b0" }),
-                React.createElement("stop", { offset: "100%", stopColor: "#ffd166" })),
-            React.createElement("filter", { id: "welcomeSoftShadow", x: "-20%", y: "-20%", width: "140%", height: "140%" },
-                React.createElement("feDropShadow", { dx: "0", dy: "10", stdDeviation: "10", floodColor: "#334155", floodOpacity: ".16" }))),
-        React.createElement("rect", { x: "0", y: "0", width: "240", height: "180", rx: "34", fill: "#fff7ed" }),
-        React.createElement("circle", { className: "welcome-promise-dot dot-a", cx: "34", cy: "38", r: "7", fill: "#bfe2ff", opacity: ".72" }),
-        React.createElement("circle", { className: "welcome-promise-dot dot-b", cx: "205", cy: "42", r: "9", fill: "#ffd166", opacity: ".72" }),
-        React.createElement("circle", { className: "welcome-promise-dot dot-c", cx: "196", cy: "140", r: "6", fill: "#ffc7d2", opacity: ".72" }),
-        React.createElement("path", { className: "welcome-promise-ribbon", d: "M36 137 C74 154 169 154 204 132", fill: "none", stroke: "#fef3c7", strokeWidth: "18", strokeLinecap: "round", opacity: ".82" }),
-        React.createElement("g", { filter: "url(#welcomeSoftShadow)", strokeLinecap: "round", strokeLinejoin: "round" },
-            React.createElement("g", { className: "welcome-promise-hand welcome-promise-left" },
-                React.createElement("path", { d: "M20 115 C32 92 52 80 76 83 L98 86 C109 88 113 101 104 109 C94 118 82 111 72 104 L60 95", fill: "url(#welcomeHandPink)" }),
-                React.createElement("path", { d: "M54 101 C69 77 91 63 111 75 C128 85 125 109 108 116 C94 122 84 113 76 104", fill: "none", stroke: "#f7a3b6", strokeWidth: "23" }),
-                React.createElement("path", { d: "M41 112 C54 100 68 96 82 99", fill: "none", stroke: "#ffc7d2", strokeWidth: "17" }),
-                React.createElement("path", { d: "M34 126 C51 112 68 109 86 116", fill: "none", stroke: "#ffc7d2", strokeWidth: "16" }),
-                React.createElement("ellipse", { cx: "103", cy: "82", rx: "7", ry: "4.5", fill: "#fff1f2", transform: "rotate(25 103 82)" })),
-            React.createElement("g", { className: "welcome-promise-hand welcome-promise-right" },
-                React.createElement("path", { d: "M220 115 C208 92 188 80 164 83 L142 86 C131 88 127 101 136 109 C146 118 158 111 168 104 L180 95", fill: "url(#welcomeHandBlue)" }),
-                React.createElement("path", { d: "M186 101 C171 77 149 63 129 75 C112 85 115 109 132 116 C146 122 156 113 164 104", fill: "none", stroke: "#8ecff6", strokeWidth: "23" }),
-                React.createElement("path", { d: "M199 112 C186 100 172 96 158 99", fill: "none", stroke: "#bfe2ff", strokeWidth: "17" }),
-                React.createElement("path", { d: "M206 126 C189 112 172 109 154 116", fill: "none", stroke: "#bfe2ff", strokeWidth: "16" }),
-                React.createElement("ellipse", { cx: "137", cy: "82", rx: "7", ry: "4.5", fill: "#eff6ff", transform: "rotate(-25 137 82)" })),
-            React.createElement("g", { className: "welcome-promise-hook" },
-                React.createElement("path", { d: "M104 91 C112 103 128 103 136 91", fill: "none", stroke: "#fff", strokeWidth: "6", opacity: ".82" }),
-                React.createElement("path", { d: "M107 93 C114 101 126 101 133 93", fill: "none", stroke: "url(#welcomeWarm)", strokeWidth: "4", opacity: ".88" })))));
+function WelcomePinkySwearArt() {
+    return (React.createElement("div", { className: "pinky-swear-art", role: "img", "aria-label": "Animasi pinky swear dua tangan saling mendekat" },
+        React.createElement("span", { className: "pinky-art-texture texture-a" }),
+        React.createElement("span", { className: "pinky-art-texture texture-b" }),
+        React.createElement("span", { className: "pinky-art-spark spark-a" }),
+        React.createElement("span", { className: "pinky-art-spark spark-b" }),
+        React.createElement("span", { className: "pinky-art-spark spark-c" }),
+        React.createElement("span", { className: "pinky-art-heart" }),
+        React.createElement("div", { className: "pinky-hand pinky-hand-left" },
+            React.createElement("span", { className: "pinky-palm" }),
+            React.createElement("span", { className: "pinky-finger thumb" }),
+            React.createElement("span", { className: "pinky-finger index" }),
+            React.createElement("span", { className: "pinky-finger middle" }),
+            React.createElement("span", { className: "pinky-finger ring" }),
+            React.createElement("span", { className: "pinky-finger pinky" }),
+            React.createElement("span", { className: "pinky-cuff" })),
+        React.createElement("div", { className: "pinky-hand pinky-hand-right" },
+            React.createElement("span", { className: "pinky-palm" }),
+            React.createElement("span", { className: "pinky-finger thumb" }),
+            React.createElement("span", { className: "pinky-finger index" }),
+            React.createElement("span", { className: "pinky-finger middle" }),
+            React.createElement("span", { className: "pinky-finger ring" }),
+            React.createElement("span", { className: "pinky-finger pinky" }),
+            React.createElement("span", { className: "pinky-cuff" })),
+        React.createElement("span", { className: "pinky-hook-glow" })));
 }
 function WelcomeOverlay({ config, onDone }) {
     const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
@@ -3356,7 +3585,7 @@ function WelcomeOverlay({ config, onDone }) {
                 React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
                 React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
                     React.createElement("div", { "aria-hidden": "true", className: "welcome-promise-logo", style: { display: 'grid', placeItems: 'center', width: 132, height: 98, borderRadius: '28px', overflow: 'hidden', background: '#fff7ed', boxShadow: '0 18px 36px rgba(15,23,42,.16)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' } },
-                        React.createElement(WelcomePromiseHandsSvg, null)),
+                        React.createElement(WelcomePinkySwearArt, null)),
                     React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
                     React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
                     React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#475569', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
@@ -3409,12 +3638,14 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [manualRequests, setManualRequests] = useState([]);
+    const [presenceRows, setPresenceRows] = useState([]);
     const [connectionState, setConnectionState] = useState('offline');
     const [lastSync, setLastSync] = useState('');
     const [welcomeTitle, setWelcomeTitle] = useState(DEFAULT_WELCOME_CONFIG.title);
     const [welcomeSubtitle, setWelcomeSubtitle] = useState(DEFAULT_WELCOME_CONFIG.subtitle);
     const [welcomeDurationSeconds, setWelcomeDurationSeconds] = useState(DEFAULT_WELCOME_CONFIG.durationSeconds);
     const [pdfTableFontSize, setPdfTableFontSize] = useState(DEFAULT_PDF_SETTINGS.tableFontSize);
+    const [pdfTableTitleFontSize, setPdfTableTitleFontSize] = useState(DEFAULT_PDF_SETTINGS.tableTitleFontSize);
     const [pdfEvidenceFontSize, setPdfEvidenceFontSize] = useState(DEFAULT_PDF_SETTINGS.evidenceFontSize);
     const [pdfTableExtraRows, setPdfTableExtraRows] = useState(DEFAULT_PDF_SETTINGS.tableExtraRows);
     const [pdfPhotoGridPerPage, setPdfPhotoGridPerPage] = useState(DEFAULT_PDF_SETTINGS.photoGridPerPage);
@@ -3452,6 +3683,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     function applyPdfSettings(nextSettings, showAlert = false) {
         const saved = savePdfSettings(nextSettings);
         setPdfTableFontSize(saved.tableFontSize);
+        setPdfTableTitleFontSize(saved.tableTitleFontSize);
         setPdfEvidenceFontSize(saved.evidenceFontSize);
         setPdfTableExtraRows(saved.tableExtraRows);
         setPdfPhotoGridPerPage(saved.photoGridPerPage);
@@ -3461,11 +3693,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         return saved;
     }
     function adjustPdfSetting(key, delta) {
-        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage });
+        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage });
         applyPdfSettings({ ...current, [key]: Number(current[key]) + delta });
     }
     function setPdfPhotoGrid(value) {
-        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage });
+        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage });
         applyPdfSettings({ ...current, photoGridPerPage: value });
     }
     function resetPdfSettings() {
@@ -3497,12 +3729,14 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         if (!quiet)
             setLoading(true);
         try {
-            const [remoteRowsResult, remoteRequestsResult] = await Promise.allSettled([
+            const [remoteRowsResult, remoteRequestsResult, presenceRowsResult] = await Promise.allSettled([
                 fetchMonitorRowsFromConvex(),
-                fetchManualRequestsFromConvex()
+                fetchManualRequestsFromConvex(),
+                fetchPresenceRowsFromConvex()
             ]);
             const remoteRows = remoteRowsResult.status === 'fulfilled' ? remoteRowsResult.value : null;
             const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
+            const remotePresence = presenceRowsResult.status === 'fulfilled' ? presenceRowsResult.value : null;
             if (remoteRows !== null) {
                 applyRows(remoteRows, netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : (source === 'convex realtime' ? 'convex realtime' : 'convex')));
             }
@@ -3515,10 +3749,17 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             else {
                 setManualRequests(readManualStoreRequests());
             }
+            if (remotePresence !== null) {
+                setPresenceRows(normalizePresenceRows(remotePresence));
+            }
+            else {
+                setPresenceRows(readLocalPresenceRows());
+            }
         }
         catch (error) {
             applyRows(localRows(), 'local');
             setManualRequests(readManualStoreRequests());
+            setPresenceRows(readLocalPresenceRows());
         }
         finally {
             if (!quiet)
@@ -3548,6 +3789,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(currentWelcome.durationSeconds));
         const currentPdfSettings = readPdfSettings();
         setPdfTableFontSize(currentPdfSettings.tableFontSize);
+        setPdfTableTitleFontSize(currentPdfSettings.tableTitleFontSize);
         setPdfEvidenceFontSize(currentPdfSettings.evidenceFontSize);
         setPdfTableExtraRows(currentPdfSettings.tableExtraRows);
         setPdfPhotoGridPerPage(currentPdfSettings.photoGridPerPage);
@@ -3560,11 +3802,13 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
+        let unsubscribePresence = null;
         let unsubscribeConnection = null;
         let pollId = null;
         async function startRealtime() {
             setLoading(true);
             setManualRequests(readManualStoreRequests());
+            setPresenceRows(readLocalPresenceRows());
             try {
                 if (netlifyEnabled() || supabaseEnabled()) {
                     setConnectionState('online');
@@ -3609,8 +3853,19 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             setManualRequests(readManualStoreRequests());
                         }
                     });
+                    unsubscribePresence = await subscribeConvexQuery(getConvexConfig().presenceQuery || 'monitor:listPresence', {}, (nextPresenceRows) => {
+                        if (cancelled)
+                            return;
+                        setPresenceRows(normalizePresenceRows(nextPresenceRows));
+                        setConnectionState('online');
+                        setLoading(false);
+                    }, (error) => {
+                        console.warn('Realtime presence gagal:', error);
+                        if (!cancelled)
+                            setPresenceRows(readLocalPresenceRows());
+                    });
                 }
-                if (!unsubscribeRows && !unsubscribeRequests) {
+                if (!unsubscribeRows && !unsubscribeRequests && !unsubscribePresence) {
                     await refresh();
                     pollId = window.setInterval(() => refresh({ quiet: true }), getRemotePollMs());
                 }
@@ -3645,6 +3900,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             }
             catch (error) { }
             try {
+                unsubscribePresence?.();
+            }
+            catch (error) { }
+            try {
                 unsubscribeConnection?.();
             }
             catch (error) { }
@@ -3656,6 +3915,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         const haystack = normalize([row.bestie_name, row.store_name, row.store_code].join(' '));
         return !query || haystack.includes(normalize(query));
     });
+    const onlinePresence = normalizePresenceRows(presenceRows).filter((row) => row.is_online);
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
     const todayVisits = rows.filter((row) => String(row.visit_date || '').slice(0, 10) === today).length;
@@ -3679,11 +3939,14 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement(Button, { variant: "secondary", icon: "spark", onClick: () => refresh(), disabled: loading }, loading ? 'Sync...' : 'Refresh'),
                     React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                         React.createElement(Icon, { name: "close", className: "h-4 w-4" })))),
-            React.createElement("div", { className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" },
+            React.createElement("div", { className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" },
                 React.createElement("div", { className: "rounded-3xl bg-slate-950 p-5 text-white" },
                     React.createElement("p", { className: "text-xs font-bold uppercase text-slate-300" }, "Source"),
                     React.createElement("p", { className: "mt-2 text-2xl font-black capitalize" }, source)),
                 React.createElement("div", { className: "rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100" },
+                    React.createElement("p", { className: "text-xs font-bold uppercase" }, "Online"),
+                    React.createElement("p", { className: "mt-2 text-3xl font-black" }, onlinePresence.length)),
+                React.createElement("div", { className: "rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100" },
                     React.createElement("p", { className: "text-xs font-bold uppercase" }, "Total Visit"),
                     React.createElement("p", { className: "mt-2 text-3xl font-black" }, rows.length)),
                 React.createElement("div", { className: "rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100" },
@@ -3692,6 +3955,29 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
                     React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
                     React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
+            React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4" },
+                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Live Presence"),
+                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Bestie Yang Sedang Online")),
+                    React.createElement(Badge, { tone: "success" }, "Realtime")),
+                React.createElement("div", { className: "grid gap-3 md:grid-cols-2" }, onlinePresence.length ? onlinePresence.map((row) => (React.createElement("div", { key: row.session_id, className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                    React.createElement("div", { className: "flex items-start justify-between gap-3" },
+                        React.createElement("div", { className: "min-w-0" },
+                            React.createElement("div", { className: "flex items-center gap-2" },
+                                React.createElement("span", { className: "h-2.5 w-2.5 rounded-full bg-emerald-500", style: { boxShadow: '0 0 0 5px rgba(16,185,129,.14)' } }),
+                                React.createElement("p", { className: "truncate font-black text-slate-950" }, row.bestie_name || '-')),
+                            React.createElement("p", { className: "mt-1 truncate text-xs font-bold text-slate-600" },
+                                "Store: ",
+                                row.store_name || '-'),
+                            React.createElement("p", { className: "mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" },
+                                row.active_screen || 'home',
+                                " \u2022 ",
+                                row.store_code || '-')),
+                        React.createElement(Badge, { tone: "success" }, "Online")),
+                    React.createElement("p", { className: "mt-2 text-[11px] font-semibold text-slate-400" },
+                        "Last seen: ",
+                        formatDateTime(row.last_seen_at || row.updated_at))))) : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100" }, "Belum ada bestie online yang terdeteksi."))),
             React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
                 React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                     React.createElement("div", null,
@@ -3734,13 +4020,20 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Pengaturan PDF"),
                         React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "Atur ukuran font table, deskripsi foto, jumlah row table, dan grid foto per halaman PDF. Rekomendasi: 6 foto/halaman supaya foto tetap luas dan jelas.")),
                     React.createElement(Badge, { tone: "success" }, "Auto Save")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-4" },
+                React.createElement("div", { className: "grid gap-3 md:grid-cols-5" },
                     React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Table PDF"),
                         React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
                             React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', -0.5) }, "-"),
                             React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableFontSize).toFixed(1)),
                             React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', 0.5) }, "+"))),
+                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Title Table PDF"),
+                        React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
+                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', -0.5) }, "-"),
+                            React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableTitleFontSize).toFixed(1)),
+                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', 0.5) }, "+")),
+                        React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Mengatur title Temuan di atas table.")),
                     React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Deskripsi Foto"),
                         React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
@@ -3760,7 +4053,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement("div", { className: "mt-3 grid grid-cols-3 gap-1" }, [4, 6, 8].map((option) => React.createElement("button", { key: option, type: "button", className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'), onClick: () => setPdfPhotoGrid(option) }, option))),
                         React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Rekomendasi: 6 foto/halaman."))),
                 React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
-                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
+                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
                     React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
             React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
                 React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
@@ -4232,6 +4525,29 @@ function App() {
     useEffect(() => {
         window.getFormData = () => visit || {};
     }, [visit]);
+    useEffect(() => {
+        let cancelled = false;
+        async function pulse() {
+            if (cancelled)
+                return;
+            const payload = presencePayloadFromState(visit, screen);
+            await upsertPresence(payload);
+        }
+        pulse();
+        const interval = window.setInterval(pulse, 15000);
+        function handleVisibilityChange() {
+            if (document.visibilityState === 'visible')
+                pulse();
+        }
+        window.addEventListener('focus', pulse);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            cancelled = true;
+            window.clearInterval(interval);
+            window.removeEventListener('focus', pulse);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [visit?.id, visit?.nama, visit?.store, screen]);
     useEffect(() => {
         if (!visit?.id)
             return;

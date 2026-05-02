@@ -6,10 +6,12 @@ Use this when you want the admin monitor to update realtime across devices.
 Convex realtime requires normal Convex queries/mutations. The web app subscribes to:
 - monitor:listVisits
 - monitor:listManualStoreRequests
+- monitor:listPresence
 
 And writes through mutations:
 - monitor:upsertVisit
 - monitor:upsertManualStoreRequest
+- monitor:upsertPresence
 
 Recommended setup:
 1. In your project terminal run:
@@ -42,6 +44,22 @@ export default defineSchema({
     user_agent: v.optional(v.string())
   })
     .index("by_visit_key", ["visit_key"])
+    .index("by_updated_at", ["updated_at"]),
+
+  monitor_presence: defineTable({
+    session_id: v.string(),
+    bestie_name: v.string(),
+    store_name: v.string(),
+    store_code: v.optional(v.string()),
+    visit_id: v.optional(v.string()),
+    active_screen: v.optional(v.string()),
+    is_online: v.optional(v.boolean()),
+    last_seen_at: v.string(),
+    updated_at: v.string(),
+    page_url: v.optional(v.string()),
+    user_agent: v.optional(v.string())
+  })
+    .index("by_session_id", ["session_id"])
     .index("by_updated_at", ["updated_at"]),
 
   manual_store_requests: defineTable({
@@ -123,6 +141,53 @@ export const upsertVisit = mutation({
     }
 
     const id = await ctx.db.insert("regional_bestie_visits", doc);
+    return { ok: true, id, inserted: true };
+  }
+});
+
+export const listPresence = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("monitor_presence")
+      .withIndex("by_updated_at")
+      .order("desc")
+      .take(300);
+  }
+});
+
+export const upsertPresence = mutation({
+  args: { payload: v.any() },
+  handler: async (ctx, { payload }) => {
+    const session_id = text(payload.session_id);
+    if (!session_id) throw new Error("session_id wajib diisi");
+
+    const now = new Date().toISOString();
+    const doc = {
+      session_id,
+      bestie_name: text(payload.bestie_name, "Belum pilih bestie"),
+      store_name: text(payload.store_name, "Belum pilih store"),
+      store_code: text(payload.store_code),
+      visit_id: text(payload.visit_id),
+      active_screen: text(payload.active_screen, "home"),
+      is_online: payload.is_online !== false,
+      last_seen_at: text(payload.last_seen_at, now),
+      updated_at: text(payload.updated_at, now),
+      page_url: text(payload.page_url),
+      user_agent: text(payload.user_agent)
+    };
+
+    const existing = await ctx.db
+      .query("monitor_presence")
+      .withIndex("by_session_id", (q) => q.eq("session_id", session_id))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, doc);
+      return { ok: true, id: existing._id, updated: true };
+    }
+
+    const id = await ctx.db.insert("monitor_presence", doc);
     return { ok: true, id, inserted: true };
   }
 });

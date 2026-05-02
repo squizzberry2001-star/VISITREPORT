@@ -40,13 +40,28 @@ create table if not exists public.manual_store_requests (
   user_agent text
 );
 
+create table if not exists public.monitor_presence (
+  session_id text primary key,
+  bestie_name text,
+  store_name text,
+  store_code text,
+  active_screen text,
+  page_url text,
+  user_agent text,
+  last_seen_at text,
+  updated_at text,
+  is_online boolean default true
+);
+
 alter table public.app_settings enable row level security;
 alter table public.monitor_visits enable row level security;
 alter table public.manual_store_requests enable row level security;
+alter table public.monitor_presence enable row level security;
 
 grant select, insert, update, delete on public.app_settings to anon;
 grant select, insert, update, delete on public.monitor_visits to anon;
 grant select, insert, update, delete on public.manual_store_requests to anon;
+grant select, insert, update, delete on public.monitor_presence to anon;
 
 drop policy if exists "Bestie app settings public read" on public.app_settings;
 drop policy if exists "Bestie app settings public write" on public.app_settings;
@@ -57,6 +72,9 @@ drop policy if exists "Bestie monitor public update" on public.monitor_visits;
 drop policy if exists "Bestie manual requests public read" on public.manual_store_requests;
 drop policy if exists "Bestie manual requests public write" on public.manual_store_requests;
 drop policy if exists "Bestie manual requests public update" on public.manual_store_requests;
+drop policy if exists "Bestie presence public read" on public.monitor_presence;
+drop policy if exists "Bestie presence public write" on public.monitor_presence;
+drop policy if exists "Bestie presence public update" on public.monitor_presence;
 
 create policy "Bestie app settings public read"
   on public.app_settings for select to anon
@@ -94,6 +112,19 @@ create policy "Bestie manual requests public write"
 
 create policy "Bestie manual requests public update"
   on public.manual_store_requests for update to anon
+  using (true)
+  with check (true);
+
+create policy "Bestie presence public read"
+  on public.monitor_presence for select to anon
+  using (true);
+
+create policy "Bestie presence public write"
+  on public.monitor_presence for insert to anon
+  with check (true);
+
+create policy "Bestie presence public update"
+  on public.monitor_presence for update to anon
   using (true)
   with check (true);
 
