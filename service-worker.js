@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp51-remove-observation-evidence-summary';
+const APP_VERSION = 'revamp52-fix-quick-section-overlay';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

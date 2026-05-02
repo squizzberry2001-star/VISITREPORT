@@ -1,6 +1,6 @@
 {
-  "version": "revamp51-remove-observation-evidence-summary",
-  "build": "revamp51-remove-observation-evidence-summary",
+  "version": "revamp52-fix-quick-section-overlay",
+  "build": "revamp52-fix-quick-section-overlay",
   "updatedAt": "2026-05-01T00:00:00+07:00",
   "note": "asset cache busting and auto sync controller"
 }
