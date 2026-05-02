@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp56-bottom-button-safe-space';
+const APP_VERSION = 'revamp58-home-notice-action-grid';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
