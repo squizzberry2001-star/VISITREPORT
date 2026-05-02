@@ -1,6 +1,6 @@
 {
-  "version": "revamp64-welcome-stuck-fix",
-  "build": "revamp64-welcome-stuck-fix",
+  "version": "revamp63-focused-layout-revamp",
+  "build": "revamp63-focused-layout-revamp",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "migrate remote admin/monitor sync from Supabase-ready config to Netlify Functions + Netlify Blobs, keep PDF/preview improvements"
+  "note": "focused revamp: centered welcome/history, manual sync, top mobile navbar, bottom quick section, QSC 4:3 crop, PDF table readability, preview zoom"
 }
