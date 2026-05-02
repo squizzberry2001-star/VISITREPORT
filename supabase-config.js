@@ -3,8 +3,8 @@
 // Jangan pernah memasukkan secret key/service_role key di file frontend ini.
 window.RB_SUPABASE_CONFIG = {
   enabled: false,
-  url: 'https://cqeutfujywwphtflhqgc.supabase.co',
-  publishableKey: 'sb_publishable_2zOzjfTizjHdloW8Lv05Lg_o1r5QCDB',
+  url: 'https://wsyttlpvwumgdhyzvvbq.supabase.co',
+  publishableKey: 'sb_publishable_mDEPMhW-YUQImNe0xauF2w_Plw4QP-E',
 
   // Browser bundle; app ini tidak memakai build step/npm.
   bundleUrl: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
