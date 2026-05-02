@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp63-focused-layout-revamp';
+const APP_VERSION = 'revamp64-welcome-stuck-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
