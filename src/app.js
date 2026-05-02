@@ -18,45 +18,41 @@ const DEFAULT_WELCOME_CONFIG = {
     subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”',
     durationSeconds: 5
 };
-
 const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
 const DEFAULT_PDF_SETTINGS = {
-  tableFontSize: 9.4,
-  evidenceFontSize: 8.9,
-  tableExtraRows: 0
+    tableFontSize: 9.4,
+    evidenceFontSize: 8.9,
+    tableExtraRows: 0
 };
-
 function clampNumber(value, min, max, fallback) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.min(max, Math.max(min, number));
+    const number = Number(value);
+    if (!Number.isFinite(number))
+        return fallback;
+    return Math.min(max, Math.max(min, number));
 }
-
 function normalizePdfSettings(value) {
-  const raw = value && typeof value === 'object' ? value : {};
-  return {
-    tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
-    evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
-    tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows))
-  };
+    const raw = value && typeof value === 'object' ? value : {};
+    return {
+        tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
+        evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
+        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows))
+    };
 }
-
 function readPdfSettings() {
-  try {
-    return normalizePdfSettings(JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}'));
-  } catch (error) {
-    return { ...DEFAULT_PDF_SETTINGS };
-  }
+    try {
+        return normalizePdfSettings(JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}'));
+    }
+    catch (error) {
+        return { ...DEFAULT_PDF_SETTINGS };
+    }
 }
-
 function savePdfSettings(settings) {
-  const next = normalizePdfSettings(settings);
-  localStorage.setItem(PDF_SETTINGS_KEY, JSON.stringify(next));
-  return next;
+    const next = normalizePdfSettings(settings);
+    localStorage.setItem(PDF_SETTINGS_KEY, JSON.stringify(next));
+    return next;
 }
-
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp54-quick-section-scrollable';
+const APP_BUILD_VERSION = 'revamp55-evidence-section-polish';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -212,7 +208,7 @@ function findApprovedManualStore(storeName) {
 }
 const BESTIE_NAMES = uniqueBy(BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
-    return cleanText((item === null || item === void 0 ? void 0 : item.storeName) || (item === null || item === void 0 ? void 0 : item.assignmentStoreName) || (item === null || item === void 0 ? void 0 : item.siteDescr) || (item === null || item === void 0 ? void 0 : item.store));
+    return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
 }
 function getStoresForBestie(bestieName) {
     const key = normalize(bestieName);
@@ -261,27 +257,27 @@ function findMasterStore(storeName) {
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
     const approvedManual = findApprovedManualStore(storeName);
-    const master = findMasterStore(storeName || (assignment === null || assignment === void 0 ? void 0 : assignment.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.assignmentStoreName) || (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.siteDescr) || (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.storeName));
+    const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName || approvedManual?.siteDescr || approvedManual?.storeName);
     const merged = {
         ...(assignment || {}),
         ...(master || {}),
         ...(approvedManual || {})
     };
     if (!merged.siteDescr)
-        merged.siteDescr = (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.assignmentStoreName) || storeName || '';
+        merged.siteDescr = approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || storeName || '';
     if (!merged.address)
-        merged.address = (assignment === null || assignment === void 0 ? void 0 : assignment.storeAddress) || '';
-    if (!merged.siteCode && (assignment === null || assignment === void 0 ? void 0 : assignment.storeCode))
+        merged.address = assignment?.storeAddress || '';
+    if (!merged.siteCode && assignment?.storeCode)
         merged.siteCode = assignment.storeCode;
-    if (!merged.siteCode4 && (assignment === null || assignment === void 0 ? void 0 : assignment.storeCode))
+    if (!merged.siteCode4 && assignment?.storeCode)
         merged.siteCode4 = assignment.storeCode;
-    if (!merged.storeHead && (assignment === null || assignment === void 0 ? void 0 : assignment.storeHead))
+    if (!merged.storeHead && assignment?.storeHead)
         merged.storeHead = assignment.storeHead;
-    if (!merged.areaManager && (assignment === null || assignment === void 0 ? void 0 : assignment.areaManager))
+    if (!merged.areaManager && assignment?.areaManager)
         merged.areaManager = assignment.areaManager;
-    if (!merged.regionalManager && (assignment === null || assignment === void 0 ? void 0 : assignment.regionalManager))
+    if (!merged.regionalManager && assignment?.regionalManager)
         merged.regionalManager = assignment.regionalManager;
-    if (!merged.city && (assignment === null || assignment === void 0 ? void 0 : assignment.city))
+    if (!merged.city && assignment?.city)
         merged.city = assignment.city;
     return merged;
 }
@@ -328,8 +324,8 @@ function blankPhoto() {
     return { image: '', description: '' };
 }
 function normalizeQscPhotos(visit) {
-    const legacy = (visit === null || visit === void 0 ? void 0 : visit.qscResultPhoto) ? [visit.qscResultPhoto] : [];
-    const source = Array.isArray(visit === null || visit === void 0 ? void 0 : visit.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
+    const legacy = visit?.qscResultPhoto ? [visit.qscResultPhoto] : [];
+    const source = Array.isArray(visit?.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
     const firstTwo = [0, 1].map((index) => source[index] || blankPhoto());
     return firstTwo;
 }
@@ -359,11 +355,13 @@ function createVisit(bestieName = '', storeName = '') {
         showOPITable: false,
         showQSCTable: false,
         showFindingEvidence: false,
-        showCorrectiveAction: false
+        showCorrectiveAction: false,
+        activeObservationTab: 'opi',
+        activeEvidenceTab: 'finding'
     };
 }
 function isMeaningfulObservation(row) {
-    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row === null || row === void 0 ? void 0 : row[key]));
+    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row?.[key]));
 }
 function isEditableTarget(target) {
     const node = target instanceof Element ? target : null;
@@ -389,7 +387,7 @@ function visitProgress(visit) {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 function historyMetaFromVisit(visit) {
-    const detail = getStoreWebDetail(visit === null || visit === void 0 ? void 0 : visit.store);
+    const detail = getStoreWebDetail(visit?.store);
     return {
         id: visit.id,
         bestieName: cleanText(visit.nama, '-'),
@@ -451,7 +449,7 @@ async function getVisitRecord(id) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(REPORT_DB_STORE, 'readonly');
         const request = tx.objectStore(REPORT_DB_STORE).get(id);
-        request.onsuccess = () => { var _a; return resolve(((_a = request.result) === null || _a === void 0 ? void 0 : _a.data) || null); };
+        request.onsuccess = () => resolve(request.result?.data || null);
         request.onerror = () => reject(request.error);
     });
 }
@@ -473,14 +471,13 @@ async function clearVisitRecords() {
         tx.onerror = () => reject(tx.error);
     });
 }
-
 async function getAllVisitRecordsForBackup() {
     try {
         const db = await openDb();
         return await new Promise((resolve, reject) => {
             const tx = db.transaction(REPORT_DB_STORE, 'readonly');
             const request = tx.objectStore(REPORT_DB_STORE).getAll();
-            request.onsuccess = () => resolve((request.result || []).map((item) => (item === null || item === void 0 ? void 0 : item.data) || item).filter(Boolean));
+            request.onsuccess = () => resolve((request.result || []).map((item) => item?.data || item).filter(Boolean));
             request.onerror = () => reject(request.error);
         });
     }
@@ -521,7 +518,6 @@ async function backupVisitReportData() {
     return payload;
 }
 async function restoreVisitReportDataFromFile(file) {
-    var _a, _b;
     const raw = await readBackupFileText(file);
     const payload = JSON.parse(raw);
     if (!payload || payload.app !== 'regional-bestie-visit-report') {
@@ -535,17 +531,17 @@ Jumlah visit backup: ${visits.length}`);
         return false;
     await clearVisitRecords();
     for (const visit of visits) {
-        await putVisitRecord(Object.assign(Object.assign({}, visit), { updatedAt: visit.updatedAt || Date.now() }));
+        await putVisitRecord({ ...visit, updatedAt: visit.updatedAt || Date.now() });
     }
     if (payload.localStorage && typeof payload.localStorage === 'object') {
         Object.entries(payload.localStorage).forEach(([key, value]) => {
             if (key.indexOf('rbv_') === 0)
-                localStorage.setItem(key, String(value !== null && value !== void 0 ? value : ''));
+                localStorage.setItem(key, String(value ?? ''));
         });
     }
     const backupMeta = (() => {
         try {
-            const parsed = JSON.parse(String(((_a = payload.localStorage) === null || _a === void 0 ? void 0 : _a[HISTORY_META_KEY]) || '[]'));
+            const parsed = JSON.parse(String(payload.localStorage?.[HISTORY_META_KEY] || '[]'));
             return Array.isArray(parsed) ? parsed : [];
         }
         catch (error) {
@@ -553,7 +549,7 @@ Jumlah visit backup: ${visits.length}`);
         }
     })();
     saveHistoryMeta(backupMeta.length ? backupMeta : visits.map(historyMetaFromVisit));
-    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && ((_b = visits[0]) === null || _b === void 0 ? void 0 : _b.id))
+    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && visits[0]?.id)
         localStorage.setItem(ACTIVE_VISIT_KEY, visits[0].id);
     alert('Restore data selesai. Aplikasi akan dimuat ulang.');
     window.location.reload();
@@ -667,6 +663,12 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M4 6h16" }),
             React.createElement("path", { d: "M4 12h16" }),
             React.createElement("path", { d: "M4 18h16" })),
+        qr: React.createElement(React.Fragment, null,
+            React.createElement("rect", { x: "4", y: "4", width: "6", height: "6", rx: "1" }),
+            React.createElement("rect", { x: "14", y: "4", width: "6", height: "6", rx: "1" }),
+            React.createElement("rect", { x: "4", y: "14", width: "6", height: "6", rx: "1" }),
+            React.createElement("path", { d: "M14 14h2v2h-2z" }),
+            React.createElement("path", { d: "M18 14h2v6h-6v-2h4z" })),
         check: React.createElement("path", { d: "m5 13 4 4L19 7" })
     };
     return (React.createElement("svg", { className: className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, paths[name] || paths.spark));
@@ -716,7 +718,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange === null || onChange === void 0 ? void 0 : onChange(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
+    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
@@ -888,9 +890,8 @@ function SearchableCombobox({ label, value, options, onChange, onSelect, placeho
         onSelect ? onSelect(item) : onChange(item.value || item.label);
         setOpen(false);
         window.requestAnimationFrame(() => {
-            var _a;
-            const input = (_a = wrapRef.current) === null || _a === void 0 ? void 0 : _a.querySelector('input');
-            input === null || input === void 0 ? void 0 : input.blur();
+            const input = wrapRef.current?.querySelector('input');
+            input?.blur();
         });
     }
     return (React.createElement(Field, { label: label, required: required, helper: helper },
@@ -961,22 +962,28 @@ const MARKER_SIZE_OPTIONS = [
     { key: 'large', label: 'Besar', scale: 0.064 }
 ];
 function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
-    const sourceWidth = Math.max(1, (imageElement === null || imageElement === void 0 ? void 0 : imageElement.naturalWidth) || (imageElement === null || imageElement === void 0 ? void 0 : imageElement.width) || 1080);
-    const sourceHeight = Math.max(1, (imageElement === null || imageElement === void 0 ? void 0 : imageElement.naturalHeight) || (imageElement === null || imageElement === void 0 ? void 0 : imageElement.height) || 1080);
+    const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
+    const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
     const maxSide = 1400;
-    if ((ratio === null || ratio === void 0 ? void 0 : ratio.w) && (ratio === null || ratio === void 0 ? void 0 : ratio.h)) {
+    if (ratio?.w && ratio?.h) {
         const targetRatio = ratio.w / ratio.h;
         let width = maxSide;
         let height = Math.round(width / targetRatio);
-        if (height > maxSide) { height = maxSide; width = Math.round(height * targetRatio); }
+        if (height > maxSide) {
+            height = maxSide;
+            width = Math.round(height * targetRatio);
+        }
         return { width: Math.max(360, width), height: Math.max(360, height) };
     }
     const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-    return { width: Math.max(360, Math.round(sourceWidth * scale)), height: Math.max(360, Math.round(sourceHeight * scale)) };
+    return {
+        width: Math.max(360, Math.round(sourceWidth * scale)),
+        height: Math.max(360, Math.round(sourceHeight * scale))
+    };
 }
 function getMarkerRadius(canvas, markerSize) {
     const selected = MARKER_SIZE_OPTIONS.find((item) => item.key === markerSize) || MARKER_SIZE_OPTIONS[1];
-    const minSide = Math.min((canvas === null || canvas === void 0 ? void 0 : canvas.width) || 1080, (canvas === null || canvas === void 0 ? void 0 : canvas.height) || 1080);
+    const minSide = Math.min(canvas?.width || 1080, canvas?.height || 1080);
     return Math.max(24, Math.round(minSide * selected.scale));
 }
 function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
@@ -1005,8 +1012,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
             htmlOverscroll: html.style.overscrollBehavior
         };
         const stopBackgroundScroll = (event) => {
-            var _a, _b;
-            const panel = (_b = (_a = event.target) === null || _a === void 0 ? void 0 : _a.closest) === null || _b === void 0 ? void 0 : _b.call(_a, '.photo-editor-v10-panel');
+            const panel = event.target?.closest?.('.photo-editor-v10-panel');
             if ((event.touches && event.touches.length > 1) || !panel)
                 event.preventDefault();
         };
@@ -1195,8 +1201,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
         setOffset(clampOffset(next, zoom));
     }
     function handlePointerUp(event) {
-        var _a;
-        if (((_a = dragRef.current) === null || _a === void 0 ? void 0 : _a.pointerId) === (event === null || event === void 0 ? void 0 : event.pointerId))
+        if (dragRef.current?.pointerId === event?.pointerId)
             dragRef.current = null;
         else
             dragRef.current = null;
@@ -1304,7 +1309,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
                 React.createElement("button", { type: "button", className: "photo-editor-save", onClick: saveEditedImage, disabled: !imageReady },
                     React.createElement(Icon, { name: "check", className: "h-5 w-5" }),
                     React.createElement("span", null, "Simpan"))))));
-    return (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(modal, document.body) : modal;
+    return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
 function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false }) {
     const cameraRef = useRef(null);
@@ -1331,8 +1336,8 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             return;
         onChange({ ...(value || blankPhoto()), image: '' });
     }
-    const description = (value === null || value === void 0 ? void 0 : value.description) || '';
-    const photoAspect = matchCropFrame && (value === null || value === void 0 ? void 0 : value.cropAspect) ? String(value.cropAspect) : '';
+    const description = value?.description || '';
+    const photoAspect = matchCropFrame && value?.cropAspect ? String(value.cropAspect) : '';
     const cardStyle = photoAspect ? { '--photo-aspect': photoAspect } : undefined;
     return (React.createElement("div", { className: cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame'), style: cardStyle },
         React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 px-4 py-3" },
@@ -1341,21 +1346,21 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
                     label,
                     required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null)),
             React.createElement("div", { className: "flex shrink-0 gap-2" },
-                (value === null || value === void 0 ? void 0 : value.image) ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
+                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
-                (value === null || value === void 0 ? void 0 : value.image) ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
+                value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
-        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', (value === null || value === void 0 ? void 0 : value.image) ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, (value === null || value === void 0 ? void 0 : value.image) ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
+        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
             React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { var _a; return (_a = cameraRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Ambil foto dari kamera" }),
-            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { var _a; return (_a = galleryRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Pilih foto dari galeri" })),
+            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => cameraRef.current?.click(), "aria-label": "Ambil foto dari kamera" }),
+            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => galleryRef.current?.click(), "aria-label": "Pilih foto dari galeri" })),
         React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: (meta === null || meta === void 0 ? void 0 : meta.aspectRatio) || (value === null || value === void 0 ? void 0 : value.cropAspect) || '' }) })));
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || '' }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
@@ -1367,8 +1372,7 @@ function SectionShell({ title, children, actions, preTitle }) {
         children));
 }
 function CrewEditor({ visit, update }) {
-    var _a;
-    const crewList = ((_a = visit.crewList) === null || _a === void 0 ? void 0 : _a.length) ? visit.crewList : [{ name: '', level: '' }];
+    const crewList = visit.crewList?.length ? visit.crewList : [{ name: '', level: '' }];
     const updateCrew = (index, patch) => {
         const next = crewList.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item);
         update({ crewList: next });
@@ -1419,7 +1423,7 @@ function CrewEditor({ visit, update }) {
                 React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addCrew }, "Tambah Crew")))));
 }
 function ObservationCards({ title, rows, onChange }) {
-    const safeRows = (rows === null || rows === void 0 ? void 0 : rows.length) ? rows : [blankObservationRow()];
+    const safeRows = rows?.length ? rows : [blankObservationRow()];
     const [activeIndex, setActiveIndex] = useState(0);
     const activeRowNumber = Math.min(activeIndex + 1, safeRows.length);
     useEffect(() => {
@@ -1452,10 +1456,39 @@ function ObservationCards({ title, rows, onChange }) {
         color: '#0f172a',
         boxShadow: '0 6px 14px rgba(15, 23, 42, 0.08)'
     };
-    const mobileNav = (React.createElement("div", { className: "observation-inline-nav md:hidden", "aria-label": "Navigasi temuan observation", style: { marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', borderRadius: '999px', padding: '7px', background: 'rgba(255,255,255,0.78)', border: '1px solid rgba(226, 232, 240, 0.92)', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } },
-        React.createElement("button", { type: "button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya", style: Object.assign(Object.assign({}, navButtonBase), { opacity: activeIndex <= 0 ? 0.45 : 1 }) },
+    const mobileNav = (React.createElement("div", { className: "observation-inline-nav md:hidden", "aria-label": "Navigasi temuan observation", style: {
+            marginTop: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            borderRadius: '999px',
+            padding: '7px',
+            background: 'rgba(255,255,255,0.78)',
+            border: '1px solid rgba(226, 232, 240, 0.92)',
+            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)'
+        } },
+        React.createElement("button", { type: "button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya", style: { ...navButtonBase, opacity: activeIndex <= 0 ? 0.45 : 1 } },
             React.createElement(Icon, { name: "left", className: "h-4 w-4" })),
-        React.createElement("div", { style: { flex: '1 1 auto', minWidth: 0, height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '999px', background: '#172554', color: '#ffffff', padding: '0 12px', fontSize: '12px', fontWeight: 900, letterSpacing: '0.01em', boxShadow: '0 8px 18px rgba(23, 37, 84, 0.18)' } },
+        React.createElement("div", { style: {
+                flex: '1 1 auto',
+                minWidth: 0,
+                height: '34px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                borderRadius: '999px',
+                background: '#172554',
+                color: '#ffffff',
+                padding: '0 12px',
+                fontSize: '12px',
+                fontWeight: 900,
+                letterSpacing: '0.01em',
+                boxShadow: '0 8px 18px rgba(23, 37, 84, 0.18)'
+            } },
             React.createElement("span", null,
                 "Temuan ",
                 activeRowNumber,
@@ -1463,7 +1496,7 @@ function ObservationCards({ title, rows, onChange }) {
                 safeRows.length),
             React.createElement("button", { type: "button", onClick: addRow, "aria-label": "Tambah temuan", style: { width: '24px', height: '24px', display: 'inline-grid', placeItems: 'center', borderRadius: '999px', background: '#0f766e', color: '#ffffff' } },
                 React.createElement(Icon, { name: "plus", className: "h-3.5 w-3.5" }))),
-        React.createElement("button", { type: "button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya", style: Object.assign(Object.assign({}, navButtonBase), { opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1 }) },
+        React.createElement("button", { type: "button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya", style: { ...navButtonBase, opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1 } },
             React.createElement(Icon, { name: "right", className: "h-4 w-4" }))));
     return (React.createElement("div", { className: "observation-card-system grid gap-4" },
         mobileNav,
@@ -1485,8 +1518,7 @@ function ObservationCards({ title, rows, onChange }) {
                         React.createElement(DateInput, { value: row.deadline || '', onChange: (e) => updateRow(index, { deadline: e.target.value }) })),
                     richField('Hasil', 'hasil', row, index, 'Hasil tindakan...')))))),
         React.createElement("div", { className: "observation-desktop-add flex justify-end" },
-            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row")),
-        ));
+            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row"))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
     const minSlots = 8;
@@ -1496,17 +1528,21 @@ function PhotoGrid({ photos, onChange, prefix }) {
     const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
     const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
     const removeEmpty = () => {
-        if (!confirmAction('Rapikan dan hapus slot foto kosong?'))
+        if (!confirmAction('Rapihkan dan hapus slot foto kosong?'))
             return;
         const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
         const next = meaningful.length ? meaningful : blankSet();
         onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
     };
+    const renderActions = (position = 'top') => (React.createElement("div", { className: cx('photo-grid-actions flex flex-wrap gap-2', position === 'top'
+            ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2'
+            : 'justify-end pb-20 md:pb-0') },
+        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "eraser", onClick: removeEmpty }, "Rapihkan Slot Foto"),
+        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "plus", onClick: addFour }, "Tambah Slot Foto")));
     return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
+        renderActions('top'),
         React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true })))),
-        React.createElement("div", { className: "flex flex-wrap justify-end gap-2" },
-            React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: removeEmpty }, "Rapikan Slot Kosong"),
-            React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addFour }, "Tambah 4 Slot"))));
+        renderActions('bottom')));
 }
 const SECTION_DEFS = [
     { id: 'setup', label: 'Visit', title: 'Visit Setup', icon: 'store', hint: 'Bestie & store' },
@@ -1527,11 +1563,10 @@ function VisitSetupSection({ visit, update }) {
     const manualDetail = visit.manualStoreDetail || {};
     const detail = useMemo(() => ({ ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr }), [baseDetail, manualDetail, visit.store]);
     const progress = visitProgress(visit);
-    const detailValue = (key, fallback = '') => { var _a, _b; return (_b = (_a = manualDetail[key]) !== null && _a !== void 0 ? _a : fallback) !== null && _b !== void 0 ? _b : ''; };
+    const detailValue = (key, fallback = '') => manualDetail[key] ?? fallback ?? '';
     function handleBestieChange(value) {
-        var _a;
         const stores = getStoresForBestie(value);
-        update({ nama: value, store: ((_a = stores[0]) === null || _a === void 0 ? void 0 : _a.label) || '', manualStoreDetail: {} });
+        update({ nama: value, store: stores[0]?.label || '', manualStoreDetail: {} });
     }
     function handleStoreChange(value) {
         update({ store: value, manualStoreDetail: {} });
@@ -1588,7 +1623,8 @@ function QscResultSection({ visit, update }) {
         React.createElement("div", { className: "qsc-result-photo-grid grid gap-4" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, matchCropFrame: true, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true }))))));
 }
 function ObservationSection({ visit, update }) {
-    const [tab, setTab] = useState('opi');
+    const tab = visit.activeObservationTab === 'qsc' ? 'qsc' : 'opi';
+    const setTab = (nextTab) => update({ activeObservationTab: nextTab });
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
@@ -1604,18 +1640,20 @@ function ObservationSection({ visit, update }) {
     return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
 }
 function EvidenceSection({ visit, update }) {
-    const [tab, setTab] = useState('finding');
+    const tab = visit.activeEvidenceTab === 'corrective' ? 'corrective' : 'finding';
+    const setTab = (nextTab) => update({ activeEvidenceTab: nextTab });
     const enabled = tab === 'finding' ? visit.showFindingEvidence === true : visit.showCorrectiveAction === true;
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
+    const evidenceTabStyle = { minWidth: 0, width: '100%', justifyContent: 'center', paddingLeft: '8px', paddingRight: '8px', whiteSpace: 'nowrap' };
     const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
-        React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
-            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), onClick: () => setTab('finding') },
-                React.createElement(Icon, { name: "image", className: "h-4 w-4" }),
-                " Finding Evidence"),
-            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), onClick: () => setTab('corrective') },
-                React.createElement(Icon, { name: "image", className: "h-4 w-4" }),
-                " Corrective Action")),
+        React.createElement("div", { className: "grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]" },
+            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), style: evidenceTabStyle, onClick: () => setTab('finding') },
+                React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
+                React.createElement("span", { className: "min-w-0 truncate" }, "Finding Evidence")),
+            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), style: evidenceTabStyle, onClick: () => setTab('corrective') },
+                React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
+                React.createElement("span", { className: "min-w-0 truncate" }, "Corrective Action"))),
         React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
     return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
@@ -1656,11 +1694,11 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
         try {
             deferredPrompt.prompt();
             await deferredPrompt.userChoice;
-            onPromptUsed === null || onPromptUsed === void 0 ? void 0 : onPromptUsed();
+            onPromptUsed?.();
             onClose();
         }
         catch (error) {
-            onPromptUsed === null || onPromptUsed === void 0 ? void 0 : onPromptUsed();
+            onPromptUsed?.();
         }
     }
     if (!open)
@@ -1688,336 +1726,166 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
                 React.createElement("strong", null, item.browser),
                 React.createElement("p", null, item.steps))))))));
 }
-
 function getLinkedDeviceId() {
-  const key = 'rbv_linked_device_id';
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = 'device-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem(key, id);
-  }
-  return id;
-}
-
-function linkedDeviceFunctionName(configKey, fallback) {
-  const config = getConvexConfig();
-  return cleanText(config[configKey], fallback);
-}
-
-function linkedDevicePlatform() {
-  const ua = navigator.userAgent || '';
-  if (/iPhone|Android.*Mobile/i.test(ua)) return 'mobile';
-  if (/iPad|Tablet|Android/i.test(ua)) return 'tablet';
-  return 'desktop';
-}
-
-function linkedDeviceRole() {
-  const platform = linkedDevicePlatform();
-  return platform === 'desktop' ? 'desktop' : platform === 'tablet' ? 'tablet' : platform === 'mobile' ? 'mobile' : 'unknown';
-}
-
-async function registerCurrentDeviceToConvex() {
-  if (!convexEnabled()) return false;
-  const deviceId = getLinkedDeviceId();
-  await runConvexMutation(linkedDeviceFunctionName('registerDeviceMutation', 'linkedDevices:registerDevice'), {
-    deviceId,
-    deviceName: localStorage.getItem('rbv_device_name') || `${linkedDeviceRole()}-${deviceId.slice(-6)}`,
-    platform: linkedDevicePlatform(),
-    userAgent: navigator.userAgent || '',
-    role: linkedDeviceRole()
-  });
-  return true;
-}
-
-async function buildLinkedDevicePayload() {
-  const deviceId = getLinkedDeviceId();
-  const url = new URL(window.location.href);
-  url.searchParams.set('linkedDevice', '1');
-  const fallbackPayload = {
-    app: 'regional-bestie-visit-report',
-    type: 'linked-device',
-    deviceId,
-    sourceDeviceId: deviceId,
-    url: url.toString(),
-    createdAt: new Date().toISOString(),
-    convex: false
-  };
-
-  if (convexEnabled()) {
-    try {
-      await registerCurrentDeviceToConvex();
-      const result = await runConvexMutation(linkedDeviceFunctionName('createLinkMutation', 'linkedDevices:createLinkCode'), { sourceDeviceId: deviceId });
-      const linkCode = cleanText(result && result.linkCode);
-      if (linkCode) {
-        url.hash = 'bestie-link-code=' + encodeURIComponent(linkCode);
-        return JSON.stringify({
-          ...fallbackPayload,
-          linkCode,
-          expiresAt: result.expiresAt || 0,
-          url: url.toString(),
-          convex: true
-        });
-      }
-    } catch (error) {
-      console.warn('Create Convex link code gagal, pakai fallback lokal:', error);
+    const key = 'rbv_linked_device_id';
+    let id = localStorage.getItem(key);
+    if (!id) {
+        id = 'device-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(key, id);
     }
-  }
-
-  url.hash = 'bestie-linked-device=' + encodeURIComponent(deviceId);
-  return JSON.stringify({ ...fallbackPayload, url: url.toString() });
+    return id;
 }
-
-function parseLinkedDevicePayload(raw) {
-  const text = String(raw || '').trim();
-  if (!text) return null;
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed?.app === 'regional-bestie-visit-report' && parsed?.type === 'linked-device' && (parsed?.deviceId || parsed?.linkCode)) return parsed;
-  } catch (error) {
-    // QR dari kamera bisa berupa URL, bukan JSON.
-  }
-  try {
-    const url = new URL(text);
-    const hash = decodeURIComponent(url.hash || '');
-    const linkMatch = hash.match(/bestie-link-code=([^&]+)/);
-    if (linkMatch?.[1]) {
-      return {
+function buildLinkedDevicePayload() {
+    const deviceId = getLinkedDeviceId();
+    const url = new URL(window.location.href);
+    url.searchParams.set('linkedDevice', '1');
+    url.hash = 'bestie-linked-device=' + encodeURIComponent(deviceId);
+    return JSON.stringify({
         app: 'regional-bestie-visit-report',
         type: 'linked-device',
-        linkCode: linkMatch[1],
+        deviceId,
         url: url.toString(),
-        createdAt: new Date().toISOString(),
-        convex: true
-      };
-    }
-    const match = hash.match(/bestie-linked-device=([^&]+)/);
-    if (match?.[1]) {
-      return {
-        app: 'regional-bestie-visit-report',
-        type: 'linked-device',
-        deviceId: match[1],
-        sourceDeviceId: match[1],
-        url: url.toString(),
-        createdAt: new Date().toISOString(),
-        convex: false
-      };
-    }
-  } catch (error) {
-    // Bukan URL valid.
-  }
-  return null;
-}
-
-
-function linkedDeviceQrFallbackUrl(payload) {
-  return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=' + encodeURIComponent(payload);
-}
-
-
-async function acceptLinkedDevicePayload(payload) {
-  if (!payload) return false;
-  if (payload.linkCode && convexEnabled()) {
-    await registerCurrentDeviceToConvex();
-    await runConvexMutation(linkedDeviceFunctionName('acceptLinkMutation', 'linkedDevices:acceptLinkCode'), {
-      linkCode: payload.linkCode,
-      targetDeviceId: getLinkedDeviceId()
+        createdAt: new Date().toISOString()
     });
-    return true;
-  }
-  return false;
 }
-
-async function upsertVisitToConvex(visit) {
-  if (!visit || !visit.id || !convexEnabled()) return false;
-  await registerCurrentDeviceToConvex();
-  await runConvexMutation(linkedDeviceFunctionName('visitUpsertMutation', 'visits:upsertVisit'), {
-    deviceId: getLinkedDeviceId(),
-    visitId: visit.id,
-    payload: { ...visit, progress: visitProgress(visit), updatedAt: visit.updatedAt || Date.now() }
-  });
-  return true;
-}
-
-async function deleteVisitFromConvex(visitId) {
-  if (!visitId || !convexEnabled()) return false;
-  await registerCurrentDeviceToConvex();
-  await runConvexMutation(linkedDeviceFunctionName('visitDeleteMutation', 'visits:deleteVisit'), {
-    deviceId: getLinkedDeviceId(),
-    visitId
-  });
-  return true;
-}
-
-async function pullVisitsFromConvexToLocal() {
-  if (!convexEnabled()) return { count: 0 };
-  await registerCurrentDeviceToConvex();
-  const rows = await runConvexQuery(linkedDeviceFunctionName('visitListQuery', 'visits:listVisits'), { deviceId: getLinkedDeviceId() });
-  const safeRows = Array.isArray(rows) ? rows : [];
-  const visits = safeRows.map((row) => row && (row.payload || row.data || row.visit || row)).filter((item) => item && item.id);
-  for (const item of visits) {
-    await putVisitRecord({ ...item, updatedAt: item.updatedAt || Date.now() });
-  }
-  if (visits.length) {
-    saveHistoryMeta([...visits.map(historyMetaFromVisit), ...readHistoryMeta()]);
-  }
-  return { count: visits.length };
-}
-
-function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
-  const [qrDataUrl, setQrDataUrl] = useState('');
-  const [scanOpen, setScanOpen] = useState(false);
-  const [scanStatus, setScanStatus] = useState('');
-  const [qrText, setQrText] = useState('');
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const rafRef = useRef(0);
-
-  const stopScanner = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) videoRef.current.srcObject = null;
-  };
-
-  useEffect(() => {
-    if (!open) {
-      stopScanner();
-      return undefined;
-    }
-    let active = true;
-    setQrText('');
-    setQrDataUrl('');
-    (async () => {
-      const payload = await buildLinkedDevicePayload();
-      if (!active) return;
-      setQrText(payload);
-      setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
-      if (window.QRCode?.toDataURL) {
-        window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
-          if (!error && url && active) setQrDataUrl(url);
-        });
-      }
-    })();
-    return () => { active = false; stopScanner(); };
-  }, [open]);
-
-  function saveLinkedDevice(payload) {
-    localStorage.setItem('rbv_linked_desktop_device', JSON.stringify({ ...payload, linkedAt: new Date().toISOString() }));
-    setScanStatus(payload.linkCode ? 'Berhasil linked device ke Convex. Sync database siap digunakan.' : 'Berhasil linked device lokal.');
-    stopScanner();
-    setScanOpen(false);
-  }
-
-  function handleScanResult(raw) {
-    const payload = parseLinkedDevicePayload(raw);
-    if (!payload) {
-      setScanStatus('QR tidak sesuai aplikasi Bestie Visit.');
-      return false;
-    }
-    setScanStatus('Menghubungkan device...');
-    acceptLinkedDevicePayload(payload)
-      .then(() => saveLinkedDevice(payload))
-      .catch((error) => {
-        console.warn('Accept linked device gagal:', error);
-        setScanStatus(error?.message || 'Gagal linked device ke Convex.');
-      });
-    return true;
-  }
-
-  async function startScanner() {
+function parseLinkedDevicePayload(raw) {
+    const text = String(raw || '').trim();
+    if (!text)
+        return null;
     try {
-      setScanStatus('Membuka kamera...');
-      setScanOpen(true);
-      stopScanner();
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setScanStatus('Kamera tidak tersedia di browser ini.');
-        return;
-      }
-      if (!window.jsQR) {
-        setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
-        return;
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-      streamRef.current = stream;
-      const video = videoRef.current;
-      if (!video) return;
-      video.srcObject = stream;
-      video.setAttribute('playsInline', 'true');
-      await video.play();
-      setScanStatus('Arahkan kamera ke QR desktop.');
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      const scanFrame = () => {
-        if (!videoRef.current || !ctx) return;
-        const w = video.videoWidth || 0;
-        const h = video.videoHeight || 0;
-        if (w && h) {
-          canvas.width = w;
-          canvas.height = h;
-          ctx.drawImage(video, 0, 0, w, h);
-          const imageData = ctx.getImageData(0, 0, w, h);
-          const code = window.jsQR(imageData.data, w, h);
-          if (code?.data && handleScanResult(code.data)) return;
-        }
-        rafRef.current = requestAnimationFrame(scanFrame);
-      };
-      rafRef.current = requestAnimationFrame(scanFrame);
-    } catch (error) {
-      console.warn('Scan QR gagal:', error);
-      setScanStatus('Tidak bisa membuka kamera. Pastikan izin kamera diberikan.');
-      stopScanner();
+        const parsed = JSON.parse(text);
+        if (parsed?.app === 'regional-bestie-visit-report' && parsed?.type === 'linked-device' && parsed?.deviceId)
+            return parsed;
     }
-  }
-
-  if (!open) return null;
-
-  return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' },
-    React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' },
-      React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' },
-        React.createElement('div', null,
-          React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'),
-          React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')
-        ),
-        React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' },
-          React.createElement(Icon, { name: 'close', className: 'h-5 w-5' })
-        )
-      ),
-      React.createElement('div', { className: 'space-y-4 p-5' },
-        React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' },
-          React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' },
-            qrDataUrl
-              ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
-              : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')
-          ),
-          React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')
-        ),
-        React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
-          React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner },
-            React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }),
-            React.createElement('span', null, 'Scan QR')
-          ),
-          React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } },
-            React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }),
-            React.createElement('span', null, 'Salin Kode')
-          )
-        ),
-        scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' },
-          React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })
-        ) : null,
-        React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' },
-          'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'
-        ),
-        scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null,
-        React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount))
-      )
-    )
-  );
+    catch (error) {
+        // QR dari kamera bisa berupa URL, bukan JSON.
+    }
+    try {
+        const url = new URL(text);
+        const hash = decodeURIComponent(url.hash || '');
+        const match = hash.match(/bestie-linked-device=([^&]+)/);
+        if (match?.[1]) {
+            return {
+                app: 'regional-bestie-visit-report',
+                type: 'linked-device',
+                deviceId: match[1],
+                url: url.toString(),
+                createdAt: new Date().toISOString()
+            };
+        }
+    }
+    catch (error) {
+        // Bukan URL valid.
+    }
+    return null;
 }
-
+function linkedDeviceQrFallbackUrl(payload) {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=' + encodeURIComponent(payload);
+}
+function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
+    const [qrDataUrl, setQrDataUrl] = useState('');
+    const [scanOpen, setScanOpen] = useState(false);
+    const [scanStatus, setScanStatus] = useState('');
+    const [qrText, setQrText] = useState('');
+    const videoRef = useRef(null);
+    const streamRef = useRef(null);
+    const rafRef = useRef(0);
+    const stopScanner = () => {
+        if (rafRef.current)
+            cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current = null;
+        }
+        if (videoRef.current)
+            videoRef.current.srcObject = null;
+    };
+    useEffect(() => {
+        if (!open) {
+            stopScanner();
+            return undefined;
+        }
+        const payload = buildLinkedDevicePayload();
+        setQrText(payload);
+        setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
+        if (window.QRCode?.toDataURL) {
+            window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
+                if (!error && url)
+                    setQrDataUrl(url);
+            });
+        }
+        return () => stopScanner();
+    }, [open]);
+    function saveLinkedDevice(payload) {
+        localStorage.setItem('rbv_linked_desktop_device', JSON.stringify({ ...payload, linkedAt: new Date().toISOString() }));
+        setScanStatus('Berhasil linked device. Data perangkat desktop sudah tersimpan di device ini.');
+        stopScanner();
+        setScanOpen(false);
+    }
+    function handleScanResult(raw) {
+        const payload = parseLinkedDevicePayload(raw);
+        if (!payload) {
+            setScanStatus('QR tidak sesuai aplikasi Bestie Visit.');
+            return false;
+        }
+        saveLinkedDevice(payload);
+        return true;
+    }
+    async function startScanner() {
+        try {
+            setScanStatus('Membuka kamera...');
+            setScanOpen(true);
+            stopScanner();
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setScanStatus('Kamera tidak tersedia di browser ini.');
+                return;
+            }
+            if (!window.jsQR) {
+                setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
+                return;
+            }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+            streamRef.current = stream;
+            const video = videoRef.current;
+            if (!video)
+                return;
+            video.srcObject = stream;
+            video.setAttribute('playsInline', 'true');
+            await video.play();
+            setScanStatus('Arahkan kamera ke QR desktop.');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const scanFrame = () => {
+                if (!videoRef.current || !ctx)
+                    return;
+                const w = video.videoWidth || 0;
+                const h = video.videoHeight || 0;
+                if (w && h) {
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.drawImage(video, 0, 0, w, h);
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const code = window.jsQR(imageData.data, w, h);
+                    if (code?.data && handleScanResult(code.data))
+                        return;
+                }
+                rafRef.current = requestAnimationFrame(scanFrame);
+            };
+            rafRef.current = requestAnimationFrame(scanFrame);
+        }
+        catch (error) {
+            console.warn('Scan QR gagal:', error);
+            setScanStatus('Tidak bisa membuka kamera. Pastikan izin kamera diberikan.');
+            stopScanner();
+        }
+    }
+    if (!open)
+        return null;
+    return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' }, React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' }, React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' }, React.createElement('div', null, React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'), React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')), React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' }, React.createElement(Icon, { name: 'close', className: 'h-5 w-5' }))), React.createElement('div', { className: 'space-y-4 p-5' }, React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' }, React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' }, qrDataUrl
+        ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
+        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
+}
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -2041,15 +1909,14 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         catch (error) {
             console.warn('Backup data gagal:', error);
-            alert((error === null || error === void 0 ? void 0 : error.message) || 'Backup data gagal.');
+            alert(error?.message || 'Backup data gagal.');
         }
         finally {
             setBackupBusy(false);
         }
     }
     async function handleRestoreFile(event) {
-        var _a;
-        const file = (_a = event.target.files) === null || _a === void 0 ? void 0 : _a[0];
+        const file = event.target.files?.[0];
         event.target.value = '';
         if (!file || restoreBusy)
             return;
@@ -2059,7 +1926,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         catch (error) {
             console.warn('Restore data gagal:', error);
-            alert((error === null || error === void 0 ? void 0 : error.message) || 'Restore data gagal. Pastikan file backup benar.');
+            alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
         }
         finally {
             setRestoreBusy(false);
@@ -2074,13 +1941,13 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp54-quick-section-scrollable" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp55-evidence-section-polish" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Backup")),
-                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Restore")),
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
@@ -2109,7 +1976,19 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
                     React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
-        React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: { position: "fixed", left: "50%", bottom: "calc(18px + env(safe-area-inset-bottom, 0px))", transform: "translateX(-50%)", zIndex: 80, width: "min(360px, calc(100vw - 32px))", height: "56px", background: "#0f766e", opacity: 1, backdropFilter: "none", WebkitBackdropFilter: "none" }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
+        React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
+                position: 'fixed',
+                left: '50%',
+                bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+                transform: 'translateX(-50%)',
+                zIndex: 80,
+                width: 'min(360px, calc(100vw - 32px))',
+                height: '56px',
+                background: '#0f766e',
+                opacity: 1,
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+            }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
             React.createElement(Icon, { name: "plus", className: "h-5 w-5" }),
             React.createElement("span", null, "Kunjungan Baru")),
         React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })));
@@ -2124,11 +2003,10 @@ function NewVisitModal({ open, onClose, onCreate }) {
     const [manualNote, setManualNote] = useState('');
     const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
     useEffect(() => {
-        var _a;
         if (!open)
             return;
         const initialBestie = BESTIE_NAMES[0] || '';
-        const initialStore = ((_a = getStoresForBestie(initialBestie)[0]) === null || _a === void 0 ? void 0 : _a.label) || '';
+        const initialStore = getStoresForBestie(initialBestie)[0]?.label || '';
         setBestieName(initialBestie);
         setStoreName(initialStore);
         setManualOpen(false);
@@ -2138,10 +2016,9 @@ function NewVisitModal({ open, onClose, onCreate }) {
         setManualNote('');
     }, [open]);
     useEffect(() => {
-        var _a;
         const options = getStoresForBestie(bestieName);
         if (!storeName || !options.some((item) => normalize(item.label) === normalize(storeName))) {
-            setStoreName(((_a = options[0]) === null || _a === void 0 ? void 0 : _a.label) || '');
+            setStoreName(options[0]?.label || '');
         }
     }, [bestieName]);
     function submitManualRequest() {
@@ -2214,14 +2091,14 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             const scroller = scrollRef.current;
             if (!target || !blob)
                 return;
-            const measuredWidth = Math.max(280, Math.floor(((scroller === null || scroller === void 0 ? void 0 : scroller.clientWidth) || target.clientWidth || 360) - 16));
+            const measuredWidth = Math.max(280, Math.floor((scroller?.clientWidth || target.clientWidth || 360) - 16));
             if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 18 && target.childElementCount)
                 return;
             lastWidthRef.current = measuredWidth;
             const seq = renderSeqRef.current + 1;
             renderSeqRef.current = seq;
             const pdfjsLib = window.pdfjsLib;
-            if (!(pdfjsLib === null || pdfjsLib === void 0 ? void 0 : pdfjsLib.getDocument)) {
+            if (!pdfjsLib?.getDocument) {
                 setFallback(true);
                 return;
             }
@@ -2231,7 +2108,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 if (pdfjsLib.GlobalWorkerOptions) {
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                 }
-                const scrollTop = (scroller === null || scroller === void 0 ? void 0 : scroller.scrollTop) || 0;
+                const scrollTop = scroller?.scrollTop || 0;
                 const data = await blob.arrayBuffer();
                 if (cancelled || renderSeqRef.current !== seq)
                     return;
@@ -2325,7 +2202,7 @@ function PreviewPage({ visit, onBack }) {
             }
             catch (error) {
                 setPdfBlob(null);
-                setStatus((error === null || error === void 0 ? void 0 : error.message) || 'Preview PDF gagal dibuat.');
+                setStatus(error?.message || 'Preview PDF gagal dibuat.');
             }
         }
         render();
@@ -2337,13 +2214,13 @@ function PreviewPage({ visit, onBack }) {
         await window.ReportVisitPDF.save(visit);
     }
     catch (error) {
-        alert((error === null || error === void 0 ? void 0 : error.message) || 'Gagal download PDF.');
+        alert(error?.message || 'Gagal download PDF.');
     }
     finally {
         setBusy(false);
     } }
-    async function handleExportExcel() { var _a; if (!visit)
-        return; if (!((_a = window.__caAssignmentExport) === null || _a === void 0 ? void 0 : _a.buildWorkbook)) {
+    async function handleExportExcel() { if (!visit)
+        return; if (!window.__caAssignmentExport?.buildWorkbook) {
         alert('Mesin export Excel belum siap.');
         return;
     } setBusy(true); try {
@@ -2352,7 +2229,7 @@ function PreviewPage({ visit, onBack }) {
         downloadBlob(blob, fileName);
     }
     catch (error) {
-        alert((error === null || error === void 0 ? void 0 : error.message) || 'Gagal export Excel CA Assignment.');
+        alert(error?.message || 'Gagal export Excel CA Assignment.');
     }
     finally {
         setBusy(false);
@@ -2408,7 +2285,7 @@ function getConvexHttpUrl() {
     return cleanText(config.httpUrl || config.siteUrl);
 }
 function buildVisitKey(visit) {
-    return [visit === null || visit === void 0 ? void 0 : visit.nama, visit === null || visit === void 0 ? void 0 : visit.store, visit === null || visit === void 0 ? void 0 : visit.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || (visit === null || visit === void 0 ? void 0 : visit.id) || SESSION_ID;
+    return [visit?.nama, visit?.store, visit?.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || visit?.id || SESSION_ID;
 }
 function convexUrl(path) {
     const config = getConvexConfig();
@@ -2426,8 +2303,7 @@ function getConvexBundleUrl() {
     return config.bundleUrl || 'https://unpkg.com/convex@latest/dist/browser.bundle.js';
 }
 function loadConvexBundle() {
-    var _a;
-    if ((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient)
+    if (window.convex?.ConvexClient)
         return Promise.resolve(window.convex);
     if (RB_CONVEX_BUNDLE_PROMISE)
         return RB_CONVEX_BUNDLE_PROMISE;
@@ -2443,24 +2319,23 @@ function loadConvexBundle() {
         script.src = getConvexBundleUrl();
         script.async = true;
         script.crossOrigin = 'anonymous';
-        script.onload = () => { var _a; return ((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient) ? resolve(window.convex) : reject(new Error('Convex client tidak tersedia.')); };
+        script.onload = () => window.convex?.ConvexClient ? resolve(window.convex) : reject(new Error('Convex client tidak tersedia.'));
         script.onerror = () => reject(new Error('Convex client gagal dimuat.'));
         document.head.appendChild(script);
     });
     return RB_CONVEX_BUNDLE_PROMISE;
 }
 async function getConvexRealtimeClient() {
-    var _a, _b;
     const config = getConvexConfig();
     const deploymentUrl = getConvexDeploymentUrl();
     if (!config.enabled || !deploymentUrl)
         return null;
     await loadConvexBundle();
-    if (!((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient))
+    if (!window.convex?.ConvexClient)
         return null;
     if (!RB_CONVEX_CLIENT || RB_CONVEX_CLIENT_URL !== deploymentUrl) {
         try {
-            (_b = RB_CONVEX_CLIENT === null || RB_CONVEX_CLIENT === void 0 ? void 0 : RB_CONVEX_CLIENT.close) === null || _b === void 0 ? void 0 : _b.call(RB_CONVEX_CLIENT);
+            RB_CONVEX_CLIENT?.close?.();
         }
         catch (error) { }
         RB_CONVEX_CLIENT = new window.convex.ConvexClient(deploymentUrl);
@@ -2488,12 +2363,12 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
     return () => {
         if (typeof unsubscribe === 'function')
             unsubscribe();
-        else if (typeof (unsubscribe === null || unsubscribe === void 0 ? void 0 : unsubscribe.unsubscribe) === 'function')
+        else if (typeof unsubscribe?.unsubscribe === 'function')
             unsubscribe.unsubscribe();
     };
 }
 function normalizeMonitorRows(rows) {
-    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
     return safeRows.map((row) => ({
         id: row._id || row.id || row.visit_key || `${row.bestie_name || row.bestieName}-${row.store_name || row.storeName}-${row.visit_date || row.visitDate}`,
         bestie_name: row.bestie_name || row.bestieName || row.nama || '-',
@@ -2506,7 +2381,7 @@ function normalizeMonitorRows(rows) {
     }));
 }
 function normalizeManualRequestRows(rows) {
-    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
     return safeRows.map((item) => ({
         id: item.request_id || item.requestId || item.id || item._id,
         status: item.status || 'pending',
@@ -2685,7 +2560,6 @@ function exportJson(data, fileName) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     downloadBlob(blob, fileName);
 }
-
 function WelcomeOverlay({ config, onDone }) {
     const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
     const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
@@ -2713,7 +2587,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
             return;
         setPin('');
         setError('');
-        setTimeout(() => { var _a; return (_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.focus(); }, 60);
+        setTimeout(() => inputRef.current?.focus(), 60);
     }, [open]);
     useEffect(() => {
         if (pin.length < 6)
@@ -2775,7 +2649,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     }
     function adjustPdfSetting(key, delta) {
         const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows });
-        applyPdfSettings(Object.assign(Object.assign({}, current), { [key]: Number(current[key]) + delta }));
+        applyPdfSettings({ ...current, [key]: Number(current[key]) + delta });
     }
     function resetPdfSettings() {
         applyPdfSettings(DEFAULT_PDF_SETTINGS, true);
@@ -2875,7 +2749,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     setConnectionState('connecting');
                     if (typeof client.subscribeToConnectionState === 'function') {
                         unsubscribeConnection = client.subscribeToConnectionState((state) => {
-                            const status = (state === null || state === void 0 ? void 0 : state.hasInflightRequests) ? 'syncing' : (state === null || state === void 0 ? void 0 : state.isWebSocketConnected) ? 'online' : 'connecting';
+                            const status = state?.hasInflightRequests ? 'syncing' : state?.isWebSocketConnected ? 'online' : 'connecting';
                             setConnectionState(status);
                         });
                     }
@@ -2935,15 +2809,15 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             if (pollId)
                 window.clearInterval(pollId);
             try {
-                unsubscribeRows === null || unsubscribeRows === void 0 ? void 0 : unsubscribeRows();
+                unsubscribeRows?.();
             }
             catch (error) { }
             try {
-                unsubscribeRequests === null || unsubscribeRequests === void 0 ? void 0 : unsubscribeRequests();
+                unsubscribeRequests?.();
             }
             catch (error) { }
             try {
-                unsubscribeConnection === null || unsubscribeConnection === void 0 ? void 0 : unsubscribeConnection();
+                unsubscribeConnection?.();
             }
             catch (error) { }
         };
@@ -3085,7 +2959,7 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
             React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Bestie Audit"),
             React.createElement("h2", { className: "mt-2 text-xl font-black leading-tight" }, "Visit Report System")),
         React.createElement("nav", { className: "space-y-2", "aria-label": "System menu" },
-            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap === null || onTitleTap === void 0 ? void 0 : onTitleTap(); setScreen('dashboard'); } },
+            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
                 React.createElement("span", { className: "flex items-center gap-3" },
                     React.createElement(Icon, { name: "home" }),
                     React.createElement("span", null,
@@ -3123,17 +2997,71 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
         return null;
     const progress = visitProgress(visit);
     const safeProgress = Math.max(0, Math.min(100, progress || 0));
-    return (React.createElement("div", { className: "visit-quick-dock-v54 md:hidden", role: "navigation", "aria-label": "Quick section", style: { position: 'fixed', left: '50%', top: 'auto', right: 'auto', bottom: 'calc(92px + env(safe-area-inset-bottom, 0px))', transform: 'translate3d(-50%, 0, 0)', zIndex: 70, width: 'min(520px, calc(100vw - 32px))', height: '54px', minHeight: '0', maxHeight: '54px', overflow: 'hidden', borderRadius: '24px', padding: '7px 8px 9px', background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(226,232,240,0.96)', boxShadow: '0 10px 24px rgba(15,23,42,0.11)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', pointerEvents: 'auto' } },
-        React.createElement("div", { ref: scrollerRef, className: "visit-quick-dock-scroll-v54", style: { display: 'flex', alignItems: 'center', gap: '6px', height: '34px', overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '0 2px', touchAction: 'pan-x' } }, SECTION_DEFS.map((section, index) => {
+    return (React.createElement("div", { className: "visit-quick-dock-v54 md:hidden", role: "navigation", "aria-label": "Quick section", style: {
+            position: 'fixed',
+            left: '50%',
+            top: 'auto',
+            right: 'auto',
+            bottom: 'calc(92px + env(safe-area-inset-bottom, 0px))',
+            transform: 'translate3d(-50%, 0, 0)',
+            zIndex: 70,
+            width: 'min(520px, calc(100vw - 32px))',
+            height: '54px',
+            minHeight: '0',
+            maxHeight: '54px',
+            overflow: 'hidden',
+            borderRadius: '24px',
+            padding: '7px 8px 9px',
+            background: 'rgba(255,255,255,0.96)',
+            border: '1px solid rgba(226,232,240,0.96)',
+            boxShadow: '0 10px 24px rgba(15,23,42,0.11)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            pointerEvents: 'auto'
+        } },
+        React.createElement("div", { ref: scrollerRef, className: "visit-quick-dock-scroll-v54", style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                height: '34px',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehaviorX: 'contain',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                padding: '0 2px',
+                touchAction: 'pan-x'
+            } }, SECTION_DEFS.map((section, index) => {
             const active = activeSection === index;
             const minWidth = section.id === 'evidence' ? 92 : section.id === 'qsc' ? 70 : section.id === 'observation' ? 68 : 76;
-            return (React.createElement("button", { key: section.id, type: "button", className: "visit-quick-dock-chip-v54", onClick: () => goSection(index), "aria-current": active ? 'page' : undefined, "aria-label": `Buka section ${section.title}`, "data-active": active ? 'true' : undefined, style: { flex: '0 0 auto', width: 'auto', minWidth: `${minWidth}px`, height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', padding: '0 12px', fontSize: '11.5px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1, whiteSpace: 'nowrap', color: active ? '#ffffff' : '#334155', background: active ? '#172554' : 'rgba(248,250,252,0.78)', border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)', boxShadow: active ? '0 7px 16px rgba(23,37,84,0.18)' : 'inset 0 1px 0 rgba(255,255,255,0.78)', transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease', touchAction: 'pan-x' } },
+            return (React.createElement("button", { key: section.id, type: "button", className: "visit-quick-dock-chip-v54", onClick: () => goSection(index), "aria-current": active ? 'page' : undefined, "aria-label": `Buka section ${section.title}`, "data-active": active ? 'true' : undefined, style: {
+                    flex: '0 0 auto',
+                    width: 'auto',
+                    minWidth: `${minWidth}px`,
+                    height: '32px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '999px',
+                    padding: '0 12px',
+                    fontSize: '11.5px',
+                    fontWeight: 900,
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                    color: active ? '#ffffff' : '#334155',
+                    background: active ? '#172554' : 'rgba(248,250,252,0.78)',
+                    border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
+                    boxShadow: active ? '0 7px 16px rgba(23,37,84,0.18)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
+                    transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
+                    touchAction: 'pan-x'
+                } },
                 React.createElement("span", { style: { overflow: 'hidden', textOverflow: 'ellipsis' } }, section.label)));
         })),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', left: '16px', right: '16px', bottom: '6px', height: '2px', overflow: 'hidden', borderRadius: '999px', background: 'rgba(203,213,225,0.58)' } },
             React.createElement("div", { style: { width: safeProgress + '%', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6)' } }))));
 }
-
 function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) {
     const goAudit = () => visit ? setScreen('audit') : onNewVisit();
     const goPreview = () => visit ? setScreen('preview') : onNewVisit();
@@ -3152,7 +3080,6 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
                 React.createElement("span", null, "Clear")) : null)));
 }
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
-    var _a;
     useEffect(() => {
         function handleKey(event) {
             if (isEditableTarget(event.target))
@@ -3187,7 +3114,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
                 React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
                 " ",
                 section.label)))),
-        React.createElement("div", { key: ((_a = SECTION_DEFS[activeSection]) === null || _a === void 0 ? void 0 : _a.id) || activeSection }, screens[activeSection])));
+        React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection }, screens[activeSection])));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
@@ -3200,12 +3127,18 @@ function App() {
     const [secretOpen, setSecretOpen] = useState(false);
     const [welcomeConfig, setWelcomeConfig] = useState(() => readWelcomeConfig());
     const [welcomeOpen, setWelcomeOpen] = useState(() => {
-        try { return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1'; }
-        catch (error) { return true; }
+        try {
+            return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1';
+        }
+        catch (error) {
+            return true;
+        }
     });
     const secretTapRef = useRef({ count: 0, timer: null });
     function closeWelcome() {
-        try { sessionStorage.setItem(WELCOME_SEEN_KEY, '1'); }
+        try {
+            sessionStorage.setItem(WELCOME_SEEN_KEY, '1');
+        }
         catch (error) { }
         setWelcomeOpen(false);
     }
@@ -3214,10 +3147,9 @@ function App() {
         setWelcomeConfig(saved);
     }
     async function updateStorageLabel() {
-        var _a;
         const localBytes = calcLocalStorageBytes();
         let label = `LocalStorage ${formatBytes(localBytes)}`;
-        if ((_a = navigator.storage) === null || _a === void 0 ? void 0 : _a.estimate) {
+        if (navigator.storage?.estimate) {
             try {
                 const estimate = await navigator.storage.estimate();
                 label += ` • Browser ${formatBytes(estimate.usage || 0)}`;
@@ -3232,7 +3164,6 @@ function App() {
     }
     useEffect(() => {
         refreshHistory();
-        pullVisitsFromConvexToLocal().then(() => refreshHistory()).catch((error) => console.warn('Pull Convex visits gagal:', error));
         let cancelled = false;
         let versionTimer = null;
         function reloadWithVersion(version) {
@@ -3314,16 +3245,15 @@ function App() {
     useEffect(() => {
         const touchState = { target: null, x: 0, y: 0, moved: false, startedAt: 0 };
         const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]';
-        const findTextTarget = (target) => { var _a, _b; return ((_b = (_a = target === null || target === void 0 ? void 0 : target.closest) === null || _a === void 0 ? void 0 : _a.call(target, textTargetSelector)) !== null && _b !== void 0 ? _b : null); };
-        const movementLimit = () => { var _a, _b; return ((_b = (_a = window.matchMedia) === null || _a === void 0 ? void 0 : _a.call(window, '(pointer: coarse)')) === null || _b === void 0 ? void 0 : _b.matches) ? 16 : 11; };
+        const findTextTarget = (target) => target?.closest?.(textTargetSelector) || null;
+        const movementLimit = () => (window.matchMedia?.('(pointer: coarse)')?.matches ? 16 : 11);
         function canFocusOnTap(target) {
-            var _a;
             if (!target || target.disabled || target.readOnly)
                 return false;
             const tag = (target.tagName || '').toLowerCase();
             if (tag === 'select')
                 return false;
-            const type = String(((_a = target.getAttribute) === null || _a === void 0 ? void 0 : _a.call(target, 'type')) || '').toLowerCase();
+            const type = String(target.getAttribute?.('type') || '').toLowerCase();
             return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
         }
         function focusTapTarget(target) {
@@ -3342,9 +3272,8 @@ function App() {
             }, 0);
         }
         function handleTouchStart(event) {
-            var _a;
             const target = findTextTarget(event.target);
-            if (!target || !((_a = event.touches) === null || _a === void 0 ? void 0 : _a[0]))
+            if (!target || !event.touches?.[0])
                 return;
             touchState.target = target;
             touchState.x = event.touches[0].clientX;
@@ -3353,8 +3282,7 @@ function App() {
             touchState.startedAt = Date.now();
         }
         function handleTouchMove(event) {
-            var _a;
-            if (!touchState.target || !((_a = event.touches) === null || _a === void 0 ? void 0 : _a[0]))
+            if (!touchState.target || !event.touches?.[0])
                 return;
             const dx = Math.abs(event.touches[0].clientX - touchState.x);
             const dy = Math.abs(event.touches[0].clientY - touchState.y);
@@ -3363,7 +3291,6 @@ function App() {
                 touchState.moved = true;
         }
         function handleTouchEnd(event) {
-            var _a;
             const target = touchState.target;
             const wasScroll = Boolean(target && touchState.moved);
             if (wasScroll) {
@@ -3371,7 +3298,7 @@ function App() {
                     event.preventDefault();
                 event.stopPropagation();
                 if (document.activeElement === target)
-                    (_a = target.blur) === null || _a === void 0 ? void 0 : _a.call(target);
+                    target.blur?.();
             }
             else if (target) {
                 focusTapTarget(target);
@@ -3400,7 +3327,7 @@ function App() {
         window.getFormData = () => visit || {};
     }, [visit]);
     useEffect(() => {
-        if (!(visit === null || visit === void 0 ? void 0 : visit.id))
+        if (!visit?.id)
             return;
         const timer = setTimeout(async () => {
             const nextVisit = { ...visit, updatedAt: Date.now() };
@@ -3411,7 +3338,6 @@ function App() {
                 setHistory(nextMeta);
                 updateStorageLabel();
                 upsertMonitorVisit(nextVisit);
-                upsertVisitToConvex(nextVisit).catch((error) => console.warn('Sync visit Convex gagal:', error));
             }
             catch (error) {
                 console.warn('Autosave gagal:', error);
@@ -3448,7 +3374,6 @@ function App() {
         localStorage.setItem(ACTIVE_VISIT_KEY, next.id);
         updateStorageLabel();
         upsertMonitorVisit(next);
-        upsertVisitToConvex(next).catch((error) => console.warn('Sync visit Convex gagal:', error));
     }
     async function openVisit(id) {
         try {
@@ -3471,10 +3396,9 @@ function App() {
         if (!ok)
             return;
         await deleteVisitRecord(id);
-        deleteVisitFromConvex(id).catch((error) => console.warn('Delete visit Convex gagal:', error));
         const nextMeta = saveHistoryMeta(readHistoryMeta().filter((item) => item.id !== id));
         setHistory(nextMeta);
-        if ((visit === null || visit === void 0 ? void 0 : visit.id) === id) {
+        if (visit?.id === id) {
             setVisit(null);
             setScreen('dashboard');
             localStorage.removeItem(ACTIVE_VISIT_KEY);
@@ -3485,8 +3409,6 @@ function App() {
         const ok = confirm('Hapus semua history kunjungan di perangkat ini?');
         if (!ok)
             return;
-        const deletedMeta = readHistoryMeta();
-        deletedMeta.forEach((item) => deleteVisitFromConvex(item.id).catch((error) => console.warn('Delete visit Convex gagal:', error)));
         await clearVisitRecords();
         saveHistoryMeta([]);
         localStorage.removeItem(ACTIVE_VISIT_KEY);

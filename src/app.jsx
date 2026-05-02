@@ -57,7 +57,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp54-quick-section-scrollable';
+const APP_BUILD_VERSION = 'revamp55-evidence-section-polish';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -374,7 +374,9 @@ function createVisit(bestieName = '', storeName = '') {
     showOPITable: false,
     showQSCTable: false,
     showFindingEvidence: false,
-    showCorrectiveAction: false
+    showCorrectiveAction: false,
+    activeObservationTab: 'opi',
+    activeEvidenceTab: 'finding'
   };
 }
 
@@ -1652,22 +1654,31 @@ function PhotoGrid({ photos, onChange, prefix }) {
   const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
   const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
   const removeEmpty = () => {
-    if (!confirmAction('Rapikan dan hapus slot foto kosong?')) return;
+    if (!confirmAction('Rapihkan dan hapus slot foto kosong?')) return;
     const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
     const next = meaningful.length ? meaningful : blankSet();
     onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
   };
+  const renderActions = (position = 'top') => (
+    <div className={cx(
+      'photo-grid-actions flex flex-wrap gap-2',
+      position === 'top'
+        ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2'
+        : 'justify-end pb-20 md:pb-0'
+    )}>
+      <Button variant="secondary" className="min-w-[150px] flex-1 justify-center sm:flex-none" icon="eraser" onClick={removeEmpty}>Rapihkan Slot Foto</Button>
+      <Button variant="secondary" className="min-w-[150px] flex-1 justify-center sm:flex-none" icon="plus" onClick={addFour}>Tambah Slot Foto</Button>
+    </div>
+  );
   return (
     <div className="photo-grid-system grid gap-4">
+      {renderActions('top')}
       <div className="evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
           <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich />
         ))}
       </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button variant="secondary" icon="eraser" onClick={removeEmpty}>Rapikan Slot Kosong</Button>
-        <Button variant="secondary" icon="plus" onClick={addFour}>Tambah 4 Slot</Button>
-      </div>
+      {renderActions('bottom')}
     </div>
   );
 }
@@ -1763,7 +1774,8 @@ function QscResultSection({ visit, update }) {
 }
 
 function ObservationSection({ visit, update }) {
-  const [tab, setTab] = useState('opi');
+  const tab = visit.activeObservationTab === 'qsc' ? 'qsc' : 'opi';
+  const setTab = (nextTab) => update({ activeObservationTab: nextTab });
   const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
   const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
   const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
@@ -1776,11 +1788,13 @@ function ObservationSection({ visit, update }) {
 }
 
 function EvidenceSection({ visit, update }) {
-  const [tab, setTab] = useState('finding');
+  const tab = visit.activeEvidenceTab === 'corrective' ? 'corrective' : 'finding';
+  const setTab = (nextTab) => update({ activeEvidenceTab: nextTab });
   const enabled = tab === 'finding' ? visit.showFindingEvidence === true : visit.showCorrectiveAction === true;
   const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
   const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
-  const preTitle = <div className="section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex gap-2 overflow-x-auto pb-1"><button type="button" className={cx('subnav-chip prominent', tab === 'finding' && 'active')} onClick={() => setTab('finding')}><Icon name="image" className="h-4 w-4" /> Finding Evidence</button><button type="button" className={cx('subnav-chip prominent', tab === 'corrective' && 'active')} onClick={() => setTab('corrective')}><Icon name="image" className="h-4 w-4" /> Corrective Action</button></div><Toggle checked={enabled} onChange={setEnabled} label={toggleLabel} /></div>;
+  const evidenceTabStyle = { minWidth: 0, width: '100%', justifyContent: 'center', paddingLeft: '8px', paddingRight: '8px', whiteSpace: 'nowrap' };
+  const preTitle = <div className="section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]"><button type="button" className={cx('subnav-chip prominent', tab === 'finding' && 'active')} style={evidenceTabStyle} onClick={() => setTab('finding')}><Icon name="image" className="h-4 w-4 shrink-0" /><span className="min-w-0 truncate">Finding Evidence</span></button><button type="button" className={cx('subnav-chip prominent', tab === 'corrective' && 'active')} style={evidenceTabStyle} onClick={() => setTab('corrective')}><Icon name="image" className="h-4 w-4 shrink-0" /><span className="min-w-0 truncate">Corrective Action</span></button></div><Toggle checked={enabled} onChange={setEnabled} label={toggleLabel} /></div>;
   return (
     <SectionShell title="Evidence Photos" preTitle={preTitle}>
       {!enabled ? <InactiveSection title={(tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan'} /> : tab === 'finding' ? <PhotoGrid prefix="Finding" photos={visit.findingEvidencePhotos} onChange={(findingEvidencePhotos) => update({ findingEvidencePhotos })} /> : <PhotoGrid prefix="Corrective" photos={visit.correctiveActionPhotos} onChange={(correctiveActionPhotos) => update({ correctiveActionPhotos })} />}
@@ -2142,7 +2156,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp54-quick-section-scrollable">
+        <div className="mt-3" data-build="revamp55-evidence-section-polish">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-4 gap-2">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
