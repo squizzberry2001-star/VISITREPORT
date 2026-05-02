@@ -28,6 +28,10 @@ window.RB_CONVEX_CONFIG = {
   visitDeleteMutation: 'visits:deleteVisit',
   visitListQuery: 'visits:listVisits',
 
+  // Global admin-controlled HOME/welcome content.
+  appConfigListQuery: 'appSettings:listConfigs',
+  appConfigSetMutation: 'appSettings:setConfig',
+
   // Legacy HTTP action paths, only used as fallback if deploymentUrl is empty/unavailable.
   upsertPath: 'monitor/upsertVisit',
   listPath: 'monitor/listVisits',

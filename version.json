@@ -1,6 +1,6 @@
 {
-  "version": "revamp58-home-notice-action-grid",
-  "build": "revamp58-home-notice-action-grid",
+  "version": "revamp60-global-admin-welcome-notice",
+  "build": "revamp60-global-admin-welcome-notice",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "smooth centered home update notice and 2x2 mobile home action grid with solid delete history button"
+  "note": "sync welcome animation and home update notice through Convex app settings; smoother centered notice animation; catchier interactive welcome overlay"
 }

@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp58-home-notice-action-grid';
+const APP_VERSION = 'revamp60-global-admin-welcome-notice';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
