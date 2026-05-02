@@ -78,7 +78,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp57-home-pdf-admin-revamp';
+const APP_BUILD_VERSION = 'revamp58-home-notice-action-grid';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2166,6 +2166,7 @@ function HomeUpdateNotice({ config }) {
   const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
   const messages = notice.messages || [];
   const [index, setIndex] = useState(0);
+  const animationSeconds = Math.max(1.8, Number(notice.intervalSeconds || 4) - 0.12);
   useEffect(() => { setIndex(0); }, [messages.join('|'), notice.enabled]);
   useEffect(() => {
     if (!notice.enabled || messages.length <= 1) return undefined;
@@ -2175,22 +2176,15 @@ function HomeUpdateNotice({ config }) {
   if (!notice.enabled || !messages.length) return null;
   const activeMessage = messages[index % messages.length] || messages[0];
   return (
-    <section className="home-update-notice rounded-[24px] border border-emerald-100 bg-white/90 p-4 shadow-sm ring-1 ring-white/70" style={{ overflow: 'hidden' }}>
-      <style>{`@keyframes rbvNoticeSlideIn{0%{opacity:0;transform:translateY(14px)}18%{opacity:1;transform:translateY(0)}82%{opacity:1;transform:translateY(0)}100%{opacity:.15;transform:translateY(-10px)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`}</style>
-      <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-audit-primary ring-1 ring-emerald-100"><Icon name="spark" className="h-5 w-5" /></div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-audit-primary">Informasi Update</p>
-              <h2 className="truncate text-base font-black text-slate-950">{notice.title}</h2>
-            </div>
-            {messages.length > 1 ? <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">{index + 1}/{messages.length}</span> : null}
-          </div>
-          <div className="mt-2 min-h-[34px] overflow-hidden rounded-2xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
-            <p key={index} className="text-sm font-bold leading-5 text-slate-700" style={{ animation: `rbvNoticeSlideIn ${notice.intervalSeconds}s ease-in-out both` }}>{activeMessage}</p>
-          </div>
+    <section className="home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm" style={{ overflow: 'hidden' }}>
+      <style>{`@keyframes rbvNoticeSlideSmooth{0%{opacity:0;transform:translate3d(0,10px,0)}14%{opacity:1;transform:translate3d(0,0,0)}86%{opacity:1;transform:translate3d(0,0,0)}100%{opacity:0;transform:translate3d(0,-8px,0)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`}</style>
+      <div className="mx-auto flex max-w-2xl flex-col items-center justify-center text-center">
+        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary">Informasi Update</p>
+        <h2 className="mt-1 max-w-full truncate text-base font-black text-slate-950">{notice.title}</h2>
+        <div className="mt-2 flex min-h-[44px] w-full items-center justify-center overflow-hidden px-2">
+          <p key={index} className="mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700" style={{ animation: `rbvNoticeSlideSmooth ${animationSeconds}s cubic-bezier(.4,0,.2,1) both`, willChange: 'opacity, transform' }}>{activeMessage}</p>
         </div>
+        {messages.length > 1 ? <span className="mt-1 text-[10px] font-black text-slate-400">{index + 1}/{messages.length}</span> : null}
       </div>
     </section>
   );
@@ -2264,9 +2258,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp57-home-pdf-admin-revamp">
+        <div className="mt-3" data-build="revamp58-home-notice-action-grid">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
               <Icon name="download" className="h-4 w-4 shrink-0 text-audit-primary" />
               <span className="block max-w-full truncate">Backup</span>
@@ -2279,9 +2273,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
               <Icon name="spark" className="h-4 w-4 shrink-0" />
               <span className="block max-w-full truncate">Install</span>
             </button>
-            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-rose-50/80 px-2 text-[10px] font-extrabold leading-none text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
+            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-rose-600 px-2 text-[10px] font-extrabold leading-none text-white shadow-sm ring-1 ring-rose-500 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
               <Icon name="trash" className="h-4 w-4 shrink-0" />
-              <span className="block max-w-full truncate">Hapus</span>
+              <span className="block max-w-full truncate">Hapus History</span>
             </button>
           </div>
         </div>

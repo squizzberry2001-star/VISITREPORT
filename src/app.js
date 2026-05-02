@@ -73,7 +73,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp57-home-pdf-admin-revamp';
+const APP_BUILD_VERSION = 'revamp58-home-notice-action-grid';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1951,6 +1951,7 @@ function HomeUpdateNotice({ config }) {
     const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
     const messages = notice.messages || [];
     const [index, setIndex] = useState(0);
+    const animationSeconds = Math.max(1.8, Number(notice.intervalSeconds || 4) - 0.12);
     useEffect(() => { setIndex(0); }, [messages.join('|'), notice.enabled]);
     useEffect(() => {
         if (!notice.enabled || messages.length <= 1)
@@ -1961,22 +1962,17 @@ function HomeUpdateNotice({ config }) {
     if (!notice.enabled || !messages.length)
         return null;
     const activeMessage = messages[index % messages.length] || messages[0];
-    return (React.createElement("section", { className: "home-update-notice rounded-[24px] border border-emerald-100 bg-white/90 p-4 shadow-sm ring-1 ring-white/70", style: { overflow: 'hidden' } },
-        React.createElement("style", null, `@keyframes rbvNoticeSlideIn{0%{opacity:0;transform:translateY(14px)}18%{opacity:1;transform:translateY(0)}82%{opacity:1;transform:translateY(0)}100%{opacity:.15;transform:translateY(-10px)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
-        React.createElement("div", { className: "flex items-start gap-3" },
-            React.createElement("div", { className: "grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-audit-primary ring-1 ring-emerald-100" },
-                React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
-            React.createElement("div", { className: "min-w-0 flex-1" },
-                React.createElement("div", { className: "flex items-center justify-between gap-3" },
-                    React.createElement("div", { className: "min-w-0" },
-                        React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-audit-primary" }, "Informasi Update"),
-                        React.createElement("h2", { className: "truncate text-base font-black text-slate-950" }, notice.title)),
-                    messages.length > 1 ? React.createElement("span", { className: "shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500" },
-                        index + 1,
-                        "/",
-                        messages.length) : null),
-                React.createElement("div", { className: "mt-2 min-h-[34px] overflow-hidden rounded-2xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100" },
-                    React.createElement("p", { key: index, className: "text-sm font-bold leading-5 text-slate-700", style: { animation: `rbvNoticeSlideIn ${notice.intervalSeconds}s ease-in-out both` } }, activeMessage))))));
+    return (React.createElement("section", { className: "home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm", style: { overflow: 'hidden' } },
+        React.createElement("style", null, `@keyframes rbvNoticeSlideSmooth{0%{opacity:0;transform:translate3d(0,10px,0)}14%{opacity:1;transform:translate3d(0,0,0)}86%{opacity:1;transform:translate3d(0,0,0)}100%{opacity:0;transform:translate3d(0,-8px,0)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
+        React.createElement("div", { className: "mx-auto flex max-w-2xl flex-col items-center justify-center text-center" },
+            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary" }, "Informasi Update"),
+            React.createElement("h2", { className: "mt-1 max-w-full truncate text-base font-black text-slate-950" }, notice.title),
+            React.createElement("div", { className: "mt-2 flex min-h-[44px] w-full items-center justify-center overflow-hidden px-2" },
+                React.createElement("p", { key: index, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: `rbvNoticeSlideSmooth ${animationSeconds}s cubic-bezier(.4,0,.2,1) both`, willChange: 'opacity, transform' } }, activeMessage)),
+            messages.length > 1 ? React.createElement("span", { className: "mt-1 text-[10px] font-black text-slate-400" },
+                index + 1,
+                "/",
+                messages.length) : null)));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
@@ -2044,9 +2040,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp57-home-pdf-admin-revamp" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp58-home-notice-action-grid" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                React.createElement("div", { className: "grid grid-cols-4 gap-2" },
+                React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Backup")),
@@ -2056,9 +2052,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", style: { animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Install")),
-                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-rose-50/80 px-2 text-[10px] font-extrabold leading-none text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-rose-600 px-2 text-[10px] font-extrabold leading-none text-white shadow-sm ring-1 ring-rose-500 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Hapus"))))),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Hapus History"))))),
         React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", null,
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
