@@ -19,6 +19,10 @@ const DEFAULT_WELCOME_CONFIG = {
     durationSeconds: 5
 };
 const UPDATE_NOTICE_CONFIG_KEY = 'rbv_update_notice_config_v1';
+const APP_CONFIG_KEYS = {
+    welcome: 'welcome_animation',
+    updateNotice: 'home_update_notice'
+};
 const DEFAULT_UPDATE_NOTICE_CONFIG = {
     enabled: true,
     title: 'Info Update Website',
@@ -73,7 +77,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp58-home-notice-action-grid';
+const APP_BUILD_VERSION = 'revamp60-global-admin-welcome-notice';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -150,6 +154,7 @@ function saveWelcomeConfig(config) {
         durationSeconds: normalizeWelcomeDurationSeconds(config && config.durationSeconds)
     };
     localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('rbv-welcome-config-change', { detail: next }));
     return next;
 }
 function normalizeUpdateNoticeIntervalSeconds(value, fallback = DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds) {
@@ -278,7 +283,7 @@ function findApprovedManualStore(storeName) {
 }
 const BESTIE_NAMES = uniqueBy(BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
-    return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
+    return cleanText((item === null || item === void 0 ? void 0 : item.storeName) || (item === null || item === void 0 ? void 0 : item.assignmentStoreName) || (item === null || item === void 0 ? void 0 : item.siteDescr) || (item === null || item === void 0 ? void 0 : item.store));
 }
 function getStoresForBestie(bestieName) {
     const key = normalize(bestieName);
@@ -327,27 +332,27 @@ function findMasterStore(storeName) {
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
     const approvedManual = findApprovedManualStore(storeName);
-    const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName || approvedManual?.siteDescr || approvedManual?.storeName);
+    const master = findMasterStore(storeName || (assignment === null || assignment === void 0 ? void 0 : assignment.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.assignmentStoreName) || (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.siteDescr) || (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.storeName));
     const merged = {
         ...(assignment || {}),
         ...(master || {}),
         ...(approvedManual || {})
     };
     if (!merged.siteDescr)
-        merged.siteDescr = approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || storeName || '';
+        merged.siteDescr = (approvedManual === null || approvedManual === void 0 ? void 0 : approvedManual.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.storeName) || (assignment === null || assignment === void 0 ? void 0 : assignment.assignmentStoreName) || storeName || '';
     if (!merged.address)
-        merged.address = assignment?.storeAddress || '';
-    if (!merged.siteCode && assignment?.storeCode)
+        merged.address = (assignment === null || assignment === void 0 ? void 0 : assignment.storeAddress) || '';
+    if (!merged.siteCode && (assignment === null || assignment === void 0 ? void 0 : assignment.storeCode))
         merged.siteCode = assignment.storeCode;
-    if (!merged.siteCode4 && assignment?.storeCode)
+    if (!merged.siteCode4 && (assignment === null || assignment === void 0 ? void 0 : assignment.storeCode))
         merged.siteCode4 = assignment.storeCode;
-    if (!merged.storeHead && assignment?.storeHead)
+    if (!merged.storeHead && (assignment === null || assignment === void 0 ? void 0 : assignment.storeHead))
         merged.storeHead = assignment.storeHead;
-    if (!merged.areaManager && assignment?.areaManager)
+    if (!merged.areaManager && (assignment === null || assignment === void 0 ? void 0 : assignment.areaManager))
         merged.areaManager = assignment.areaManager;
-    if (!merged.regionalManager && assignment?.regionalManager)
+    if (!merged.regionalManager && (assignment === null || assignment === void 0 ? void 0 : assignment.regionalManager))
         merged.regionalManager = assignment.regionalManager;
-    if (!merged.city && assignment?.city)
+    if (!merged.city && (assignment === null || assignment === void 0 ? void 0 : assignment.city))
         merged.city = assignment.city;
     return merged;
 }
@@ -394,8 +399,8 @@ function blankPhoto() {
     return { image: '', description: '' };
 }
 function normalizeQscPhotos(visit) {
-    const legacy = visit?.qscResultPhoto ? [visit.qscResultPhoto] : [];
-    const source = Array.isArray(visit?.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
+    const legacy = (visit === null || visit === void 0 ? void 0 : visit.qscResultPhoto) ? [visit.qscResultPhoto] : [];
+    const source = Array.isArray(visit === null || visit === void 0 ? void 0 : visit.qscResultPhotos) && visit.qscResultPhotos.length ? visit.qscResultPhotos : legacy;
     const firstTwo = [0, 1].map((index) => source[index] || blankPhoto());
     return firstTwo;
 }
@@ -431,7 +436,7 @@ function createVisit(bestieName = '', storeName = '') {
     };
 }
 function isMeaningfulObservation(row) {
-    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row?.[key]));
+    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row === null || row === void 0 ? void 0 : row[key]));
 }
 function isEditableTarget(target) {
     const node = target instanceof Element ? target : null;
@@ -457,7 +462,7 @@ function visitProgress(visit) {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 function historyMetaFromVisit(visit) {
-    const detail = getStoreWebDetail(visit?.store);
+    const detail = getStoreWebDetail(visit === null || visit === void 0 ? void 0 : visit.store);
     return {
         id: visit.id,
         bestieName: cleanText(visit.nama, '-'),
@@ -519,7 +524,7 @@ async function getVisitRecord(id) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(REPORT_DB_STORE, 'readonly');
         const request = tx.objectStore(REPORT_DB_STORE).get(id);
-        request.onsuccess = () => resolve(request.result?.data || null);
+        request.onsuccess = () => { var _a; return resolve(((_a = request.result) === null || _a === void 0 ? void 0 : _a.data) || null); };
         request.onerror = () => reject(request.error);
     });
 }
@@ -547,7 +552,7 @@ async function getAllVisitRecordsForBackup() {
         return await new Promise((resolve, reject) => {
             const tx = db.transaction(REPORT_DB_STORE, 'readonly');
             const request = tx.objectStore(REPORT_DB_STORE).getAll();
-            request.onsuccess = () => resolve((request.result || []).map((item) => item?.data || item).filter(Boolean));
+            request.onsuccess = () => resolve((request.result || []).map((item) => (item === null || item === void 0 ? void 0 : item.data) || item).filter(Boolean));
             request.onerror = () => reject(request.error);
         });
     }
@@ -588,6 +593,7 @@ async function backupVisitReportData() {
     return payload;
 }
 async function restoreVisitReportDataFromFile(file) {
+    var _a;
     const raw = await readBackupFileText(file);
     const payload = JSON.parse(raw);
     if (!payload || payload.app !== 'regional-bestie-visit-report') {
@@ -606,12 +612,13 @@ Jumlah visit backup: ${visits.length}`);
     if (payload.localStorage && typeof payload.localStorage === 'object') {
         Object.entries(payload.localStorage).forEach(([key, value]) => {
             if (key.indexOf('rbv_') === 0)
-                localStorage.setItem(key, String(value ?? ''));
+                localStorage.setItem(key, String(value !== null && value !== void 0 ? value : ''));
         });
     }
     const backupMeta = (() => {
+        var _a;
         try {
-            const parsed = JSON.parse(String(payload.localStorage?.[HISTORY_META_KEY] || '[]'));
+            const parsed = JSON.parse(String(((_a = payload.localStorage) === null || _a === void 0 ? void 0 : _a[HISTORY_META_KEY]) || '[]'));
             return Array.isArray(parsed) ? parsed : [];
         }
         catch (error) {
@@ -619,7 +626,7 @@ Jumlah visit backup: ${visits.length}`);
         }
     })();
     saveHistoryMeta(backupMeta.length ? backupMeta : visits.map(historyMetaFromVisit));
-    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && visits[0]?.id)
+    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && ((_a = visits[0]) === null || _a === void 0 ? void 0 : _a.id))
         localStorage.setItem(ACTIVE_VISIT_KEY, visits[0].id);
     alert('Restore data selesai. Aplikasi akan dimuat ulang.');
     window.location.reload();
@@ -788,7 +795,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
+    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange === null || onChange === void 0 ? void 0 : onChange(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
@@ -960,8 +967,9 @@ function SearchableCombobox({ label, value, options, onChange, onSelect, placeho
         onSelect ? onSelect(item) : onChange(item.value || item.label);
         setOpen(false);
         window.requestAnimationFrame(() => {
-            const input = wrapRef.current?.querySelector('input');
-            input?.blur();
+            var _a;
+            const input = (_a = wrapRef.current) === null || _a === void 0 ? void 0 : _a.querySelector('input');
+            input === null || input === void 0 ? void 0 : input.blur();
         });
     }
     return (React.createElement(Field, { label: label, required: required, helper: helper },
@@ -1026,10 +1034,10 @@ const MARKER_SIZE_OPTIONS = [
     { key: 'large', label: 'Besar', scale: 0.064 }
 ];
 function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
-    const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
-    const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
+    const sourceWidth = Math.max(1, (imageElement === null || imageElement === void 0 ? void 0 : imageElement.naturalWidth) || (imageElement === null || imageElement === void 0 ? void 0 : imageElement.width) || 1080);
+    const sourceHeight = Math.max(1, (imageElement === null || imageElement === void 0 ? void 0 : imageElement.naturalHeight) || (imageElement === null || imageElement === void 0 ? void 0 : imageElement.height) || 1080);
     const maxSide = 1400;
-    if (ratio?.w && ratio?.h) {
+    if ((ratio === null || ratio === void 0 ? void 0 : ratio.w) && (ratio === null || ratio === void 0 ? void 0 : ratio.h)) {
         const targetRatio = ratio.w / ratio.h;
         let width = maxSide;
         let height = Math.round(width / targetRatio);
@@ -1047,7 +1055,7 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
 }
 function getMarkerRadius(canvas, markerSize) {
     const selected = MARKER_SIZE_OPTIONS.find((item) => item.key === markerSize) || MARKER_SIZE_OPTIONS[1];
-    const minSide = Math.min(canvas?.width || 1080, canvas?.height || 1080);
+    const minSide = Math.min((canvas === null || canvas === void 0 ? void 0 : canvas.width) || 1080, (canvas === null || canvas === void 0 ? void 0 : canvas.height) || 1080);
     return Math.max(24, Math.round(minSide * selected.scale));
 }
 function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
@@ -1076,7 +1084,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
             htmlOverscroll: html.style.overscrollBehavior
         };
         const stopBackgroundScroll = (event) => {
-            const panel = event.target?.closest?.('.photo-editor-v10-panel');
+            var _a, _b;
+            const panel = (_b = (_a = event.target) === null || _a === void 0 ? void 0 : _a.closest) === null || _b === void 0 ? void 0 : _b.call(_a, '.photo-editor-v10-panel');
             if ((event.touches && event.touches.length > 1) || !panel)
                 event.preventDefault();
         };
@@ -1265,7 +1274,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
         setOffset(clampOffset(next, zoom));
     }
     function handlePointerUp(event) {
-        if (dragRef.current?.pointerId === event?.pointerId)
+        var _a;
+        if (((_a = dragRef.current) === null || _a === void 0 ? void 0 : _a.pointerId) === (event === null || event === void 0 ? void 0 : event.pointerId))
             dragRef.current = null;
         else
             dragRef.current = null;
@@ -1371,7 +1381,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
                 React.createElement("button", { type: "button", className: "photo-editor-save", onClick: saveEditedImage, disabled: !imageReady },
                     React.createElement(Icon, { name: "check", className: "h-5 w-5" }),
                     React.createElement("span", null, "Simpan"))))));
-    return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
+    return (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(modal, document.body) : modal;
 }
 function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false }) {
     const cameraRef = useRef(null);
@@ -1398,8 +1408,8 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             return;
         onChange({ ...(value || blankPhoto()), image: '' });
     }
-    const description = value?.description || '';
-    const photoAspect = matchCropFrame && value?.cropAspect ? String(value.cropAspect) : '';
+    const description = (value === null || value === void 0 ? void 0 : value.description) || '';
+    const photoAspect = matchCropFrame && (value === null || value === void 0 ? void 0 : value.cropAspect) ? String(value.cropAspect) : '';
     const cardStyle = photoAspect ? { '--photo-aspect': photoAspect } : undefined;
     return (React.createElement("div", { className: cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame'), style: cardStyle },
         React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 px-4 py-3" },
@@ -1408,21 +1418,21 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
                     label,
                     required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null)),
             React.createElement("div", { className: "flex shrink-0 gap-2" },
-                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
+                (value === null || value === void 0 ? void 0 : value.image) ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
-                value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
+                (value === null || value === void 0 ? void 0 : value.image) ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
-        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
+        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', (value === null || value === void 0 ? void 0 : value.image) ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, (value === null || value === void 0 ? void 0 : value.image) ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
             React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => cameraRef.current?.click(), "aria-label": "Ambil foto dari kamera" }),
-            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => galleryRef.current?.click(), "aria-label": "Pilih foto dari galeri" })),
+            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { var _a; return (_a = cameraRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Ambil foto dari kamera" }),
+            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { var _a; return (_a = galleryRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Pilih foto dari galeri" })),
         React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || '' }) })));
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: (value === null || value === void 0 ? void 0 : value.image) || '', title: label, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: (meta === null || meta === void 0 ? void 0 : meta.aspectRatio) || (value === null || value === void 0 ? void 0 : value.cropAspect) || '' }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
@@ -1434,7 +1444,8 @@ function SectionShell({ title, children, actions, preTitle }) {
         children));
 }
 function CrewEditor({ visit, update }) {
-    const crewList = visit.crewList?.length ? visit.crewList : [{ name: '', level: '' }];
+    var _a;
+    const crewList = ((_a = visit.crewList) === null || _a === void 0 ? void 0 : _a.length) ? visit.crewList : [{ name: '', level: '' }];
     const updateCrew = (index, patch) => {
         const next = crewList.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item);
         update({ crewList: next });
@@ -1485,7 +1496,7 @@ function CrewEditor({ visit, update }) {
                 React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addCrew }, "Tambah Crew")))));
 }
 function ObservationCards({ title, rows, onChange }) {
-    const safeRows = rows?.length ? rows : [blankObservationRow()];
+    const safeRows = (rows === null || rows === void 0 ? void 0 : rows.length) ? rows : [blankObservationRow()];
     const [activeIndex, setActiveIndex] = useState(0);
     const activeRowNumber = Math.min(activeIndex + 1, safeRows.length);
     useEffect(() => {
@@ -1624,10 +1635,11 @@ function VisitSetupSection({ visit, update }) {
     const manualDetail = visit.manualStoreDetail || {};
     const detail = useMemo(() => ({ ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr }), [baseDetail, manualDetail, visit.store]);
     const progress = visitProgress(visit);
-    const detailValue = (key, fallback = '') => manualDetail[key] ?? fallback ?? '';
+    const detailValue = (key, fallback = '') => { var _a, _b; return (_b = (_a = manualDetail[key]) !== null && _a !== void 0 ? _a : fallback) !== null && _b !== void 0 ? _b : ''; };
     function handleBestieChange(value) {
+        var _a;
         const stores = getStoresForBestie(value);
-        update({ nama: value, store: stores[0]?.label || '', manualStoreDetail: {} });
+        update({ nama: value, store: ((_a = stores[0]) === null || _a === void 0 ? void 0 : _a.label) || '', manualStoreDetail: {} });
     }
     function handleStoreChange(value) {
         update({ store: value, manualStoreDetail: {} });
@@ -1755,11 +1767,11 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
         try {
             deferredPrompt.prompt();
             await deferredPrompt.userChoice;
-            onPromptUsed?.();
+            onPromptUsed === null || onPromptUsed === void 0 ? void 0 : onPromptUsed();
             onClose();
         }
         catch (error) {
-            onPromptUsed?.();
+            onPromptUsed === null || onPromptUsed === void 0 ? void 0 : onPromptUsed();
         }
     }
     if (!open)
@@ -1815,7 +1827,7 @@ function parseLinkedDevicePayload(raw) {
         return null;
     try {
         const parsed = JSON.parse(text);
-        if (parsed?.app === 'regional-bestie-visit-report' && parsed?.type === 'linked-device' && parsed?.deviceId)
+        if ((parsed === null || parsed === void 0 ? void 0 : parsed.app) === 'regional-bestie-visit-report' && (parsed === null || parsed === void 0 ? void 0 : parsed.type) === 'linked-device' && (parsed === null || parsed === void 0 ? void 0 : parsed.deviceId))
             return parsed;
     }
     catch (error) {
@@ -1825,7 +1837,7 @@ function parseLinkedDevicePayload(raw) {
         const url = new URL(text);
         const hash = decodeURIComponent(url.hash || '');
         const match = hash.match(/bestie-linked-device=([^&]+)/);
-        if (match?.[1]) {
+        if (match === null || match === void 0 ? void 0 : match[1]) {
             return {
                 app: 'regional-bestie-visit-report',
                 type: 'linked-device',
@@ -1863,6 +1875,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
             videoRef.current.srcObject = null;
     };
     useEffect(() => {
+        var _a;
         if (!open) {
             stopScanner();
             return undefined;
@@ -1870,7 +1883,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         const payload = buildLinkedDevicePayload();
         setQrText(payload);
         setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
-        if (window.QRCode?.toDataURL) {
+        if ((_a = window.QRCode) === null || _a === void 0 ? void 0 : _a.toDataURL) {
             window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
                 if (!error && url)
                     setQrDataUrl(url);
@@ -1894,11 +1907,12 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         return true;
     }
     async function startScanner() {
+        var _a;
         try {
             setScanStatus('Membuka kamera...');
             setScanOpen(true);
             stopScanner();
-            if (!navigator.mediaDevices?.getUserMedia) {
+            if (!((_a = navigator.mediaDevices) === null || _a === void 0 ? void 0 : _a.getUserMedia)) {
                 setScanStatus('Kamera tidak tersedia di browser ini.');
                 return;
             }
@@ -1928,7 +1942,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
                     ctx.drawImage(video, 0, 0, w, h);
                     const imageData = ctx.getImageData(0, 0, w, h);
                     const code = window.jsQR(imageData.data, w, h);
-                    if (code?.data && handleScanResult(code.data))
+                    if ((code === null || code === void 0 ? void 0 : code.data) && handleScanResult(code.data))
                         return;
                 }
                 rafRef.current = requestAnimationFrame(scanFrame);
@@ -1945,34 +1959,31 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         return null;
     return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' }, React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' }, React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' }, React.createElement('div', null, React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'), React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')), React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' }, React.createElement(Icon, { name: 'close', className: 'h-5 w-5' }))), React.createElement('div', { className: 'space-y-4 p-5' }, React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' }, React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' }, qrDataUrl
         ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
-        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
+        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { var _a; (_a = navigator.clipboard) === null || _a === void 0 ? void 0 : _a.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
 }
 function HomeUpdateNotice({ config }) {
     const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
     const messages = notice.messages || [];
     const [index, setIndex] = useState(0);
-    const animationSeconds = Math.max(1.8, Number(notice.intervalSeconds || 4) - 0.12);
-    useEffect(() => { setIndex(0); }, [messages.join('|'), notice.enabled]);
+    const messageSignature = messages.join('|');
+    useEffect(() => { setIndex(0); }, [messageSignature, notice.enabled]);
     useEffect(() => {
         if (!notice.enabled || messages.length <= 1)
             return undefined;
         const timer = window.setInterval(() => setIndex((current) => (current + 1) % messages.length), Math.round(notice.intervalSeconds * 1000));
         return () => window.clearInterval(timer);
-    }, [notice.enabled, messages.length, notice.intervalSeconds, messages.join('|')]);
+    }, [notice.enabled, messages.length, notice.intervalSeconds, messageSignature]);
     if (!notice.enabled || !messages.length)
         return null;
     const activeMessage = messages[index % messages.length] || messages[0];
     return (React.createElement("section", { className: "home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm", style: { overflow: 'hidden' } },
-        React.createElement("style", null, `@keyframes rbvNoticeSlideSmooth{0%{opacity:0;transform:translate3d(0,10px,0)}14%{opacity:1;transform:translate3d(0,0,0)}86%{opacity:1;transform:translate3d(0,0,0)}100%{opacity:0;transform:translate3d(0,-8px,0)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
-        React.createElement("div", { className: "mx-auto flex max-w-2xl flex-col items-center justify-center text-center" },
+        React.createElement("style", null, `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
+        React.createElement("div", { className: "mx-auto flex min-h-[112px] max-w-2xl flex-col items-center justify-center text-center" },
             React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary" }, "Informasi Update"),
             React.createElement("h2", { className: "mt-1 max-w-full truncate text-base font-black text-slate-950" }, notice.title),
-            React.createElement("div", { className: "mt-2 flex min-h-[44px] w-full items-center justify-center overflow-hidden px-2" },
-                React.createElement("p", { key: index, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: `rbvNoticeSlideSmooth ${animationSeconds}s cubic-bezier(.4,0,.2,1) both`, willChange: 'opacity, transform' } }, activeMessage)),
-            messages.length > 1 ? React.createElement("span", { className: "mt-1 text-[10px] font-black text-slate-400" },
-                index + 1,
-                "/",
-                messages.length) : null)));
+            React.createElement("div", { className: "mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2" },
+                React.createElement("p", { key: `${index}-${activeMessage}`, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both', willChange: 'opacity, transform' } }, activeMessage)),
+            messages.length > 1 ? React.createElement("div", { className: "mt-2 flex items-center justify-center gap-1.5", "aria-label": `${index + 1} dari ${messages.length} info` }, messages.map((_, dotIndex) => React.createElement("span", { key: dotIndex, className: "h-1.5 w-1.5 rounded-full", style: { background: dotIndex === index ? '#0f766e' : 'rgba(148,163,184,.5)', animation: dotIndex === index ? 'rbvNoticeDot 1.6s ease-in-out infinite' : 'none' } }))) : null)));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
@@ -1990,7 +2001,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
     useEffect(() => {
-        const syncNotice = (event) => setNoticeConfig(event?.detail ? normalizeUpdateNoticeConfig(event.detail) : readUpdateNoticeConfig());
+        const syncNotice = (event) => setNoticeConfig((event === null || event === void 0 ? void 0 : event.detail) ? normalizeUpdateNoticeConfig(event.detail) : readUpdateNoticeConfig());
         window.addEventListener('rbv-update-notice-change', syncNotice);
         window.addEventListener('storage', syncNotice);
         return () => {
@@ -2007,14 +2018,15 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         catch (error) {
             console.warn('Backup data gagal:', error);
-            alert(error?.message || 'Backup data gagal.');
+            alert((error === null || error === void 0 ? void 0 : error.message) || 'Backup data gagal.');
         }
         finally {
             setBackupBusy(false);
         }
     }
     async function handleRestoreFile(event) {
-        const file = event.target.files?.[0];
+        var _a;
+        const file = (_a = event.target.files) === null || _a === void 0 ? void 0 : _a[0];
         event.target.value = '';
         if (!file || restoreBusy)
             return;
@@ -2024,7 +2036,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         catch (error) {
             console.warn('Restore data gagal:', error);
-            alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
+            alert((error === null || error === void 0 ? void 0 : error.message) || 'Restore data gagal. Pastikan file backup benar.');
         }
         finally {
             setRestoreBusy(false);
@@ -2040,13 +2052,13 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp59-delete-history-contrast" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp60-global-admin-welcome-notice" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Backup")),
-                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => { var _a; return (_a = restoreInputRef.current) === null || _a === void 0 ? void 0 : _a.click(); }, "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Restore")),
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", style: { animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
@@ -2108,10 +2120,11 @@ function NewVisitModal({ open, onClose, onCreate }) {
     const [manualNote, setManualNote] = useState('');
     const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
     useEffect(() => {
+        var _a;
         if (!open)
             return;
         const initialBestie = BESTIE_NAMES[0] || '';
-        const initialStore = getStoresForBestie(initialBestie)[0]?.label || '';
+        const initialStore = ((_a = getStoresForBestie(initialBestie)[0]) === null || _a === void 0 ? void 0 : _a.label) || '';
         setBestieName(initialBestie);
         setStoreName(initialStore);
         setManualOpen(false);
@@ -2121,9 +2134,10 @@ function NewVisitModal({ open, onClose, onCreate }) {
         setManualNote('');
     }, [open]);
     useEffect(() => {
+        var _a;
         const options = getStoresForBestie(bestieName);
         if (!storeName || !options.some((item) => normalize(item.label) === normalize(storeName))) {
-            setStoreName(options[0]?.label || '');
+            setStoreName(((_a = options[0]) === null || _a === void 0 ? void 0 : _a.label) || '');
         }
     }, [bestieName]);
     function submitManualRequest() {
@@ -2196,14 +2210,14 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             const scroller = scrollRef.current;
             if (!target || !blob)
                 return;
-            const measuredWidth = Math.max(280, Math.floor((scroller?.clientWidth || target.clientWidth || 360) - 16));
+            const measuredWidth = Math.max(280, Math.floor(((scroller === null || scroller === void 0 ? void 0 : scroller.clientWidth) || target.clientWidth || 360) - 16));
             if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 18 && target.childElementCount)
                 return;
             lastWidthRef.current = measuredWidth;
             const seq = renderSeqRef.current + 1;
             renderSeqRef.current = seq;
             const pdfjsLib = window.pdfjsLib;
-            if (!pdfjsLib?.getDocument) {
+            if (!(pdfjsLib === null || pdfjsLib === void 0 ? void 0 : pdfjsLib.getDocument)) {
                 setFallback(true);
                 return;
             }
@@ -2213,7 +2227,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 if (pdfjsLib.GlobalWorkerOptions) {
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                 }
-                const scrollTop = scroller?.scrollTop || 0;
+                const scrollTop = (scroller === null || scroller === void 0 ? void 0 : scroller.scrollTop) || 0;
                 const data = await blob.arrayBuffer();
                 if (cancelled || renderSeqRef.current !== seq)
                     return;
@@ -2307,7 +2321,7 @@ function PreviewPage({ visit, onBack }) {
             }
             catch (error) {
                 setPdfBlob(null);
-                setStatus(error?.message || 'Preview PDF gagal dibuat.');
+                setStatus((error === null || error === void 0 ? void 0 : error.message) || 'Preview PDF gagal dibuat.');
             }
         }
         render();
@@ -2319,13 +2333,13 @@ function PreviewPage({ visit, onBack }) {
         await window.ReportVisitPDF.save(visit);
     }
     catch (error) {
-        alert(error?.message || 'Gagal download PDF.');
+        alert((error === null || error === void 0 ? void 0 : error.message) || 'Gagal download PDF.');
     }
     finally {
         setBusy(false);
     } }
-    async function handleExportExcel() { if (!visit)
-        return; if (!window.__caAssignmentExport?.buildWorkbook) {
+    async function handleExportExcel() { var _a; if (!visit)
+        return; if (!((_a = window.__caAssignmentExport) === null || _a === void 0 ? void 0 : _a.buildWorkbook)) {
         alert('Mesin export Excel belum siap.');
         return;
     } setBusy(true); try {
@@ -2334,7 +2348,7 @@ function PreviewPage({ visit, onBack }) {
         downloadBlob(blob, fileName);
     }
     catch (error) {
-        alert(error?.message || 'Gagal export Excel CA Assignment.');
+        alert((error === null || error === void 0 ? void 0 : error.message) || 'Gagal export Excel CA Assignment.');
     }
     finally {
         setBusy(false);
@@ -2390,7 +2404,7 @@ function getConvexHttpUrl() {
     return cleanText(config.httpUrl || config.siteUrl);
 }
 function buildVisitKey(visit) {
-    return [visit?.nama, visit?.store, visit?.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || visit?.id || SESSION_ID;
+    return [visit === null || visit === void 0 ? void 0 : visit.nama, visit === null || visit === void 0 ? void 0 : visit.store, visit === null || visit === void 0 ? void 0 : visit.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || (visit === null || visit === void 0 ? void 0 : visit.id) || SESSION_ID;
 }
 function convexUrl(path) {
     const config = getConvexConfig();
@@ -2408,7 +2422,8 @@ function getConvexBundleUrl() {
     return config.bundleUrl || 'https://unpkg.com/convex@latest/dist/browser.bundle.js';
 }
 function loadConvexBundle() {
-    if (window.convex?.ConvexClient)
+    var _a;
+    if ((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient)
         return Promise.resolve(window.convex);
     if (RB_CONVEX_BUNDLE_PROMISE)
         return RB_CONVEX_BUNDLE_PROMISE;
@@ -2424,23 +2439,24 @@ function loadConvexBundle() {
         script.src = getConvexBundleUrl();
         script.async = true;
         script.crossOrigin = 'anonymous';
-        script.onload = () => window.convex?.ConvexClient ? resolve(window.convex) : reject(new Error('Convex client tidak tersedia.'));
+        script.onload = () => { var _a; return ((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient) ? resolve(window.convex) : reject(new Error('Convex client tidak tersedia.')); };
         script.onerror = () => reject(new Error('Convex client gagal dimuat.'));
         document.head.appendChild(script);
     });
     return RB_CONVEX_BUNDLE_PROMISE;
 }
 async function getConvexRealtimeClient() {
+    var _a, _b;
     const config = getConvexConfig();
     const deploymentUrl = getConvexDeploymentUrl();
     if (!config.enabled || !deploymentUrl)
         return null;
     await loadConvexBundle();
-    if (!window.convex?.ConvexClient)
+    if (!((_a = window.convex) === null || _a === void 0 ? void 0 : _a.ConvexClient))
         return null;
     if (!RB_CONVEX_CLIENT || RB_CONVEX_CLIENT_URL !== deploymentUrl) {
         try {
-            RB_CONVEX_CLIENT?.close?.();
+            (_b = RB_CONVEX_CLIENT === null || RB_CONVEX_CLIENT === void 0 ? void 0 : RB_CONVEX_CLIENT.close) === null || _b === void 0 ? void 0 : _b.call(RB_CONVEX_CLIENT);
         }
         catch (error) { }
         RB_CONVEX_CLIENT = new window.convex.ConvexClient(deploymentUrl);
@@ -2468,12 +2484,12 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
     return () => {
         if (typeof unsubscribe === 'function')
             unsubscribe();
-        else if (typeof unsubscribe?.unsubscribe === 'function')
+        else if (typeof (unsubscribe === null || unsubscribe === void 0 ? void 0 : unsubscribe.unsubscribe) === 'function')
             unsubscribe.unsubscribe();
     };
 }
 function normalizeMonitorRows(rows) {
-    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
     return safeRows.map((row) => ({
         id: row._id || row.id || row.visit_key || `${row.bestie_name || row.bestieName}-${row.store_name || row.storeName}-${row.visit_date || row.visitDate}`,
         bestie_name: row.bestie_name || row.bestieName || row.nama || '-',
@@ -2486,7 +2502,7 @@ function normalizeMonitorRows(rows) {
     }));
 }
 function normalizeManualRequestRows(rows) {
-    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
     return safeRows.map((item) => ({
         id: item.request_id || item.requestId || item.id || item._id,
         status: item.status || 'pending',
@@ -2661,6 +2677,67 @@ async function syncManualRequestStatusToConvex(request) {
         return;
     syncManualRequestToConvex(request);
 }
+function normalizeRemoteAppConfigRows(rows) {
+    const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows === null || rows === void 0 ? void 0 : rows.rows) ? rows.rows : Array.isArray(rows === null || rows === void 0 ? void 0 : rows.data) ? rows.data : []);
+    return safeRows.map((row) => ({
+        key: row.configKey || row.config_key || row.key || '',
+        payload: row.payload || row.value || row.config || {},
+        updatedAt: row.updatedAt || row.updated_at || 0
+    })).filter((row) => row.key);
+}
+function applyRemoteAppConfigRows(rows) {
+    const normalized = normalizeRemoteAppConfigRows(rows);
+    normalized.forEach((row) => {
+        if (row.key === APP_CONFIG_KEYS.welcome)
+            saveWelcomeConfig(row.payload);
+        if (row.key === APP_CONFIG_KEYS.updateNotice)
+            saveUpdateNoticeConfig(row.payload);
+    });
+    return normalized;
+}
+async function fetchAppConfigsFromConvex() {
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return null;
+    try {
+        const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
+        const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] });
+        if (rows !== null)
+            return normalizeRemoteAppConfigRows(rows);
+    }
+    catch (error) {
+        console.warn('Convex app config query gagal:', error);
+    }
+    return null;
+}
+async function syncAppConfigToConvex(key, payload) {
+    const config = getConvexConfig();
+    if (!convexEnabled() || !key)
+        return;
+    try {
+        await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
+            key,
+            payload,
+            updatedBy: SESSION_ID
+        });
+    }
+    catch (error) {
+        console.warn('Convex app config sync gagal:', error);
+    }
+}
+function syncWelcomeConfigToConvex(config) {
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.welcome, normalizeWelcomeConfigPayload(config));
+}
+function syncUpdateNoticeConfigToConvex(config) {
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.updateNotice, normalizeUpdateNoticeConfig(config));
+}
+function normalizeWelcomeConfigPayload(config) {
+    return {
+        title: cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title),
+        subtitle: cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle),
+        durationSeconds: normalizeWelcomeDurationSeconds(config && config.durationSeconds)
+    };
+}
 function exportJson(data, fileName) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     downloadBlob(blob, fileName);
@@ -2670,18 +2747,77 @@ function WelcomeOverlay({ config, onDone }) {
     const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
     const durationSeconds = normalizeWelcomeDurationSeconds(config && config.durationSeconds);
     const durationMs = Math.round(durationSeconds * 1000);
+    const cardRef = useRef(null);
     useEffect(() => {
         const timer = window.setTimeout(onDone, durationMs);
         return () => window.clearTimeout(timer);
     }, [onDone, durationMs]);
-    return (React.createElement("div", { className: "welcome-dream-overlay", role: "dialog", "aria-modal": "true", style: { '--welcome-duration': String(durationSeconds) + 's', transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' } },
-        React.createElement("div", { className: "welcome-dream-card", style: { transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' } },
-            React.createElement("div", { className: "welcome-orb welcome-orb-a" }),
-            React.createElement("div", { className: "welcome-orb welcome-orb-b" }),
-            React.createElement("div", { className: "welcome-dream-content" },
-                React.createElement("p", { className: "welcome-kicker" }, "Bestie Visit"),
-                React.createElement("h1", null, title),
-                React.createElement("p", { className: "welcome-subtitle" }, subtitle)))));
+    function handlePointerMove(event) {
+        const card = cardRef.current;
+        if (!card)
+            return;
+        const rect = card.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) - 0.5;
+        const y = ((event.clientY - rect.top) / rect.height) - 0.5;
+        card.style.setProperty('--tilt-x', `${(-y * 5).toFixed(2)}deg`);
+        card.style.setProperty('--tilt-y', `${(x * 6).toFixed(2)}deg`);
+        card.style.setProperty('--glow-x', `${(x + 0.5) * 100}%`);
+        card.style.setProperty('--glow-y', `${(y + 0.5) * 100}%`);
+    }
+    function resetPointerTilt() {
+        const card = cardRef.current;
+        if (!card)
+            return;
+        card.style.setProperty('--tilt-x', '0deg');
+        card.style.setProperty('--tilt-y', '0deg');
+        card.style.setProperty('--glow-x', '50%');
+        card.style.setProperty('--glow-y', '50%');
+    }
+    return (React.createElement("div", { className: "welcome-dream-overlay", role: "dialog", "aria-modal": "true", style: {
+            '--welcome-duration': String(durationSeconds) + 's',
+            position: 'fixed',
+            inset: 0,
+            zIndex: 95,
+            display: 'grid',
+            placeItems: 'center',
+            padding: '24px',
+            overflow: 'hidden',
+            background: 'radial-gradient(circle at 18% 18%, rgba(20,184,166,.34), transparent 32%), radial-gradient(circle at 82% 24%, rgba(34,197,94,.24), transparent 34%), linear-gradient(145deg, rgba(15,23,42,.92), rgba(12,74,110,.86))',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            animation: 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
+        } },
+        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}}`),
+        React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(20,184,166,.22)', filter: 'blur(18px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' } }),
+        React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(34,197,94,.18)', filter: 'blur(20px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' } }),
+        React.createElement("div", { ref: cardRef, className: "welcome-dream-card", onPointerMove: handlePointerMove, onPointerLeave: resetPointerTilt, style: {
+                '--tilt-x': '0deg',
+                '--tilt-y': '0deg',
+                '--glow-x': '50%',
+                '--glow-y': '50%',
+                position: 'relative',
+                width: 'min(92vw, 420px)',
+                borderRadius: '34px',
+                padding: '1px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,.82), rgba(20,184,166,.55), rgba(255,255,255,.22))',
+                boxShadow: '0 28px 80px rgba(2,6,23,.35)',
+                transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
+                transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden'
+            } },
+            React.createElement("div", { style: { position: 'relative', overflow: 'hidden', borderRadius: '33px', padding: '28px 24px 24px', background: 'linear-gradient(160deg, rgba(255,255,255,.96), rgba(240,253,250,.92))' } },
+                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(20,184,166,.24), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
+                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
+                React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
+                    React.createElement("div", { "aria-hidden": "true", style: { display: 'grid', placeItems: 'center', width: 58, height: 58, borderRadius: '20px', background: 'linear-gradient(135deg, #0f766e, #14b8a6)', color: '#fff', boxShadow: '0 16px 32px rgba(15,118,110,.28)', animation: 'rbvWelcomeSpark 2.6s ease-in-out infinite' } },
+                        React.createElement(Icon, { name: "spark", className: "h-7 w-7" })),
+                    React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
+                    React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
+                    React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#475569', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
+                    React.createElement("div", { "aria-hidden": "true", style: { marginTop: 24, height: 7, width: 'min(260px, 78%)', overflow: 'hidden', borderRadius: '999px', background: 'rgba(15,118,110,.12)' } },
+                        React.createElement("span", { style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })))))));
 }
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
@@ -2692,7 +2828,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
             return;
         setPin('');
         setError('');
-        setTimeout(() => inputRef.current?.focus(), 60);
+        setTimeout(() => { var _a; return (_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.focus(); }, 60);
     }, [open]);
     useEffect(() => {
         if (pin.length < 6)
@@ -2742,18 +2878,19 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [noticeTitle, setNoticeTitle] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.title);
     const [noticeMessagesText, setNoticeMessagesText] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n'));
     const [noticeIntervalSeconds, setNoticeIntervalSeconds] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds);
-    function saveWelcomeSettings() {
+    async function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
             onWelcomeConfigChange(saved);
-        alert('Text welcome berhasil disimpan.');
+        await syncWelcomeConfigToConvex(saved);
+        alert('Text welcome berhasil disimpan dan disinkronkan.');
     }
     function saveAssignmentSettings() {
         const saved = saveAssignmentLinkConfig(assignmentLink);
         setAssignmentLink(saved);
         alert('Assignment link berhasil disimpan.');
     }
-    function saveNoticeSettings() {
+    async function saveNoticeSettings() {
         const saved = saveUpdateNoticeConfig({
             enabled: noticeEnabled,
             title: noticeTitle,
@@ -2764,7 +2901,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setNoticeTitle(saved.title);
         setNoticeMessagesText(saved.messages.join('\n'));
         setNoticeIntervalSeconds(saved.intervalSeconds);
-        alert('Informasi update HOME berhasil disimpan.');
+        await syncUpdateNoticeConfigToConvex(saved);
+        alert('Informasi update HOME berhasil disimpan dan disinkronkan.');
     }
     function applyPdfSettings(nextSettings, showAlert = false) {
         const saved = savePdfSettings(nextSettings);
@@ -2890,7 +3028,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     setConnectionState('connecting');
                     if (typeof client.subscribeToConnectionState === 'function') {
                         unsubscribeConnection = client.subscribeToConnectionState((state) => {
-                            const status = state?.hasInflightRequests ? 'syncing' : state?.isWebSocketConnected ? 'online' : 'connecting';
+                            const status = (state === null || state === void 0 ? void 0 : state.hasInflightRequests) ? 'syncing' : (state === null || state === void 0 ? void 0 : state.isWebSocketConnected) ? 'online' : 'connecting';
                             setConnectionState(status);
                         });
                     }
@@ -2950,15 +3088,15 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             if (pollId)
                 window.clearInterval(pollId);
             try {
-                unsubscribeRows?.();
+                unsubscribeRows === null || unsubscribeRows === void 0 ? void 0 : unsubscribeRows();
             }
             catch (error) { }
             try {
-                unsubscribeRequests?.();
+                unsubscribeRequests === null || unsubscribeRequests === void 0 ? void 0 : unsubscribeRequests();
             }
             catch (error) { }
             try {
-                unsubscribeConnection?.();
+                unsubscribeConnection === null || unsubscribeConnection === void 0 ? void 0 : unsubscribeConnection();
             }
             catch (error) { }
         };
@@ -3127,7 +3265,7 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
             React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Bestie Audit"),
             React.createElement("h2", { className: "mt-2 text-xl font-black leading-tight" }, "Visit Report System")),
         React.createElement("nav", { className: "space-y-2", "aria-label": "System menu" },
-            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
+            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap === null || onTitleTap === void 0 ? void 0 : onTitleTap(); setScreen('dashboard'); } },
                 React.createElement("span", { className: "flex items-center gap-3" },
                     React.createElement(Icon, { name: "home" }),
                     React.createElement("span", null,
@@ -3156,10 +3294,11 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
 function MobileTopBar({ screen, visit, activeSection, goSection }) {
     const scrollerRef = useRef(null);
     useEffect(() => {
+        var _a;
         if (screen !== 'audit' || !visit)
             return;
-        const activeChip = scrollerRef.current?.querySelector('[data-active="true"]');
-        activeChip?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        const activeChip = (_a = scrollerRef.current) === null || _a === void 0 ? void 0 : _a.querySelector('[data-active="true"]');
+        activeChip === null || activeChip === void 0 ? void 0 : activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }, [screen, Boolean(visit), activeSection]);
     if (screen !== 'audit' || !visit)
         return null;
@@ -3248,6 +3387,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
                 React.createElement("span", null, "Clear")) : null)));
 }
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
+    var _a;
     useEffect(() => {
         function handleKey(event) {
             if (isEditableTarget(event.target))
@@ -3282,7 +3422,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
                 React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
                 " ",
                 section.label)))),
-        React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection }, screens[activeSection]),
+        React.createElement("div", { key: ((_a = SECTION_DEFS[activeSection]) === null || _a === void 0 ? void 0 : _a.id) || activeSection }, screens[activeSection]),
         React.createElement("div", { className: "md:hidden", "aria-hidden": "true", style: { height: '132px', flexShrink: 0 } })));
 }
 function App() {
@@ -3304,6 +3444,50 @@ function App() {
         }
     });
     const secretTapRef = useRef({ count: 0, timer: null });
+    useEffect(() => {
+        let cancelled = false;
+        let unsubscribe = null;
+        let pollId = null;
+        function applyConfigRows(rows) {
+            const applied = applyRemoteAppConfigRows(rows);
+            if (applied.some((row) => row.key === APP_CONFIG_KEYS.welcome))
+                setWelcomeConfig(readWelcomeConfig());
+        }
+        async function refreshRemoteConfigs() {
+            const rows = await fetchAppConfigsFromConvex();
+            if (!cancelled && rows)
+                applyConfigRows(rows);
+        }
+        async function startRemoteConfigSync() {
+            try {
+                await refreshRemoteConfigs();
+                unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] }, (rows) => { if (!cancelled)
+                    applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
+            }
+            catch (error) {
+                console.warn('Sync app config gagal:', error);
+            }
+            if (!cancelled && !unsubscribe) {
+                const pollMs = Math.max(3500, Number(getConvexConfig().pollMs || 5000));
+                pollId = window.setInterval(refreshRemoteConfigs, pollMs);
+            }
+        }
+        startRemoteConfigSync();
+        const syncWelcome = (event) => setWelcomeConfig((event === null || event === void 0 ? void 0 : event.detail) ? normalizeWelcomeConfigPayload(event.detail) : readWelcomeConfig());
+        window.addEventListener('rbv-welcome-config-change', syncWelcome);
+        window.addEventListener('storage', syncWelcome);
+        return () => {
+            cancelled = true;
+            if (pollId)
+                window.clearInterval(pollId);
+            try {
+                unsubscribe === null || unsubscribe === void 0 ? void 0 : unsubscribe();
+            }
+            catch (error) { }
+            window.removeEventListener('rbv-welcome-config-change', syncWelcome);
+            window.removeEventListener('storage', syncWelcome);
+        };
+    }, []);
     function closeWelcome() {
         try {
             sessionStorage.setItem(WELCOME_SEEN_KEY, '1');
@@ -3316,9 +3500,10 @@ function App() {
         setWelcomeConfig(saved);
     }
     async function updateStorageLabel() {
+        var _a;
         const localBytes = calcLocalStorageBytes();
         let label = `LocalStorage ${formatBytes(localBytes)}`;
-        if (navigator.storage?.estimate) {
+        if ((_a = navigator.storage) === null || _a === void 0 ? void 0 : _a.estimate) {
             try {
                 const estimate = await navigator.storage.estimate();
                 label += ` • Browser ${formatBytes(estimate.usage || 0)}`;
@@ -3414,15 +3599,16 @@ function App() {
     useEffect(() => {
         const touchState = { target: null, x: 0, y: 0, moved: false, startedAt: 0 };
         const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]';
-        const findTextTarget = (target) => target?.closest?.(textTargetSelector) || null;
-        const movementLimit = () => (window.matchMedia?.('(pointer: coarse)')?.matches ? 16 : 11);
+        const findTextTarget = (target) => { var _a; return ((_a = target === null || target === void 0 ? void 0 : target.closest) === null || _a === void 0 ? void 0 : _a.call(target, textTargetSelector)) || null; };
+        const movementLimit = () => { var _a, _b; return (((_b = (_a = window.matchMedia) === null || _a === void 0 ? void 0 : _a.call(window, '(pointer: coarse)')) === null || _b === void 0 ? void 0 : _b.matches) ? 16 : 11); };
         function canFocusOnTap(target) {
+            var _a;
             if (!target || target.disabled || target.readOnly)
                 return false;
             const tag = (target.tagName || '').toLowerCase();
             if (tag === 'select')
                 return false;
-            const type = String(target.getAttribute?.('type') || '').toLowerCase();
+            const type = String(((_a = target.getAttribute) === null || _a === void 0 ? void 0 : _a.call(target, 'type')) || '').toLowerCase();
             return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
         }
         function focusTapTarget(target) {
@@ -3441,8 +3627,9 @@ function App() {
             }, 0);
         }
         function handleTouchStart(event) {
+            var _a;
             const target = findTextTarget(event.target);
-            if (!target || !event.touches?.[0])
+            if (!target || !((_a = event.touches) === null || _a === void 0 ? void 0 : _a[0]))
                 return;
             touchState.target = target;
             touchState.x = event.touches[0].clientX;
@@ -3451,7 +3638,8 @@ function App() {
             touchState.startedAt = Date.now();
         }
         function handleTouchMove(event) {
-            if (!touchState.target || !event.touches?.[0])
+            var _a;
+            if (!touchState.target || !((_a = event.touches) === null || _a === void 0 ? void 0 : _a[0]))
                 return;
             const dx = Math.abs(event.touches[0].clientX - touchState.x);
             const dy = Math.abs(event.touches[0].clientY - touchState.y);
@@ -3460,6 +3648,7 @@ function App() {
                 touchState.moved = true;
         }
         function handleTouchEnd(event) {
+            var _a;
             const target = touchState.target;
             const wasScroll = Boolean(target && touchState.moved);
             if (wasScroll) {
@@ -3467,7 +3656,7 @@ function App() {
                     event.preventDefault();
                 event.stopPropagation();
                 if (document.activeElement === target)
-                    target.blur?.();
+                    (_a = target.blur) === null || _a === void 0 ? void 0 : _a.call(target);
             }
             else if (target) {
                 focusTapTarget(target);
@@ -3496,7 +3685,7 @@ function App() {
         window.getFormData = () => visit || {};
     }, [visit]);
     useEffect(() => {
-        if (!visit?.id)
+        if (!(visit === null || visit === void 0 ? void 0 : visit.id))
             return;
         const timer = setTimeout(async () => {
             const nextVisit = { ...visit, updatedAt: Date.now() };
@@ -3567,7 +3756,7 @@ function App() {
         await deleteVisitRecord(id);
         const nextMeta = saveHistoryMeta(readHistoryMeta().filter((item) => item.id !== id));
         setHistory(nextMeta);
-        if (visit?.id === id) {
+        if ((visit === null || visit === void 0 ? void 0 : visit.id) === id) {
             setVisit(null);
             setScreen('dashboard');
             localStorage.removeItem(ACTIVE_VISIT_KEY);

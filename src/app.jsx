@@ -20,6 +20,10 @@ const DEFAULT_WELCOME_CONFIG = {
   durationSeconds: 5
 };
 const UPDATE_NOTICE_CONFIG_KEY = 'rbv_update_notice_config_v1';
+const APP_CONFIG_KEYS = {
+  welcome: 'welcome_animation',
+  updateNotice: 'home_update_notice'
+};
 const DEFAULT_UPDATE_NOTICE_CONFIG = {
   enabled: true,
   title: 'Info Update Website',
@@ -78,7 +82,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp58-home-notice-action-grid';
+const APP_BUILD_VERSION = 'revamp60-global-admin-welcome-notice';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -162,6 +166,7 @@ function saveWelcomeConfig(config) {
     durationSeconds: normalizeWelcomeDurationSeconds(config && config.durationSeconds)
   };
   localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent('rbv-welcome-config-change', { detail: next }));
   return next;
 }
 
@@ -2166,25 +2171,25 @@ function HomeUpdateNotice({ config }) {
   const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
   const messages = notice.messages || [];
   const [index, setIndex] = useState(0);
-  const animationSeconds = Math.max(1.8, Number(notice.intervalSeconds || 4) - 0.12);
-  useEffect(() => { setIndex(0); }, [messages.join('|'), notice.enabled]);
+  const messageSignature = messages.join('|');
+  useEffect(() => { setIndex(0); }, [messageSignature, notice.enabled]);
   useEffect(() => {
     if (!notice.enabled || messages.length <= 1) return undefined;
     const timer = window.setInterval(() => setIndex((current) => (current + 1) % messages.length), Math.round(notice.intervalSeconds * 1000));
     return () => window.clearInterval(timer);
-  }, [notice.enabled, messages.length, notice.intervalSeconds, messages.join('|')]);
+  }, [notice.enabled, messages.length, notice.intervalSeconds, messageSignature]);
   if (!notice.enabled || !messages.length) return null;
   const activeMessage = messages[index % messages.length] || messages[0];
   return (
     <section className="home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm" style={{ overflow: 'hidden' }}>
-      <style>{`@keyframes rbvNoticeSlideSmooth{0%{opacity:0;transform:translate3d(0,10px,0)}14%{opacity:1;transform:translate3d(0,0,0)}86%{opacity:1;transform:translate3d(0,0,0)}100%{opacity:0;transform:translate3d(0,-8px,0)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`}</style>
-      <div className="mx-auto flex max-w-2xl flex-col items-center justify-center text-center">
+      <style>{`@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`}</style>
+      <div className="mx-auto flex min-h-[112px] max-w-2xl flex-col items-center justify-center text-center">
         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary">Informasi Update</p>
         <h2 className="mt-1 max-w-full truncate text-base font-black text-slate-950">{notice.title}</h2>
-        <div className="mt-2 flex min-h-[44px] w-full items-center justify-center overflow-hidden px-2">
-          <p key={index} className="mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700" style={{ animation: `rbvNoticeSlideSmooth ${animationSeconds}s cubic-bezier(.4,0,.2,1) both`, willChange: 'opacity, transform' }}>{activeMessage}</p>
+        <div className="mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2">
+          <p key={`${index}-${activeMessage}`} className="mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700" style={{ animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both', willChange: 'opacity, transform' }}>{activeMessage}</p>
         </div>
-        {messages.length > 1 ? <span className="mt-1 text-[10px] font-black text-slate-400">{index + 1}/{messages.length}</span> : null}
+        {messages.length > 1 ? <div className="mt-2 flex items-center justify-center gap-1.5" aria-label={`${index + 1} dari ${messages.length} info`}>{messages.map((_, dotIndex) => <span key={dotIndex} className="h-1.5 w-1.5 rounded-full" style={{ background: dotIndex === index ? '#0f766e' : 'rgba(148,163,184,.5)', animation: dotIndex === index ? 'rbvNoticeDot 1.6s ease-in-out infinite' : 'none' }} />)}</div> : null}
       </div>
     </section>
   );
@@ -2258,7 +2263,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp59-delete-history-contrast">
+        <div className="mt-3" data-build="revamp60-global-admin-welcome-notice">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -2853,6 +2858,67 @@ async function syncManualRequestStatusToConvex(request) {
   syncManualRequestToConvex(request);
 }
 
+function normalizeRemoteAppConfigRows(rows) {
+  const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
+  return safeRows.map((row) => ({
+    key: row.configKey || row.config_key || row.key || '',
+    payload: row.payload || row.value || row.config || {},
+    updatedAt: row.updatedAt || row.updated_at || 0
+  })).filter((row) => row.key);
+}
+
+function applyRemoteAppConfigRows(rows) {
+  const normalized = normalizeRemoteAppConfigRows(rows);
+  normalized.forEach((row) => {
+    if (row.key === APP_CONFIG_KEYS.welcome) saveWelcomeConfig(row.payload);
+    if (row.key === APP_CONFIG_KEYS.updateNotice) saveUpdateNoticeConfig(row.payload);
+  });
+  return normalized;
+}
+
+async function fetchAppConfigsFromConvex() {
+  const config = getConvexConfig();
+  if (!convexEnabled()) return null;
+  try {
+    const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
+    const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] });
+    if (rows !== null) return normalizeRemoteAppConfigRows(rows);
+  } catch (error) {
+    console.warn('Convex app config query gagal:', error);
+  }
+  return null;
+}
+
+async function syncAppConfigToConvex(key, payload) {
+  const config = getConvexConfig();
+  if (!convexEnabled() || !key) return;
+  try {
+    await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
+      key,
+      payload,
+      updatedBy: SESSION_ID
+    });
+  } catch (error) {
+    console.warn('Convex app config sync gagal:', error);
+  }
+}
+
+function syncWelcomeConfigToConvex(config) {
+  return syncAppConfigToConvex(APP_CONFIG_KEYS.welcome, normalizeWelcomeConfigPayload(config));
+}
+
+function syncUpdateNoticeConfigToConvex(config) {
+  return syncAppConfigToConvex(APP_CONFIG_KEYS.updateNotice, normalizeUpdateNoticeConfig(config));
+}
+
+function normalizeWelcomeConfigPayload(config) {
+  return {
+    title: cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title),
+    subtitle: cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle),
+    durationSeconds: normalizeWelcomeDurationSeconds(config && config.durationSeconds)
+  };
+}
+
 function exportJson(data, fileName) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   downloadBlob(blob, fileName);
@@ -2864,19 +2930,90 @@ function WelcomeOverlay({ config, onDone }) {
   const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
   const durationSeconds = normalizeWelcomeDurationSeconds(config && config.durationSeconds);
   const durationMs = Math.round(durationSeconds * 1000);
+  const cardRef = useRef(null);
   useEffect(() => {
     const timer = window.setTimeout(onDone, durationMs);
     return () => window.clearTimeout(timer);
   }, [onDone, durationMs]);
+  function handlePointerMove(event) {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) - 0.5;
+    const y = ((event.clientY - rect.top) / rect.height) - 0.5;
+    card.style.setProperty('--tilt-x', `${(-y * 5).toFixed(2)}deg`);
+    card.style.setProperty('--tilt-y', `${(x * 6).toFixed(2)}deg`);
+    card.style.setProperty('--glow-x', `${(x + 0.5) * 100}%`);
+    card.style.setProperty('--glow-y', `${(y + 0.5) * 100}%`);
+  }
+  function resetPointerTilt() {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.setProperty('--tilt-x', '0deg');
+    card.style.setProperty('--tilt-y', '0deg');
+    card.style.setProperty('--glow-x', '50%');
+    card.style.setProperty('--glow-y', '50%');
+  }
   return (
-    <div className="welcome-dream-overlay" role="dialog" aria-modal="true" style={{ '--welcome-duration': String(durationSeconds) + 's', transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-      <div className="welcome-dream-card" style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-        <div className="welcome-orb welcome-orb-a" />
-        <div className="welcome-orb welcome-orb-b" />
-        <div className="welcome-dream-content">
-          <p className="welcome-kicker">Bestie Visit</p>
-          <h1>{title}</h1>
-          <p className="welcome-subtitle">{subtitle}</p>
+    <div
+      className="welcome-dream-overlay"
+      role="dialog"
+      aria-modal="true"
+      style={{
+        '--welcome-duration': String(durationSeconds) + 's',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 95,
+        display: 'grid',
+        placeItems: 'center',
+        padding: '24px',
+        overflow: 'hidden',
+        background: 'radial-gradient(circle at 18% 18%, rgba(20,184,166,.34), transparent 32%), radial-gradient(circle at 82% 24%, rgba(34,197,94,.24), transparent 34%), linear-gradient(145deg, rgba(15,23,42,.92), rgba(12,74,110,.86))',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
+        animation: 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
+      }}
+    >
+      <style>{`@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}}`}</style>
+      <div aria-hidden="true" style={{ position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(20,184,166,.22)', filter: 'blur(18px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(34,197,94,.18)', filter: 'blur(20px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' }} />
+      <div
+        ref={cardRef}
+        className="welcome-dream-card"
+        onPointerMove={handlePointerMove}
+        onPointerLeave={resetPointerTilt}
+        style={{
+          '--tilt-x': '0deg',
+          '--tilt-y': '0deg',
+          '--glow-x': '50%',
+          '--glow-y': '50%',
+          position: 'relative',
+          width: 'min(92vw, 420px)',
+          borderRadius: '34px',
+          padding: '1px',
+          background: 'linear-gradient(135deg, rgba(255,255,255,.82), rgba(20,184,166,.55), rgba(255,255,255,.22))',
+          boxShadow: '0 28px 80px rgba(2,6,23,.35)',
+          transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
+          transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden'
+        }}
+      >
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '33px', padding: '28px 24px 24px', background: 'linear-gradient(160deg, rgba(255,255,255,.96), rgba(240,253,250,.92))' }}>
+          <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(20,184,166,.24), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' }} />
+          <div aria-hidden="true" style={{ position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' }} />
+          <div className="welcome-dream-content" style={{ position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' }}>
+            <div aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 58, height: 58, borderRadius: '20px', background: 'linear-gradient(135deg, #0f766e, #14b8a6)', color: '#fff', boxShadow: '0 16px 32px rgba(15,118,110,.28)', animation: 'rbvWelcomeSpark 2.6s ease-in-out infinite' }}>
+              <Icon name="spark" className="h-7 w-7" />
+            </div>
+            <p className="welcome-kicker" style={{ marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' }}>Bestie Visit</p>
+            <h1 style={{ marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' }}>{title}</h1>
+            <p className="welcome-subtitle" style={{ marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#475569', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' }}>{subtitle}</p>
+            <div aria-hidden="true" style={{ marginTop: 24, height: 7, width: 'min(260px, 78%)', overflow: 'hidden', borderRadius: '999px', background: 'rgba(15,118,110,.12)' }}>
+              <span style={{ display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` }} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2955,10 +3092,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
   const [noticeMessagesText, setNoticeMessagesText] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n'));
   const [noticeIntervalSeconds, setNoticeIntervalSeconds] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds);
 
-  function saveWelcomeSettings() {
+  async function saveWelcomeSettings() {
     const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
     if (typeof onWelcomeConfigChange === 'function') onWelcomeConfigChange(saved);
-    alert('Text welcome berhasil disimpan.');
+    await syncWelcomeConfigToConvex(saved);
+    alert('Text welcome berhasil disimpan dan disinkronkan.');
   }
 
   function saveAssignmentSettings() {
@@ -2967,7 +3105,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     alert('Assignment link berhasil disimpan.');
   }
 
-  function saveNoticeSettings() {
+  async function saveNoticeSettings() {
     const saved = saveUpdateNoticeConfig({
       enabled: noticeEnabled,
       title: noticeTitle,
@@ -2978,7 +3116,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     setNoticeTitle(saved.title);
     setNoticeMessagesText(saved.messages.join('\n'));
     setNoticeIntervalSeconds(saved.intervalSeconds);
-    alert('Informasi update HOME berhasil disimpan.');
+    await syncUpdateNoticeConfigToConvex(saved);
+    alert('Informasi update HOME berhasil disimpan dan disinkronkan.');
   }
 
   function applyPdfSettings(nextSettings, showAlert = false) {
@@ -3570,6 +3709,52 @@ function App() {
     try { return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1'; } catch (error) { return true; }
   });
   const secretTapRef = useRef({ count: 0, timer: null });
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = null;
+    let pollId = null;
+
+    function applyConfigRows(rows) {
+      const applied = applyRemoteAppConfigRows(rows);
+      if (applied.some((row) => row.key === APP_CONFIG_KEYS.welcome)) setWelcomeConfig(readWelcomeConfig());
+    }
+
+    async function refreshRemoteConfigs() {
+      const rows = await fetchAppConfigsFromConvex();
+      if (!cancelled && rows) applyConfigRows(rows);
+    }
+
+    async function startRemoteConfigSync() {
+      try {
+        await refreshRemoteConfigs();
+        unsubscribe = await subscribeConvexQuery(
+          getConvexConfig().appConfigListQuery || 'appSettings:listConfigs',
+          { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] },
+          (rows) => { if (!cancelled) applyConfigRows(rows); },
+          (error) => { console.warn('Realtime app config gagal:', error); }
+        );
+      } catch (error) {
+        console.warn('Sync app config gagal:', error);
+      }
+      if (!cancelled && !unsubscribe) {
+        const pollMs = Math.max(3500, Number(getConvexConfig().pollMs || 5000));
+        pollId = window.setInterval(refreshRemoteConfigs, pollMs);
+      }
+    }
+
+    startRemoteConfigSync();
+    const syncWelcome = (event) => setWelcomeConfig(event?.detail ? normalizeWelcomeConfigPayload(event.detail) : readWelcomeConfig());
+    window.addEventListener('rbv-welcome-config-change', syncWelcome);
+    window.addEventListener('storage', syncWelcome);
+    return () => {
+      cancelled = true;
+      if (pollId) window.clearInterval(pollId);
+      try { unsubscribe?.(); } catch (error) {}
+      window.removeEventListener('rbv-welcome-config-change', syncWelcome);
+      window.removeEventListener('storage', syncWelcome);
+    };
+  }, []);
 
   function closeWelcome() {
     try { sessionStorage.setItem(WELCOME_SEEN_KEY, '1'); } catch (error) {}
