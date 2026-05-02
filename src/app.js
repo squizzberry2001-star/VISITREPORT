@@ -56,7 +56,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp51-remove-observation-evidence-summary';
+const APP_BUILD_VERSION = 'revamp52-fix-quick-section-overlay';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2074,7 +2074,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp51-remove-observation-evidence-summary" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp52-fix-quick-section-overlay" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -3116,16 +3116,17 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
         return null;
     const progress = visitProgress(visit);
     const safeProgress = Math.max(0, Math.min(100, progress || 0));
-    return (React.createElement("header", { className: "mobile-quick-section md:hidden", style: { position: 'fixed', left: '50%', bottom: 'calc(104px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', zIndex: 70, width: 'min(520px, calc(100vw - 28px))', borderRadius: '24px', padding: '8px 10px 9px', background: 'rgba(255, 255, 255, 0.92)', border: '1px solid rgba(226, 232, 240, 0.95)', boxShadow: '0 14px 34px rgba(15, 23, 42, 0.14)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' } },
-        React.createElement("div", { className: "mobile-quick-scroll", "aria-label": "Quick section", style: { display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' } }, SECTION_DEFS.map((section, index) => {
+    return (React.createElement("div", { className: "visit-quick-dock-v52 md:hidden", role: "navigation", "aria-label": "Quick section", style: { position: 'fixed', left: '50%', top: 'auto', right: 'auto', bottom: 'calc(106px + env(safe-area-inset-bottom, 0px))', transform: 'translate3d(-50%, 0, 0)', zIndex: 70, width: 'min(520px, calc(100vw - 28px))', height: '56px', minHeight: '0', maxHeight: '56px', overflow: 'hidden', borderRadius: '22px', padding: '7px 9px 8px', background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(226,232,240,0.95)', boxShadow: '0 14px 32px rgba(15,23,42,0.14)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', pointerEvents: 'auto' } },
+        React.createElement("div", { className: "visit-quick-dock-scroll-v52", style: { display: 'flex', alignItems: 'center', gap: '6px', height: '36px', overflowX: 'auto', overflowY: 'hidden', padding: '0 0 2px', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' } }, SECTION_DEFS.map((section, index) => {
             const active = activeSection === index;
-            return (React.createElement("button", { key: section.id, type: "button", className: cx('mobile-quick-chip', active && 'active'), onClick: () => goSection(index), style: { flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', minWidth: '66px', height: '34px', borderRadius: '999px', padding: '0 10px', fontSize: '11px', fontWeight: 900, lineHeight: 1, color: active ? '#ffffff' : '#334155', background: active ? '#172554' : 'rgba(248, 250, 252, 0.92)', border: active ? '1px solid #172554' : '1px solid rgba(226, 232, 240, 0.95)', boxShadow: active ? '0 8px 18px rgba(23, 37, 84, 0.22)' : 'none', transition: 'transform 160ms ease, background 160ms ease' } },
+            return (React.createElement("button", { key: section.id, type: "button", className: "visit-quick-dock-chip-v52", onClick: () => goSection(index), style: { flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', minWidth: '64px', height: '32px', borderRadius: '999px', padding: '0 10px', fontSize: '11px', fontWeight: 900, lineHeight: 1, color: active ? '#ffffff' : '#334155', background: active ? '#172554' : 'rgba(248,250,252,0.94)', border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.95)', boxShadow: active ? '0 8px 18px rgba(23,37,84,0.20)' : 'none' } },
                 React.createElement(Icon, { name: section.icon, className: "h-3.5 w-3.5 shrink-0" }),
                 React.createElement("span", null, section.label)));
         })),
-        React.createElement("div", { "aria-hidden": "true", style: { marginTop: '5px', height: '3px', overflow: 'hidden', borderRadius: '999px', background: 'rgba(203, 213, 225, 0.55)' } },
+        React.createElement("div", { "aria-hidden": "true", style: { height: '3px', overflow: 'hidden', borderRadius: '999px', background: 'rgba(203,213,225,0.55)' } },
             React.createElement("div", { style: { width: safeProgress + '%', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6)' } }))));
 }
+
 function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) {
     const goAudit = () => visit ? setScreen('audit') : onNewVisit();
     const goPreview = () => visit ? setScreen('preview') : onNewVisit();
