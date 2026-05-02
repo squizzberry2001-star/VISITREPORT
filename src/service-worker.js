@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp57-home-pdf-admin-revamp';
+const APP_VERSION = 'revamp63-focused-layout-revamp';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -10,7 +10,7 @@ const LOCAL_ASSETS = [
   './store-master-data.js',
   './ca-assignment-export.js',
   './jszip.min.js',
-  './convex-config.js',
+  './netlify-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -47,6 +47,7 @@ function shouldNetworkFirst(request) {
   if (isNavigationRequest(request)) return true;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return false;
+  if (url.pathname.startsWith('/.netlify/functions/')) return true;
   if (url.pathname.endsWith('/service-worker.js')) return true;
   if (url.pathname.endsWith('/version.json')) return true;
   return ['script', 'style', 'manifest', 'document'].includes(request.destination);

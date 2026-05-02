@@ -82,7 +82,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp62-netlify-blobs-sync';
+const APP_BUILD_VERSION = 'revamp63-focused-layout-revamp';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1093,7 +1093,11 @@ function distanceBetweenTouches(touches) {
 }
 
 const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF', w: 16, h: 9 };
-const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO];
+const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
+const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
+function ratioToAspectString(ratio) {
+  return ratio && ratio.w && ratio.h ? `${ratio.w} / ${ratio.h}` : '';
+}
 
 const MARKER_SIZE_OPTIONS = [
   { key: 'small', label: 'Kecil', scale: 0.034 },
@@ -1128,7 +1132,7 @@ function getMarkerRadius(canvas, markerSize) {
   return Math.max(24, Math.round(minSide * selected.scale));
 }
 
-function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' }) {
+function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', cropRatio = PDF_PHOTO_CROP_RATIO }) {
   const canvasRef = useRef(null);
   const imgRef = useRef(null);
   const dragRef = useRef(null);
@@ -1138,7 +1142,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [markers, setMarkers] = useState([]);
   const [mode, setMode] = useState('move');
-  const [selectedRatio, setSelectedRatio] = useState(PHOTO_EDITOR_RATIOS[0]);
+  const activeCropRatio = cropRatio && cropRatio.w && cropRatio.h ? cropRatio : PDF_PHOTO_CROP_RATIO;
+  const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
   const [markerSize, setMarkerSize] = useState('medium');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
   const [imageReady, setImageReady] = useState(false);
@@ -1191,21 +1196,21 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
     setOffset({ x: 0, y: 0 });
     setMarkers([]);
     setMode('move');
-    setSelectedRatio(PDF_PHOTO_CROP_RATIO);
+    setSelectedRatio(activeCropRatio);
     setMarkerSize('medium');
     pinchRef.current = null;
     dragRef.current = null;
     loadImageElement(image).then((loaded) => {
       if (cancelled) return;
       imgRef.current = loaded;
-      setCanvasSize(getEditorCanvasSize(loaded, PDF_PHOTO_CROP_RATIO));
+      setCanvasSize(getEditorCanvasSize(loaded, activeCropRatio));
       setImageReady(true);
       window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
     }).catch(() => {
       if (!cancelled) setImageReady(false);
     });
     return () => { cancelled = true; };
-  }, [open, image]);
+  }, [open, image, activeCropRatio.key]);
 
   function scheduleDraw(showGuide = true) {
     if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
@@ -1470,7 +1475,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
 
 }
 
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO }) {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1480,7 +1485,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
     if (!file) return;
     try {
       const dataUrl = await fileToDataUrl(file);
-      onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: '' });
+      onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
       setEditorOpen(true);
     } catch (error) {
       alert('Foto gagal dibaca. Coba pilih ulang foto.');
@@ -1495,7 +1500,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
   }
 
   const description = value?.description || '';
-  const photoAspect = matchCropFrame && value?.cropAspect ? String(value.cropAspect) : '';
+  const photoAspect = matchCropFrame ? (value?.cropAspect ? String(value.cropAspect) : ratioToAspectString(cropRatio)) : '';
   const cardStyle = photoAspect ? { '--photo-aspect': photoAspect } : undefined;
 
   return (
@@ -1511,7 +1516,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
       <div className="border-t border-slate-200 p-3">
         {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
-      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} onClose={() => setEditorOpen(false)} onSave={(editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || '' })} />
+      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} cropRatio={cropRatio} onClose={() => setEditorOpen(false)} onSave={(editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' })} />
     </div>
   );
 }
@@ -1743,7 +1748,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
       {renderActions('top')}
       <div className="evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
-          <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich />
+          <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich matchCropFrame cropRatio={PDF_PHOTO_CROP_RATIO} />
         ))}
       </div>
       {renderActions('bottom')}
@@ -1835,7 +1840,7 @@ function QscResultSection({ visit, update }) {
   const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
   return (
     <SectionShell title="QSC / FAMITRACK Result" actions={<Toggle checked={enabled} onChange={(value) => update({ showQSCResult: value })} label={enabled ? 'Hide slide' : 'Unhide slide'} />}>
-      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="qsc-result-photo-grid grid gap-4">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} matchCropFrame onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
+      {!enabled ? <InactiveSection title="Slide QSC/Famitrack disembunyikan" /> : <>{missing ? <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900">Kurang {missing} foto wajib.</div> : null}<div className="qsc-result-photo-grid grid gap-4">{normalizeQscPhotos(visit).map((photo, index) => <PhotoInput key={index} value={photo} matchCropFrame cropRatio={QSC_PHOTO_CROP_RATIO} onChange={(value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }} label={'Foto QSC / FAMITRACK ' + (index + 1)} required />)}</div></>}
     </SectionShell>
   );
 }
@@ -2221,6 +2226,28 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     };
   }, []);
 
+  async function handleManualWebsiteSync() {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter((key) => key.startsWith('bestie-visit-')).map((key) => caches.delete(key)));
+      }
+      if (navigator.serviceWorker?.getRegistrations) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        registrations.forEach((registration) => {
+          registration.update?.().catch(() => {});
+          if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        });
+      }
+    } catch (error) {
+      console.warn('Manual sync website gagal:', error);
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', APP_BUILD_VERSION);
+    url.searchParams.set('manualSync', String(Date.now()));
+    window.location.replace(url.toString());
+  }
+
   async function handleBackupData() {
     if (backupBusy) return;
     try {
@@ -2258,12 +2285,24 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <h1 className="text-xl font-black tracking-tight text-slate-950 md:text-3xl">Regional Bestie Visit Report</h1>
             <p className="mt-1 text-xs font-semibold text-slate-500">Home</p>
           </button>
-          <div className="dashboard-stat dark min-w-[84px] px-3 py-2">
-            <p>History</p>
-            <strong>{history.length}</strong>
+          <div className="history-sync-wrap flex shrink-0 items-center gap-2">
+            <div className="dashboard-stat dark history-number-card min-w-[84px] px-3 py-2">
+              <p>History</p>
+              <strong>{history.length}</strong>
+            </div>
+            <button
+              type="button"
+              className="manual-sync-button"
+              onClick={handleManualWebsiteSync}
+              aria-label="Manual sync perubahan website"
+              title="Sync update website"
+            >
+              <Icon name="download" className="h-4 w-4" />
+              <span>Sync</span>
+            </button>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp60-global-admin-welcome-notice">
+        <div className="mt-3" data-build="revamp63-focused-layout-revamp">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -3993,9 +4032,9 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
         left: '50%',
         top: 'auto',
         right: 'auto',
-        bottom: 'calc(92px + env(safe-area-inset-bottom, 0px))',
+        bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
         transform: 'translate3d(-50%, 0, 0)',
-        zIndex: 70,
+        zIndex: 82,
         width: 'min(520px, calc(100vw - 32px))',
         height: '54px',
         minHeight: '0',
@@ -4108,7 +4147,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
     <main className="workspace-page w-full px-4 py-5 pb-44 md:px-8 md:py-8 md:pb-8">
       <div className="desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="hidden gap-2 sm:flex"><Button variant="icon" onClick={() => goSection(activeSection - 1)} disabled={activeSection <= 0} aria-label="Section sebelumnya"><Icon name="left" className="h-5 w-5" /></Button><Button variant="icon" onClick={() => goSection(activeSection + 1)} disabled={activeSection >= SECTION_DEFS.length - 1} aria-label="Section berikutnya"><Icon name="right" className="h-5 w-5" /></Button></div></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sub menu section">{SECTION_DEFS.map((section, index) => <button key={section.id} type="button" className={cx('subnav-chip', activeSection === index && 'active')} onClick={() => goSection(index)}><Icon name={section.icon} className="h-4 w-4" /> {section.label}</button>)}</div></div>
       <div key={SECTION_DEFS[activeSection]?.id || activeSection}>{screens[activeSection]}</div>
-      <div className="md:hidden" aria-hidden="true" style={{ height: '132px', flexShrink: 0 }} />
+      <div className="md:hidden" aria-hidden="true" style={{ height: '96px', flexShrink: 0 }} />
     </main>
   );
 }

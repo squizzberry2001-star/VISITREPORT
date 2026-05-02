@@ -2117,3 +2117,167 @@ select,
     animation: none !important;
   }
 }
+
+/* Revamp v63 focused layout polish: requested only */
+:root { --safe-top: env(safe-area-inset-top, 0px); }
+
+/* 1. Welcome animation exact center */
+.welcome-dream-overlay {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100dvh !important;
+  padding: max(18px, var(--safe-top)) 18px max(18px, var(--safe-bottom)) !important;
+}
+.welcome-dream-card {
+  margin: auto !important;
+  width: min(420px, calc(100vw - 36px)) !important;
+  min-height: min(360px, calc(100dvh - 56px)) !important;
+  transform-origin: center center !important;
+}
+.welcome-dream-content {
+  width: 100% !important;
+  min-height: 230px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 2-3. History number centered + manual sync button */
+.history-sync-wrap { align-self: stretch; }
+.history-number-card,
+.dashboard-stat.history-number-card {
+  text-align: center !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.dashboard-stat.history-number-card p,
+.dashboard-stat.history-number-card strong { width: 100%; text-align: center !important; }
+.manual-sync-button {
+  display: inline-flex;
+  min-width: 58px;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 118, 110, .28);
+  background: rgba(236, 253, 245, .94);
+  color: #0f766e;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.86), 0 10px 22px rgba(15, 118, 110, .10);
+  transition: transform .16s var(--ease), box-shadow .16s var(--ease), background-color .16s var(--ease);
+}
+.manual-sync-button:active { transform: scale(.96); }
+.manual-sync-button svg { width: 18px; height: 18px; }
+@media (max-width: 380px) {
+  .manual-sync-button { min-width: 52px; min-height: 54px; border-radius: 16px; font-size: 9.5px; }
+  .dashboard-stat.history-number-card { min-width: 72px !important; }
+}
+
+/* 4. Mobile navbar sticky top, quick section takes old bottom-navbar position */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1180px) {
+  .mobile-system-nav {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: auto !important;
+    z-index: 90 !important;
+    padding: calc(.48rem + var(--safe-top)) .72rem .54rem !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid rgba(226, 232, 240, .92) !important;
+    background: rgba(255, 255, 255, .96) !important;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, .10) !important;
+  }
+  .mobile-system-grid { gap: .45rem !important; }
+  .mobile-system-button {
+    min-height: 46px !important;
+    border-radius: 15px !important;
+    font-size: 10px !important;
+    gap: .12rem !important;
+  }
+  .mobile-system-button svg { width: 17px !important; height: 17px !important; }
+  .workspace-page,
+  .preview-page {
+    padding-top: calc(5.2rem + var(--safe-top)) !important;
+    padding-bottom: calc(5.6rem + var(--safe-bottom)) !important;
+  }
+  .visit-quick-dock-v54 {
+    bottom: calc(12px + var(--safe-bottom)) !important;
+    z-index: 82 !important;
+    width: min(520px, calc(100vw - 24px)) !important;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, .14) !important;
+  }
+  .photo-grid-actions:last-child { padding-bottom: calc(5.4rem + var(--safe-bottom)) !important; }
+}
+
+/* 5. Observation temuan navigation sticky above quick section */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1180px) {
+  .observation-inline-nav {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: calc(76px + var(--safe-bottom)) !important;
+    z-index: 86 !important;
+    width: min(460px, calc(100vw - 28px)) !important;
+    margin: 0 !important;
+    padding: 6px !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, .94) !important;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .12) !important;
+    transform: translateX(-50%) !important;
+  }
+  .observation-card-system { padding-bottom: calc(7.7rem + var(--safe-bottom)) !important; }
+}
+
+/* 6-7. Evidence and QSC thumbnails follow PDF crop frames */
+.photo-input-card.match-crop-frame .photo-frame {
+  aspect-ratio: var(--photo-aspect, 16 / 9) !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.evidence-photo-grid .photo-input-card.match-crop-frame .photo-frame {
+  aspect-ratio: 16 / 9 !important;
+}
+.qsc-result-photo-grid .photo-input-card.match-crop-frame .photo-frame {
+  aspect-ratio: 4 / 3 !important;
+}
+.qsc-result-photo-grid .photo-input-card.match-crop-frame .photo-frame img,
+.evidence-photo-grid .photo-input-card.match-crop-frame .photo-frame img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1180px) {
+  .evidence-photo-grid .photo-frame,
+  .qsc-result-photo-grid .photo-frame {
+    min-height: 0 !important;
+  }
+  .evidence-photo-grid .photo-input-card,
+  .qsc-result-photo-grid .photo-input-card {
+    overflow: hidden !important;
+  }
+}
+
+/* 12. Container precision polish */
+.section-heading,
+.section-switcher,
+.surface-card,
+.glass-panel,
+.photo-input-card,
+.preview-modal-card {
+  max-width: 100%;
+}
+.section-switcher { overflow: hidden; }
+.photo-grid-system,
+.observation-card-system,
+.visit-setup-grid { min-width: 0; }
+@media (max-width: 767px) {
+  .dashboard-compact > .flex:first-child { align-items: stretch !important; }
+  .dashboard-compact h1 { max-width: 100% !important; }
+  .section-switcher { border-radius: 20px !important; padding: .58rem !important; }
+  .surface-card { box-shadow: 0 10px 26px rgba(15, 23, 42, .055); }
+}

@@ -1,6 +1,6 @@
 {
-  "version": "revamp57-home-pdf-admin-revamp",
-  "build": "revamp57-home-pdf-admin-revamp",
+  "version": "revamp63-focused-layout-revamp",
+  "build": "revamp63-focused-layout-revamp",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "home update notice, hidden assignment link control, wider PDF evidence grid, and install/delete button polish"
+  "note": "focused revamp: centered welcome/history, manual sync, top mobile navbar, bottom quick section, QSC 4:3 crop, PDF table readability, preview zoom"
 }

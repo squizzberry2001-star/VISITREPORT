@@ -821,25 +821,17 @@
     }
 
     const rows = [];
-    addFull(rows, buildField('Temuan', row.temuan || '-', fullW), 5);
+    addFull(rows, buildField('Temuan', row.temuan || '-', fullW, { highlight: { fill: [254, 249, 195], text: [66, 32, 6] }, boldValue: true, labelColor: [133, 77, 14] }), 5);
     addPair(
       rows,
       buildField('Kondisi Ideal', row.kondisiIdeal || '-', halfW),
       buildField('Dampak', row.dampak || '-', halfW),
       5
     );
-    addPair(
-      rows,
-      buildField('Penyebab', row.penyebab || '-', halfW),
-      buildField('Tindakan Perbaikan', row.tindakan || '-', halfW),
-      6
-    );
-    addPair(
-      rows,
-      buildField('Deadline', row.deadline ? formatDate(row.deadline) : '-', halfW, { highlight: deadlineHighlight(row.deadline), boldValue: true }),
-      buildField('Hasil', row.hasil || '-', halfW),
-      5
-    );
+    addFull(rows, buildField('Penyebab', row.penyebab || '-', fullW), 5);
+    addFull(rows, buildField('Tindakan Perbaikan', row.tindakan || '-', fullW), 6);
+    addFull(rows, buildField('Deadline', row.deadline ? formatDate(row.deadline) : '-', fullW, { highlight: deadlineHighlight(row.deadline), boldValue: true }), 2);
+    addFull(rows, buildField('Hasil', row.hasil || '-', fullW), 5);
     return rows;
   }
 
@@ -864,8 +856,8 @@
     }
     const valueFill = field.highlight ? field.highlight.fill : fillColor;
     const valueText = field.highlight ? field.highlight.text : [15, 23, 42];
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.16);
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.28);
     doc.setFillColor.apply(doc, valueFill);
     doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
 
@@ -874,7 +866,7 @@
     const lineHeight = Math.max(3.35, valueFontSize * 0.405);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(labelFontSize);
-    doc.setTextColor(30, 64, 175);
+    doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
     doc.text(field.label, x + 2.0, y + 3.6, { baseline: 'alphabetic' });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
@@ -925,8 +917,8 @@
     doc.setTextColor.apply(doc, palette.primary);
     doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + 4.2);
 
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.22);
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.34);
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x, tableY, tableW, bodyH, 2.2, 2.2, 'FD');
     doc.setFillColor.apply(doc, palette.primary);
@@ -1024,7 +1016,8 @@
 
   async function drawPhotoGridCard(doc, item, x, y, width, height, palette) {
     doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(203, 213, 225);
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.24);
     doc.roundedRect(x, y, width, height, 3, 3, 'FD');
 
     let descY = y + 5;
@@ -1054,7 +1047,7 @@
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(clampNumber(evidenceFontSize - 1.1, 7.2, 9.2, 7.6));
-      doc.setTextColor(30, 64, 175);
+      doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
       doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
       descY += Math.max(4.2, evidenceLineHeight);
     }
