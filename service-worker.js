@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp60-global-admin-welcome-notice';
+const APP_VERSION = 'revamp61-supabase-pdf-preview-zoom';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -10,7 +10,7 @@ const LOCAL_ASSETS = [
   './store-master-data.js',
   './ca-assignment-export.js',
   './jszip.min.js',
-  './convex-config.js',
+  './supabase-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'

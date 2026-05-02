@@ -1,6 +1,6 @@
 {
-  "version": "revamp60-global-admin-welcome-notice",
-  "build": "revamp60-global-admin-welcome-notice",
+  "version": "revamp61-supabase-pdf-preview-zoom",
+  "build": "revamp61-supabase-pdf-preview-zoom",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "sync welcome animation and home update notice through Convex app settings; smoother centered notice animation; catchier interactive welcome overlay"
+  "note": "migrate admin welcome/notice sync to Supabase config, update PDF observation table order/highlight, and add mobile pinch zoom for PDF preview"
 }
