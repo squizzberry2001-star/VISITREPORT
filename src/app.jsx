@@ -57,7 +57,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp53-quick-section-minimal';
+const APP_BUILD_VERSION = 'revamp54-quick-section-scrollable';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2142,7 +2142,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp53-quick-section-minimal">
+        <div className="mt-3" data-build="revamp54-quick-section-scrollable">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-4 gap-2">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -3201,12 +3201,21 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
 }
 
 function MobileTopBar({ screen, visit, activeSection, goSection }) {
+  const scrollerRef = useRef(null);
+
+  useEffect(() => {
+    if (screen !== 'audit' || !visit) return;
+    const activeChip = scrollerRef.current?.querySelector('[data-active="true"]');
+    activeChip?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [screen, Boolean(visit), activeSection]);
+
   if (screen !== 'audit' || !visit) return null;
   const progress = visitProgress(visit);
   const safeProgress = Math.max(0, Math.min(100, progress || 0));
+
   return (
     <div
-      className="visit-quick-dock-v53 md:hidden"
+      className="visit-quick-dock-v54 md:hidden"
       role="navigation"
       aria-label="Quick section"
       style={{
@@ -3218,9 +3227,9 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
         transform: 'translate3d(-50%, 0, 0)',
         zIndex: 70,
         width: 'min(520px, calc(100vw - 32px))',
-        height: '52px',
+        height: '54px',
         minHeight: '0',
-        maxHeight: '52px',
+        maxHeight: '54px',
         overflow: 'hidden',
         borderRadius: '24px',
         padding: '7px 8px 9px',
@@ -3233,34 +3242,45 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
       }}
     >
       <div
-        className="visit-quick-dock-grid-v53"
+        ref={scrollerRef}
+        className="visit-quick-dock-scroll-v54"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+          display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          height: '32px'
+          height: '34px',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorX: 'contain',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          padding: '0 2px',
+          touchAction: 'pan-x'
         }}
       >
         {SECTION_DEFS.map((section, index) => {
           const active = activeSection === index;
+          const minWidth = section.id === 'evidence' ? 92 : section.id === 'qsc' ? 70 : section.id === 'observation' ? 68 : 76;
           return (
             <button
               key={section.id}
               type="button"
-              className="visit-quick-dock-chip-v53"
+              className="visit-quick-dock-chip-v54"
               onClick={() => goSection(index)}
               aria-current={active ? 'page' : undefined}
               aria-label={`Buka section ${section.title}`}
+              data-active={active ? 'true' : undefined}
               style={{
-                width: '100%',
-                minWidth: 0,
+                flex: '0 0 auto',
+                width: 'auto',
+                minWidth: `${minWidth}px`,
                 height: '32px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '999px',
-                padding: '0 8px',
+                padding: '0 12px',
                 fontSize: '11.5px',
                 fontWeight: 900,
                 letterSpacing: '-0.01em',
@@ -3271,7 +3291,7 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
                 border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
                 boxShadow: active ? '0 7px 16px rgba(23,37,84,0.18)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
                 transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
-                touchAction: 'manipulation'
+                touchAction: 'pan-x'
               }}
             >
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{section.label}</span>
