@@ -1,6 +1,6 @@
 {
-  "version": "revamp55-evidence-section-polish",
-  "build": "revamp55-evidence-section-polish",
+  "version": "revamp56-bottom-button-safe-space",
+  "build": "revamp56-bottom-button-safe-space",
   "updatedAt": "2026-05-02T00:00:00+07:00",
   "note": "evidence controls, tab persistence, and evidence tab fit fix"
 }

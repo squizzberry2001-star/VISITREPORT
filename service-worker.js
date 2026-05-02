@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp55-evidence-section-polish';
+const APP_VERSION = 'revamp56-bottom-button-safe-space';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
