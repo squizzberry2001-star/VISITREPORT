@@ -52,7 +52,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp55-evidence-section-polish';
+const APP_BUILD_VERSION = 'revamp56-bottom-button-safe-space';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1941,7 +1941,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp55-evidence-section-polish" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp56-bottom-button-safe-space" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -3114,7 +3114,8 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
                 React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
                 " ",
                 section.label)))),
-        React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection }, screens[activeSection])));
+        React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection }, screens[activeSection]),
+        React.createElement("div", { className: "md:hidden", "aria-hidden": "true", style: { height: '132px', flexShrink: 0 } })));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
