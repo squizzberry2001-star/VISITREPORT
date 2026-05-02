@@ -1047,7 +1047,8 @@
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(clampNumber(evidenceFontSize - 1.1, 7.2, 9.2, 7.6));
-      doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
+      const continuationTitleColor = palette && palette.primary ? palette.primary : [30, 64, 175];
+      doc.setTextColor.apply(doc, continuationTitleColor);
       doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
       descY += Math.max(4.2, evidenceLineHeight);
     }
