@@ -1,6 +1,6 @@
 {
-  "version": "revamp53-quick-section-minimal",
-  "build": "revamp53-quick-section-minimal",
+  "version": "revamp54-quick-section-scrollable",
+  "build": "revamp54-quick-section-scrollable",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "minimal quick section layout update"
+  "note": "quick section horizontal scroll fix"
 }

@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp53-quick-section-minimal';
+const APP_VERSION = 'revamp54-quick-section-scrollable';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
