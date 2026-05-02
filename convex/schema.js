@@ -51,4 +51,11 @@ export default defineSchema({
   })
     .index("by_device", ["deviceId"])
     .index("by_created_at", ["createdAt"]),
+
+  appConfigs: defineTable({
+    configKey: v.string(),
+    payload: v.any(),
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.string()),
+  }).index("by_config_key", ["configKey"]),
 });
