@@ -1,6 +1,6 @@
 {
-  "version": "revamp63-focused-layout-revamp",
-  "build": "revamp63-focused-layout-revamp",
+  "version": "revamp64-sticky-quick-welcome-zoom",
+  "build": "revamp64-sticky-quick-welcome-zoom",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "focused revamp: centered welcome/history, manual sync, top mobile navbar, bottom quick section, QSC 4:3 crop, PDF table readability, preview zoom"
+  "note": "follow-up: sticky temuan nav above enlarged quick section, icon quick buttons, inline SVG welcome CSS art, smoother PDF preview zoom"
 }

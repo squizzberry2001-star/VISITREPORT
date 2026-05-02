@@ -82,7 +82,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp63-focused-layout-revamp';
+const APP_BUILD_VERSION = 'revamp64-sticky-quick-welcome-zoom';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1643,13 +1643,18 @@ function ObservationCards({ title, rows, onChange }) {
       className="observation-inline-nav md:hidden"
       aria-label="Navigasi temuan observation"
       style={{
-        marginTop: '12px',
+        position: 'fixed',
+        left: '0',
+        right: '0',
+        bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+        zIndex: 86,
+        marginTop: '0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '8px',
-        borderRadius: '999px',
-        padding: '7px',
+        borderRadius: '18px 18px 0 0',
+        padding: '7px 12px',
         background: 'rgba(255,255,255,0.78)',
         border: '1px solid rgba(226, 232, 240, 0.92)',
         boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
@@ -2302,7 +2307,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             </button>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp63-focused-layout-revamp">
+        <div className="mt-3" data-build="revamp64-sticky-quick-welcome-zoom">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -2479,10 +2484,12 @@ function downloadBlob(blob, fileName) {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
+  anchor.rel = 'noopener';
   document.body.appendChild(anchor);
-  anchor.click();
+  if ('download' in anchor) anchor.click();
+  else window.open(url, '_blank', 'noopener');
   anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
@@ -2494,6 +2501,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
   const [renderZoom, setRenderZoom] = useState(1);
   const zoomRef = useRef(1);
   const pinchRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
+  const zoomFrameRef = useRef(0);
+  const renderZoomTimerRef = useRef(null);
   const renderSeqRef = useRef(0);
   const lastWidthRef = useRef(0);
 
@@ -2513,6 +2522,23 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     pinchRef.current = { active: true, startDistance: distance, startZoom: zoomRef.current || 1 };
   }
 
+  function applyLivePreviewZoom(nextZoom) {
+    zoomRef.current = nextZoom;
+    if (zoomFrameRef.current) return;
+    zoomFrameRef.current = window.requestAnimationFrame(() => {
+      zoomFrameRef.current = 0;
+      setZoom(zoomRef.current || 1);
+    });
+  }
+
+  function schedulePreviewRenderZoom() {
+    window.clearTimeout(renderZoomTimerRef.current);
+    renderZoomTimerRef.current = window.setTimeout(() => {
+      const nextRenderZoom = zoomRef.current || 1;
+      setRenderZoom((current) => Math.abs(current - nextRenderZoom) < 0.04 ? current : nextRenderZoom);
+    }, 180);
+  }
+
   function handlePreviewTouchMove(event) {
     if (!pinchRef.current.active || !event.touches || event.touches.length < 2) return;
     event.preventDefault();
@@ -2520,14 +2546,13 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const distance = touchDistance(event.touches);
     const ratio = distance / Math.max(1, pinchRef.current.startDistance);
     const nextZoom = clampNumber(pinchRef.current.startZoom * ratio, 0.75, 2.6, 1);
-    zoomRef.current = nextZoom;
-    setZoom(nextZoom);
+    applyLivePreviewZoom(nextZoom);
   }
 
   function finishPreviewPinch() {
     if (!pinchRef.current.active) return;
     pinchRef.current.active = false;
-    setRenderZoom(zoomRef.current || 1);
+    schedulePreviewRenderZoom();
   }
 
   useEffect(() => {
@@ -2558,11 +2583,13 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
         const scrollTop = scroller?.scrollTop || 0;
         const data = await blob.arrayBuffer();
         if (cancelled || renderSeqRef.current !== seq) return;
-        const pdf = await pdfjsLib.getDocument({ data }).promise;
-        const fragment = document.createDocumentFragment();
+        const pdf = await pdfjsLib.getDocument({ data, disableAutoFetch: true, disableStream: true }).promise;
+        if (cancelled || renderSeqRef.current !== seq) return;
         const maxWidth = Math.max(260, Math.min(measuredWidth * renderZoom, 1680));
+        const fragment = document.createDocumentFragment();
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           if (cancelled || renderSeqRef.current !== seq) return;
+          setRenderStatus(`Memuat preview halaman ${pageNumber}/${pdf.numPages}...`);
           const page = await pdf.getPage(pageNumber);
           const baseViewport = page.getViewport({ scale: 1 });
           const scale = maxWidth / baseViewport.width;
@@ -2606,6 +2633,8 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     return () => {
       cancelled = true;
       clearTimeout(resizeTimer);
+      window.clearTimeout(renderZoomTimerRef.current);
+      if (zoomFrameRef.current) window.cancelAnimationFrame(zoomFrameRef.current);
       if (observer) observer.disconnect();
       window.removeEventListener('resize', scheduleRender);
       window.removeEventListener('orientationchange', scheduleRender);
@@ -2630,7 +2659,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
       <div
         ref={pagesRef}
         className="pdf-canvas-pages"
-        style={{ transform: `scale(${liveScale})`, transformOrigin: 'top left', transition: pinchRef.current.active ? 'none' : 'transform 120ms ease', willChange: 'transform' }}
+        style={{ transform: `translateZ(0) scale(${liveScale})`, transformOrigin: 'top center', transition: pinchRef.current.active ? 'none' : 'transform 180ms cubic-bezier(.22,1,.36,1)', willChange: 'transform' }}
       />
       <div aria-hidden="true" style={{ position: 'sticky', bottom: 10, left: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
         <span style={{ borderRadius: 999, background: 'rgba(15,23,42,.72)', color: '#fff', padding: '5px 10px', fontSize: 11, fontWeight: 900, boxShadow: '0 10px 24px rgba(15,23,42,.18)' }}>Zoom {zoomLabel}%</span>
@@ -2653,6 +2682,7 @@ function PreviewPage({ visit, onBack }) {
       if (!visit) return;
       setStatus('Merender PDF...');
       try {
+        if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
         const blob = await window.ReportVisitPDF.createBlob(visit);
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
@@ -2668,7 +2698,20 @@ function PreviewPage({ visit, onBack }) {
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [visit]);
 
-  async function handleDownloadPdf() { if (!visit) return; setBusy(true); try { await window.ReportVisitPDF.save(visit); } catch (error) { alert(error?.message || 'Gagal download PDF.'); } finally { setBusy(false); } }
+  async function handleDownloadPdf() {
+    if (!visit) return;
+    setBusy(true);
+    try {
+      if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+      const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
+      const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+      downloadBlob(blob, fileName);
+    } catch (error) {
+      alert(error?.message || 'Gagal download PDF.');
+    } finally {
+      setBusy(false);
+    }
+  }
   async function handleExportExcel() { if (!visit) return; if (!window.__caAssignmentExport?.buildWorkbook) { alert('Mesin export Excel belum siap.'); return; } setBusy(true); try { const blob = await window.__caAssignmentExport.buildWorkbook(visit); const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx'; downloadBlob(blob, fileName); } catch (error) { alert(error?.message || 'Gagal export Excel CA Assignment.'); } finally { setBusy(false); } }
 
   if (!visit) return <main className="preview-page w-full px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
@@ -3377,6 +3420,45 @@ function exportJson(data, fileName) {
 }
 
 
+
+function WelcomePromiseHandsSvg() {
+  return (
+    <svg className="welcome-promise-svg" viewBox="0 0 240 180" role="img" aria-label="Index finger promise hands illustration">
+      <defs>
+        <linearGradient id="welcomeHandPink" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffc7d2"/><stop offset="100%" stopColor="#f49ab0"/></linearGradient>
+        <linearGradient id="welcomeHandBlue" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bfe2ff"/><stop offset="100%" stopColor="#7ec8f5"/></linearGradient>
+        <linearGradient id="welcomeWarm" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fff3b0"/><stop offset="100%" stopColor="#ffd166"/></linearGradient>
+        <filter id="welcomeSoftShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="10" floodColor="#334155" floodOpacity=".16"/></filter>
+      </defs>
+      <rect x="0" y="0" width="240" height="180" rx="34" fill="#fff7ed" />
+      <circle className="welcome-promise-dot dot-a" cx="34" cy="38" r="7" fill="#bfe2ff" opacity=".72" />
+      <circle className="welcome-promise-dot dot-b" cx="205" cy="42" r="9" fill="#ffd166" opacity=".72" />
+      <circle className="welcome-promise-dot dot-c" cx="196" cy="140" r="6" fill="#ffc7d2" opacity=".72" />
+      <path className="welcome-promise-ribbon" d="M36 137 C74 154 169 154 204 132" fill="none" stroke="#fef3c7" strokeWidth="18" strokeLinecap="round" opacity=".82" />
+      <g filter="url(#welcomeSoftShadow)" strokeLinecap="round" strokeLinejoin="round">
+        <g className="welcome-promise-hand welcome-promise-left">
+          <path d="M20 115 C32 92 52 80 76 83 L98 86 C109 88 113 101 104 109 C94 118 82 111 72 104 L60 95" fill="url(#welcomeHandPink)" />
+          <path d="M54 101 C69 77 91 63 111 75 C128 85 125 109 108 116 C94 122 84 113 76 104" fill="none" stroke="#f7a3b6" strokeWidth="23" />
+          <path d="M41 112 C54 100 68 96 82 99" fill="none" stroke="#ffc7d2" strokeWidth="17" />
+          <path d="M34 126 C51 112 68 109 86 116" fill="none" stroke="#ffc7d2" strokeWidth="16" />
+          <ellipse cx="103" cy="82" rx="7" ry="4.5" fill="#fff1f2" transform="rotate(25 103 82)" />
+        </g>
+        <g className="welcome-promise-hand welcome-promise-right">
+          <path d="M220 115 C208 92 188 80 164 83 L142 86 C131 88 127 101 136 109 C146 118 158 111 168 104 L180 95" fill="url(#welcomeHandBlue)" />
+          <path d="M186 101 C171 77 149 63 129 75 C112 85 115 109 132 116 C146 122 156 113 164 104" fill="none" stroke="#8ecff6" strokeWidth="23" />
+          <path d="M199 112 C186 100 172 96 158 99" fill="none" stroke="#bfe2ff" strokeWidth="17" />
+          <path d="M206 126 C189 112 172 109 154 116" fill="none" stroke="#bfe2ff" strokeWidth="16" />
+          <ellipse cx="137" cy="82" rx="7" ry="4.5" fill="#eff6ff" transform="rotate(-25 137 82)" />
+        </g>
+        <g className="welcome-promise-hook">
+          <path d="M104 91 C112 103 128 103 136 91" fill="none" stroke="#fff" strokeWidth="6" opacity=".82" />
+          <path d="M107 93 C114 101 126 101 133 93" fill="none" stroke="url(#welcomeWarm)" strokeWidth="4" opacity=".88" />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
 function WelcomeOverlay({ config, onDone }) {
   const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
   const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
@@ -3438,7 +3520,7 @@ function WelcomeOverlay({ config, onDone }) {
         animation: 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
       }}
     >
-      <style>{`@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}}`}</style>
+      <style>{`@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`}</style>
       <div aria-hidden="true" style={{ position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(20,184,166,.22)', filter: 'blur(18px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' }} />
       <div aria-hidden="true" style={{ position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(34,197,94,.18)', filter: 'blur(20px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' }} />
       <div
@@ -3467,8 +3549,8 @@ function WelcomeOverlay({ config, onDone }) {
           <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(20,184,166,.24), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' }} />
           <div aria-hidden="true" style={{ position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' }} />
           <div className="welcome-dream-content" style={{ position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' }}>
-            <div aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 58, height: 58, borderRadius: '20px', background: 'linear-gradient(135deg, #0f766e, #14b8a6)', color: '#fff', boxShadow: '0 16px 32px rgba(15,118,110,.28)', animation: 'rbvWelcomeSpark 2.6s ease-in-out infinite' }}>
-              <Icon name="spark" className="h-7 w-7" />
+            <div aria-hidden="true" className="welcome-promise-logo" style={{ display: 'grid', placeItems: 'center', width: 132, height: 98, borderRadius: '28px', overflow: 'hidden', background: '#fff7ed', boxShadow: '0 18px 36px rgba(15,23,42,.16)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' }}>
+              <WelcomePromiseHandsSvg />
             </div>
             <p className="welcome-kicker" style={{ marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' }}>Bestie Visit</p>
             <h1 style={{ marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' }}>{title}</h1>
@@ -4040,22 +4122,23 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
       aria-label="Quick section"
       style={{
         position: 'fixed',
-        left: '50%',
+        left: '0',
         top: 'auto',
-        right: 'auto',
-        bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-        transform: 'translate3d(-50%, 0, 0)',
+        right: '0',
+        bottom: '0',
+        transform: 'none',
         zIndex: 82,
-        width: 'min(520px, calc(100vw - 32px))',
-        height: '54px',
+        width: '100%',
+        height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
         minHeight: '0',
-        maxHeight: '54px',
+        maxHeight: 'none',
         overflow: 'hidden',
-        borderRadius: '24px',
-        padding: '7px 8px 9px',
-        background: 'rgba(255,255,255,0.96)',
-        border: '1px solid rgba(226,232,240,0.96)',
-        boxShadow: '0 10px 24px rgba(15,23,42,0.11)',
+        borderRadius: '18px 18px 0 0',
+        padding: '9px 12px calc(9px + env(safe-area-inset-bottom, 0px))',
+        background: 'rgba(255,255,255,0.97)',
+        border: '0',
+        borderTop: '1px solid rgba(226,232,240,0.96)',
+        boxShadow: '0 -12px 30px rgba(15,23,42,0.12)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         pointerEvents: 'auto'
@@ -4067,8 +4150,8 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          height: '34px',
+          gap: '8px',
+          height: '54px',
           overflowX: 'auto',
           overflowY: 'hidden',
           WebkitOverflowScrolling: 'touch',
@@ -4081,7 +4164,7 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
       >
         {SECTION_DEFS.map((section, index) => {
           const active = activeSection === index;
-          const minWidth = section.id === 'evidence' ? 92 : section.id === 'qsc' ? 70 : section.id === 'observation' ? 68 : 76;
+          const minWidth = section.id === 'evidence' ? 108 : section.id === 'qsc' ? 88 : section.id === 'observation' ? 92 : 96;
           return (
             <button
               key={section.id}
@@ -4095,13 +4178,14 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
                 flex: '0 0 auto',
                 width: 'auto',
                 minWidth: `${minWidth}px`,
-                height: '32px',
+                height: '50px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '999px',
-                padding: '0 12px',
-                fontSize: '11.5px',
+                gap: '7px',
+                borderRadius: '17px',
+                padding: '0 14px',
+                fontSize: '12px',
                 fontWeight: 900,
                 letterSpacing: '-0.01em',
                 lineHeight: 1,
@@ -4109,11 +4193,12 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
                 color: active ? '#ffffff' : '#334155',
                 background: active ? '#172554' : 'rgba(248,250,252,0.78)',
                 border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
-                boxShadow: active ? '0 7px 16px rgba(23,37,84,0.18)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
+                boxShadow: active ? '0 6px 14px rgba(23,37,84,0.14)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
                 transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
                 touchAction: 'pan-x'
               }}
             >
+              <span className="visit-quick-dock-icon-v54" style={{ display: 'inline-grid', placeItems: 'center', width: 22, height: 22, borderRadius: '999px', background: active ? 'rgba(255,255,255,0.16)' : 'rgba(15,118,110,0.10)', color: active ? '#ffffff' : '#0f766e', flex: '0 0 auto' }}><Icon name={section.icon} className="h-4 w-4" /></span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{section.label}</span>
             </button>
           );
