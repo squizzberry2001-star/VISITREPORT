@@ -2258,7 +2258,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp58-home-notice-action-grid">
+        <div className="mt-3" data-build="revamp59-delete-history-contrast">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -2273,9 +2273,21 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
               <Icon name="spark" className="h-4 w-4 shrink-0" />
               <span className="block max-w-full truncate">Install</span>
             </button>
-            <button type="button" className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-rose-600 px-2 text-[10px] font-extrabold leading-none text-white shadow-sm ring-1 ring-rose-500 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={onClearHistory}>
+            <button
+              type="button"
+              className="flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-extrabold leading-none shadow-sm transition hover:-translate-y-0.5 active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.28)',
+                boxShadow: '0 10px 22px rgba(185,28,28,0.24)'
+              }}
+              onClick={onClearHistory}
+              aria-label="Hapus history kunjungan"
+              title="Hapus History"
+            >
               <Icon name="trash" className="h-4 w-4 shrink-0" />
-              <span className="block max-w-full truncate">Hapus History</span>
+              <span className="block max-w-full truncate" style={{ color: '#ffffff' }}>Hapus History</span>
             </button>
           </div>
         </div>
