@@ -4,10 +4,13 @@
   const TEMPLATE = window.RBV_PDF_TEMPLATE_ASSETS || {};
 
   const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
+  const DEFAULT_ASSIGNMENT_LINK = 'https://tinyurl.com/store-caassignment';
+  const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
   const DEFAULT_PDF_SETTINGS = {
     tableFontSize: 9.4,
     evidenceFontSize: 8.9,
-    tableExtraRows: 0
+    tableExtraRows: 0,
+    photoGridPerPage: 6
   };
 
   function clampNumber(value, min, max, fallback) {
@@ -16,13 +19,21 @@
     return Math.min(max, Math.max(min, number));
   }
 
+  function normalizePdfPhotoGridPerPage(value, fallback) {
+    const allowed = [4, 6, 8];
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback || DEFAULT_PDF_SETTINGS.photoGridPerPage;
+    return allowed.reduce(function (closest, item) { return Math.abs(item - number) < Math.abs(closest - number) ? item : closest; }, allowed.indexOf(fallback) !== -1 ? fallback : 6);
+  }
+
   function readPdfSettings() {
     try {
       const raw = JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}') || {};
       return {
         tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
         evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
-        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows))
+        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows)),
+        photoGridPerPage: normalizePdfPhotoGridPerPage(raw.photoGridPerPage, DEFAULT_PDF_SETTINGS.photoGridPerPage)
       };
     } catch (error) {
       return Object.assign({}, DEFAULT_PDF_SETTINGS);
@@ -39,6 +50,24 @@
 
   function pdfTableExtraRows() {
     return readPdfSettings().tableExtraRows;
+  }
+
+  function pdfPhotoGridPerPage() {
+    return readPdfSettings().photoGridPerPage;
+  }
+
+  function readAssignmentLinkConfig() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(ASSIGNMENT_CONFIG_KEY) || '{}') || {};
+      return plainText(parsed.link, DEFAULT_ASSIGNMENT_LINK);
+    } catch (error) {
+      return DEFAULT_ASSIGNMENT_LINK;
+    }
+  }
+
+  function getAssignmentLink(data) {
+    const hiddenLink = readAssignmentLinkConfig();
+    return hiddenLink || text(data && data.storeAssignmentLink, DEFAULT_ASSIGNMENT_LINK);
   }
 
 
@@ -971,8 +1000,8 @@
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
     const evidenceFontSize = pdfEvidenceFontSize();
     const lineHeight = Math.max(3.6, evidenceFontSize * 0.45);
-    const imageHeight = Math.max(23, Math.min(cardHeight * 0.48, cardHeight - 20));
-    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 14) / lineHeight));
+    const imageHeight = Math.max(34, Math.min(cardHeight * 0.72, cardHeight - 18));
+    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 10) / lineHeight));
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
     const items = [];
     photos.forEach(function (photo, index) {
@@ -1003,8 +1032,8 @@
     if (item.image) {
       const imgX = x + 3;
       const imgY = y + 3;
-      const imgW = Math.max(18, width - 6);
-      const imgH = Math.max(22, Math.min(item.imageHeight || 34, height - 17));
+      const imgW = Math.max(18, width - 5);
+      const imgH = Math.max(30, Math.min(item.imageHeight || 46, height - 15));
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
       const added = await addImageInBox(doc, item.image, imgX + 0.6, imgY + 0.6, imgW - 1.2, imgH - 1.2, 'contain');
@@ -1041,12 +1070,13 @@
 
     drawStaticTitleSlide(doc, templateKey, title, subtitle, palette, pageWidth, pageHeight, margin);
 
-    const columns = 4;
+    const preferredGrid = pdfPhotoGridPerPage();
+    const columns = preferredGrid === 4 ? 2 : preferredGrid === 8 ? 4 : 3;
     const rowsPerPage = 2;
     const maxPerPage = columns * rowsPerPage;
-    const gap = 3.2;
-    const contentTop = 23;
-    const contentBottom = pageHeight - 10;
+    const gap = preferredGrid === 8 ? 3.0 : 3.6;
+    const contentTop = 22;
+    const contentBottom = pageHeight - 9;
     const cardWidth = (pageWidth - margin * 2 - gap * (columns - 1)) / columns;
     const cardHeight = (contentBottom - contentTop - gap * (rowsPerPage - 1)) / rowsPerPage;
     const items = buildPhotoGridItems(doc, cleanPhotos, cardWidth, cardHeight);
@@ -1084,7 +1114,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.setTextColor.apply(doc, palette.primary);
-    doc.text(text(data && data.storeAssignmentLink, 'https://tinyurl.com/store-caassignment'), margin, y);
+    doc.text(getAssignmentLink(data), margin, y);
     y += 17;
 
     doc.setTextColor.apply(doc, palette.ink);

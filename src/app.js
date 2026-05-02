@@ -18,11 +18,24 @@ const DEFAULT_WELCOME_CONFIG = {
     subtitle: '“Sudahkah kalian bahagia hari ini?, Semangat ya kerjanya”',
     durationSeconds: 5
 };
+const UPDATE_NOTICE_CONFIG_KEY = 'rbv_update_notice_config_v1';
+const DEFAULT_UPDATE_NOTICE_CONFIG = {
+    enabled: true,
+    title: 'Info Update Website',
+    messages: [
+        'Konten informasi update dapat diatur dari panel rahasia.',
+        'Gunakan area ini untuk mengumumkan perubahan fitur, maintenance, atau instruksi terbaru.'
+    ],
+    intervalSeconds: 4
+};
+const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
+const DEFAULT_ASSIGNMENT_LINK = 'https://tinyurl.com/store-caassignment';
 const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
 const DEFAULT_PDF_SETTINGS = {
     tableFontSize: 9.4,
     evidenceFontSize: 8.9,
-    tableExtraRows: 0
+    tableExtraRows: 0,
+    photoGridPerPage: 6
 };
 function clampNumber(value, min, max, fallback) {
     const number = Number(value);
@@ -30,12 +43,20 @@ function clampNumber(value, min, max, fallback) {
         return fallback;
     return Math.min(max, Math.max(min, number));
 }
+function normalizePdfPhotoGridPerPage(value, fallback = DEFAULT_PDF_SETTINGS.photoGridPerPage) {
+    const allowed = [4, 6, 8];
+    const number = Number(value);
+    if (!Number.isFinite(number))
+        return fallback;
+    return allowed.reduce((closest, item) => Math.abs(item - number) < Math.abs(closest - number) ? item : closest, allowed.includes(fallback) ? fallback : 6);
+}
 function normalizePdfSettings(value) {
     const raw = value && typeof value === 'object' ? value : {};
     return {
         tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
         evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
-        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows))
+        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows)),
+        photoGridPerPage: normalizePdfPhotoGridPerPage(raw.photoGridPerPage)
     };
 }
 function readPdfSettings() {
@@ -52,7 +73,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp56-bottom-button-safe-space';
+const APP_BUILD_VERSION = 'revamp57-home-pdf-admin-revamp';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -129,6 +150,55 @@ function saveWelcomeConfig(config) {
         durationSeconds: normalizeWelcomeDurationSeconds(config && config.durationSeconds)
     };
     localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
+    return next;
+}
+function normalizeUpdateNoticeIntervalSeconds(value, fallback = DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds) {
+    const number = Number(value);
+    if (!Number.isFinite(number))
+        return fallback;
+    return Math.min(15, Math.max(2, number));
+}
+function normalizeUpdateNoticeMessages(value) {
+    const source = Array.isArray(value) ? value : String(value || '').split(/\n+/);
+    const messages = source.map((item) => cleanText(item)).filter(Boolean).slice(0, 12);
+    return messages.length ? messages : DEFAULT_UPDATE_NOTICE_CONFIG.messages.slice();
+}
+function normalizeUpdateNoticeConfig(value) {
+    const raw = value && typeof value === 'object' ? value : {};
+    return {
+        enabled: raw.enabled !== false,
+        title: cleanText(raw.title, DEFAULT_UPDATE_NOTICE_CONFIG.title),
+        messages: normalizeUpdateNoticeMessages(raw.messages),
+        intervalSeconds: normalizeUpdateNoticeIntervalSeconds(raw.intervalSeconds)
+    };
+}
+function readUpdateNoticeConfig() {
+    try {
+        return normalizeUpdateNoticeConfig(JSON.parse(localStorage.getItem(UPDATE_NOTICE_CONFIG_KEY) || '{}'));
+    }
+    catch (error) {
+        return { ...DEFAULT_UPDATE_NOTICE_CONFIG, messages: DEFAULT_UPDATE_NOTICE_CONFIG.messages.slice() };
+    }
+}
+function saveUpdateNoticeConfig(config) {
+    const next = normalizeUpdateNoticeConfig(config);
+    localStorage.setItem(UPDATE_NOTICE_CONFIG_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('rbv-update-notice-change', { detail: next }));
+    return next;
+}
+function readAssignmentLinkConfig() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(ASSIGNMENT_CONFIG_KEY) || '{}');
+        return cleanText(parsed.link, DEFAULT_ASSIGNMENT_LINK);
+    }
+    catch (error) {
+        return DEFAULT_ASSIGNMENT_LINK;
+    }
+}
+function saveAssignmentLinkConfig(link) {
+    const next = cleanText(link, DEFAULT_ASSIGNMENT_LINK);
+    localStorage.setItem(ASSIGNMENT_CONFIG_KEY, JSON.stringify({ link: next, updatedAt: Date.now() }));
+    window.dispatchEvent(new CustomEvent('rbv-assignment-link-change', { detail: { link: next } }));
     return next;
 }
 function readManualStoreRequests() {
@@ -350,7 +420,7 @@ function createVisit(bestieName = '', storeName = '') {
         qscData: [blankObservationRow()],
         findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
         correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
-        storeAssignmentLink: 'https://tinyurl.com/store-caassignment',
+        storeAssignmentLink: readAssignmentLinkConfig(),
         showQSCResult: false,
         showOPITable: false,
         showQSCTable: false,
@@ -948,14 +1018,8 @@ function distanceBetweenTouches(touches) {
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
-const PHOTO_EDITOR_RATIOS = [
-    { key: 'original', label: 'Asli', w: 0, h: 0 },
-    { key: '1-1', label: '1:1', w: 1, h: 1 },
-    { key: '4-3', label: '4:3', w: 4, h: 3 },
-    { key: '3-4', label: '3:4', w: 3, h: 4 },
-    { key: '16-9', label: '16:9', w: 16, h: 9 },
-    { key: '9-16', label: '9:16', w: 9, h: 16 }
-];
+const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF', w: 16, h: 9 };
+const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO];
 const MARKER_SIZE_OPTIONS = [
     { key: 'small', label: 'Kecil', scale: 0.034 },
     { key: 'medium', label: 'Sedang', scale: 0.045 },
@@ -1050,7 +1114,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
         setOffset({ x: 0, y: 0 });
         setMarkers([]);
         setMode('move');
-        setSelectedRatio(PHOTO_EDITOR_RATIOS[0]);
+        setSelectedRatio(PDF_PHOTO_CROP_RATIO);
         setMarkerSize('medium');
         pinchRef.current = null;
         dragRef.current = null;
@@ -1058,7 +1122,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
             if (cancelled)
                 return;
             imgRef.current = loaded;
-            setCanvasSize(getEditorCanvasSize(loaded, PHOTO_EDITOR_RATIOS[0]));
+            setCanvasSize(getEditorCanvasSize(loaded, PDF_PHOTO_CROP_RATIO));
             setImageReady(true);
             window.requestAnimationFrame(() => drawEditorCanvas(undefined, { showGuide: true }));
         }).catch(() => {
@@ -1293,10 +1357,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto' })
                 React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: resetEditor },
                     React.createElement(Icon, { name: "eraser", className: "h-4 w-4" }),
                     React.createElement("span", null, "Reset"))),
-            React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan crop dan marker" },
-                React.createElement("div", { className: "photo-editor-option-row" },
-                    React.createElement("span", null, "Ratio"),
-                    React.createElement("div", { className: "photo-editor-chip-group" }, PHOTO_EDITOR_RATIOS.map((ratio) => React.createElement("button", { key: ratio.key, type: "button", className: cx('photo-editor-chip', selectedRatio.key === ratio.key && 'active'), onClick: () => changeRatio(ratio) }, ratio.label)))),
+            React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan marker" },
+                React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Crop otomatis mengikuti frame foto PDF."),
                 React.createElement("div", { className: "photo-editor-option-row" },
                     React.createElement("span", null, "Marker"),
                     React.createElement("div", { className: "photo-editor-chip-group" }, MARKER_SIZE_OPTIONS.map((option) => React.createElement("button", { key: option.key, type: "button", className: cx('photo-editor-chip', markerSize === option.key && 'active'), onClick: () => setMarkerSize(option.key) }, option.label))))),
@@ -1549,8 +1611,7 @@ const SECTION_DEFS = [
     { id: 'crew', label: 'Crew', title: 'General Information', icon: 'calendar', hint: 'Tanggal & PIC' },
     { id: 'qsc-result', label: 'QSC', title: 'QSC / FAMITRACK Result', icon: 'camera', hint: 'Foto result' },
     { id: 'observation', label: 'Obs', title: 'Observation', icon: 'clipboard', hint: 'OPI & QSC' },
-    { id: 'evidence', label: 'Evidence', title: 'Evidence', icon: 'image', hint: 'Foto temuan' },
-    { id: 'assignment', label: 'Assign', title: 'Store Assignment', icon: 'excel', hint: 'CA purpose' }
+    { id: 'evidence', label: 'Evidence', title: 'Evidence', icon: 'image', hint: 'Foto temuan' }
 ];
 function ProgressBar({ value }) {
     const safeValue = Math.max(0, Math.min(100, Number(value || 0)));
@@ -1886,11 +1947,43 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
         : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Convex untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
 }
+function HomeUpdateNotice({ config }) {
+    const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
+    const messages = notice.messages || [];
+    const [index, setIndex] = useState(0);
+    useEffect(() => { setIndex(0); }, [messages.join('|'), notice.enabled]);
+    useEffect(() => {
+        if (!notice.enabled || messages.length <= 1)
+            return undefined;
+        const timer = window.setInterval(() => setIndex((current) => (current + 1) % messages.length), Math.round(notice.intervalSeconds * 1000));
+        return () => window.clearInterval(timer);
+    }, [notice.enabled, messages.length, notice.intervalSeconds, messages.join('|')]);
+    if (!notice.enabled || !messages.length)
+        return null;
+    const activeMessage = messages[index % messages.length] || messages[0];
+    return (React.createElement("section", { className: "home-update-notice rounded-[24px] border border-emerald-100 bg-white/90 p-4 shadow-sm ring-1 ring-white/70", style: { overflow: 'hidden' } },
+        React.createElement("style", null, `@keyframes rbvNoticeSlideIn{0%{opacity:0;transform:translateY(14px)}18%{opacity:1;transform:translateY(0)}82%{opacity:1;transform:translateY(0)}100%{opacity:.15;transform:translateY(-10px)}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
+        React.createElement("div", { className: "flex items-start gap-3" },
+            React.createElement("div", { className: "grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-audit-primary ring-1 ring-emerald-100" },
+                React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
+            React.createElement("div", { className: "min-w-0 flex-1" },
+                React.createElement("div", { className: "flex items-center justify-between gap-3" },
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-audit-primary" }, "Informasi Update"),
+                        React.createElement("h2", { className: "truncate text-base font-black text-slate-950" }, notice.title)),
+                    messages.length > 1 ? React.createElement("span", { className: "shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500" },
+                        index + 1,
+                        "/",
+                        messages.length) : null),
+                React.createElement("div", { className: "mt-2 min-h-[34px] overflow-hidden rounded-2xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100" },
+                    React.createElement("p", { key: index, className: "text-sm font-bold leading-5 text-slate-700", style: { animation: `rbvNoticeSlideIn ${notice.intervalSeconds}s ease-in-out both` } }, activeMessage))))));
+}
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
     const [restoreBusy, setRestoreBusy] = useState(false);
+    const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
     const restoreInputRef = useRef(null);
     useEffect(() => {
         function handleBeforeInstallPrompt(event) {
@@ -1899,6 +1992,15 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }, []);
+    useEffect(() => {
+        const syncNotice = (event) => setNoticeConfig(event?.detail ? normalizeUpdateNoticeConfig(event.detail) : readUpdateNoticeConfig());
+        window.addEventListener('rbv-update-notice-change', syncNotice);
+        window.addEventListener('storage', syncNotice);
+        return () => {
+            window.removeEventListener('rbv-update-notice-change', syncNotice);
+            window.removeEventListener('storage', syncNotice);
+        };
     }, []);
     async function handleBackupData() {
         if (backupBusy)
@@ -1933,6 +2035,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
     }
     return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-28" },
+        React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
         React.createElement("section", { className: "dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5" },
             React.createElement("div", { className: "flex items-start justify-between gap-3" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
@@ -1941,7 +2044,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp56-bottom-button-safe-space" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp57-home-pdf-admin-revamp" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -1950,12 +2053,13 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Restore")),
-                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
-                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", style: { animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Install")),
-                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-rose-600 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-rose-50/80 px-2 text-[10px] font-extrabold leading-none text-rose-700 shadow-sm ring-1 ring-rose-200 transition hover:-translate-y-0.5 active:scale-[0.98]", onClick: onClearHistory },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Hapus"))))),
+        React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", null,
             React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
@@ -2631,25 +2735,54 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [pdfTableFontSize, setPdfTableFontSize] = useState(DEFAULT_PDF_SETTINGS.tableFontSize);
     const [pdfEvidenceFontSize, setPdfEvidenceFontSize] = useState(DEFAULT_PDF_SETTINGS.evidenceFontSize);
     const [pdfTableExtraRows, setPdfTableExtraRows] = useState(DEFAULT_PDF_SETTINGS.tableExtraRows);
+    const [pdfPhotoGridPerPage, setPdfPhotoGridPerPage] = useState(DEFAULT_PDF_SETTINGS.photoGridPerPage);
+    const [assignmentLink, setAssignmentLink] = useState(DEFAULT_ASSIGNMENT_LINK);
+    const [noticeEnabled, setNoticeEnabled] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.enabled);
+    const [noticeTitle, setNoticeTitle] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.title);
+    const [noticeMessagesText, setNoticeMessagesText] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n'));
+    const [noticeIntervalSeconds, setNoticeIntervalSeconds] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds);
     function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
             onWelcomeConfigChange(saved);
         alert('Text welcome berhasil disimpan.');
     }
+    function saveAssignmentSettings() {
+        const saved = saveAssignmentLinkConfig(assignmentLink);
+        setAssignmentLink(saved);
+        alert('Assignment link berhasil disimpan.');
+    }
+    function saveNoticeSettings() {
+        const saved = saveUpdateNoticeConfig({
+            enabled: noticeEnabled,
+            title: noticeTitle,
+            messages: normalizeUpdateNoticeMessages(noticeMessagesText),
+            intervalSeconds: noticeIntervalSeconds
+        });
+        setNoticeEnabled(saved.enabled);
+        setNoticeTitle(saved.title);
+        setNoticeMessagesText(saved.messages.join('\n'));
+        setNoticeIntervalSeconds(saved.intervalSeconds);
+        alert('Informasi update HOME berhasil disimpan.');
+    }
     function applyPdfSettings(nextSettings, showAlert = false) {
         const saved = savePdfSettings(nextSettings);
         setPdfTableFontSize(saved.tableFontSize);
         setPdfEvidenceFontSize(saved.evidenceFontSize);
         setPdfTableExtraRows(saved.tableExtraRows);
+        setPdfPhotoGridPerPage(saved.photoGridPerPage);
         window.dispatchEvent(new CustomEvent('rbv-pdf-settings-change', { detail: saved }));
         if (showAlert)
             alert('Pengaturan PDF berhasil disimpan.');
         return saved;
     }
     function adjustPdfSetting(key, delta) {
-        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows });
+        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage });
         applyPdfSettings({ ...current, [key]: Number(current[key]) + delta });
+    }
+    function setPdfPhotoGrid(value) {
+        const current = normalizePdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage });
+        applyPdfSettings({ ...current, photoGridPerPage: value });
     }
     function resetPdfSettings() {
         applyPdfSettings(DEFAULT_PDF_SETTINGS, true);
@@ -2733,6 +2866,13 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setPdfTableFontSize(currentPdfSettings.tableFontSize);
         setPdfEvidenceFontSize(currentPdfSettings.evidenceFontSize);
         setPdfTableExtraRows(currentPdfSettings.tableExtraRows);
+        setPdfPhotoGridPerPage(currentPdfSettings.photoGridPerPage);
+        setAssignmentLink(readAssignmentLinkConfig());
+        const currentNotice = readUpdateNoticeConfig();
+        setNoticeEnabled(currentNotice.enabled);
+        setNoticeTitle(currentNotice.title);
+        setNoticeMessagesText(currentNotice.messages.join('\n'));
+        setNoticeIntervalSeconds(currentNotice.intervalSeconds);
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
@@ -2876,13 +3016,36 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })),
                     React.createElement(Field, { label: "Durasi (detik)", helper: "Bisa diisi 1 sampai 15 detik." },
                         React.createElement(TextInput, { type: "number", min: "1", max: "15", step: "0.5", value: welcomeDurationSeconds, onChange: (event) => setWelcomeDurationSeconds(event.target.value), onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds)) })))),
+            React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
+                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Hidden Control"),
+                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Assignment Link")),
+                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveAssignmentSettings }, "Simpan Link")),
+                React.createElement(Field, { label: "Link corrective action assignment", helper: "Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF." },
+                    React.createElement(TextInput, { type: "url", value: assignmentLink, onChange: (event) => setAssignmentLink(event.target.value), placeholder: DEFAULT_ASSIGNMENT_LINK }))),
+            React.createElement("div", { className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4" },
+                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Home Notification"),
+                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Info Update Website")),
+                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveNoticeSettings }, "Simpan Info")),
+                React.createElement("div", { className: "grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]" },
+                    React.createElement(Field, { label: "Judul" },
+                        React.createElement(TextInput, { value: noticeTitle, onChange: (event) => setNoticeTitle(event.target.value), placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.title })),
+                    React.createElement(Field, { label: "Isi slide text", helper: "Pisahkan setiap informasi dengan baris baru." },
+                        React.createElement(TextArea, { value: noticeMessagesText, onChange: (event) => setNoticeMessagesText(event.target.value), minRows: 3, placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n') })),
+                    React.createElement("div", { className: "grid gap-3" },
+                        React.createElement(Field, { label: "Interval", helper: "2 sampai 15 detik" },
+                            React.createElement(TextInput, { type: "number", min: "2", max: "15", step: "0.5", value: noticeIntervalSeconds, onChange: (event) => setNoticeIntervalSeconds(event.target.value), onBlur: () => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds)) })),
+                        React.createElement(Toggle, { checked: noticeEnabled, onChange: setNoticeEnabled, label: noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan' })))),
             React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
                 React.createElement("div", { className: "mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between" },
                     React.createElement("div", null,
                         React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Pengaturan PDF"),
-                        React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "Atur ukuran font table, deskripsi foto findings, dan jumlah row/card table per halaman PDF.")),
+                        React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "Atur ukuran font table, deskripsi foto, jumlah row table, dan grid foto per halaman PDF. Rekomendasi: 6 foto/halaman supaya foto tetap luas dan jelas.")),
                     React.createElement(Badge, { tone: "success" }, "Auto Save")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
+                React.createElement("div", { className: "grid gap-3 md:grid-cols-4" },
                     React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Table PDF"),
                         React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
@@ -2902,9 +3065,13 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement("strong", { className: "text-lg text-slate-950" },
                                 "+",
                                 pdfTableExtraRows),
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', 1) }, "+")))),
+                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', 1) }, "+"))),
+                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Grid Foto PDF"),
+                        React.createElement("div", { className: "mt-3 grid grid-cols-3 gap-1" }, [4, 6, 8].map((option) => React.createElement("button", { key: option, type: "button", className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'), onClick: () => setPdfPhotoGrid(option) }, option))),
+                        React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Rekomendasi: 6 foto/halaman."))),
                 React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
-                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows }, true) }, "Simpan PDF Setting"),
+                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
                     React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
             React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
                 React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
@@ -3095,7 +3262,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
     if (!visit)
         return React.createElement("main", { className: "workspace-page w-full px-4 py-8 pb-44 md:px-8 md:pb-8" },
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
-    const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update }), React.createElement(AssignmentSection, { visit: visit, update: update, onPreview: onPreview })];
+    const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update })];
     return (React.createElement("main", { className: "workspace-page w-full px-4 py-5 pb-44 md:px-8 md:py-8 md:pb-8" },
         React.createElement("div", { className: "desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block" },
             React.createElement("div", { className: "flex items-center justify-between gap-3" },
