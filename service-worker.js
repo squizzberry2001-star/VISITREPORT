@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp48-pdf-auto-height-text-full';
+const APP_VERSION = 'revamp51-remove-observation-evidence-summary';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
