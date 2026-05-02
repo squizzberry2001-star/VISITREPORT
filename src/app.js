@@ -56,7 +56,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp48-pdf-auto-height-text-full';
+const APP_BUILD_VERSION = 'revamp51-remove-observation-evidence-summary';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1441,28 +1441,32 @@ function ObservationCards({ title, rows, onChange }) {
     const goNext = () => setActiveIndex((current) => Math.min(safeRows.length - 1, current + 1));
     const richField = (label, key, row, index, placeholder) => (React.createElement(Field, { label: label },
         React.createElement(RichTextInput, { value: row[key] || '', onChange: (value) => updateRow(index, { [key]: value }), placeholder: placeholder })));
-    const mobileNav = (React.createElement("div", { className: "observation-mobile-nav", "aria-label": "Navigasi temuan observation" },
-        React.createElement("div", { className: "observation-nav-status" },
-            "Temuan ",
-            activeRowNumber,
-            " / ",
-            safeRows.length),
-        React.createElement("div", { className: "observation-nav-controls" },
-            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya" },
-                React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
-            React.createElement("button", { type: "button", className: "observation-nav-add", onClick: addRow, "aria-label": "Tambah temuan" },
-                React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
-            React.createElement("button", { type: "button", className: "observation-nav-button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya" },
-                React.createElement(Icon, { name: "right", className: "h-5 w-5" })))));
-    const mobileNavPortal = (ReactDOM === null || ReactDOM === void 0 ? void 0 : ReactDOM.createPortal) ? ReactDOM.createPortal(mobileNav, document.body) : mobileNav;
-    return (React.createElement("div", { className: "observation-card-system grid gap-4" },
-        React.createElement("div", { className: "observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-            React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, title),
-            React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-800" },
+    const navButtonBase = {
+        width: '34px',
+        height: '34px',
+        borderRadius: '999px',
+        display: 'inline-grid',
+        placeItems: 'center',
+        border: '1px solid rgba(226, 232, 240, 0.95)',
+        background: '#ffffff',
+        color: '#0f172a',
+        boxShadow: '0 6px 14px rgba(15, 23, 42, 0.08)'
+    };
+    const mobileNav = (React.createElement("div", { className: "observation-inline-nav md:hidden", "aria-label": "Navigasi temuan observation", style: { marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', borderRadius: '999px', padding: '7px', background: 'rgba(255,255,255,0.78)', border: '1px solid rgba(226, 232, 240, 0.92)', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } },
+        React.createElement("button", { type: "button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya", style: Object.assign(Object.assign({}, navButtonBase), { opacity: activeIndex <= 0 ? 0.45 : 1 }) },
+            React.createElement(Icon, { name: "left", className: "h-4 w-4" })),
+        React.createElement("div", { style: { flex: '1 1 auto', minWidth: 0, height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '999px', background: '#172554', color: '#ffffff', padding: '0 12px', fontSize: '12px', fontWeight: 900, letterSpacing: '0.01em', boxShadow: '0 8px 18px rgba(23, 37, 84, 0.18)' } },
+            React.createElement("span", null,
                 "Temuan ",
                 activeRowNumber,
-                " dari ",
-                safeRows.length)),
+                "/",
+                safeRows.length),
+            React.createElement("button", { type: "button", onClick: addRow, "aria-label": "Tambah temuan", style: { width: '24px', height: '24px', display: 'inline-grid', placeItems: 'center', borderRadius: '999px', background: '#0f766e', color: '#ffffff' } },
+                React.createElement(Icon, { name: "plus", className: "h-3.5 w-3.5" }))),
+        React.createElement("button", { type: "button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya", style: Object.assign(Object.assign({}, navButtonBase), { opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1 }) },
+            React.createElement(Icon, { name: "right", className: "h-4 w-4" }))));
+    return (React.createElement("div", { className: "observation-card-system grid gap-4" },
+        mobileNav,
         safeRows.map((row, index) => (React.createElement("article", { key: index, className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active') },
             React.createElement("div", { className: "mb-4 flex items-center justify-between gap-3" },
                 React.createElement(Badge, { tone: isMeaningfulObservation(row) ? 'success' : 'default' },
@@ -1482,7 +1486,7 @@ function ObservationCards({ title, rows, onChange }) {
                     richField('Hasil', 'hasil', row, index, 'Hasil tindakan...')))))),
         React.createElement("div", { className: "observation-desktop-add flex justify-end" },
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row")),
-        mobileNavPortal));
+        ));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
     const minSlots = 8;
@@ -1499,10 +1503,6 @@ function PhotoGrid({ photos, onChange, prefix }) {
         onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
     };
     return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
-        React.createElement("div", { className: "rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-            React.createElement("p", { className: "text-sm font-bold text-slate-900" },
-                safePhotos.length,
-                " slot foto")),
         React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true })))),
         React.createElement("div", { className: "flex flex-wrap justify-end gap-2" },
             React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: removeEmpty }, "Rapikan Slot Kosong"),
@@ -2074,7 +2074,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "dashboard-stat dark min-w-[84px] px-3 py-2" },
                     React.createElement("p", null, "History"),
                     React.createElement("strong", null, history.length))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp48-pdf-auto-height-text-full" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp51-remove-observation-evidence-summary" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-4 gap-2" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -3115,12 +3115,16 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
     if (screen !== 'audit' || !visit)
         return null;
     const progress = visitProgress(visit);
-    return (React.createElement("header", { className: "mobile-quick-section md:hidden" },
-        React.createElement("div", { className: "mobile-quick-scroll", "aria-label": "Quick section" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('mobile-quick-chip', activeSection === index && 'active'), onClick: () => goSection(index) },
-            React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
-            React.createElement("span", null, section.label))))),
-        React.createElement("div", { className: "mobile-quick-progress" },
-            React.createElement(ProgressBar, { value: progress }))));
+    const safeProgress = Math.max(0, Math.min(100, progress || 0));
+    return (React.createElement("header", { className: "mobile-quick-section md:hidden", style: { position: 'fixed', left: '50%', bottom: 'calc(104px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', zIndex: 70, width: 'min(520px, calc(100vw - 28px))', borderRadius: '24px', padding: '8px 10px 9px', background: 'rgba(255, 255, 255, 0.92)', border: '1px solid rgba(226, 232, 240, 0.95)', boxShadow: '0 14px 34px rgba(15, 23, 42, 0.14)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' } },
+        React.createElement("div", { className: "mobile-quick-scroll", "aria-label": "Quick section", style: { display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' } }, SECTION_DEFS.map((section, index) => {
+            const active = activeSection === index;
+            return (React.createElement("button", { key: section.id, type: "button", className: cx('mobile-quick-chip', active && 'active'), onClick: () => goSection(index), style: { flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', minWidth: '66px', height: '34px', borderRadius: '999px', padding: '0 10px', fontSize: '11px', fontWeight: 900, lineHeight: 1, color: active ? '#ffffff' : '#334155', background: active ? '#172554' : 'rgba(248, 250, 252, 0.92)', border: active ? '1px solid #172554' : '1px solid rgba(226, 232, 240, 0.95)', boxShadow: active ? '0 8px 18px rgba(23, 37, 84, 0.22)' : 'none', transition: 'transform 160ms ease, background 160ms ease' } },
+                React.createElement(Icon, { name: section.icon, className: "h-3.5 w-3.5 shrink-0" }),
+                React.createElement("span", null, section.label)));
+        })),
+        React.createElement("div", { "aria-hidden": "true", style: { marginTop: '5px', height: '3px', overflow: 'hidden', borderRadius: '999px', background: 'rgba(203, 213, 225, 0.55)' } },
+            React.createElement("div", { style: { width: safeProgress + '%', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6)' } }))));
 }
 function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) {
     const goAudit = () => visit ? setScreen('audit') : onNewVisit();
@@ -3157,7 +3161,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
         return React.createElement("main", { className: "workspace-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
     const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update }), React.createElement(AssignmentSection, { visit: visit, update: update, onPreview: onPreview })];
-    return (React.createElement("main", { className: "workspace-page w-full px-4 py-5 md:px-8 md:py-8" },
+    return (React.createElement("main", { className: "workspace-page w-full px-4 py-5 pb-44 md:px-8 md:py-8 md:pb-8" },
         React.createElement("div", { className: "desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block" },
             React.createElement("div", { className: "flex items-center justify-between gap-3" },
                 React.createElement("div", { className: "min-w-0" },

@@ -57,7 +57,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp48-pdf-auto-height-text-full';
+const APP_BUILD_VERSION = 'revamp51-remove-observation-evidence-summary';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1552,24 +1552,72 @@ function ObservationCards({ title, rows, onChange }) {
       <RichTextInput value={row[key] || ''} onChange={(value) => updateRow(index, { [key]: value })} placeholder={placeholder} />
     </Field>
   );
+  const navButtonBase = {
+    width: '34px',
+    height: '34px',
+    borderRadius: '999px',
+    display: 'inline-grid',
+    placeItems: 'center',
+    border: '1px solid rgba(226, 232, 240, 0.95)',
+    background: '#ffffff',
+    color: '#0f172a',
+    boxShadow: '0 6px 14px rgba(15, 23, 42, 0.08)'
+  };
   const mobileNav = (
-    <div className="observation-mobile-nav" aria-label="Navigasi temuan observation">
-      <div className="observation-nav-status">Temuan {activeRowNumber} / {safeRows.length}</div>
-      <div className="observation-nav-controls">
-        <button type="button" className="observation-nav-button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya"><Icon name="left" className="h-5 w-5" /></button>
-        <button type="button" className="observation-nav-add" onClick={addRow} aria-label="Tambah temuan"><Icon name="plus" className="h-5 w-5" /></button>
-        <button type="button" className="observation-nav-button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya"><Icon name="right" className="h-5 w-5" /></button>
+    <div
+      className="observation-inline-nav md:hidden"
+      aria-label="Navigasi temuan observation"
+      style={{
+        marginTop: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '8px',
+        borderRadius: '999px',
+        padding: '7px',
+        background: 'rgba(255,255,255,0.78)',
+        border: '1px solid rgba(226, 232, 240, 0.92)',
+        boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)'
+      }}
+    >
+      <button type="button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya" style={{ ...navButtonBase, opacity: activeIndex <= 0 ? 0.45 : 1 }}>
+        <Icon name="left" className="h-4 w-4" />
+      </button>
+      <div
+        style={{
+          flex: '1 1 auto',
+          minWidth: 0,
+          height: '34px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          borderRadius: '999px',
+          background: '#172554',
+          color: '#ffffff',
+          padding: '0 12px',
+          fontSize: '12px',
+          fontWeight: 900,
+          letterSpacing: '0.01em',
+          boxShadow: '0 8px 18px rgba(23, 37, 84, 0.18)'
+        }}
+      >
+        <span>Temuan {activeRowNumber}/{safeRows.length}</span>
+        <button type="button" onClick={addRow} aria-label="Tambah temuan" style={{ width: '24px', height: '24px', display: 'inline-grid', placeItems: 'center', borderRadius: '999px', background: '#0f766e', color: '#ffffff' }}>
+          <Icon name="plus" className="h-3.5 w-3.5" />
+        </button>
       </div>
+      <button type="button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya" style={{ ...navButtonBase, opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1 }}>
+        <Icon name="right" className="h-4 w-4" />
+      </button>
     </div>
   );
-  const mobileNavPortal = ReactDOM?.createPortal ? ReactDOM.createPortal(mobileNav, document.body) : mobileNav;
 
   return (
     <div className="observation-card-system grid gap-4">
-      <div className="observation-summary-card rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
-        <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
-        <p className="mt-1 text-xs font-bold text-emerald-800">Temuan {activeRowNumber} dari {safeRows.length}</p>
-      </div>
+      {mobileNav}
       {safeRows.map((row, index) => (
         <article key={index} className={cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active')}>
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -1592,7 +1640,6 @@ function ObservationCards({ title, rows, onChange }) {
       <div className="observation-desktop-add flex justify-end">
         <Button variant="secondary" icon="plus" onClick={addRow}>Tambah Row</Button>
       </div>
-      {mobileNavPortal}
     </div>
   );
 }
@@ -1612,9 +1659,6 @@ function PhotoGrid({ photos, onChange, prefix }) {
   };
   return (
     <div className="photo-grid-system grid gap-4">
-      <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
-        <p className="text-sm font-bold text-slate-900">{safePhotos.length} slot foto</p>
-      </div>
       <div className="evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
           <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich />
@@ -2098,7 +2142,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <strong>{history.length}</strong>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp48-pdf-auto-height-text-full">
+        <div className="mt-3" data-build="revamp51-remove-observation-evidence-summary">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-4 gap-2">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -3159,17 +3203,91 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
 function MobileTopBar({ screen, visit, activeSection, goSection }) {
   if (screen !== 'audit' || !visit) return null;
   const progress = visitProgress(visit);
+  const safeProgress = Math.max(0, Math.min(100, progress || 0));
   return (
-    <header className="mobile-quick-section md:hidden">
-      <div className="mobile-quick-scroll" aria-label="Quick section">
-        {SECTION_DEFS.map((section, index) => (
-          <button key={section.id} type="button" className={cx('mobile-quick-chip', activeSection === index && 'active')} onClick={() => goSection(index)}>
-            <Icon name={section.icon} className="h-4 w-4" />
-            <span>{section.label}</span>
-          </button>
-        ))}
+    <header
+      className="mobile-quick-section md:hidden"
+      style={{
+        position: 'fixed',
+        left: '50%',
+        bottom: 'calc(104px + env(safe-area-inset-bottom, 0px))',
+        transform: 'translateX(-50%)',
+        zIndex: 70,
+        width: 'min(520px, calc(100vw - 28px))',
+        borderRadius: '24px',
+        padding: '8px 10px 9px',
+        background: 'rgba(255, 255, 255, 0.92)',
+        border: '1px solid rgba(226, 232, 240, 0.95)',
+        boxShadow: '0 14px 34px rgba(15, 23, 42, 0.14)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)'
+      }}
+    >
+      <div
+        className="mobile-quick-scroll"
+        aria-label="Quick section"
+        style={{
+          display: 'flex',
+          gap: '6px',
+          overflowX: 'auto',
+          paddingBottom: '2px',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none'
+        }}
+      >
+        {SECTION_DEFS.map((section, index) => {
+          const active = activeSection === index;
+          return (
+            <button
+              key={section.id}
+              type="button"
+              className={cx('mobile-quick-chip', active && 'active')}
+              onClick={() => goSection(index)}
+              style={{
+                flex: '0 0 auto',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                minWidth: '66px',
+                height: '34px',
+                borderRadius: '999px',
+                padding: '0 10px',
+                fontSize: '11px',
+                fontWeight: 900,
+                lineHeight: 1,
+                color: active ? '#ffffff' : '#334155',
+                background: active ? '#172554' : 'rgba(248, 250, 252, 0.92)',
+                border: active ? '1px solid #172554' : '1px solid rgba(226, 232, 240, 0.95)',
+                boxShadow: active ? '0 8px 18px rgba(23, 37, 84, 0.22)' : 'none',
+                transition: 'transform 160ms ease, background 160ms ease'
+              }}
+            >
+              <Icon name={section.icon} className="h-3.5 w-3.5 shrink-0" />
+              <span>{section.label}</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="mobile-quick-progress"><ProgressBar value={progress} /></div>
+      <div
+        aria-hidden="true"
+        style={{
+          marginTop: '5px',
+          height: '3px',
+          overflow: 'hidden',
+          borderRadius: '999px',
+          background: 'rgba(203, 213, 225, 0.55)'
+        }}
+      >
+        <div
+          style={{
+            width: safeProgress + '%',
+            height: '100%',
+            borderRadius: '999px',
+            background: 'linear-gradient(90deg, #0f766e, #14b8a6)'
+          }}
+        />
+      </div>
     </header>
   );
 }
@@ -3198,12 +3316,12 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
     return () => document.removeEventListener('keydown', handleKey);
   }, [activeSection]);
 
-  if (!visit) return <main className="workspace-page w-full px-4 py-8 md:px-8"><EmptyState icon="clipboard" title="Belum ada visit aktif" /></main>;
+  if (!visit) return <main className="workspace-page w-full px-4 py-8 pb-44 md:px-8 md:pb-8"><EmptyState icon="clipboard" title="Belum ada visit aktif" /></main>;
 
   const screens = [<VisitSetupSection visit={visit} update={update} />, <GeneralInfoSection visit={visit} update={update} />, <QscResultSection visit={visit} update={update} />, <ObservationSection visit={visit} update={update} />, <EvidenceSection visit={visit} update={update} />, <AssignmentSection visit={visit} update={update} onPreview={onPreview} />];
 
   return (
-    <main className="workspace-page w-full px-4 py-5 md:px-8 md:py-8">
+    <main className="workspace-page w-full px-4 py-5 pb-44 md:px-8 md:py-8 md:pb-8">
       <div className="desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="hidden gap-2 sm:flex"><Button variant="icon" onClick={() => goSection(activeSection - 1)} disabled={activeSection <= 0} aria-label="Section sebelumnya"><Icon name="left" className="h-5 w-5" /></Button><Button variant="icon" onClick={() => goSection(activeSection + 1)} disabled={activeSection >= SECTION_DEFS.length - 1} aria-label="Section berikutnya"><Icon name="right" className="h-5 w-5" /></Button></div></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Sub menu section">{SECTION_DEFS.map((section, index) => <button key={section.id} type="button" className={cx('subnav-chip', activeSection === index && 'active')} onClick={() => goSection(index)}><Icon name={section.icon} className="h-4 w-4" /> {section.label}</button>)}</div></div>
       <div key={SECTION_DEFS[activeSection]?.id || activeSection}>{screens[activeSection]}</div>
     </main>
