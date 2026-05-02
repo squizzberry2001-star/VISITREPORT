@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp62-netlify-blobs-sync';
+const APP_VERSION = 'revamp63-focused-layout-revamp';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
