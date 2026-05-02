@@ -2479,10 +2479,12 @@ function downloadBlob(blob, fileName) {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
+  anchor.rel = 'noopener';
   document.body.appendChild(anchor);
-  anchor.click();
+  if ('download' in anchor) anchor.click();
+  else window.open(url, '_blank', 'noopener');
   anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
@@ -2558,11 +2560,13 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
         const scrollTop = scroller?.scrollTop || 0;
         const data = await blob.arrayBuffer();
         if (cancelled || renderSeqRef.current !== seq) return;
-        const pdf = await pdfjsLib.getDocument({ data }).promise;
-        const fragment = document.createDocumentFragment();
+        const pdf = await pdfjsLib.getDocument({ data, disableAutoFetch: true, disableStream: true }).promise;
+        if (cancelled || renderSeqRef.current !== seq) return;
         const maxWidth = Math.max(260, Math.min(measuredWidth * renderZoom, 1680));
+        target.replaceChildren();
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           if (cancelled || renderSeqRef.current !== seq) return;
+          setRenderStatus(`Memuat preview halaman ${pageNumber}/${pdf.numPages}...`);
           const page = await pdf.getPage(pageNumber);
           const baseViewport = page.getViewport({ scale: 1 });
           const scale = maxWidth / baseViewport.width;
@@ -2577,12 +2581,11 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
           canvas.style.width = Math.floor(viewport.width) + 'px';
           canvas.style.height = Math.floor(viewport.height) + 'px';
           pageWrap.appendChild(canvas);
-          fragment.appendChild(pageWrap);
+          target.appendChild(pageWrap);
           const context = canvas.getContext('2d', { alpha: false });
           await page.render({ canvasContext: context, viewport, transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null }).promise;
         }
         if (cancelled || renderSeqRef.current !== seq) return;
-        target.replaceChildren(fragment);
         if (scroller) scroller.scrollTop = Math.min(scrollTop, Math.max(0, scroller.scrollHeight - scroller.clientHeight));
         setRenderStatus('');
       } catch (error) {
@@ -2653,6 +2656,7 @@ function PreviewPage({ visit, onBack }) {
       if (!visit) return;
       setStatus('Merender PDF...');
       try {
+        if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
         const blob = await window.ReportVisitPDF.createBlob(visit);
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
@@ -2668,7 +2672,20 @@ function PreviewPage({ visit, onBack }) {
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [visit]);
 
-  async function handleDownloadPdf() { if (!visit) return; setBusy(true); try { await window.ReportVisitPDF.save(visit); } catch (error) { alert(error?.message || 'Gagal download PDF.'); } finally { setBusy(false); } }
+  async function handleDownloadPdf() {
+    if (!visit) return;
+    setBusy(true);
+    try {
+      if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+      const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
+      const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+      downloadBlob(blob, fileName);
+    } catch (error) {
+      alert(error?.message || 'Gagal download PDF.');
+    } finally {
+      setBusy(false);
+    }
+  }
   async function handleExportExcel() { if (!visit) return; if (!window.__caAssignmentExport?.buildWorkbook) { alert('Mesin export Excel belum siap.'); return; } setBusy(true); try { const blob = await window.__caAssignmentExport.buildWorkbook(visit); const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx'; downloadBlob(blob, fileName); } catch (error) { alert(error?.message || 'Gagal export Excel CA Assignment.'); } finally { setBusy(false); } }
 
   if (!visit) return <main className="preview-page w-full px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
@@ -4040,22 +4057,23 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
       aria-label="Quick section"
       style={{
         position: 'fixed',
-        left: '50%',
+        left: '0',
         top: 'auto',
-        right: 'auto',
-        bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-        transform: 'translate3d(-50%, 0, 0)',
+        right: '0',
+        bottom: '0',
+        transform: 'none',
         zIndex: 82,
-        width: 'min(520px, calc(100vw - 32px))',
-        height: '54px',
+        width: '100%',
+        height: 'calc(58px + env(safe-area-inset-bottom, 0px))',
         minHeight: '0',
-        maxHeight: '54px',
+        maxHeight: 'none',
         overflow: 'hidden',
-        borderRadius: '24px',
-        padding: '7px 8px 9px',
-        background: 'rgba(255,255,255,0.96)',
-        border: '1px solid rgba(226,232,240,0.96)',
-        boxShadow: '0 10px 24px rgba(15,23,42,0.11)',
+        borderRadius: '18px 18px 0 0',
+        padding: '8px 12px calc(8px + env(safe-area-inset-bottom, 0px))',
+        background: 'rgba(255,255,255,0.97)',
+        border: '0',
+        borderTop: '1px solid rgba(226,232,240,0.96)',
+        boxShadow: '0 -12px 30px rgba(15,23,42,0.12)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         pointerEvents: 'auto'
@@ -4068,7 +4086,7 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          height: '34px',
+          height: '38px',
           overflowX: 'auto',
           overflowY: 'hidden',
           WebkitOverflowScrolling: 'touch',
@@ -4095,11 +4113,11 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
                 flex: '0 0 auto',
                 width: 'auto',
                 minWidth: `${minWidth}px`,
-                height: '32px',
+                height: '36px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '999px',
+                borderRadius: '14px',
                 padding: '0 12px',
                 fontSize: '11.5px',
                 fontWeight: 900,
@@ -4109,7 +4127,7 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
                 color: active ? '#ffffff' : '#334155',
                 background: active ? '#172554' : 'rgba(248,250,252,0.78)',
                 border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
-                boxShadow: active ? '0 7px 16px rgba(23,37,84,0.18)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
+                boxShadow: active ? '0 6px 14px rgba(23,37,84,0.14)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
                 transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
                 touchAction: 'pan-x'
               }}
