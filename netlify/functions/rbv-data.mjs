@@ -3,9 +3,11 @@ import { getStore } from '@netlify/blobs';
 const STORE_NAME = env('RBV_STORE_NAME') || 'bestie-visit-data';
 const KEY_MONITOR = 'monitor_visits.json';
 const KEY_MANUAL = 'manual_store_requests.json';
+const KEY_PRESENCE = 'monitor_presence.json';
 const KEY_SETTINGS = 'app_settings.json';
 const MAX_MONITOR = Number(env('RBV_MONITOR_LIMIT') || 500);
 const MAX_MANUAL = Number(env('RBV_MANUAL_LIMIT') || 500);
+const MAX_PRESENCE = Number(env('RBV_PRESENCE_LIMIT') || 300);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -104,6 +106,25 @@ async function upsertMonitorVisit(store, request) {
   return json({ ok: true, row: nextRows.find((item) => cleanText(item.visit_key) === visitKey) || payload });
 }
 
+async function listPresence(store, requestUrl) {
+  const limit = parseLimit(requestUrl.searchParams.get('limit'), MAX_PRESENCE);
+  const rows = sortByUpdatedDesc(await readJSON(store, KEY_PRESENCE, []));
+  return json({ ok: true, rows: rows.slice(0, limit) });
+}
+
+async function upsertPresence(store, request) {
+  assertWriteAllowed(request);
+  const payload = await request.json();
+  const sessionId = cleanText(payload.session_id);
+  if (!sessionId) return error('session_id wajib diisi.', 400);
+  const now = new Date().toISOString();
+  const rows = await readJSON(store, KEY_PRESENCE, []);
+  const nextPayload = { ...payload, session_id: sessionId, last_seen_at: payload.last_seen_at || now, updated_at: payload.updated_at || now };
+  const nextRows = sortByUpdatedDesc(mergeByKey(rows, 'session_id', nextPayload)).slice(0, MAX_PRESENCE);
+  await writeJSON(store, KEY_PRESENCE, nextRows);
+  return json({ ok: true, row: nextRows.find((item) => cleanText(item.session_id) === sessionId) || nextPayload });
+}
+
 async function listManualRequests(store) {
   const rows = sortByUpdatedDesc(await readJSON(store, KEY_MANUAL, []));
   return json({ ok: true, rows: rows.slice(0, MAX_MANUAL) });
@@ -156,6 +177,8 @@ export default async function handler(request) {
   try {
     if (request.method === 'GET' && action === 'listMonitorVisits') return listMonitorVisits(store, requestUrl);
     if (request.method === 'POST' && action === 'upsertMonitorVisit') return upsertMonitorVisit(store, request);
+    if (request.method === 'GET' && action === 'listPresence') return listPresence(store, requestUrl);
+    if (request.method === 'POST' && action === 'upsertPresence') return upsertPresence(store, request);
     if (request.method === 'GET' && action === 'listManualRequests') return listManualRequests(store);
     if (request.method === 'POST' && action === 'upsertManualRequest') return upsertManualRequest(store, request);
     if (request.method === 'GET' && action === 'listAppSettings') return listAppSettings(store, requestUrl);
