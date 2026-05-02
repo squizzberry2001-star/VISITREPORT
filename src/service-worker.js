@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp64-sticky-quick-welcome-zoom';
+const APP_VERSION = 'revamp65-focus-secret-presence-full-preview';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

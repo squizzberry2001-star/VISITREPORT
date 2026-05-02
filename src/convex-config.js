@@ -16,8 +16,10 @@ window.RB_CONVEX_CONFIG = {
   // Secret admin monitor functions.
   monitorQuery: 'monitor:listVisits',
   manualRequestsQuery: 'monitor:listManualStoreRequests',
+  presenceQuery: 'monitor:listPresence',
   upsertMutation: 'monitor:upsertVisit',
   upsertManualRequestMutation: 'monitor:upsertManualStoreRequest',
+  presenceUpsertMutation: 'monitor:upsertPresence',
 
   // Linked device + visit sync functions.
   registerDeviceMutation: 'linkedDevices:registerDevice',
@@ -33,6 +35,8 @@ window.RB_CONVEX_CONFIG = {
   listPath: 'monitor/listVisits',
   upsertManualRequestPath: 'monitor/upsertManualStoreRequest',
   listManualRequestsPath: 'monitor/listManualStoreRequests',
+  upsertPresencePath: 'monitor/upsertPresence',
+  listPresencePath: 'monitor/listPresence',
 
   pollMs: 5000,
   token: ''

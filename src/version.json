@@ -1,6 +1,6 @@
 {
-  "version": "revamp64-sticky-quick-welcome-zoom",
-  "build": "revamp64-sticky-quick-welcome-zoom",
-  "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "follow-up: sticky temuan nav above enlarged quick section, icon quick buttons, inline SVG welcome CSS art, smoother PDF preview zoom"
+  "version": "revamp65-focus-secret-presence-full-preview",
+  "build": "revamp65-focus-secret-presence-full-preview",
+  "updatedAt": "2026-05-03T00:00:00+07:00",
+  "note": "focused updates: full-height PDF preview, CSS pinky swear welcome animation, realtime secret presence monitor, loading states, save picker, PDF table/title tuning, safer restore merge, sticky home history scroll"
 }
