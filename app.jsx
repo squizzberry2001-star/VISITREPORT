@@ -3383,10 +3383,21 @@ function WelcomeOverlay({ config, onDone }) {
   const durationSeconds = normalizeWelcomeDurationSeconds(config && config.durationSeconds);
   const durationMs = Math.round(durationSeconds * 1000);
   const cardRef = useRef(null);
+  const onDoneRef = useRef(onDone);
+  const doneRef = useRef(false);
   useEffect(() => {
-    const timer = window.setTimeout(onDone, durationMs);
+    onDoneRef.current = onDone;
+  }, [onDone]);
+  useEffect(() => {
+    doneRef.current = false;
+    const timer = window.setTimeout(finishWelcome, durationMs + 120);
     return () => window.clearTimeout(timer);
-  }, [onDone, durationMs]);
+  }, [durationMs]);
+  function finishWelcome() {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    if (typeof onDoneRef.current === 'function') onDoneRef.current();
+  }
   function handlePointerMove(event) {
     const card = cardRef.current;
     if (!card) return;
@@ -3463,7 +3474,7 @@ function WelcomeOverlay({ config, onDone }) {
             <h1 style={{ marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' }}>{title}</h1>
             <p className="welcome-subtitle" style={{ marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#475569', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' }}>{subtitle}</p>
             <div aria-hidden="true" style={{ marginTop: 24, height: 7, width: 'min(260px, 78%)', overflow: 'hidden', borderRadius: '999px', background: 'rgba(15,118,110,.12)' }}>
-              <span style={{ display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` }} />
+              <span onAnimationEnd={(event) => { if (event.animationName === 'rbvWelcomeProgress') finishWelcome(); }} style={{ display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` }} />
             </div>
           </div>
         </div>
