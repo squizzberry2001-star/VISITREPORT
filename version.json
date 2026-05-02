@@ -1,6 +1,6 @@
 {
-  "version": "revamp61-supabase-pdf-preview-zoom",
-  "build": "revamp61-supabase-pdf-preview-zoom",
+  "version": "revamp62-netlify-blobs-sync",
+  "build": "revamp62-netlify-blobs-sync",
   "updatedAt": "2026-05-02T00:00:00+07:00",
-  "note": "migrate admin welcome/notice sync to Supabase config, update PDF observation table order/highlight, and add mobile pinch zoom for PDF preview"
+  "note": "migrate remote admin/monitor sync from Supabase-ready config to Netlify Functions + Netlify Blobs, keep PDF/preview improvements"
 }
