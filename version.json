@@ -1,6 +1,6 @@
 {
-  "version": "revamp68-observation-add-center-counter-proper",
-  "build": "revamp68-observation-add-center-counter-proper",
+  "version": "revamp69-pdf-table-horizontal-full-only",
+  "build": "revamp69-pdf-table-horizontal-full-only",
   "updatedAt": "2026-05-03T00:00:00+07:00",
-  "note": "centered observation add button and moved page number text into a separate proper badge"
+  "note": "PDF observation table keeps layout and uses full width only on left and right margins"
 }
