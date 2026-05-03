@@ -50,6 +50,11 @@
     return readPdfSettings().tableTitleFontSize;
   }
 
+  function pdfFieldTitleGap() {
+    const titleSize = pdfTableTitleFontSize();
+    return Math.max(4.2, titleSize * 0.52);
+  }
+
   function pdfEvidenceFontSize() {
     return readPdfSettings().evidenceFontSize;
   }
@@ -844,9 +849,11 @@
   function observationCompactCellHeight(field) {
     if (!field) return 0;
     const fontSize = pdfTableFontSize();
+    const labelFontSize = pdfTableTitleFontSize();
     const lineHeight = Math.max(3.35, fontSize * 0.405);
     const lineCount = Math.max(1, (field.lines || ['-']).length);
-    return Math.max(fontSize + 0.3, 3.4 + lineCount * lineHeight);
+    const labelBlock = Math.max(7.6, pdfFieldTitleGap() + labelFontSize * 0.18);
+    return Math.max(fontSize + labelFontSize * 0.62, 2.4 + labelBlock + lineCount * lineHeight);
   }
 
   function observationCompactRowHeight(row) {
@@ -868,17 +875,19 @@
     doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
 
     const valueFontSize = pdfTableFontSize();
-    const labelFontSize = clampNumber(valueFontSize - 2.2, 6.4, 8.6, 7.2);
+    const labelFontSize = pdfTableTitleFontSize();
     const lineHeight = Math.max(3.35, valueFontSize * 0.405);
+    const labelY = y + Math.max(4.2, labelFontSize * 0.44);
+    const valueY = labelY + pdfFieldTitleGap();
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(labelFontSize);
     doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
-    doc.text(field.label, x + 2.0, y + 3.6, { baseline: 'alphabetic' });
+    doc.text(field.label, x + 2.2, labelY, { baseline: 'alphabetic' });
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
     doc.setFontSize(valueFontSize);
     doc.setTextColor.apply(doc, valueText);
-    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.0, y + 7.4, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.2, valueY, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
   }
 
   function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
@@ -891,7 +900,7 @@
 
   function observationCompactSegmentHeight(rows) {
     const density = pdfTableExtraRows();
-    const titleFontSize = pdfTableTitleFontSize();
+    const titleFontSize = clampNumber(pdfTableTitleFontSize() - 1.3, 7.4, 10.8, 8.6);
     const titleH = Math.max(5.8, titleFontSize * 0.62);
     const titleGap = Math.max(1.6, 2.4 - density * 0.08);
     const pad = Math.max(1.45, 2.2 - density * 0.16);
@@ -905,7 +914,7 @@
 
   function drawObservationCompactSegment(doc, rowIndex, totalRows, rows, x, y, width, palette, continuation) {
     const density = pdfTableExtraRows();
-    const titleFontSize = pdfTableTitleFontSize();
+    const titleFontSize = clampNumber(pdfTableTitleFontSize() - 1.3, 7.4, 10.8, 8.6);
     const titleH = Math.max(5.8, titleFontSize * 0.62);
     const titleGap = Math.max(1.6, 2.4 - density * 0.08);
     const pad = Math.max(1.45, 2.2 - density * 0.16);
@@ -951,13 +960,13 @@
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
-    const tableMargin = 5.5;
+    const tableMargin = 3.2;
     const x = tableMargin;
     const width = pageWidth - tableMargin * 2;
     const density = pdfTableExtraRows();
     const bottom = pageHeight - Math.max(5, 12 - density * 1.6);
     const gap = Math.max(1.2, 2.4 - density * 0.22);
-    const innerTableWidth = width - 4.4;
+    const innerTableWidth = width - 3.6;
     let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
 
     cleanRows.forEach(function (row, rowIndex) {
@@ -1056,7 +1065,8 @@
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(clampNumber(evidenceFontSize - 1.1, 7.2, 9.2, 7.6));
-      doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
+      const continuationTitleColor = palette && palette.primary ? palette.primary : [30, 64, 175];
+      doc.setTextColor.apply(doc, continuationTitleColor);
       doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
       descY += Math.max(4.2, evidenceLineHeight);
     }

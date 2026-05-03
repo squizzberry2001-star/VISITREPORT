@@ -81,7 +81,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp65-focus-secret-presence-full-preview';
+const APP_BUILD_VERSION = 'revamp66-home-nav-loading-secret-spark-pdf-spacing';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -762,7 +762,14 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("rect", { x: "4", y: "14", width: "6", height: "6", rx: "1" }),
             React.createElement("path", { d: "M14 14h2v2h-2z" }),
             React.createElement("path", { d: "M18 14h2v6h-6v-2h4z" })),
-        check: React.createElement("path", { d: "m5 13 4 4L19 7" })
+        check: React.createElement("path", { d: "m5 13 4 4L19 7" }),
+        settings: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M4 7h10" }),
+            React.createElement("path", { d: "M18 7h2" }),
+            React.createElement("circle", { cx: "16", cy: "7", r: "2" }),
+            React.createElement("path", { d: "M4 17h2" }),
+            React.createElement("path", { d: "M10 17h10" }),
+            React.createElement("circle", { cx: "8", cy: "17", r: "2" }))
     };
     return (React.createElement("svg", { className: className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, paths[name] || paths.spark));
 }
@@ -1546,7 +1553,7 @@ function ObservationCards({ title, rows, onChange }) {
         color: '#0f172a',
         boxShadow: '0 6px 14px rgba(15, 23, 42, 0.08)'
     };
-    const mobileNav = (React.createElement("div", { className: "observation-inline-nav md:hidden", "aria-label": "Navigasi temuan observation", style: {
+    const mobileNavContent = (React.createElement("div", { className: "observation-inline-nav observation-nav-v68 md:hidden", "aria-label": "Navigasi temuan observation", style: {
             position: 'fixed',
             left: '0',
             right: '0',
@@ -1556,9 +1563,9 @@ function ObservationCards({ title, rows, onChange }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '8px',
+            gap: '10px',
             borderRadius: '18px 18px 0 0',
-            padding: '7px 12px',
+            padding: '7px 14px',
             background: 'rgba(255,255,255,0.78)',
             border: '1px solid rgba(226, 232, 240, 0.92)',
             boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
@@ -1567,32 +1574,20 @@ function ObservationCards({ title, rows, onChange }) {
         } },
         React.createElement("button", { type: "button", onClick: goPrev, disabled: activeIndex <= 0, "aria-label": "Temuan sebelumnya", style: { ...navButtonBase, opacity: activeIndex <= 0 ? 0.45 : 1 } },
             React.createElement(Icon, { name: "left", className: "h-4 w-4" })),
-        React.createElement("div", { style: {
-                flex: '1 1 auto',
-                minWidth: 0,
-                height: '34px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                borderRadius: '999px',
-                background: '#172554',
-                color: '#ffffff',
-                padding: '0 12px',
-                fontSize: '12px',
-                fontWeight: 900,
-                letterSpacing: '0.01em',
-                boxShadow: '0 8px 18px rgba(23, 37, 84, 0.18)'
-            } },
-            React.createElement("span", null,
+        React.createElement("div", { className: "observation-nav-center-v68", "aria-live": "polite" },
+            React.createElement("span", { className: "observation-count-badge-v68" },
                 "Temuan ",
                 activeRowNumber,
                 "/",
                 safeRows.length),
-            React.createElement("button", { type: "button", onClick: addRow, "aria-label": "Tambah temuan", style: { width: '24px', height: '24px', display: 'inline-grid', placeItems: 'center', borderRadius: '999px', background: '#0f766e', color: '#ffffff' } },
-                React.createElement(Icon, { name: "plus", className: "h-3.5 w-3.5" }))),
+            React.createElement("button", { type: "button", onClick: addRow, "aria-label": "Tambah temuan", className: "observation-add-center-v68" },
+                React.createElement(Icon, { name: "plus", className: "h-5 w-5" })),
+            React.createElement("span", { className: "observation-count-spacer-v68", "aria-hidden": "true" })),
         React.createElement("button", { type: "button", onClick: goNext, disabled: activeIndex >= safeRows.length - 1, "aria-label": "Temuan berikutnya", style: { ...navButtonBase, opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1 } },
             React.createElement(Icon, { name: "right", className: "h-4 w-4" }))));
+    const mobileNav = (typeof document !== 'undefined' && ReactDOM?.createPortal)
+        ? ReactDOM.createPortal(mobileNavContent, document.body)
+        : mobileNavContent;
     return (React.createElement("div", { className: "observation-card-system grid gap-4" },
         mobileNav,
         safeRows.map((row, index) => (React.createElement("article", { key: index, className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active') },
@@ -2099,15 +2094,14 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
                     React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, "Home")),
                 React.createElement("div", { className: "history-sync-wrap flex shrink-0 items-center gap-2" },
-                    React.createElement("button", { type: "button", className: "dashboard-stat dark history-number-card history-secret-trigger min-w-[84px] px-3 py-2", onClick: onTitleTap, "aria-label": "History panel rahasia" },
-                        React.createElement("span", { className: "history-secret-icon" },
-                            React.createElement(Icon, { name: "history", className: "h-4 w-4" })),
+                    React.createElement("button", { type: "button", className: "dashboard-stat dark history-number-card min-w-[84px] px-3 py-2", onClick: onTitleTap, "aria-label": "History" },
+                        React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
                         React.createElement("p", null, "History"),
                         React.createElement("strong", null, history.length)),
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp65-focus-secret-presence-full-preview" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp66-home-nav-loading-secret-spark-pdf-spacing" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -2466,6 +2460,7 @@ function PreviewPage({ visit, onBack }) {
     const [pdfBlob, setPdfBlob] = useState(null);
     const [status, setStatus] = useState('Menyiapkan preview PDF...');
     const [busy, setBusy] = useState(false);
+    const [downloadBusy, setDownloadBusy] = useState(false);
     const [downloadMessage, setDownloadMessage] = useState('');
     useEffect(() => {
         let cancelled = false;
@@ -2495,11 +2490,13 @@ function PreviewPage({ visit, onBack }) {
             URL.revokeObjectURL(objectUrl); };
     }, [visit]);
     async function handleDownloadPdf() {
-        if (!visit || busy)
+        if (!visit || busy || downloadBusy)
             return;
         setBusy(true);
+        setDownloadBusy(true);
         setDownloadMessage('Menyiapkan PDF...');
         try {
+            await new Promise((resolve) => window.setTimeout(resolve, 80));
             if (!window.ReportVisitPDF?.createBlob)
                 throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
             const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
@@ -2507,12 +2504,14 @@ function PreviewPage({ visit, onBack }) {
             setDownloadMessage('Pilih lokasi simpan...');
             const didSave = await downloadBlobManaged(blob, fileName);
             setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
+            await new Promise((resolve) => window.setTimeout(resolve, didSave ? 420 : 260));
         }
         catch (error) {
             alert(error?.message || 'Gagal download PDF.');
         }
         finally {
-            window.setTimeout(() => setDownloadMessage(''), 500);
+            setDownloadBusy(false);
+            setDownloadMessage('');
             setBusy(false);
         }
     }
@@ -2535,6 +2534,11 @@ function PreviewPage({ visit, onBack }) {
         return React.createElement("main", { className: "preview-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif", action: React.createElement(Button, { variant: "secondary", onClick: onBack }, "Kembali") }));
     return (React.createElement("main", { className: "preview-page w-full px-4 py-4 md:px-8 md:py-8" },
+        downloadBusy ? React.createElement("div", { className: "download-pdf-overlay", role: "status", "aria-live": "polite" },
+            React.createElement("div", { className: "download-pdf-loader" },
+                React.createElement("span", { className: "download-pdf-spinner", "aria-hidden": "true" }),
+                React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'),
+                React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null,
         React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
             React.createElement("div", null,
                 React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
@@ -2556,11 +2560,8 @@ function PreviewPage({ visit, onBack }) {
                         formatDate(visit.tanggal))),
                 React.createElement("div", { className: "preview-actions flex flex-wrap gap-2" },
                     React.createElement(Button, { variant: "secondary", icon: "left", onClick: onBack }, "Kembali"),
-                    React.createElement(Button, { icon: busy ? null : "download", onClick: handleDownloadPdf, disabled: busy }, busy ? React.createElement(React.Fragment, null,
-                        React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
-                        " ",
-                        downloadMessage || 'Loading...') : 'Download PDF'),
-                    React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy, className: "excel-export-button" },
+                    React.createElement(Button, { icon: downloadBusy ? null : "download", onClick: handleDownloadPdf, disabled: busy || downloadBusy }, downloadBusy ? 'Memproses...' : 'Download PDF'),
+                    React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy || downloadBusy, className: "excel-export-button" },
                         React.createElement("span", { className: "text-left leading-tight" },
                             React.createElement("span", { className: "block" }, "Export Excel CA Assigment"),
                             React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store"))))),
@@ -3502,6 +3503,15 @@ function WelcomePinkySwearArt() {
             React.createElement("span", { className: "pinky-cuff" })),
         React.createElement("span", { className: "pinky-hook-glow" })));
 }
+function WelcomeSparkStarArt() {
+    return (React.createElement("div", { className: "welcome-spark-star-art", role: "img", "aria-label": "Animasi spark star" },
+        React.createElement("span", { className: "spark-star-core" }),
+        React.createElement("span", { className: "spark-star-small spark-a" }),
+        React.createElement("span", { className: "spark-star-small spark-b" }),
+        React.createElement("span", { className: "spark-star-small spark-c" }),
+        React.createElement("span", { className: "spark-star-ring ring-a" }),
+        React.createElement("span", { className: "spark-star-ring ring-b" })));
+}
 function WelcomeOverlay({ config, onDone }) {
     const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
     const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
@@ -3510,11 +3520,13 @@ function WelcomeOverlay({ config, onDone }) {
     const cardRef = useRef(null);
     const onDoneRef = useRef(onDone);
     const doneRef = useRef(false);
+    const [closing, setClosing] = useState(false);
     useEffect(() => {
         onDoneRef.current = onDone;
     }, [onDone]);
     useEffect(() => {
         doneRef.current = false;
+        setClosing(false);
         const timer = window.setTimeout(finishWelcome, durationMs + 120);
         return () => window.clearTimeout(timer);
     }, [durationMs]);
@@ -3522,8 +3534,11 @@ function WelcomeOverlay({ config, onDone }) {
         if (doneRef.current)
             return;
         doneRef.current = true;
-        if (typeof onDoneRef.current === 'function')
-            onDoneRef.current();
+        setClosing(true);
+        window.setTimeout(() => {
+            if (typeof onDoneRef.current === 'function')
+                onDoneRef.current();
+        }, 340);
     }
     function handlePointerMove(event) {
         const card = cardRef.current;
@@ -3546,7 +3561,7 @@ function WelcomeOverlay({ config, onDone }) {
         card.style.setProperty('--glow-x', '50%');
         card.style.setProperty('--glow-y', '50%');
     }
-    return (React.createElement("div", { className: "welcome-dream-overlay", role: "dialog", "aria-modal": "true", style: {
+    return (React.createElement("div", { className: cx("welcome-dream-overlay", closing && "is-closing"), role: "dialog", "aria-modal": "true", style: {
             '--welcome-duration': String(durationSeconds) + 's',
             position: 'fixed',
             inset: 0,
@@ -3559,9 +3574,9 @@ function WelcomeOverlay({ config, onDone }) {
             transform: 'translateZ(0)',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            animation: 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
+            animation: closing ? 'rbvWelcomeOverlayOut .34s cubic-bezier(.22,1,.36,1) forwards' : 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
         } },
-        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`),
+        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(10px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(20,184,166,.22)', filter: 'blur(18px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' } }),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(34,197,94,.18)', filter: 'blur(20px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' } }),
         React.createElement("div", { ref: cardRef, className: "welcome-dream-card", onPointerMove: handlePointerMove, onPointerLeave: resetPointerTilt, style: {
@@ -3585,7 +3600,7 @@ function WelcomeOverlay({ config, onDone }) {
                 React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
                 React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
                     React.createElement("div", { "aria-hidden": "true", className: "welcome-promise-logo", style: { display: 'grid', placeItems: 'center', width: 132, height: 98, borderRadius: '28px', overflow: 'hidden', background: '#fff7ed', boxShadow: '0 18px 36px rgba(15,23,42,.16)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' } },
-                        React.createElement(WelcomePinkySwearArt, null)),
+                        React.createElement(WelcomeSparkStarArt, null)),
                     React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
                     React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
                     React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#475569', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
@@ -3654,6 +3669,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [noticeTitle, setNoticeTitle] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.title);
     const [noticeMessagesText, setNoticeMessagesText] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n'));
     const [noticeIntervalSeconds, setNoticeIntervalSeconds] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds);
+    const [secretTab, setSecretTab] = useState('settings');
     async function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
@@ -3799,6 +3815,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setNoticeTitle(currentNotice.title);
         setNoticeMessagesText(currentNotice.messages.join('\n'));
         setNoticeIntervalSeconds(currentNotice.intervalSeconds);
+        setSecretTab('settings');
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
@@ -3922,183 +3939,191 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const isLive = source === 'netlify' || source === 'supabase' || source === 'convex realtime';
     const sourceBadgeLabel = source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
-    return (React.createElement("div", { className: "fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7" },
-            React.createElement("div", { className: "mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between" },
+    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7" },
+            React.createElement("div", { className: "mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between" },
                 React.createElement("div", null,
                     React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Monitor Admin"),
-                        React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, sourceBadgeLabel),
-                        React.createElement(Badge, { tone: connectionTone }, connectionState)),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pantauan Visit Bestie & Store"),
-                    lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
+                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Panel Rahasia Admin"),
+                        secretTab === 'monitoring' ? React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, sourceBadgeLabel) : React.createElement(Badge, { tone: "default" }, "Setting Web"),
+                        secretTab === 'monitoring' ? React.createElement(Badge, { tone: connectionTone }, connectionState) : null),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & PDF'),
+                    secretTab === 'monitoring' && lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
                         "Update terakhir: ",
                         formatDateTime(lastSync)) : null),
                 React.createElement("div", { className: "flex flex-wrap gap-2" },
-                    React.createElement(Button, { variant: "secondary", icon: "download", onClick: () => exportJson(rows, 'regional-bestie-monitor.json') }, "Export JSON"),
-                    React.createElement(Button, { variant: "secondary", icon: "spark", onClick: () => refresh(), disabled: loading }, loading ? 'Sync...' : 'Refresh'),
+                    secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "download", onClick: () => exportJson(rows, 'regional-bestie-monitor.json') }, "Export JSON") : null,
+                    secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "spark", onClick: () => refresh(), disabled: loading }, loading ? 'Sync...' : 'Refresh') : null,
                     React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                         React.createElement(Icon, { name: "close", className: "h-4 w-4" })))),
-            React.createElement("div", { className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" },
-                React.createElement("div", { className: "rounded-3xl bg-slate-950 p-5 text-white" },
-                    React.createElement("p", { className: "text-xs font-bold uppercase text-slate-300" }, "Source"),
-                    React.createElement("p", { className: "mt-2 text-2xl font-black capitalize" }, source)),
-                React.createElement("div", { className: "rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100" },
-                    React.createElement("p", { className: "text-xs font-bold uppercase" }, "Online"),
-                    React.createElement("p", { className: "mt-2 text-3xl font-black" }, onlinePresence.length)),
-                React.createElement("div", { className: "rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100" },
-                    React.createElement("p", { className: "text-xs font-bold uppercase" }, "Total Visit"),
-                    React.createElement("p", { className: "mt-2 text-3xl font-black" }, rows.length)),
-                React.createElement("div", { className: "rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100" },
-                    React.createElement("p", { className: "text-xs font-bold uppercase" }, "Bestie Unik"),
-                    React.createElement("p", { className: "mt-2 text-3xl font-black" }, uniqueBesties)),
-                React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
-                    React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
-                    React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
-            React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4" },
-                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                    React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Live Presence"),
-                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Bestie Yang Sedang Online")),
-                    React.createElement(Badge, { tone: "success" }, "Realtime")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-2" }, onlinePresence.length ? onlinePresence.map((row) => (React.createElement("div", { key: row.session_id, className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                    React.createElement("div", { className: "flex items-start justify-between gap-3" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("div", { className: "flex items-center gap-2" },
-                                React.createElement("span", { className: "h-2.5 w-2.5 rounded-full bg-emerald-500", style: { boxShadow: '0 0 0 5px rgba(16,185,129,.14)' } }),
-                                React.createElement("p", { className: "truncate font-black text-slate-950" }, row.bestie_name || '-')),
-                            React.createElement("p", { className: "mt-1 truncate text-xs font-bold text-slate-600" },
-                                "Store: ",
-                                row.store_name || '-'),
-                            React.createElement("p", { className: "mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" },
-                                row.active_screen || 'home',
-                                " \u2022 ",
-                                row.store_code || '-')),
-                        React.createElement(Badge, { tone: "success" }, "Online")),
-                    React.createElement("p", { className: "mt-2 text-[11px] font-semibold text-slate-400" },
-                        "Last seen: ",
-                        formatDateTime(row.last_seen_at || row.updated_at))))) : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100" }, "Belum ada bestie online yang terdeteksi."))),
-            React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
-                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                    React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Welcome Animation"),
-                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Edit Welcome")),
-                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveWelcomeSettings }, "Simpan Welcome")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
-                    React.createElement(Field, { label: "Head title" },
-                        React.createElement(TextInput, { value: welcomeTitle, onChange: (event) => setWelcomeTitle(event.target.value), placeholder: DEFAULT_WELCOME_CONFIG.title })),
-                    React.createElement(Field, { label: "Sub title" },
-                        React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })),
-                    React.createElement(Field, { label: "Durasi (detik)", helper: "Bisa diisi 1 sampai 15 detik." },
-                        React.createElement(TextInput, { type: "number", min: "1", max: "15", step: "0.5", value: welcomeDurationSeconds, onChange: (event) => setWelcomeDurationSeconds(event.target.value), onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds)) })))),
-            React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
-                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                    React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Hidden Control"),
-                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Assignment Link")),
-                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveAssignmentSettings }, "Simpan Link")),
-                React.createElement(Field, { label: "Link corrective action assignment", helper: "Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF." },
-                    React.createElement(TextInput, { type: "url", value: assignmentLink, onChange: (event) => setAssignmentLink(event.target.value), placeholder: DEFAULT_ASSIGNMENT_LINK }))),
-            React.createElement("div", { className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4" },
-                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                    React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Home Notification"),
-                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Info Update Website")),
-                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveNoticeSettings }, "Simpan Info")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]" },
-                    React.createElement(Field, { label: "Judul" },
-                        React.createElement(TextInput, { value: noticeTitle, onChange: (event) => setNoticeTitle(event.target.value), placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.title })),
-                    React.createElement(Field, { label: "Isi slide text", helper: "Pisahkan setiap informasi dengan baris baru." },
-                        React.createElement(TextArea, { value: noticeMessagesText, onChange: (event) => setNoticeMessagesText(event.target.value), minRows: 3, placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n') })),
-                    React.createElement("div", { className: "grid gap-3" },
-                        React.createElement(Field, { label: "Interval", helper: "2 sampai 15 detik" },
-                            React.createElement(TextInput, { type: "number", min: "2", max: "15", step: "0.5", value: noticeIntervalSeconds, onChange: (event) => setNoticeIntervalSeconds(event.target.value), onBlur: () => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds)) })),
-                        React.createElement(Toggle, { checked: noticeEnabled, onChange: setNoticeEnabled, label: noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan' })))),
-            React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-                React.createElement("div", { className: "mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between" },
-                    React.createElement("div", null,
-                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Pengaturan PDF"),
-                        React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "Atur ukuran font table, deskripsi foto, jumlah row table, dan grid foto per halaman PDF. Rekomendasi: 6 foto/halaman supaya foto tetap luas dan jelas.")),
-                    React.createElement(Badge, { tone: "success" }, "Auto Save")),
-                React.createElement("div", { className: "grid gap-3 md:grid-cols-5" },
-                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Table PDF"),
-                        React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', -0.5) }, "-"),
-                            React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableFontSize).toFixed(1)),
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', 0.5) }, "+"))),
-                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Title Table PDF"),
-                        React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', -0.5) }, "-"),
-                            React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableTitleFontSize).toFixed(1)),
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', 0.5) }, "+")),
-                        React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Mengatur title Temuan di atas table.")),
-                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Deskripsi Foto"),
-                        React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('evidenceFontSize', -0.5) }, "-"),
-                            React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfEvidenceFontSize).toFixed(1)),
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('evidenceFontSize', 0.5) }, "+"))),
-                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Add Row Table PDF"),
-                        React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', -1) }, "-"),
-                            React.createElement("strong", { className: "text-lg text-slate-950" },
-                                "+",
-                                pdfTableExtraRows),
-                            React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', 1) }, "+"))),
-                    React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Grid Foto PDF"),
-                        React.createElement("div", { className: "mt-3 grid grid-cols-3 gap-1" }, [4, 6, 8].map((option) => React.createElement("button", { key: option, type: "button", className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'), onClick: () => setPdfPhotoGrid(option) }, option))),
-                        React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Rekomendasi: 6 foto/halaman."))),
-                React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
-                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
-                    React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
-            React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
-                React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                    React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
-                    React.createElement(Badge, { tone: "default" },
-                        manualRequests.filter((item) => item.status === 'pending').length,
-                        " pending")),
-                React.createElement("div", { className: "grid gap-3" }, manualRequests.length ? manualRequests.map((item) => (React.createElement("div", { key: item.id, className: "rounded-2xl bg-white p-3 ring-1 ring-slate-200" },
-                    React.createElement("div", { className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("p", { className: "font-extrabold text-slate-950" }, item.storeName || '-'),
-                            React.createElement("p", { className: "text-xs text-slate-500" },
-                                item.bestieName || '-',
-                                " \u2022 ",
-                                item.storeCode || '-',
-                                " \u2022 ",
-                                formatDateTime(item.createdAt)),
-                            item.address ? React.createElement("p", { className: "mt-1 text-xs text-slate-600" }, item.address) : null),
-                        React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
-                            React.createElement(Badge, { tone: item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default' }, item.status),
-                            item.status === 'pending' ? React.createElement(React.Fragment, null,
-                                React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => approveRequest(item.id) }, "Approve"),
-                                React.createElement(Button, { variant: "danger", icon: "close", onClick: () => rejectRequest(item.id) }, "Reject")) : null))))) : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200" }, "Belum ada request."))),
-            React.createElement("div", { className: "mb-4 max-w-md" },
-                React.createElement("div", { className: "relative" },
-                    React.createElement(Icon, { name: "search", className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" }),
-                    React.createElement(TextInput, { value: query, onChange: (e) => setQuery(e.target.value), placeholder: "Cari bestie, store, kode...", className: "pl-12" }))),
-            React.createElement("div", { className: "table-scroll overflow-hidden rounded-3xl border border-slate-200" },
-                React.createElement("table", { className: "w-full border-collapse bg-white text-sm" },
-                    React.createElement("thead", { className: "bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500" },
-                        React.createElement("tr", null,
-                            React.createElement("th", { className: "px-4 py-3" }, "No"),
-                            React.createElement("th", { className: "px-4 py-3" }, "Bestie"),
-                            React.createElement("th", { className: "px-4 py-3" }, "Kode"),
-                            React.createElement("th", { className: "px-4 py-3" }, "Store"),
-                            React.createElement("th", { className: "px-4 py-3" }, "Visit"),
-                            React.createElement("th", { className: "px-4 py-3" }, "Update"))),
-                    React.createElement("tbody", null, filtered.length ? filtered.map((row, index) => (React.createElement("tr", { key: `${row.bestie_name}-${row.store_name}-${index}`, className: "border-t border-slate-100" },
-                        React.createElement("td", { className: "px-4 py-3 font-bold text-slate-500" }, index + 1),
-                        React.createElement("td", { className: "px-4 py-3 font-bold text-slate-900" }, row.bestie_name || '-'),
-                        React.createElement("td", { className: "px-4 py-3" }, row.store_code || '-'),
-                        React.createElement("td", { className: "px-4 py-3" }, row.store_name || '-'),
-                        React.createElement("td", { className: "px-4 py-3" }, formatDate(row.visit_date)),
-                        React.createElement("td", { className: "px-4 py-3 text-slate-500" }, formatDateTime(row.updated_at))))) : React.createElement("tr", null,
-                        React.createElement("td", { colSpan: "6", className: "px-4 py-10 text-center text-slate-500" }, "Tidak ada data."))))))));
+            React.createElement("div", { className: "secret-panel-tabs mb-5 grid grid-cols-2 gap-2 rounded-3xl bg-slate-100 p-1" },
+                React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'settings' && 'active'), onClick: () => setSecretTab('settings') },
+                    React.createElement(Icon, { name: "settings", className: "h-4 w-4" }),
+                    React.createElement("span", null, "Setting Web")),
+                React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'), onClick: () => setSecretTab('monitoring') },
+                    React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
+                    React.createElement("span", null, "Monitoring"))),
+            secretTab === 'settings' ? (React.createElement(React.Fragment, null,
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Welcome Animation"),
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Edit Welcome")),
+                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveWelcomeSettings }, "Simpan Welcome")),
+                    React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
+                        React.createElement(Field, { label: "Head title" },
+                            React.createElement(TextInput, { value: welcomeTitle, onChange: (event) => setWelcomeTitle(event.target.value), placeholder: DEFAULT_WELCOME_CONFIG.title })),
+                        React.createElement(Field, { label: "Sub title" },
+                            React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })),
+                        React.createElement(Field, { label: "Durasi (detik)", helper: "Bisa diisi 1 sampai 15 detik." },
+                            React.createElement(TextInput, { type: "number", min: "1", max: "15", step: "0.5", value: welcomeDurationSeconds, onChange: (event) => setWelcomeDurationSeconds(event.target.value), onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds)) })))),
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Hidden Control"),
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Assignment Link")),
+                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveAssignmentSettings }, "Simpan Link")),
+                    React.createElement(Field, { label: "Link corrective action assignment", helper: "Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF." },
+                        React.createElement(TextInput, { type: "url", value: assignmentLink, onChange: (event) => setAssignmentLink(event.target.value), placeholder: DEFAULT_ASSIGNMENT_LINK }))),
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Home Notification"),
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Info Update Website")),
+                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveNoticeSettings }, "Simpan Info")),
+                    React.createElement("div", { className: "grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]" },
+                        React.createElement(Field, { label: "Judul" },
+                            React.createElement(TextInput, { value: noticeTitle, onChange: (event) => setNoticeTitle(event.target.value), placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.title })),
+                        React.createElement(Field, { label: "Isi slide text", helper: "Pisahkan setiap informasi dengan baris baru." },
+                            React.createElement(TextArea, { value: noticeMessagesText, onChange: (event) => setNoticeMessagesText(event.target.value), minRows: 3, placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n') })),
+                        React.createElement("div", { className: "grid gap-3" },
+                            React.createElement(Field, { label: "Interval", helper: "2 sampai 15 detik" },
+                                React.createElement(TextInput, { type: "number", min: "2", max: "15", step: "0.5", value: noticeIntervalSeconds, onChange: (event) => setNoticeIntervalSeconds(event.target.value), onBlur: () => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds)) })),
+                            React.createElement(Toggle, { checked: noticeEnabled, onChange: setNoticeEnabled, label: noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan' })))),
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
+                    React.createElement("div", { className: "mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between" },
+                        React.createElement("div", null,
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Pengaturan PDF"),
+                            React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "Atur ukuran isi table, title field seperti Temuan/Kondisi Ideal, jarak title ke isi konten, deskripsi foto, dan grid foto per halaman PDF.")),
+                        React.createElement(Badge, { tone: "success" }, "Auto Save")),
+                    React.createElement("div", { className: "grid gap-3 md:grid-cols-5" },
+                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Isi Table PDF"),
+                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', -0.5) }, "-"),
+                                React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableFontSize).toFixed(1)),
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', 0.5) }, "+"))),
+                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Title Field PDF"),
+                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', -0.5) }, "-"),
+                                React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableTitleFontSize).toFixed(1)),
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', 0.5) }, "+")),
+                            React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Untuk label Temuan, Kondisi Ideal, Dampak, dll. Spacing ke isi ikut menyesuaikan.")),
+                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Deskripsi Foto"),
+                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('evidenceFontSize', -0.5) }, "-"),
+                                React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfEvidenceFontSize).toFixed(1)),
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('evidenceFontSize', 0.5) }, "+"))),
+                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Add Row Table PDF"),
+                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', -1) }, "-"),
+                                React.createElement("strong", { className: "text-lg text-slate-950" },
+                                    "+",
+                                    pdfTableExtraRows),
+                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', 1) }, "+"))),
+                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Grid Foto PDF"),
+                            React.createElement("div", { className: "mt-3 grid grid-cols-3 gap-1" }, [4, 6, 8].map((option) => React.createElement("button", { key: option, type: "button", className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'), onClick: () => setPdfPhotoGrid(option) }, option))),
+                            React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Rekomendasi: 6 foto/halaman."))),
+                    React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
+                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
+                        React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
+                        React.createElement(Badge, { tone: "default" },
+                            manualRequests.filter((item) => item.status === 'pending').length,
+                            " pending")),
+                    React.createElement("div", { className: "grid gap-3" }, manualRequests.length ? manualRequests.map((item) => (React.createElement("div", { key: item.id, className: "rounded-2xl bg-white p-3 ring-1 ring-slate-200" },
+                        React.createElement("div", { className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
+                            React.createElement("div", { className: "min-w-0" },
+                                React.createElement("p", { className: "font-extrabold text-slate-950" }, item.storeName || '-'),
+                                React.createElement("p", { className: "text-xs text-slate-500" },
+                                    item.bestieName || '-',
+                                    " \u2022 ",
+                                    item.storeCode || '-',
+                                    " \u2022 ",
+                                    formatDateTime(item.createdAt)),
+                                item.address ? React.createElement("p", { className: "mt-1 text-xs text-slate-600" }, item.address) : null),
+                            React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
+                                React.createElement(Badge, { tone: item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default' }, item.status),
+                                item.status === 'pending' ? React.createElement(React.Fragment, null,
+                                    React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => approveRequest(item.id) }, "Approve"),
+                                    React.createElement(Button, { variant: "danger", icon: "close", onClick: () => rejectRequest(item.id) }, "Reject")) : null))))) : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200" }, "Belum ada request."))))) : (React.createElement(React.Fragment, null,
+                React.createElement("div", { className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" },
+                    React.createElement("div", { className: "rounded-3xl bg-slate-950 p-5 text-white" },
+                        React.createElement("p", { className: "text-xs font-bold uppercase text-slate-300" }, "Source"),
+                        React.createElement("p", { className: "mt-2 text-2xl font-black capitalize" }, source)),
+                    React.createElement("div", { className: "rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100" },
+                        React.createElement("p", { className: "text-xs font-bold uppercase" }, "Online"),
+                        React.createElement("p", { className: "mt-2 text-3xl font-black" }, onlinePresence.length)),
+                    React.createElement("div", { className: "rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100" },
+                        React.createElement("p", { className: "text-xs font-bold uppercase" }, "Total Visit"),
+                        React.createElement("p", { className: "mt-2 text-3xl font-black" }, rows.length)),
+                    React.createElement("div", { className: "rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100" },
+                        React.createElement("p", { className: "text-xs font-bold uppercase" }, "Bestie Unik"),
+                        React.createElement("p", { className: "mt-2 text-3xl font-black" }, uniqueBesties)),
+                    React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
+                        React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
+                        React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Live Presence"),
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Bestie Yang Sedang Online")),
+                        React.createElement(Badge, { tone: "success" }, "Realtime")),
+                    React.createElement("div", { className: "grid gap-3 md:grid-cols-2" }, onlinePresence.length ? onlinePresence.map((row) => (React.createElement("div", { key: row.session_id, className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
+                        React.createElement("div", { className: "flex items-start justify-between gap-3" },
+                            React.createElement("div", { className: "min-w-0" },
+                                React.createElement("div", { className: "flex items-center gap-2" },
+                                    React.createElement("span", { className: "h-2.5 w-2.5 rounded-full bg-emerald-500", style: { boxShadow: '0 0 0 5px rgba(16,185,129,.14)' } }),
+                                    React.createElement("p", { className: "truncate font-black text-slate-950" }, row.bestie_name || '-')),
+                                React.createElement("p", { className: "mt-1 truncate text-xs font-bold text-slate-600" },
+                                    "Store: ",
+                                    row.store_name || '-'),
+                                React.createElement("p", { className: "mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400" },
+                                    row.active_screen || 'home',
+                                    " \u2022 ",
+                                    row.store_code || '-')),
+                            React.createElement(Badge, { tone: "success" }, "Online")),
+                        React.createElement("p", { className: "mt-2 text-[11px] font-semibold text-slate-400" },
+                            "Last seen: ",
+                            formatDateTime(row.last_seen_at || row.updated_at))))) : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100" }, "Belum ada bestie online yang terdeteksi."))),
+                React.createElement("div", { className: "mb-4 max-w-md" },
+                    React.createElement("div", { className: "relative" },
+                        React.createElement(Icon, { name: "search", className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" }),
+                        React.createElement(TextInput, { value: query, onChange: (e) => setQuery(e.target.value), placeholder: "Cari bestie, store, kode...", className: "pl-12" }))),
+                React.createElement("div", { className: "table-scroll overflow-hidden rounded-3xl border border-slate-200" },
+                    React.createElement("table", { className: "w-full border-collapse bg-white text-sm" },
+                        React.createElement("thead", { className: "bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500" },
+                            React.createElement("tr", null,
+                                React.createElement("th", { className: "px-4 py-3" }, "No"),
+                                React.createElement("th", { className: "px-4 py-3" }, "Bestie"),
+                                React.createElement("th", { className: "px-4 py-3" }, "Kode"),
+                                React.createElement("th", { className: "px-4 py-3" }, "Store"),
+                                React.createElement("th", { className: "px-4 py-3" }, "Visit"),
+                                React.createElement("th", { className: "px-4 py-3" }, "Update"))),
+                        React.createElement("tbody", null, filtered.length ? filtered.map((row, index) => (React.createElement("tr", { key: `${row.bestie_name}-${row.store_name}-${index}`, className: "border-t border-slate-100" },
+                            React.createElement("td", { className: "px-4 py-3 font-bold text-slate-500" }, index + 1),
+                            React.createElement("td", { className: "px-4 py-3 font-bold text-slate-900" }, row.bestie_name || '-'),
+                            React.createElement("td", { className: "px-4 py-3" }, row.store_code || '-'),
+                            React.createElement("td", { className: "px-4 py-3" }, row.store_name || '-'),
+                            React.createElement("td", { className: "px-4 py-3" }, formatDate(row.visit_date)),
+                            React.createElement("td", { className: "px-4 py-3 text-slate-500" }, formatDateTime(row.updated_at))))) : React.createElement("tr", null,
+                            React.createElement("td", { colSpan: "6", className: "px-4 py-10 text-center text-slate-500" }, "Tidak ada data."))))))))));
 }
 function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onClearData, onTitleTap }) {
     return (React.createElement("aside", { className: "desktop-sidebar hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col" },
