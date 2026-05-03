@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp65-focus-secret-presence-full-preview';
+const APP_VERSION = 'revamp68-observation-add-center-counter-proper';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

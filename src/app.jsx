@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp65-focus-secret-presence-full-preview';
+const APP_BUILD_VERSION = 'revamp66-home-nav-loading-secret-spark-pdf-spacing';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -714,7 +714,8 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
     search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>,
     menu: <><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></>,
     qr: <><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2z"/><path d="M18 14h2v6h-6v-2h4z"/></>,
-    check: <path d="m5 13 4 4L19 7"/>
+    check: <path d="m5 13 4 4L19 7"/>,
+    settings: <><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></>
   };
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1651,9 +1652,9 @@ function ObservationCards({ title, rows, onChange }) {
     color: '#0f172a',
     boxShadow: '0 6px 14px rgba(15, 23, 42, 0.08)'
   };
-  const mobileNav = (
+  const mobileNavContent = (
     <div
-      className="observation-inline-nav md:hidden"
+      className="observation-inline-nav observation-nav-v68 md:hidden"
       aria-label="Navigasi temuan observation"
       style={{
         position: 'fixed',
@@ -1665,9 +1666,9 @@ function ObservationCards({ title, rows, onChange }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '8px',
+        gap: '10px',
         borderRadius: '18px 18px 0 0',
-        padding: '7px 12px',
+        padding: '7px 14px',
         background: 'rgba(255,255,255,0.78)',
         border: '1px solid rgba(226, 232, 240, 0.92)',
         boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
@@ -1678,35 +1679,21 @@ function ObservationCards({ title, rows, onChange }) {
       <button type="button" onClick={goPrev} disabled={activeIndex <= 0} aria-label="Temuan sebelumnya" style={{ ...navButtonBase, opacity: activeIndex <= 0 ? 0.45 : 1 }}>
         <Icon name="left" className="h-4 w-4" />
       </button>
-      <div
-        style={{
-          flex: '1 1 auto',
-          minWidth: 0,
-          height: '34px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          borderRadius: '999px',
-          background: '#172554',
-          color: '#ffffff',
-          padding: '0 12px',
-          fontSize: '12px',
-          fontWeight: 900,
-          letterSpacing: '0.01em',
-          boxShadow: '0 8px 18px rgba(23, 37, 84, 0.18)'
-        }}
-      >
-        <span>Temuan {activeRowNumber}/{safeRows.length}</span>
-        <button type="button" onClick={addRow} aria-label="Tambah temuan" style={{ width: '24px', height: '24px', display: 'inline-grid', placeItems: 'center', borderRadius: '999px', background: '#0f766e', color: '#ffffff' }}>
-          <Icon name="plus" className="h-3.5 w-3.5" />
+      <div className="observation-nav-center-v68" aria-live="polite">
+        <span className="observation-count-badge-v68">Temuan {activeRowNumber}/{safeRows.length}</span>
+        <button type="button" onClick={addRow} aria-label="Tambah temuan" className="observation-add-center-v68">
+          <Icon name="plus" className="h-5 w-5" />
         </button>
+        <span className="observation-count-spacer-v68" aria-hidden="true" />
       </div>
       <button type="button" onClick={goNext} disabled={activeIndex >= safeRows.length - 1} aria-label="Temuan berikutnya" style={{ ...navButtonBase, opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1 }}>
         <Icon name="right" className="h-4 w-4" />
       </button>
     </div>
   );
+  const mobileNav = (typeof document !== 'undefined' && ReactDOM?.createPortal)
+    ? ReactDOM.createPortal(mobileNavContent, document.body)
+    : mobileNavContent;
 
   return (
     <div className="observation-card-system grid gap-4">
@@ -2311,8 +2298,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             <p className="mt-1 text-xs font-semibold text-slate-500">Home</p>
           </button>
           <div className="history-sync-wrap flex shrink-0 items-center gap-2">
-            <button type="button" className="dashboard-stat dark history-number-card history-secret-trigger min-w-[84px] px-3 py-2" onClick={onTitleTap} aria-label="History panel rahasia">
-              <span className="history-secret-icon"><Icon name="history" className="h-4 w-4" /></span>
+            <button type="button" className="dashboard-stat dark history-number-card min-w-[84px] px-3 py-2" onClick={onTitleTap} aria-label="History">
+              <Icon name="history" className="h-4 w-4" />
               <p>History</p>
               <strong>{history.length}</strong>
             </button>
@@ -2329,7 +2316,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             </button>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp65-focus-secret-presence-full-preview">
+        <div className="mt-3" data-build="revamp66-home-nav-loading-secret-spark-pdf-spacing">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -2729,6 +2716,7 @@ function PreviewPage({ visit, onBack }) {
   const [pdfBlob, setPdfBlob] = useState(null);
   const [status, setStatus] = useState('Menyiapkan preview PDF...');
   const [busy, setBusy] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState('');
 
   useEffect(() => {
@@ -2755,20 +2743,24 @@ function PreviewPage({ visit, onBack }) {
   }, [visit]);
 
   async function handleDownloadPdf() {
-    if (!visit || busy) return;
+    if (!visit || busy || downloadBusy) return;
     setBusy(true);
+    setDownloadBusy(true);
     setDownloadMessage('Menyiapkan PDF...');
     try {
+      await new Promise((resolve) => window.setTimeout(resolve, 80));
       if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
       const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
       const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
       setDownloadMessage('Pilih lokasi simpan...');
       const didSave = await downloadBlobManaged(blob, fileName);
       setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
+      await new Promise((resolve) => window.setTimeout(resolve, didSave ? 420 : 260));
     } catch (error) {
       alert(error?.message || 'Gagal download PDF.');
     } finally {
-      window.setTimeout(() => setDownloadMessage(''), 500);
+      setDownloadBusy(false);
+      setDownloadMessage('');
       setBusy(false);
     }
   }
@@ -2778,8 +2770,9 @@ function PreviewPage({ visit, onBack }) {
 
   return (
     <main className="preview-page w-full px-4 py-4 md:px-8 md:py-8">
+      {downloadBusy ? <div className="download-pdf-overlay" role="status" aria-live="polite"><div className="download-pdf-loader"><span className="download-pdf-spinner" aria-hidden="true" /><strong>{downloadMessage || 'Menyiapkan PDF...'}</strong><p>Jangan tutup halaman sampai file manager muncul.</p></div></div> : null}
       <div className="preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Preview PDF</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Review Report</h1></div><div className="preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{visitProgress(visit)}%</p></div><ProgressBar value={visitProgress(visit)} /></div></div>
-      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon={busy ? null : "download"} onClick={handleDownloadPdf} disabled={busy}>{busy ? <><span className="loading-spinner mini" aria-hidden="true" /> {downloadMessage || 'Loading...'}</> : 'Download PDF'}</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
+      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon={downloadBusy ? null : "download"} onClick={handleDownloadPdf} disabled={busy || downloadBusy}>{downloadBusy ? 'Memproses...' : 'Download PDF'}</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy || downloadBusy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
     </main>
   );
 }
@@ -3664,6 +3657,19 @@ function WelcomePinkySwearArt() {
   );
 }
 
+function WelcomeSparkStarArt() {
+  return (
+    <div className="welcome-spark-star-art" role="img" aria-label="Animasi spark star">
+      <span className="spark-star-core" />
+      <span className="spark-star-small spark-a" />
+      <span className="spark-star-small spark-b" />
+      <span className="spark-star-small spark-c" />
+      <span className="spark-star-ring ring-a" />
+      <span className="spark-star-ring ring-b" />
+    </div>
+  );
+}
+
 function WelcomeOverlay({ config, onDone }) {
   const title = cleanText(config && config.title, DEFAULT_WELCOME_CONFIG.title);
   const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
@@ -3672,18 +3678,23 @@ function WelcomeOverlay({ config, onDone }) {
   const cardRef = useRef(null);
   const onDoneRef = useRef(onDone);
   const doneRef = useRef(false);
+  const [closing, setClosing] = useState(false);
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
   useEffect(() => {
     doneRef.current = false;
+    setClosing(false);
     const timer = window.setTimeout(finishWelcome, durationMs + 120);
     return () => window.clearTimeout(timer);
   }, [durationMs]);
   function finishWelcome() {
     if (doneRef.current) return;
     doneRef.current = true;
-    if (typeof onDoneRef.current === 'function') onDoneRef.current();
+    setClosing(true);
+    window.setTimeout(() => {
+      if (typeof onDoneRef.current === 'function') onDoneRef.current();
+    }, 340);
   }
   function handlePointerMove(event) {
     const card = cardRef.current;
@@ -3706,7 +3717,7 @@ function WelcomeOverlay({ config, onDone }) {
   }
   return (
     <div
-      className="welcome-dream-overlay"
+      className={cx("welcome-dream-overlay", closing && "is-closing")}
       role="dialog"
       aria-modal="true"
       style={{
@@ -3722,10 +3733,10 @@ function WelcomeOverlay({ config, onDone }) {
         transform: 'translateZ(0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
-        animation: 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
+        animation: closing ? 'rbvWelcomeOverlayOut .34s cubic-bezier(.22,1,.36,1) forwards' : 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
       }}
     >
-      <style>{`@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`}</style>
+      <style>{`@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(10px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`}</style>
       <div aria-hidden="true" style={{ position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(20,184,166,.22)', filter: 'blur(18px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' }} />
       <div aria-hidden="true" style={{ position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(34,197,94,.18)', filter: 'blur(20px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' }} />
       <div
@@ -3755,7 +3766,7 @@ function WelcomeOverlay({ config, onDone }) {
           <div aria-hidden="true" style={{ position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' }} />
           <div className="welcome-dream-content" style={{ position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' }}>
             <div aria-hidden="true" className="welcome-promise-logo" style={{ display: 'grid', placeItems: 'center', width: 132, height: 98, borderRadius: '28px', overflow: 'hidden', background: '#fff7ed', boxShadow: '0 18px 36px rgba(15,23,42,.16)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' }}>
-              <WelcomePinkySwearArt />
+              <WelcomeSparkStarArt />
             </div>
             <p className="welcome-kicker" style={{ marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' }}>Bestie Visit</p>
             <h1 style={{ marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' }}>{title}</h1>
@@ -3843,6 +3854,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
   const [noticeTitle, setNoticeTitle] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.title);
   const [noticeMessagesText, setNoticeMessagesText] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n'));
   const [noticeIntervalSeconds, setNoticeIntervalSeconds] = useState(DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds);
+  const [secretTab, setSecretTab] = useState('settings');
 
   async function saveWelcomeSettings() {
     const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
@@ -3993,6 +4005,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     setNoticeTitle(currentNotice.title);
     setNoticeMessagesText(currentNotice.messages.join('\n'));
     setNoticeIntervalSeconds(currentNotice.intervalSeconds);
+    setSecretTab('settings');
     let cancelled = false;
     let unsubscribeRows = null;
     let unsubscribeRequests = null;
@@ -4119,212 +4132,229 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
   const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
 
   return (
-    <div className="fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
-      <div className="mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div className="secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
+      <div className="secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7">
+        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Monitor Admin</p>
-              <Badge tone={isLive ? 'success' : 'default'}>{sourceBadgeLabel}</Badge>
-              <Badge tone={connectionTone}>{connectionState}</Badge>
+              <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Panel Rahasia Admin</p>
+              {secretTab === 'monitoring' ? <Badge tone={isLive ? 'success' : 'default'}>{sourceBadgeLabel}</Badge> : <Badge tone="default">Setting Web</Badge>}
+              {secretTab === 'monitoring' ? <Badge tone={connectionTone}>{connectionState}</Badge> : null}
             </div>
-            <h2 className="mt-2 text-2xl font-black text-slate-950">Pantauan Visit Bestie & Store</h2>
-            {lastSync ? <p className="mt-1 text-xs font-semibold text-slate-500">Update terakhir: {formatDateTime(lastSync)}</p> : null}
+            <h2 className="mt-2 text-2xl font-black text-slate-950">{secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & PDF'}</h2>
+            {secretTab === 'monitoring' && lastSync ? <p className="mt-1 text-xs font-semibold text-slate-500">Update terakhir: {formatDateTime(lastSync)}</p> : null}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" icon="download" onClick={() => exportJson(rows, 'regional-bestie-monitor.json')}>Export JSON</Button>
-            <Button variant="secondary" icon="spark" onClick={() => refresh()} disabled={loading}>{loading ? 'Sync...' : 'Refresh'}</Button>
+            {secretTab === 'monitoring' ? <Button variant="secondary" icon="download" onClick={() => exportJson(rows, 'regional-bestie-monitor.json')}>Export JSON</Button> : null}
+            {secretTab === 'monitoring' ? <Button variant="secondary" icon="spark" onClick={() => refresh()} disabled={loading}>{loading ? 'Sync...' : 'Refresh'}</Button> : null}
             <Button variant="icon" onClick={onClose} aria-label="Tutup"><Icon name="close" className="h-4 w-4" /></Button>
           </div>
         </div>
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="rounded-3xl bg-slate-950 p-5 text-white"><p className="text-xs font-bold uppercase text-slate-300">Source</p><p className="mt-2 text-2xl font-black capitalize">{source}</p></div>
-          <div className="rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100"><p className="text-xs font-bold uppercase">Online</p><p className="mt-2 text-3xl font-black">{onlinePresence.length}</p></div>
-          <div className="rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100"><p className="text-xs font-bold uppercase">Total Visit</p><p className="mt-2 text-3xl font-black">{rows.length}</p></div>
-          <div className="rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100"><p className="text-xs font-bold uppercase">Bestie Unik</p><p className="mt-2 text-3xl font-black">{uniqueBesties}</p></div>
-          <div className="rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200"><p className="text-xs font-bold uppercase text-slate-500">Visit Hari Ini</p><p className="mt-2 text-3xl font-black">{todayVisits}</p></div>
+        <div className="secret-panel-tabs mb-5 grid grid-cols-2 gap-2 rounded-3xl bg-slate-100 p-1">
+          <button type="button" className={cx('secret-panel-tab', secretTab === 'settings' && 'active')} onClick={() => setSecretTab('settings')}>
+            <Icon name="settings" className="h-4 w-4" />
+            <span>Setting Web</span>
+          </button>
+          <button type="button" className={cx('secret-panel-tab', secretTab === 'monitoring' && 'active')} onClick={() => setSecretTab('monitoring')}>
+            <Icon name="history" className="h-4 w-4" />
+            <span>Monitoring</span>
+          </button>
         </div>
 
-        <div className="mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Live Presence</p>
-              <h3 className="text-lg font-black text-slate-950">Bestie Yang Sedang Online</h3>
-            </div>
-            <Badge tone="success">Realtime</Badge>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {onlinePresence.length ? onlinePresence.map((row) => (
-              <div key={row.session_id} className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" style={{ boxShadow: '0 0 0 5px rgba(16,185,129,.14)' }} /><p className="truncate font-black text-slate-950">{row.bestie_name || '-'}</p></div>
-                    <p className="mt-1 truncate text-xs font-bold text-slate-600">Store: {row.store_name || '-'}</p>
-                    <p className="mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400">{row.active_screen || 'home'} • {row.store_code || '-'}</p>
-                  </div>
-                  <Badge tone="success">Online</Badge>
+        {secretTab === 'settings' ? (
+          <>
+            <div className="mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Welcome Animation</p>
+                  <h3 className="text-lg font-black text-slate-950">Edit Welcome</h3>
                 </div>
-                <p className="mt-2 text-[11px] font-semibold text-slate-400">Last seen: {formatDateTime(row.last_seen_at || row.updated_at)}</p>
+                <Button variant="secondary" icon="check" onClick={saveWelcomeSettings}>Simpan Welcome</Button>
               </div>
-            )) : <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100">Belum ada bestie online yang terdeteksi.</div>}
-          </div>
-        </div>
-
-        <div className="mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Welcome Animation</p>
-              <h3 className="text-lg font-black text-slate-950">Edit Welcome</h3>
+              <div className="grid gap-3 md:grid-cols-3">
+                <Field label="Head title">
+                  <TextInput value={welcomeTitle} onChange={(event) => setWelcomeTitle(event.target.value)} placeholder={DEFAULT_WELCOME_CONFIG.title} />
+                </Field>
+                <Field label="Sub title">
+                  <TextArea value={welcomeSubtitle} onChange={(event) => setWelcomeSubtitle(event.target.value)} minRows={2} placeholder={DEFAULT_WELCOME_CONFIG.subtitle} />
+                </Field>
+                <Field label="Durasi (detik)" helper="Bisa diisi 1 sampai 15 detik.">
+                  <TextInput type="number" min="1" max="15" step="0.5" value={welcomeDurationSeconds} onChange={(event) => setWelcomeDurationSeconds(event.target.value)} onBlur={() => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds))} />
+                </Field>
+              </div>
             </div>
-            <Button variant="secondary" icon="check" onClick={saveWelcomeSettings}>Simpan Welcome</Button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Field label="Head title">
-              <TextInput value={welcomeTitle} onChange={(event) => setWelcomeTitle(event.target.value)} placeholder={DEFAULT_WELCOME_CONFIG.title} />
-            </Field>
-            <Field label="Sub title">
-              <TextArea value={welcomeSubtitle} onChange={(event) => setWelcomeSubtitle(event.target.value)} minRows={2} placeholder={DEFAULT_WELCOME_CONFIG.subtitle} />
-            </Field>
-            <Field label="Durasi (detik)" helper="Bisa diisi 1 sampai 15 detik.">
-              <TextInput type="number" min="1" max="15" step="0.5" value={welcomeDurationSeconds} onChange={(event) => setWelcomeDurationSeconds(event.target.value)} onBlur={() => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds))} />
-            </Field>
-          </div>
-        </div>
 
-        <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Hidden Control</p>
-              <h3 className="text-lg font-black text-slate-950">Assignment Link</h3>
-            </div>
-            <Button variant="secondary" icon="check" onClick={saveAssignmentSettings}>Simpan Link</Button>
-          </div>
-          <Field label="Link corrective action assignment" helper="Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF.">
-            <TextInput type="url" value={assignmentLink} onChange={(event) => setAssignmentLink(event.target.value)} placeholder={DEFAULT_ASSIGNMENT_LINK} />
-          </Field>
-        </div>
-
-        <div className="mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Home Notification</p>
-              <h3 className="text-lg font-black text-slate-950">Info Update Website</h3>
-            </div>
-            <Button variant="secondary" icon="check" onClick={saveNoticeSettings}>Simpan Info</Button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]">
-            <Field label="Judul">
-              <TextInput value={noticeTitle} onChange={(event) => setNoticeTitle(event.target.value)} placeholder={DEFAULT_UPDATE_NOTICE_CONFIG.title} />
-            </Field>
-            <Field label="Isi slide text" helper="Pisahkan setiap informasi dengan baris baru.">
-              <TextArea value={noticeMessagesText} onChange={(event) => setNoticeMessagesText(event.target.value)} minRows={3} placeholder={DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n')} />
-            </Field>
-            <div className="grid gap-3">
-              <Field label="Interval" helper="2 sampai 15 detik">
-                <TextInput type="number" min="2" max="15" step="0.5" value={noticeIntervalSeconds} onChange={(event) => setNoticeIntervalSeconds(event.target.value)} onBlur={() => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds))} />
+            <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Hidden Control</p>
+                  <h3 className="text-lg font-black text-slate-950">Assignment Link</h3>
+                </div>
+                <Button variant="secondary" icon="check" onClick={saveAssignmentSettings}>Simpan Link</Button>
+              </div>
+              <Field label="Link corrective action assignment" helper="Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF.">
+                <TextInput type="url" value={assignmentLink} onChange={(event) => setAssignmentLink(event.target.value)} placeholder={DEFAULT_ASSIGNMENT_LINK} />
               </Field>
-              <Toggle checked={noticeEnabled} onChange={setNoticeEnabled} label={noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan'} />
             </div>
-          </div>
-        </div>
 
-        <div className="mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
-          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-lg font-black text-slate-950">Pengaturan PDF</h3>
-              <p className="text-xs font-semibold text-slate-500">Atur ukuran font table, deskripsi foto, jumlah row table, dan grid foto per halaman PDF. Rekomendasi: 6 foto/halaman supaya foto tetap luas dan jelas.</p>
-            </div>
-            <Badge tone="success">Auto Save</Badge>
-          </div>
-          <div className="grid gap-3 md:grid-cols-5">
-            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Table PDF</p>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <Button variant="secondary" onClick={() => adjustPdfSetting('tableFontSize', -0.5)}>-</Button>
-                <strong className="text-lg text-slate-950">{Number(pdfTableFontSize).toFixed(1)}</strong>
-                <Button variant="secondary" onClick={() => adjustPdfSetting('tableFontSize', 0.5)}>+</Button>
+            <div className="mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Home Notification</p>
+                  <h3 className="text-lg font-black text-slate-950">Info Update Website</h3>
+                </div>
+                <Button variant="secondary" icon="check" onClick={saveNoticeSettings}>Simpan Info</Button>
               </div>
-            </div>
-            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Title Table PDF</p>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <Button variant="secondary" onClick={() => adjustPdfSetting('tableTitleFontSize', -0.5)}>-</Button>
-                <strong className="text-lg text-slate-950">{Number(pdfTableTitleFontSize).toFixed(1)}</strong>
-                <Button variant="secondary" onClick={() => adjustPdfSetting('tableTitleFontSize', 0.5)}>+</Button>
-              </div>
-              <p className="mt-2 text-[10px] font-bold leading-4 text-emerald-700">Mengatur title Temuan di atas table.</p>
-            </div>
-            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Deskripsi Foto</p>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <Button variant="secondary" onClick={() => adjustPdfSetting('evidenceFontSize', -0.5)}>-</Button>
-                <strong className="text-lg text-slate-950">{Number(pdfEvidenceFontSize).toFixed(1)}</strong>
-                <Button variant="secondary" onClick={() => adjustPdfSetting('evidenceFontSize', 0.5)}>+</Button>
-              </div>
-            </div>
-            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Add Row Table PDF</p>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <Button variant="secondary" onClick={() => adjustPdfSetting('tableExtraRows', -1)}>-</Button>
-                <strong className="text-lg text-slate-950">+{pdfTableExtraRows}</strong>
-                <Button variant="secondary" onClick={() => adjustPdfSetting('tableExtraRows', 1)}>+</Button>
-              </div>
-            </div>
-            <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Grid Foto PDF</p>
-              <div className="mt-3 grid grid-cols-3 gap-1">
-                {[4, 6, 8].map((option) => <button key={option} type="button" className={cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200')} onClick={() => setPdfPhotoGrid(option)}>{option}</button>)}
-              </div>
-              <p className="mt-2 text-[10px] font-bold leading-4 text-emerald-700">Rekomendasi: 6 foto/halaman.</p>
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="secondary" icon="check" onClick={() => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true)}>Simpan PDF Setting</Button>
-            <Button variant="secondary" icon="eraser" onClick={resetPdfSettings}>Reset Default</Button>
-          </div>
-        </div>
-
-        <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-black text-slate-950">Request Toko Manual</h3><Badge tone="default">{manualRequests.filter((item) => item.status === 'pending').length} pending</Badge></div>
-          <div className="grid gap-3">
-            {manualRequests.length ? manualRequests.map((item) => (
-              <div key={item.id} className="rounded-2xl bg-white p-3 ring-1 ring-slate-200">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="min-w-0"><p className="font-extrabold text-slate-950">{item.storeName || '-'}</p><p className="text-xs text-slate-500">{item.bestieName || '-'} • {item.storeCode || '-'} • {formatDateTime(item.createdAt)}</p>{item.address ? <p className="mt-1 text-xs text-slate-600">{item.address}</p> : null}</div>
-                  <div className="flex flex-wrap items-center gap-2"><Badge tone={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default'}>{item.status}</Badge>{item.status === 'pending' ? <><Button variant="secondary" icon="check" onClick={() => approveRequest(item.id)}>Approve</Button><Button variant="danger" icon="close" onClick={() => rejectRequest(item.id)}>Reject</Button></> : null}</div>
+              <div className="grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]">
+                <Field label="Judul">
+                  <TextInput value={noticeTitle} onChange={(event) => setNoticeTitle(event.target.value)} placeholder={DEFAULT_UPDATE_NOTICE_CONFIG.title} />
+                </Field>
+                <Field label="Isi slide text" helper="Pisahkan setiap informasi dengan baris baru.">
+                  <TextArea value={noticeMessagesText} onChange={(event) => setNoticeMessagesText(event.target.value)} minRows={3} placeholder={DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n')} />
+                </Field>
+                <div className="grid gap-3">
+                  <Field label="Interval" helper="2 sampai 15 detik">
+                    <TextInput type="number" min="2" max="15" step="0.5" value={noticeIntervalSeconds} onChange={(event) => setNoticeIntervalSeconds(event.target.value)} onBlur={() => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds))} />
+                  </Field>
+                  <Toggle checked={noticeEnabled} onChange={setNoticeEnabled} label={noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan'} />
                 </div>
               </div>
-            )) : <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200">Belum ada request.</div>}
-          </div>
-        </div>
+            </div>
 
-        <div className="mb-4 max-w-md">
-          <div className="relative">
-            <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-            <TextInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari bestie, store, kode..." className="pl-12" />
-          </div>
-        </div>
+            <div className="mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
+              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-950">Pengaturan PDF</h3>
+                  <p className="text-xs font-semibold text-slate-500">Atur ukuran isi table, title field seperti Temuan/Kondisi Ideal, jarak title ke isi konten, deskripsi foto, dan grid foto per halaman PDF.</p>
+                </div>
+                <Badge tone="success">Auto Save</Badge>
+              </div>
+              <div className="grid gap-3 md:grid-cols-5">
+                <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Isi Table PDF</p>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('tableFontSize', -0.5)}>-</Button>
+                    <strong className="text-lg text-slate-950">{Number(pdfTableFontSize).toFixed(1)}</strong>
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('tableFontSize', 0.5)}>+</Button>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Title Field PDF</p>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('tableTitleFontSize', -0.5)}>-</Button>
+                    <strong className="text-lg text-slate-950">{Number(pdfTableTitleFontSize).toFixed(1)}</strong>
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('tableTitleFontSize', 0.5)}>+</Button>
+                  </div>
+                  <p className="mt-2 text-[10px] font-bold leading-4 text-emerald-700">Untuk label Temuan, Kondisi Ideal, Dampak, dll. Spacing ke isi ikut menyesuaikan.</p>
+                </div>
+                <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Font Deskripsi Foto</p>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('evidenceFontSize', -0.5)}>-</Button>
+                    <strong className="text-lg text-slate-950">{Number(pdfEvidenceFontSize).toFixed(1)}</strong>
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('evidenceFontSize', 0.5)}>+</Button>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Add Row Table PDF</p>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('tableExtraRows', -1)}>-</Button>
+                    <strong className="text-lg text-slate-950">+{pdfTableExtraRows}</strong>
+                    <Button variant="secondary" onClick={() => adjustPdfSetting('tableExtraRows', 1)}>+</Button>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">Grid Foto PDF</p>
+                  <div className="mt-3 grid grid-cols-3 gap-1">
+                    {[4, 6, 8].map((option) => <button key={option} type="button" className={cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200')} onClick={() => setPdfPhotoGrid(option)}>{option}</button>)}
+                  </div>
+                  <p className="mt-2 text-[10px] font-bold leading-4 text-emerald-700">Rekomendasi: 6 foto/halaman.</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="secondary" icon="check" onClick={() => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true)}>Simpan PDF Setting</Button>
+                <Button variant="secondary" icon="eraser" onClick={resetPdfSettings}>Reset Default</Button>
+              </div>
+            </div>
 
-        <div className="table-scroll overflow-hidden rounded-3xl border border-slate-200">
-          <table className="w-full border-collapse bg-white text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr><th className="px-4 py-3">No</th><th className="px-4 py-3">Bestie</th><th className="px-4 py-3">Kode</th><th className="px-4 py-3">Store</th><th className="px-4 py-3">Visit</th><th className="px-4 py-3">Update</th></tr>
-            </thead>
-            <tbody>
-              {filtered.length ? filtered.map((row, index) => (
-                <tr key={`${row.bestie_name}-${row.store_name}-${index}`} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-bold text-slate-500">{index + 1}</td>
-                  <td className="px-4 py-3 font-bold text-slate-900">{row.bestie_name || '-'}</td>
-                  <td className="px-4 py-3">{row.store_code || '-'}</td>
-                  <td className="px-4 py-3">{row.store_name || '-'}</td>
-                  <td className="px-4 py-3">{formatDate(row.visit_date)}</td>
-                  <td className="px-4 py-3 text-slate-500">{formatDateTime(row.updated_at)}</td>
-                </tr>
-              )) : <tr><td colSpan="6" className="px-4 py-10 text-center text-slate-500">Tidak ada data.</td></tr>}
-            </tbody>
-          </table>
-        </div>
+            <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-black text-slate-950">Request Toko Manual</h3><Badge tone="default">{manualRequests.filter((item) => item.status === 'pending').length} pending</Badge></div>
+              <div className="grid gap-3">
+                {manualRequests.length ? manualRequests.map((item) => (
+                  <div key={item.id} className="rounded-2xl bg-white p-3 ring-1 ring-slate-200">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0"><p className="font-extrabold text-slate-950">{item.storeName || '-'}</p><p className="text-xs text-slate-500">{item.bestieName || '-'} • {item.storeCode || '-'} • {formatDateTime(item.createdAt)}</p>{item.address ? <p className="mt-1 text-xs text-slate-600">{item.address}</p> : null}</div>
+                      <div className="flex flex-wrap items-center gap-2"><Badge tone={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default'}>{item.status}</Badge>{item.status === 'pending' ? <><Button variant="secondary" icon="check" onClick={() => approveRequest(item.id)}>Approve</Button><Button variant="danger" icon="close" onClick={() => rejectRequest(item.id)}>Reject</Button></> : null}</div>
+                    </div>
+                  </div>
+                )) : <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200">Belum ada request.</div>}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="rounded-3xl bg-slate-950 p-5 text-white"><p className="text-xs font-bold uppercase text-slate-300">Source</p><p className="mt-2 text-2xl font-black capitalize">{source}</p></div>
+              <div className="rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100"><p className="text-xs font-bold uppercase">Online</p><p className="mt-2 text-3xl font-black">{onlinePresence.length}</p></div>
+              <div className="rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100"><p className="text-xs font-bold uppercase">Total Visit</p><p className="mt-2 text-3xl font-black">{rows.length}</p></div>
+              <div className="rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100"><p className="text-xs font-bold uppercase">Bestie Unik</p><p className="mt-2 text-3xl font-black">{uniqueBesties}</p></div>
+              <div className="rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200"><p className="text-xs font-bold uppercase text-slate-500">Visit Hari Ini</p><p className="mt-2 text-3xl font-black">{todayVisits}</p></div>
+            </div>
+
+            <div className="mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary">Live Presence</p>
+                  <h3 className="text-lg font-black text-slate-950">Bestie Yang Sedang Online</h3>
+                </div>
+                <Badge tone="success">Realtime</Badge>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {onlinePresence.length ? onlinePresence.map((row) => (
+                  <div key={row.session_id} className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" style={{ boxShadow: '0 0 0 5px rgba(16,185,129,.14)' }} /><p className="truncate font-black text-slate-950">{row.bestie_name || '-'}</p></div>
+                        <p className="mt-1 truncate text-xs font-bold text-slate-600">Store: {row.store_name || '-'}</p>
+                        <p className="mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400">{row.active_screen || 'home'} • {row.store_code || '-'}</p>
+                      </div>
+                      <Badge tone="success">Online</Badge>
+                    </div>
+                    <p className="mt-2 text-[11px] font-semibold text-slate-400">Last seen: {formatDateTime(row.last_seen_at || row.updated_at)}</p>
+                  </div>
+                )) : <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100">Belum ada bestie online yang terdeteksi.</div>}
+              </div>
+            </div>
+
+            <div className="mb-4 max-w-md">
+              <div className="relative">
+                <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <TextInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari bestie, store, kode..." className="pl-12" />
+              </div>
+            </div>
+
+            <div className="table-scroll overflow-hidden rounded-3xl border border-slate-200">
+              <table className="w-full border-collapse bg-white text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr><th className="px-4 py-3">No</th><th className="px-4 py-3">Bestie</th><th className="px-4 py-3">Kode</th><th className="px-4 py-3">Store</th><th className="px-4 py-3">Visit</th><th className="px-4 py-3">Update</th></tr>
+                </thead>
+                <tbody>
+                  {filtered.length ? filtered.map((row, index) => (
+                    <tr key={`${row.bestie_name}-${row.store_name}-${index}`} className="border-t border-slate-100">
+                      <td className="px-4 py-3 font-bold text-slate-500">{index + 1}</td>
+                      <td className="px-4 py-3 font-bold text-slate-900">{row.bestie_name || '-'}</td>
+                      <td className="px-4 py-3">{row.store_code || '-'}</td>
+                      <td className="px-4 py-3">{row.store_name || '-'}</td>
+                      <td className="px-4 py-3">{formatDate(row.visit_date)}</td>
+                      <td className="px-4 py-3 text-slate-500">{formatDateTime(row.updated_at)}</td>
+                    </tr>
+                  )) : <tr><td colSpan="6" className="px-4 py-10 text-center text-slate-500">Tidak ada data.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
