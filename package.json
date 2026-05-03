@@ -1,5 +1,5 @@
 {
-  "name": "bestie-visit-netlify-sync",
+  "name": "bestie-visit-cloudflare-d1-sync",
   "private": true,
   "version": "1.0.0",
   "dependencies": {
@@ -7,5 +7,10 @@
   },
   "devDependencies": {
     "@netlify/functions": "^3.0.0"
+  },
+  "scripts": {
+    "cloudflare:login": "wrangler login",
+    "cloudflare:schema": "wrangler d1 execute visitreport_rbv --remote --file=cloudflare/schema.sql",
+    "cloudflare:deploy": "wrangler deploy"
   }
 }

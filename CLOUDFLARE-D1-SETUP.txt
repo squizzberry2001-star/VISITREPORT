@@ -1,0 +1,75 @@
+CLOUDFLARE D1 SETUP - VISITREPORT
+==================================
+
+Backend utama sudah dimigrasikan dari Netlify Blobs/Function ke Cloudflare D1.
+Alasan: Cloudflare D1 Free memberi 5 GB storage total, 5 juta rows read/hari,
+100 ribu rows write/hari, dan tidak ada egress charge untuk D1.
+
+A. Deploy backend Worker + D1
+----------------------------
+1. Login Cloudflare via Wrangler:
+
+   npx wrangler login
+
+2. Buat database D1:
+
+   npx wrangler d1 create visitreport_rbv
+
+3. Copy database_id dari output command, lalu paste ke file:
+
+   wrangler.toml
+
+   bagian:
+   database_id = "ISI_DATABASE_ID_D1_DI_SINI"
+
+4. Buat table database:
+
+   npx wrangler d1 execute visitreport_rbv --remote --file=cloudflare/schema.sql
+
+5. Deploy Worker API:
+
+   npx wrangler deploy
+
+6. Copy URL Worker yang muncul, contoh:
+
+   https://visitreport-rbv-api.NAMA-AKUN.workers.dev
+
+B. Hubungkan web ke Worker
+--------------------------
+1. Buka file:
+
+   cloudflare-config.js
+
+2. Isi endpoint dengan URL Worker:
+
+   endpoint: 'https://visitreport-rbv-api.NAMA-AKUN.workers.dev',
+
+3. Test endpoint di browser:
+
+   https://visitreport-rbv-api.NAMA-AKUN.workers.dev?action=listAppSettings
+
+Jika muncul JSON {"ok":true,"rows":[]}, berarti backend aktif.
+
+C. Deploy web static
+--------------------
+Kamu bisa deploy file web ke Cloudflare Pages, Netlify, Vercel, atau hosting static lain.
+Backend database tetap Cloudflare D1 selama cloudflare-config.js endpoint sudah diisi.
+
+D. Optional: pakai admin token
+------------------------------
+Kalau ingin write API pakai token:
+
+1. Set secret Worker:
+
+   npx wrangler secret put RBV_ADMIN_TOKEN
+
+2. Isi token yang sama di cloudflare-config.js:
+
+   adminToken: 'TOKEN-YANG-SAMA',
+
+Catatan: kalau RBV_ADMIN_TOKEN tidak diset di Worker, API write akan terbuka seperti behavior Netlify sebelumnya.
+
+E. Netlify lama
+---------------
+netlify-config.js sudah dibuat enabled: false agar app tidak memanggil Netlify Function yang limitnya sudah habis.
+Kalau nanti ingin aktifkan lagi sebagai fallback, ubah enabled menjadi true.

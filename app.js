@@ -2709,7 +2709,7 @@ function persistManualRequestsFromRemote(items) {
         siteCode4: item.storeCode,
         address: item.address,
         city: '',
-        source: netlifyEnabled() ? 'netlify-approved' : (supabaseEnabled() ? 'supabase-approved' : 'convex-approved'),
+        source: cloudflareEnabled() ? 'cloudflare-approved' : (netlifyEnabled() ? 'netlify-approved' : (supabaseEnabled() ? 'supabase-approved' : 'convex-approved')),
         approvedAt: item.updatedAt,
         requestedBy: item.bestieName
     }));
@@ -2781,6 +2781,171 @@ function persistPresenceLocal(payload) {
     const rows = readLocalPresenceRows().filter((item) => item.session_id !== payload.session_id);
     return saveLocalPresenceRows([payload, ...rows]);
 }
+
+// =============================================================
+// Cloudflare D1 backend helpers
+// =============================================================
+function getCloudflareConfig() {
+    const config = window.RB_CLOUDFLARE_CONFIG && typeof window.RB_CLOUDFLARE_CONFIG === 'object' ? window.RB_CLOUDFLARE_CONFIG : {};
+    return config;
+}
+function cloudflareEnabled() {
+    const config = getCloudflareConfig();
+    return config.enabled !== false && Boolean(cleanText(config.endpoint || config.workerUrl || config.apiPath || '/api/rbv-data'));
+}
+function getCloudflareApiUrl() {
+    const config = getCloudflareConfig();
+    const endpoint = cleanText(config.endpoint || config.workerUrl || '');
+    const apiPath = cleanText(config.apiPath || '/api/rbv-data');
+    if (endpoint) {
+        if (/^https?:\/\//i.test(endpoint)) {
+            if (!apiPath || endpoint.endsWith(apiPath) || endpoint.includes('?'))
+                return endpoint;
+            return endpoint.replace(/\/$/, '') + '/' + apiPath.replace(/^\//, '');
+        }
+        return endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+    }
+    return apiPath.startsWith('/') ? apiPath : '/' + apiPath;
+}
+function normalizeCloudflareError(error, label) {
+    if (!error)
+        return '';
+    return `${label || 'Cloudflare D1'}: ${error.message || error.details || error.hint || 'gagal diproses'}`;
+}
+async function cloudflareRequest(action, options = {}) {
+    if (!cloudflareEnabled() || !action)
+        return null;
+    const method = options.method || 'GET';
+    const url = new URL(getCloudflareApiUrl(), window.location.origin);
+    url.searchParams.set('action', action);
+    if (options.params && typeof options.params === 'object') {
+        Object.entries(options.params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '')
+                url.searchParams.set(key, String(value));
+        });
+    }
+    const config = getCloudflareConfig();
+    const headers = { Accept: 'application/json' };
+    if (options.body !== undefined)
+        headers['Content-Type'] = 'application/json';
+    if (cleanText(config.adminToken))
+        headers['X-Admin-Token'] = cleanText(config.adminToken);
+    const response = await fetch(url.toString(), {
+        method,
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        cache: 'no-store'
+    });
+    let payload = null;
+    try {
+        payload = await response.json();
+    }
+    catch (error) { }
+    if (!response.ok) {
+        throw new Error(payload?.error || payload?.message || `Cloudflare D1 request gagal (${response.status})`);
+    }
+    return payload;
+}
+async function upsertMonitorVisitToCloudflare(visit) {
+    if (!cloudflareEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
+        return false;
+    try {
+        await cloudflareRequest('upsertMonitorVisit', { method: 'POST', body: monitorPayloadFromVisit(visit) });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare monitor upsert'));
+        return false;
+    }
+}
+async function fetchMonitorRowsFromCloudflare() {
+    if (!cloudflareEnabled())
+        return null;
+    try {
+        const payload = await cloudflareRequest('listMonitorVisits', { params: { limit: getCloudflareConfig().monitorLimit || 500 } });
+        return normalizeMonitorRows(payload?.rows || payload?.data || []);
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare monitor read'));
+        return null;
+    }
+}
+async function upsertPresenceToCloudflare(payload) {
+    if (!cloudflareEnabled() || !payload)
+        return false;
+    try {
+        await cloudflareRequest('upsertPresence', { method: 'POST', body: payload });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare presence upsert'));
+        return false;
+    }
+}
+async function fetchPresenceRowsFromCloudflare() {
+    if (!cloudflareEnabled())
+        return null;
+    try {
+        const payload = await cloudflareRequest('listPresence', { params: { limit: getCloudflareConfig().presenceLimit || 300 } });
+        return normalizePresenceRows(payload?.rows || payload?.data || []);
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare presence read'));
+        return null;
+    }
+}
+async function fetchManualRequestsFromCloudflare() {
+    if (!cloudflareEnabled())
+        return null;
+    try {
+        const payload = await cloudflareRequest('listManualRequests');
+        return persistManualRequestsFromRemote(payload?.rows || payload?.data || []);
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare request toko read'));
+        return null;
+    }
+}
+async function syncManualRequestToCloudflare(request) {
+    if (!cloudflareEnabled() || !request)
+        return false;
+    try {
+        await cloudflareRequest('upsertManualRequest', { method: 'POST', body: manualRequestPayload(request) });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare request toko sync'));
+        return false;
+    }
+}
+async function fetchAppConfigsFromCloudflare() {
+    if (!cloudflareEnabled())
+        return null;
+    try {
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice].join(',') } });
+        return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare app config read'));
+        return null;
+    }
+}
+async function syncAppConfigToCloudflare(key, payload) {
+    if (!cloudflareEnabled() || !key)
+        return false;
+    try {
+        await cloudflareRequest('setAppSetting', {
+            method: 'POST',
+            body: { key, payload, updatedBy: SESSION_ID }
+        });
+        return true;
+    }
+    catch (error) {
+        console.warn(normalizeCloudflareError(error, 'Cloudflare app config sync'));
+        return false;
+    }
+}
+
 // =============================================================
 // Netlify backend helpers
 // =============================================================
@@ -2942,6 +3107,8 @@ async function syncAppConfigToNetlify(key, payload) {
     }
 }
 function remoteSyncProvider() {
+    if (cloudflareEnabled())
+        return 'cloudflare';
     if (netlifyEnabled())
         return 'netlify';
     if (supabaseEnabled())
@@ -2968,6 +3135,8 @@ function supabaseEnabled() {
     return Boolean(config.enabled && cleanText(config.url) && getSupabaseKey());
 }
 function getRemotePollMs() {
+    if (cloudflareEnabled())
+        return Math.max(3500, Number(getCloudflareConfig().pollMs || 5000));
     if (netlifyEnabled())
         return Math.max(3500, Number(getNetlifyConfig().pollMs || 5000));
     if (supabaseEnabled())
@@ -3219,6 +3388,8 @@ function monitorPayloadFromVisit(visit) {
     };
 }
 async function upsertMonitorVisit(visit) {
+    if (await upsertMonitorVisitToCloudflare(visit))
+        return;
     if (await upsertMonitorVisitToNetlify(visit))
         return;
     if (await upsertMonitorVisitToSupabase(visit))
@@ -3254,6 +3425,8 @@ async function upsertPresence(payload) {
     if (!payload)
         return;
     persistPresenceLocal(payload);
+    if (await upsertPresenceToCloudflare(payload))
+        return;
     if (await upsertPresenceToNetlify(payload))
         return;
     if (await upsertPresenceToSupabase(payload))
@@ -3269,6 +3442,9 @@ async function upsertPresence(payload) {
     }
 }
 async function fetchPresenceRowsFromConvex() {
+    const cloudflareRows = await fetchPresenceRowsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchPresenceRowsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
@@ -3290,6 +3466,9 @@ async function fetchPresenceRowsFromConvex() {
     return readLocalPresenceRows();
 }
 async function fetchMonitorRowsFromConvex() {
+    const cloudflareRows = await fetchMonitorRowsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchMonitorRowsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
@@ -3321,6 +3500,9 @@ async function fetchMonitorRowsFromConvex() {
     return normalizeMonitorRows(payload);
 }
 async function fetchManualRequestsFromConvex() {
+    const cloudflareRows = await fetchManualRequestsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchManualRequestsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
@@ -3352,6 +3534,8 @@ async function fetchManualRequestsFromConvex() {
     return persistManualRequestsFromRemote(payload);
 }
 async function syncManualRequestToConvex(request) {
+    if (await syncManualRequestToCloudflare(request))
+        return;
     if (await syncManualRequestToNetlify(request))
         return;
     if (await syncManualRequestToSupabase(request))
@@ -3419,6 +3603,9 @@ function applyRemoteAppConfigRows(rows) {
     return normalized;
 }
 async function fetchAppConfigsFromConvex() {
+    const cloudflareRows = await fetchAppConfigsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchAppConfigsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
@@ -3440,6 +3627,8 @@ async function fetchAppConfigsFromConvex() {
     return null;
 }
 async function syncAppConfigToConvex(key, payload) {
+    if (await syncAppConfigToCloudflare(key, payload))
+        return true;
     if (await syncAppConfigToNetlify(key, payload))
         return true;
     if (await syncAppConfigToSupabase(key, payload))
@@ -3754,7 +3943,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
             const remotePresence = presenceRowsResult.status === 'fulfilled' ? presenceRowsResult.value : null;
             if (remoteRows !== null) {
-                applyRows(remoteRows, netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : (source === 'convex realtime' ? 'convex realtime' : 'convex')));
+                applyRows(remoteRows, cloudflareEnabled() ? 'cloudflare' : (netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : (source === 'convex realtime' ? 'convex realtime' : 'convex'))));
             }
             else {
                 applyRows(localRows(), 'local');
@@ -3827,7 +4016,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setManualRequests(readManualStoreRequests());
             setPresenceRows(readLocalPresenceRows());
             try {
-                if (netlifyEnabled() || supabaseEnabled()) {
+                if (cloudflareEnabled() || netlifyEnabled() || supabaseEnabled()) {
                     setConnectionState('online');
                     await refresh();
                     pollId = window.setInterval(() => refresh({ quiet: true }), getRemotePollMs());
@@ -3936,8 +4125,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
     const todayVisits = rows.filter((row) => String(row.visit_date || '').slice(0, 10) === today).length;
-    const isLive = source === 'netlify' || source === 'supabase' || source === 'convex realtime';
-    const sourceBadgeLabel = source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
+    const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime';
+    const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
     return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7" },
@@ -4331,7 +4520,7 @@ function App() {
         async function startRemoteConfigSync() {
             try {
                 await refreshRemoteConfigs();
-                if (!netlifyEnabled() && !supabaseEnabled()) {
+                if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
                     unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
