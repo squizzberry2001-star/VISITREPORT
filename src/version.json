@@ -1,6 +1,6 @@
 {
-  "version": "revamp69-pdf-table-horizontal-full-only",
-  "build": "revamp69-pdf-table-horizontal-full-only",
-  "updatedAt": "2026-05-03T00:00:00+07:00",
-  "note": "PDF observation table keeps layout and uses full width only on left and right margins"
+  "version": "revamp72-cloudflare-d1-migration",
+  "build": "revamp72-cloudflare-d1-migration",
+  "updatedAt": "2026-05-04T00:00:00+07:00",
+  "note": "Cloudflare D1 backend migration with Netlify disabled by default"
 }

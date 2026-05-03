@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp69-pdf-table-horizontal-full-only';
+const APP_VERSION = 'revamp72-cloudflare-d1-migration';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -10,6 +10,7 @@ const LOCAL_ASSETS = [
   './store-master-data.js',
   './ca-assignment-export.js',
   './jszip.min.js',
+  './cloudflare-config.js',
   './netlify-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
@@ -47,6 +48,7 @@ function shouldNetworkFirst(request) {
   if (isNavigationRequest(request)) return true;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return false;
+  if (url.pathname.startsWith('/api/rbv-data')) return true;
   if (url.pathname.startsWith('/.netlify/functions/')) return true;
   if (url.pathname.endsWith('/service-worker.js')) return true;
   if (url.pathname.endsWith('/version.json')) return true;
