@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp68-observation-add-center-counter-proper';
+const APP_VERSION = 'revamp69-pdf-table-horizontal-full-only';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

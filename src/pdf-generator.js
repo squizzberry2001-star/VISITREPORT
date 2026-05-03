@@ -960,11 +960,13 @@
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
-    const tableMargin = 3.2;
-    const x = tableMargin;
-    const width = pageWidth - tableMargin * 2;
+    // Full-paper request applies only to left/right spacing.
+    // Keep the existing observation table layout and normal vertical safe area.
+    const tableSideMargin = 3.2;
+    const x = tableSideMargin;
+    const width = pageWidth - tableSideMargin * 2;
     const density = pdfTableExtraRows();
-    const bottom = pageHeight - Math.max(5, 12 - density * 1.6);
+    const bottom = pageHeight - margin;
     const gap = Math.max(1.2, 2.4 - density * 0.22);
     const innerTableWidth = width - 3.6;
     let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
