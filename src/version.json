@@ -1,6 +1,6 @@
 {
-  "version": "revamp73-pdf-observation-multi-findings",
-  "build": "revamp73-pdf-observation-multi-findings",
-  "updatedAt": "2026-05-04T00:30:00+07:00",
-  "note": "Observation PDF redesigned so one page can fit multiple findings with lighter, easier-to-read cards"
+  "version": "revamp74-pdf-observation-deadline-wrap",
+  "build": "revamp74-pdf-observation-deadline-wrap",
+  "updatedAt": "2026-05-04T00:55:00+07:00",
+  "note": "Observation PDF deadline label improved and text wrapping expanded so card content stays inside the PDF"
 }
