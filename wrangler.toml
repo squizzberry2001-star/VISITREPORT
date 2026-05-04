@@ -9,4 +9,4 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "visitreport_rbv"
-database_id = "ISI_DATABASE_ID_D1_DI_SINI"
+database_id = "9ebe3f41-6994-4845-ba05-f96a57f49542"
