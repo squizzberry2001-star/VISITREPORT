@@ -1,6 +1,6 @@
 {
-  "version": "revamp77-vr74-look-fill-next-card",
-  "build": "revamp77-vr74-look-fill-next-card",
-  "updatedAt": "2026-05-04T01:50:00+07:00",
-  "note": "Observation PDF keeps the VR74 table look but now uses remaining page space for the next finding cards"
+  "version": "revamp78-vr74-fill-empty-space-next-card",
+  "build": "revamp78-vr74-fill-empty-space-next-card",
+  "updatedAt": "2026-05-04T02:10:00+07:00",
+  "note": "Based on uploaded VR74, observation PDF keeps the same card design and fills remaining page space with next finding cards"
 }

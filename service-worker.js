@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp77-vr74-look-fill-next-card';
+const APP_VERSION = 'revamp78-vr74-fill-empty-space-next-card';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
