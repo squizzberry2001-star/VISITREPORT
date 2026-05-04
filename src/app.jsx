@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp66-home-nav-loading-secret-spark-pdf-spacing';
+const APP_BUILD_VERSION = 'revamp82-preview-send-email-gmail-api';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2316,7 +2316,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             </button>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp66-home-nav-loading-secret-spark-pdf-spacing">
+        <div className="mt-3" data-build="revamp82-preview-send-email-gmail-api">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -2534,6 +2534,98 @@ async function downloadBlobManaged(blob, fileName) {
   return true;
 }
 
+
+function getEmailReportConfig() {
+  const config = window.VISIT_EMAIL_CONFIG || {};
+  return {
+    enabled: config.enabled !== false,
+    endpoint: cleanText(config.endpoint, '/api/send-report-email'),
+    sender: cleanText(config.sender, 'Sender belum diset'),
+    defaultTo: cleanText(config.defaultTo),
+    defaultCc: cleanText(config.defaultCc),
+    defaultSubjectTemplate: cleanText(config.defaultSubjectTemplate, 'Visit Report - {store} - {date}'),
+    defaultBodyTemplate: cleanText(config.defaultBodyTemplate, 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.')
+  };
+}
+
+function applyEmailTemplate(template, visit) {
+  const map = {
+    '{store}': cleanText(visit?.store, '-'),
+    '{bestie}': cleanText(visit?.nama, '-'),
+    '{date}': formatDate(visit?.tanggal),
+    '{storeHead}': cleanText(visit?.storeHead || visit?.detail?.storeHead || visit?.storeDetail?.storeHead, '-'),
+    '{siteCode}': cleanText(visit?.siteCode || visit?.storeCode || visit?.detail?.siteCode, '-')
+  };
+  return Object.keys(map).reduce((text, key) => text.split(key).join(map[key]), String(template || ''));
+}
+
+function getVisitStoreEmail(visit) {
+  return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore);
+}
+
+function buildInitialEmailForm(visit) {
+  const config = getEmailReportConfig();
+  return {
+    from: config.sender,
+    to: getVisitStoreEmail(visit) || config.defaultTo,
+    cc: config.defaultCc,
+    subject: applyEmailTemplate(config.defaultSubjectTemplate, visit),
+    body: applyEmailTemplate(config.defaultBodyTemplate, visit),
+    passcode: '',
+    attachPdf: true,
+    attachExcel: true
+  };
+}
+
+function blobToBase64Payload(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      resolve(text.includes(',') ? text.split(',').pop() : text);
+    };
+    reader.onerror = () => reject(reader.error || new Error('Gagal membaca file attachment.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, status, visit }) {
+  if (!open) return null;
+  const config = getEmailReportConfig();
+  return (
+    <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6" role="dialog" aria-modal="true">
+      <div className="w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-3xl md:rounded-[32px] md:p-7">
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Send Email</p>
+            <h2 className="mt-2 text-2xl font-black text-slate-950">Kirim Visit Report</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Sender dikunci dari backend: {config.sender}</p>
+          </div>
+          <Button variant="icon" onClick={onClose} disabled={busy} aria-label="Tutup"><Icon name="close" className="h-4 w-4" /></Button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="From / Sender Locked"><TextInput value={form.from || config.sender} readOnly placeholder="Sender backend" /></Field>
+          <Field label="To" required><TextInput type="email" value={form.to} onChange={(e) => onChange({ to: e.target.value })} placeholder="email tujuan" /></Field>
+          <Field label="CC"><TextInput value={form.cc} onChange={(e) => onChange({ cc: e.target.value })} placeholder="cc1@email.com, cc2@email.com" /></Field>
+          <Field label="Kode Kirim" helper="Isi jika EMAIL_SEND_PASSCODE diset di Vercel."><TextInput type="password" value={form.passcode} onChange={(e) => onChange({ passcode: e.target.value })} placeholder="Opsional" /></Field>
+          <div className="md:col-span-2"><Field label="Subject" required><TextInput value={form.subject} onChange={(e) => onChange({ subject: e.target.value })} placeholder="Subject email" /></Field></div>
+          <div className="md:col-span-2"><Field label="Body Email" required><TextArea value={form.body} onChange={(e) => onChange({ body: e.target.value })} placeholder="Tulis isi email..." minRows={7} /></Field></div>
+        </div>
+        <div className="mt-4 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-800 md:grid-cols-2">
+          <label className="flex items-center gap-3"><input type="checkbox" checked={!!form.attachPdf} onChange={(e) => onChange({ attachPdf: e.target.checked })} /> Attach PDF Report</label>
+          <label className="flex items-center gap-3"><input type="checkbox" checked={!!form.attachExcel} onChange={(e) => onChange({ attachExcel: e.target.checked })} /> Attach Excel CA Assignment</label>
+        </div>
+        {status ? <p className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100">{status}</p> : null}
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={onClose} disabled={busy}>Tutup</Button>
+          <Button variant="secondary" icon="pdf" onClick={() => onSubmit('draft')} disabled={busy || !form.to || !form.subject}>{busy ? 'Memproses...' : 'Create Draft'}</Button>
+          <Button icon="upload" onClick={() => onSubmit('send')} disabled={busy || !form.to || !form.subject}>{busy ? 'Memproses...' : 'Send Now'}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
   const pagesRef = useRef(null);
   const scrollRef = useRef(null);
@@ -2718,6 +2810,10 @@ function PreviewPage({ visit, onBack }) {
   const [busy, setBusy] = useState(false);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState('');
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailStatus, setEmailStatus] = useState('');
+  const [emailForm, setEmailForm] = useState(() => buildInitialEmailForm(visit));
 
   useEffect(() => {
     let cancelled = false;
@@ -2741,6 +2837,10 @@ function PreviewPage({ visit, onBack }) {
     render();
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [visit]);
+
+  useEffect(() => {
+    if (!emailOpen) setEmailForm(buildInitialEmailForm(visit));
+  }, [visit, emailOpen]);
 
   async function handleDownloadPdf() {
     if (!visit || busy || downloadBusy) return;
@@ -2766,13 +2866,77 @@ function PreviewPage({ visit, onBack }) {
   }
   async function handleExportExcel() { if (!visit) return; if (!window.__caAssignmentExport?.buildWorkbook) { alert('Mesin export Excel belum siap.'); return; } setBusy(true); try { const blob = await window.__caAssignmentExport.buildWorkbook(visit); const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx'; downloadBlob(blob, fileName); } catch (error) { alert(error?.message || 'Gagal export Excel CA Assignment.'); } finally { setBusy(false); } }
 
+  function openEmailReportModal() {
+    if (!visit || busy || downloadBusy) return;
+    setEmailForm(buildInitialEmailForm(visit));
+    setEmailStatus('');
+    setEmailOpen(true);
+  }
+
+  async function handleSendReportEmail(mode) {
+    if (!visit || emailBusy) return;
+    const config = getEmailReportConfig();
+    if (!config.enabled) {
+      alert('Fitur email belum aktif di email-config.js.');
+      return;
+    }
+    if (!cleanText(emailForm.to) || !cleanText(emailForm.subject)) {
+      alert('To dan Subject wajib diisi.');
+      return;
+    }
+    setEmailBusy(true);
+    setBusy(true);
+    setEmailStatus('Menyiapkan attachment...');
+    try {
+      const attachments = [];
+      if (emailForm.attachPdf) {
+        if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+        const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
+        const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+        attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
+      }
+      if (emailForm.attachExcel) {
+        if (!window.__caAssignmentExport?.buildWorkbook) throw new Error('Mesin export Excel belum siap.');
+        const blob = await window.__caAssignmentExport.buildWorkbook(visit);
+        const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx';
+        attachments.push({ filename: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dataBase64: await blobToBase64Payload(blob) });
+      }
+      setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
+      const response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          to: emailForm.to,
+          cc: emailForm.cc,
+          subject: emailForm.subject,
+          body: emailForm.body,
+          passcode: emailForm.passcode,
+          attachments,
+          visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal }
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.ok === false) throw new Error(result.error || 'Gagal mengirim email.');
+      setEmailStatus(mode === 'send' ? 'Email berhasil dikirim.' : 'Draft Gmail berhasil dibuat.');
+      window.setTimeout(() => setEmailOpen(false), 800);
+    } catch (error) {
+      alert(error?.message || 'Gagal memproses email.');
+      setEmailStatus('');
+    } finally {
+      setEmailBusy(false);
+      setBusy(false);
+    }
+  }
+
   if (!visit) return <main className="preview-page w-full px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
 
   return (
     <main className="preview-page w-full px-4 py-4 md:px-8 md:py-8">
       {downloadBusy ? <div className="download-pdf-overlay" role="status" aria-live="polite"><div className="download-pdf-loader"><span className="download-pdf-spinner" aria-hidden="true" /><strong>{downloadMessage || 'Menyiapkan PDF...'}</strong><p>Jangan tutup halaman sampai file manager muncul.</p></div></div> : null}
+      <EmailReportModal open={emailOpen} form={emailForm} onChange={(patch) => setEmailForm((state) => ({ ...state, ...patch }))} onClose={() => setEmailOpen(false)} onSubmit={handleSendReportEmail} busy={emailBusy} status={emailStatus} visit={visit} />
       <div className="preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Preview PDF</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Review Report</h1></div><div className="preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{visitProgress(visit)}%</p></div><ProgressBar value={visitProgress(visit)} /></div></div>
-      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon={downloadBusy ? null : "download"} onClick={handleDownloadPdf} disabled={busy || downloadBusy}>{downloadBusy ? 'Memproses...' : 'Download PDF'}</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy || downloadBusy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
+      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon={downloadBusy ? null : "download"} onClick={handleDownloadPdf} disabled={busy || downloadBusy}>{downloadBusy ? 'Memproses...' : 'Download PDF'}</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy || downloadBusy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button><Button icon="upload" onClick={openEmailReportModal} disabled={busy || downloadBusy}>Send Email</Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
     </main>
   );
 }

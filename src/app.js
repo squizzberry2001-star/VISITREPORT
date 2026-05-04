@@ -81,7 +81,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp66-home-nav-loading-secret-spark-pdf-spacing';
+const APP_BUILD_VERSION = 'revamp82-preview-send-email-gmail-api';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2101,7 +2101,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp66-home-nav-loading-secret-spark-pdf-spacing" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp82-preview-send-email-gmail-api" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -2284,6 +2284,90 @@ async function downloadBlobManaged(blob, fileName) {
         downloadBlob(blob, fileName);
     return true;
 }
+
+function getEmailReportConfig() {
+    const config = window.VISIT_EMAIL_CONFIG || {};
+    return {
+        enabled: config.enabled !== false,
+        endpoint: cleanText(config.endpoint, '/api/send-report-email'),
+        sender: cleanText(config.sender, 'Sender belum diset'),
+        defaultTo: cleanText(config.defaultTo),
+        defaultCc: cleanText(config.defaultCc),
+        defaultSubjectTemplate: cleanText(config.defaultSubjectTemplate, 'Visit Report - {store} - {date}'),
+        defaultBodyTemplate: cleanText(config.defaultBodyTemplate, 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.')
+    };
+}
+function applyEmailTemplate(template, visit) {
+    const map = {
+        '{store}': cleanText(visit?.store, '-'),
+        '{bestie}': cleanText(visit?.nama, '-'),
+        '{date}': formatDate(visit?.tanggal),
+        '{storeHead}': cleanText(visit?.storeHead || visit?.detail?.storeHead || visit?.storeDetail?.storeHead, '-'),
+        '{siteCode}': cleanText(visit?.siteCode || visit?.storeCode || visit?.detail?.siteCode, '-')
+    };
+    return Object.keys(map).reduce((text, key) => text.split(key).join(map[key]), String(template || ''));
+}
+function getVisitStoreEmail(visit) {
+    return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore);
+}
+function buildInitialEmailForm(visit) {
+    const config = getEmailReportConfig();
+    return {
+        from: config.sender,
+        to: getVisitStoreEmail(visit) || config.defaultTo,
+        cc: config.defaultCc,
+        subject: applyEmailTemplate(config.defaultSubjectTemplate, visit),
+        body: applyEmailTemplate(config.defaultBodyTemplate, visit),
+        passcode: '',
+        attachPdf: true,
+        attachExcel: true
+    };
+}
+function blobToBase64Payload(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = String(reader.result || '');
+            resolve(text.includes(',') ? text.split(',').pop() : text);
+        };
+        reader.onerror = () => reject(reader.error || new Error('Gagal membaca file attachment.'));
+        reader.readAsDataURL(blob);
+    });
+}
+function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, status, visit }) {
+    if (!open)
+        return null;
+    const config = getEmailReportConfig();
+    return (React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-3xl md:rounded-[32px] md:p-7" },
+            React.createElement("div", { className: "mb-5 flex items-start justify-between gap-3" },
+                React.createElement("div", null,
+                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Send Email"),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Kirim Visit Report"),
+                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
+                        "Sender dikunci dari backend: ",
+                        config.sender)),
+                React.createElement(Button, { variant: "icon", onClick: onClose, disabled: busy, "aria-label": "Tutup" }, React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
+            React.createElement("div", { className: "grid gap-4 md:grid-cols-2" },
+                React.createElement(Field, { label: "From / Sender Locked" }, React.createElement(TextInput, { value: form.from || config.sender, readOnly: true, placeholder: "Sender backend" })),
+                React.createElement(Field, { label: "To", required: true }, React.createElement(TextInput, { type: "email", value: form.to, onChange: (e) => onChange({ to: e.target.value }), placeholder: "email tujuan" })),
+                React.createElement(Field, { label: "CC" }, React.createElement(TextInput, { value: form.cc, onChange: (e) => onChange({ cc: e.target.value }), placeholder: "cc1@email.com, cc2@email.com" })),
+                React.createElement(Field, { label: "Kode Kirim", helper: "Isi jika EMAIL_SEND_PASSCODE diset di Vercel." }, React.createElement(TextInput, { type: "password", value: form.passcode, onChange: (e) => onChange({ passcode: e.target.value }), placeholder: "Opsional" })),
+                React.createElement("div", { className: "md:col-span-2" }, React.createElement(Field, { label: "Subject", required: true }, React.createElement(TextInput, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), placeholder: "Subject email" }))),
+                React.createElement("div", { className: "md:col-span-2" }, React.createElement(Field, { label: "Body Email", required: true }, React.createElement(TextArea, { value: form.body, onChange: (e) => onChange({ body: e.target.value }), placeholder: "Tulis isi email...", minRows: 7 })))),
+            React.createElement("div", { className: "mt-4 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-800 md:grid-cols-2" },
+                React.createElement("label", { className: "flex items-center gap-3" },
+                    React.createElement("input", { type: "checkbox", checked: !!form.attachPdf, onChange: (e) => onChange({ attachPdf: e.target.checked }) }),
+                    " Attach PDF Report"),
+                React.createElement("label", { className: "flex items-center gap-3" },
+                    React.createElement("input", { type: "checkbox", checked: !!form.attachExcel, onChange: (e) => onChange({ attachExcel: e.target.checked }) }),
+                    " Attach Excel CA Assignment")),
+            status ? React.createElement("p", { className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100" }, status) : null,
+            React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
+                React.createElement(Button, { variant: "secondary", onClick: onClose, disabled: busy }, "Tutup"),
+                React.createElement(Button, { variant: "secondary", icon: "pdf", onClick: () => onSubmit('draft'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Create Draft'),
+                React.createElement(Button, { icon: "upload", onClick: () => onSubmit('send'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Send Now')))));
+}
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const pagesRef = useRef(null);
     const scrollRef = useRef(null);
@@ -2462,6 +2546,10 @@ function PreviewPage({ visit, onBack }) {
     const [busy, setBusy] = useState(false);
     const [downloadBusy, setDownloadBusy] = useState(false);
     const [downloadMessage, setDownloadMessage] = useState('');
+    const [emailOpen, setEmailOpen] = useState(false);
+    const [emailBusy, setEmailBusy] = useState(false);
+    const [emailStatus, setEmailStatus] = useState('');
+    const [emailForm, setEmailForm] = useState(() => buildInitialEmailForm(visit));
     useEffect(() => {
         let cancelled = false;
         let objectUrl = '';
@@ -2489,6 +2577,10 @@ function PreviewPage({ visit, onBack }) {
         return () => { cancelled = true; if (objectUrl)
             URL.revokeObjectURL(objectUrl); };
     }, [visit]);
+    useEffect(() => {
+        if (!emailOpen)
+            setEmailForm(buildInitialEmailForm(visit));
+    }, [visit, emailOpen]);
     async function handleDownloadPdf() {
         if (!visit || busy || downloadBusy)
             return;
@@ -2530,6 +2622,65 @@ function PreviewPage({ visit, onBack }) {
     finally {
         setBusy(false);
     } }
+    function openEmailReportModal() {
+        if (!visit || busy || downloadBusy)
+            return;
+        setEmailForm(buildInitialEmailForm(visit));
+        setEmailStatus('');
+        setEmailOpen(true);
+    }
+    async function handleSendReportEmail(mode) {
+        if (!visit || emailBusy)
+            return;
+        const config = getEmailReportConfig();
+        if (!config.enabled) {
+            alert('Fitur email belum aktif di email-config.js.');
+            return;
+        }
+        if (!cleanText(emailForm.to) || !cleanText(emailForm.subject)) {
+            alert('To dan Subject wajib diisi.');
+            return;
+        }
+        setEmailBusy(true);
+        setBusy(true);
+        setEmailStatus('Menyiapkan attachment...');
+        try {
+            const attachments = [];
+            if (emailForm.attachPdf) {
+                if (!window.ReportVisitPDF?.createBlob)
+                    throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+                const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
+                const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+                attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
+            }
+            if (emailForm.attachExcel) {
+                if (!window.__caAssignmentExport?.buildWorkbook)
+                    throw new Error('Mesin export Excel belum siap.');
+                const blob = await window.__caAssignmentExport.buildWorkbook(visit);
+                const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx';
+                attachments.push({ filename: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dataBase64: await blobToBase64Payload(blob) });
+            }
+            setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
+            const response = await fetch(config.endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode, to: emailForm.to, cc: emailForm.cc, subject: emailForm.subject, body: emailForm.body, passcode: emailForm.passcode, attachments, visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal } })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result.ok === false)
+                throw new Error(result.error || 'Gagal mengirim email.');
+            setEmailStatus(mode === 'send' ? 'Email berhasil dikirim.' : 'Draft Gmail berhasil dibuat.');
+            window.setTimeout(() => setEmailOpen(false), 800);
+        }
+        catch (error) {
+            alert(error?.message || 'Gagal memproses email.');
+            setEmailStatus('');
+        }
+        finally {
+            setEmailBusy(false);
+            setBusy(false);
+        }
+    }
     if (!visit)
         return React.createElement("main", { className: "preview-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif", action: React.createElement(Button, { variant: "secondary", onClick: onBack }, "Kembali") }));
@@ -2539,6 +2690,7 @@ function PreviewPage({ visit, onBack }) {
                 React.createElement("span", { className: "download-pdf-spinner", "aria-hidden": "true" }),
                 React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'),
                 React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null,
+        React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
         React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
             React.createElement("div", null,
                 React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
@@ -2564,7 +2716,8 @@ function PreviewPage({ visit, onBack }) {
                     React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy || downloadBusy, className: "excel-export-button" },
                         React.createElement("span", { className: "text-left leading-tight" },
                             React.createElement("span", { className: "block" }, "Export Excel CA Assigment"),
-                            React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store"))))),
+                            React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store"))),
+                    React.createElement(Button, { icon: "upload", onClick: openEmailReportModal, disabled: busy || downloadBusy }, "Send Email"))),
             React.createElement("div", { className: "preview-frame-wrap" },
                 React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status })))));
 }
