@@ -3,7 +3,7 @@ window.VISIT_EMAIL_CONFIG = {
   provider: 'vercel-gmail-api',
   endpoint: '/api/send-report-email',
   authStatusEndpoint: '/api/gmail-auth-status',
-  sender: 'ISI_EMAIL_SENDER_LOCKED_DI_SINI',
+  sender: 'Regioanl.bestie@familymartindonesia.com',
   defaultTo: '',
   defaultCc: '',
   lockedPasscode: '607090',
