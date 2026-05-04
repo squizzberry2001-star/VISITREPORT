@@ -1,6 +1,6 @@
 {
-  "version": "revamp74-pdf-observation-deadline-wrap",
-  "build": "revamp74-pdf-observation-deadline-wrap",
-  "updatedAt": "2026-05-04T00:55:00+07:00",
-  "note": "Observation PDF deadline label improved and text wrapping expanded so card content stays inside the PDF"
+  "version": "revamp75-pdf-observation-dense-pages",
+  "build": "revamp75-pdf-observation-dense-pages",
+  "updatedAt": "2026-05-04T01:20:00+07:00",
+  "note": "Observation PDF now packs multiple findings per page with the same card design and no large empty sections"
 }
