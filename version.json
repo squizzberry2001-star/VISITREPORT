@@ -1,6 +1,6 @@
 {
-  "version": "revamp84-email-gmail-style-dropdown",
-  "build": "revamp84-email-gmail-style-dropdown",
+  "version": "revamp85-email-final-layout-schedule",
+  "build": "revamp85-email-final-layout-schedule",
   "updatedAt": "2026-05-05T09:30:00+07:00",
   "note": "Preview page send email composer revamped to a Gmail-like layout with dropdown recipients from store master data, multi-CC chips, and hidden auto-locked passcode 607090."
 }
