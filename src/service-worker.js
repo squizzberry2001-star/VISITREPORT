@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp81-pdf-dense-table-borders';
+const APP_VERSION = 'revamp82-preview-send-email-gmail-api';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -12,6 +12,7 @@ const LOCAL_ASSETS = [
   './jszip.min.js',
   './cloudflare-config.js',
   './netlify-config.js',
+  './email-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -48,7 +49,7 @@ function shouldNetworkFirst(request) {
   if (isNavigationRequest(request)) return true;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return false;
-  if (url.pathname.startsWith('/api/rbv-data')) return true;
+  if (url.pathname.startsWith('/api/')) return true;
   if (url.pathname.startsWith('/.netlify/functions/')) return true;
   if (url.pathname.endsWith('/service-worker.js')) return true;
   if (url.pathname.endsWith('/version.json')) return true;
