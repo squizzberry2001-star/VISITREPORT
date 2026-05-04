@@ -1,6 +1,6 @@
 {
-  "version": "revamp74-pdf-observation-deadline-wrap",
-  "build": "revamp74-pdf-observation-deadline-wrap",
-  "updatedAt": "2026-05-04T00:55:00+07:00",
-  "note": "Observation PDF deadline label improved and text wrapping expanded so card content stays inside the PDF"
+  "version": "revamp77-vr74-look-fill-next-card",
+  "build": "revamp77-vr74-look-fill-next-card",
+  "updatedAt": "2026-05-04T01:50:00+07:00",
+  "note": "Observation PDF keeps the VR74 table look but now uses remaining page space for the next finding cards"
 }
