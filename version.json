@@ -1,6 +1,6 @@
 {
-  "version": "revamp82-preview-send-email-gmail-api",
-  "build": "revamp82-preview-send-email-gmail-api",
-  "updatedAt": "2026-05-04T18:20:00+07:00",
-  "note": "Preview page now includes Send Email with locked Gmail sender, editable to/cc/body, and PDF plus CA Assignment Excel attachments."
+  "version": "revamp84-email-gmail-style-dropdown",
+  "build": "revamp84-email-gmail-style-dropdown",
+  "updatedAt": "2026-05-05T09:30:00+07:00",
+  "note": "Preview page send email composer revamped to a Gmail-like layout with dropdown recipients from store master data, multi-CC chips, and hidden auto-locked passcode 607090."
 }

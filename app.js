@@ -81,7 +81,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp82-preview-send-email-gmail-api';
+const APP_BUILD_VERSION = 'revamp84-email-gmail-style-dropdown';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2101,7 +2101,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp82-preview-send-email-gmail-api" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp84-email-gmail-style-dropdown" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -2293,6 +2293,7 @@ function getEmailReportConfig() {
         sender: cleanText(config.sender, 'Sender belum diset'),
         defaultTo: cleanText(config.defaultTo),
         defaultCc: cleanText(config.defaultCc),
+        lockedPasscode: cleanText(config.lockedPasscode, '607090'),
         defaultSubjectTemplate: cleanText(config.defaultSubjectTemplate, 'Visit Report - {store} - {date}'),
         defaultBodyTemplate: cleanText(config.defaultBodyTemplate, 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.')
     };
@@ -2308,17 +2309,50 @@ function applyEmailTemplate(template, visit) {
     return Object.keys(map).reduce((text, key) => text.split(key).join(map[key]), String(template || ''));
 }
 function getVisitStoreEmail(visit) {
-    return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore);
+    return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore || visit?.manualStoreDetail?.emailStore);
+}
+function getVisitEmailContactOptions(visit) {
+    const detail = {
+        ...(findMasterStore(visit?.storeCode || visit?.siteCode || visit?.detail?.siteCode4 || visit?.detail?.siteCode || visit?.store) || {}),
+        ...(visit?.detail || {}),
+        ...(visit?.storeDetail || {}),
+        ...(visit?.manualStoreDetail || {})
+    };
+    const storeName = cleanText(visit?.store || detail.siteDescr || detail.storeName, 'Store');
+    const contacts = [];
+    function pushContact(kind, label, email, helper) {
+        const cleanEmail = cleanText(email).toLowerCase();
+        if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail))
+            return;
+        contacts.push({
+            kind,
+            email: cleanEmail,
+            label: cleanText(label, cleanEmail),
+            helper: cleanText(helper)
+        });
+    }
+    pushContact('store', detail.storeHead || storeName, detail.emailStore || getVisitStoreEmail(visit), `${storeName} • Email Store`);
+    pushContact('area', detail.areaManager || 'Area Manager', detail.areaManagerEmail, `${storeName} • Area Manager`);
+    pushContact('regional', detail.regionalManager || 'Regional Manager', detail.regionalManagerEmail, `${storeName} • Regional Manager`);
+    return uniqueBy(contacts, (item) => normalize(item.email));
+}
+function parseEmailList(value) {
+    return uniqueBy(String(value || '').split(',').map((item) => cleanText(item).toLowerCase()).filter(Boolean), (item) => normalize(item));
+}
+function joinEmailList(items) {
+    return uniqueBy((items || []).map((item) => cleanText(item).toLowerCase()).filter(Boolean), (item) => normalize(item)).join(', ');
 }
 function buildInitialEmailForm(visit) {
     const config = getEmailReportConfig();
+    const contactOptions = getVisitEmailContactOptions(visit);
+    const defaultTo = getVisitStoreEmail(visit) || config.defaultTo || contactOptions.find((item) => item.kind === 'store')?.email || '';
     return {
         from: config.sender,
-        to: getVisitStoreEmail(visit) || config.defaultTo,
-        cc: config.defaultCc,
+        to: defaultTo,
+        cc: joinEmailList(parseEmailList(config.defaultCc)),
         subject: applyEmailTemplate(config.defaultSubjectTemplate, visit),
         body: applyEmailTemplate(config.defaultBodyTemplate, visit),
-        passcode: '',
+        passcode: config.lockedPasscode,
         attachPdf: true,
         attachExcel: true
     };
@@ -2334,41 +2368,158 @@ function blobToBase64Payload(blob) {
         reader.readAsDataURL(blob);
     });
 }
+function EmailRecipientPicker({ label, value, onChange, options, placeholder, multiple = false, required = false }) {
+    const [query, setQuery] = useState('');
+    const [open, setOpen] = useState(false);
+    const wrapperRef = useRef(null);
+    const selectedEmails = useMemo(() => parseEmailList(value), [value]);
+    const optionMap = useMemo(() => {
+        const map = new Map();
+        (options || []).forEach((item) => map.set(normalize(item.email), item));
+        return map;
+    }, [options]);
+    useEffect(() => {
+        function handlePointer(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target))
+                setOpen(false);
+        }
+        document.addEventListener('mousedown', handlePointer);
+        document.addEventListener('touchstart', handlePointer);
+        return () => {
+            document.removeEventListener('mousedown', handlePointer);
+            document.removeEventListener('touchstart', handlePointer);
+        };
+    }, []);
+    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: 'Manual' });
+    const availableOptions = (options || []).filter((item) => {
+        if (selectedEmails.some((email) => normalize(email) === normalize(item.email)))
+            return false;
+        const search = normalize(query);
+        if (!search)
+            return true;
+        return normalize(item.label).includes(search) || normalize(item.email).includes(search) || normalize(item.helper).includes(search);
+    });
+    const customQuery = cleanText(query).toLowerCase();
+    const customAllowed = customQuery && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customQuery) && !selectedEmails.some((email) => normalize(email) === normalize(customQuery));
+    function commitEmail(email) {
+        const cleanEmail = cleanText(email).toLowerCase();
+        if (!cleanEmail)
+            return;
+        const nextEmails = multiple ? [...selectedEmails, cleanEmail] : [cleanEmail];
+        onChange(joinEmailList(nextEmails));
+        setQuery('');
+        if (!multiple)
+            setOpen(false);
+    }
+    function removeEmail(email) {
+        onChange(joinEmailList(selectedEmails.filter((item) => normalize(item) !== normalize(email))));
+    }
+    function handleKeyDown(event) {
+        if ((event.key === 'Enter' || event.key === ',' || event.key === 'Tab') && query.trim()) {
+            if (event.key !== 'Tab' || customAllowed || availableOptions.length) {
+                event.preventDefault();
+                if (customAllowed)
+                    commitEmail(customQuery);
+                else if (availableOptions.length)
+                    commitEmail(availableOptions[0].email);
+            }
+        }
+        if (event.key === 'Backspace' && !query && selectedEmails.length) {
+            event.preventDefault();
+            removeEmail(selectedEmails[selectedEmails.length - 1]);
+        }
+    }
+    const chipEls = selectedItems.map((item) => React.createElement("span", { key: item.email, className: "inline-flex max-w-full items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-sm font-semibold text-sky-900 ring-1 ring-sky-100" },
+        React.createElement("span", { className: "truncate" }, item.label !== item.email ? `${item.label} <${item.email}>` : item.email),
+        React.createElement("button", { type: "button", className: "rounded-full p-0.5 text-sky-700 transition hover:bg-sky-100", onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "close", className: "h-3.5 w-3.5" }))));
+    const customButton = customAllowed ? React.createElement("button", { type: "button", className: "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left transition hover:bg-slate-50", onMouseDown: (event) => {
+            event.preventDefault();
+            commitEmail(customQuery);
+        } },
+        React.createElement("div", null,
+            React.createElement("p", { className: "text-sm font-semibold text-slate-900" }, customQuery),
+            React.createElement("p", { className: "text-xs font-medium text-slate-500" }, "Tambahkan email manual")),
+        React.createElement("span", { className: "rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500" }, "Manual")) : null;
+    const optionEls = availableOptions.map((item) => React.createElement("button", { type: "button", key: item.email, className: "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left transition hover:bg-slate-50", onMouseDown: (event) => {
+            event.preventDefault();
+            commitEmail(item.email);
+        } },
+        React.createElement("div", { className: "min-w-0" },
+            React.createElement("p", { className: "truncate text-sm font-semibold text-slate-900" }, item.label),
+            React.createElement("p", { className: "truncate text-xs font-medium text-slate-500" }, `${item.email}${item.helper ? ` • ${item.helper}` : ''}`)),
+        React.createElement("span", { className: "rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500" }, item.kind === 'store' ? 'TO' : 'CC')));
+    const dropdown = open && (customButton || optionEls.length) ? React.createElement("div", { className: "mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" },
+        React.createElement("div", { className: "max-h-56 overflow-y-auto p-2" },
+            customButton,
+            optionEls)) : null;
+    return React.createElement("div", { className: "flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-start sm:gap-4" },
+        React.createElement("div", { className: "w-16 shrink-0 pt-2 text-sm font-semibold text-slate-500" },
+            label,
+            required ? React.createElement("span", { className: "ml-1 text-rose-500" }, "*") : null),
+        React.createElement("div", { className: "min-w-0 flex-1", ref: wrapperRef },
+            React.createElement("div", { className: "flex min-h-[52px] flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition focus-within:border-sky-300 focus-within:ring-2 focus-within:ring-sky-100" },
+                chipEls,
+                React.createElement("input", { value: query, onChange: (event) => {
+                        setQuery(event.target.value);
+                        setOpen(true);
+                    }, onFocus: () => setOpen(true), onKeyDown: handleKeyDown, className: "min-w-[160px] flex-1 border-0 bg-transparent px-1 py-1 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400", placeholder: selectedItems.length ? "Tambah email" : placeholder || (multiple ? "Tambah email" : "Pilih email") })),
+            dropdown));
+}
 function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, status, visit }) {
     if (!open)
         return null;
     const config = getEmailReportConfig();
-    return (React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-3xl md:rounded-[32px] md:p-7" },
-            React.createElement("div", { className: "mb-5 flex items-start justify-between gap-3" },
-                React.createElement("div", null,
-                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Send Email"),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Kirim Visit Report"),
-                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
-                        "Sender dikunci dari backend: ",
-                        config.sender)),
-                React.createElement(Button, { variant: "icon", onClick: onClose, disabled: busy, "aria-label": "Tutup" }, React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("div", { className: "grid gap-4 md:grid-cols-2" },
-                React.createElement(Field, { label: "From / Sender Locked" }, React.createElement(TextInput, { value: form.from || config.sender, readOnly: true, placeholder: "Sender backend" })),
-                React.createElement(Field, { label: "To", required: true }, React.createElement(TextInput, { type: "email", value: form.to, onChange: (e) => onChange({ to: e.target.value }), placeholder: "email tujuan" })),
-                React.createElement(Field, { label: "CC" }, React.createElement(TextInput, { value: form.cc, onChange: (e) => onChange({ cc: e.target.value }), placeholder: "cc1@email.com, cc2@email.com" })),
-                React.createElement(Field, { label: "Kode Kirim", helper: "Isi jika EMAIL_SEND_PASSCODE diset di Vercel." }, React.createElement(TextInput, { type: "password", value: form.passcode, onChange: (e) => onChange({ passcode: e.target.value }), placeholder: "Opsional" })),
-                React.createElement("div", { className: "md:col-span-2" }, React.createElement(Field, { label: "Subject", required: true }, React.createElement(TextInput, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), placeholder: "Subject email" }))),
-                React.createElement("div", { className: "md:col-span-2" }, React.createElement(Field, { label: "Body Email", required: true }, React.createElement(TextArea, { value: form.body, onChange: (e) => onChange({ body: e.target.value }), placeholder: "Tulis isi email...", minRows: 7 })))),
-            React.createElement("div", { className: "mt-4 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-800 md:grid-cols-2" },
-                React.createElement("label", { className: "flex items-center gap-3" },
+    const contactOptions = getVisitEmailContactOptions(visit);
+    const toOptions = contactOptions;
+    const ccOptions = contactOptions;
+    const ccCount = parseEmailList(form.cc).length;
+    const composeCard = React.createElement("div", { className: "mx-4 mt-4 rounded-[28px] border border-slate-200 bg-white shadow-sm md:mx-6" },
+        React.createElement("div", { className: "flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-start sm:gap-4" },
+            React.createElement("div", { className: "w-16 shrink-0 pt-2 text-sm font-semibold text-slate-500" }, "From"),
+            React.createElement("div", { className: "flex-1" },
+                React.createElement("div", { className: "flex min-h-[52px] flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700" },
+                    React.createElement("span", { className: "rounded-full bg-white px-3 py-1.5 text-slate-900 ring-1 ring-slate-200" }, config.sender),
+                    React.createElement("span", { className: "rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-700 ring-1 ring-emerald-100" }, "Locked Sender")))),
+        React.createElement(EmailRecipientPicker, { label: "To", required: true, value: form.to, onChange: (value) => onChange({ to: value }), options: toOptions, placeholder: "Pilih email store" }),
+        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: value }), options: ccOptions, multiple: true, placeholder: "Tambah email CC" }),
+        React.createElement("div", { className: "flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-start sm:gap-4" },
+            React.createElement("div", { className: "w-16 shrink-0 pt-2 text-sm font-semibold text-slate-500" }, "Subject"),
+            React.createElement("div", { className: "flex-1" }, React.createElement("input", { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), className: "w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100", placeholder: "Subject email" }))),
+        React.createElement("div", { className: "px-4 py-4" },
+            React.createElement("textarea", { value: form.body, onChange: (e) => onChange({ body: e.target.value }), className: "min-h-[280px] w-full resize-none rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100 md:min-h-[340px]", placeholder: "Tulis isi email..." })),
+        React.createElement("div", { className: "border-t border-slate-200 bg-slate-50 px-4 py-4" },
+            React.createElement("div", { className: "flex flex-wrap items-center gap-3" },
+                React.createElement("label", { className: "inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-sm" },
                     React.createElement("input", { type: "checkbox", checked: !!form.attachPdf, onChange: (e) => onChange({ attachPdf: e.target.checked }) }),
-                    " Attach PDF Report"),
-                React.createElement("label", { className: "flex items-center gap-3" },
+                    React.createElement(Icon, { name: "pdf", className: "h-4 w-4" }),
+                    " PDF Report"),
+                React.createElement("label", { className: "inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-sm" },
                     React.createElement("input", { type: "checkbox", checked: !!form.attachExcel, onChange: (e) => onChange({ attachExcel: e.target.checked }) }),
-                    " Attach Excel CA Assignment")),
-            status ? React.createElement("p", { className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100" }, status) : null,
-            React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
+                    React.createElement(Icon, { name: "excel", className: "h-4 w-4" }),
+                    " Excel CA Assignment"),
+                React.createElement("span", { className: "inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500" }, `CC ${ccCount} recipient`)),
+            status ? React.createElement("p", { className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100" }, status) : null));
+    const footer = React.createElement("div", { className: "border-t border-slate-200 bg-white px-4 py-4 md:px-6" },
+        React.createElement("div", { className: "flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between" },
+            React.createElement("div", { className: "text-xs font-semibold text-slate-500" }, `Passcode ${config.lockedPasscode} diisi otomatis, tidak bisa diubah, dan textbox disembunyikan.`),
+            React.createElement("div", { className: "flex flex-col gap-2 sm:flex-row" },
                 React.createElement(Button, { variant: "secondary", onClick: onClose, disabled: busy }, "Tutup"),
                 React.createElement(Button, { variant: "secondary", icon: "pdf", onClick: () => onSubmit('draft'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Create Draft'),
-                React.createElement(Button, { icon: "upload", onClick: () => onSubmit('send'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Send Now')))));
+                React.createElement(Button, { icon: "upload", onClick: () => onSubmit('send'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Send Now'))));
+    return React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-end bg-slate-950/55 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-[30px] bg-[#f6f8fc] shadow-2xl md:h-[86vh] md:max-w-5xl md:rounded-[32px]" },
+            React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-6" },
+                React.createElement("div", { className: "min-w-0" },
+                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Gmail Style Composer"),
+                    React.createElement("h2", { className: "truncate text-xl font-black text-slate-950 md:text-2xl" }, "New Message"),
+                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, `${cleanText(visit?.store, 'Store belum dipilih')} • Sender locked: ${config.sender}`)),
+                React.createElement(Button, { variant: "icon", onClick: onClose, disabled: busy, "aria-label": "Tutup" }, React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
+            React.createElement("div", { className: "flex-1 overflow-y-auto px-0 py-0" }, composeCard),
+            footer));
 }
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
+
+
     const pagesRef = useRef(null);
     const scrollRef = useRef(null);
     const [fallback, setFallback] = useState(false);
