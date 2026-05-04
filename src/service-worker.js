@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp75-pdf-observation-dense-pages';
+const APP_VERSION = 'revamp74-pdf-observation-deadline-wrap';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
