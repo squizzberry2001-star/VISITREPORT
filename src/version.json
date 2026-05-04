@@ -1,6 +1,6 @@
 {
-  "version": "revamp81-pdf-dense-table-borders",
-  "build": "revamp81-pdf-dense-table-borders",
-  "updatedAt": "2026-05-04T06:00:00+07:00",
-  "note": "Observation PDF pagination now keeps up to two summary cards per page and automatically moves the next card to a new slide only when the remaining space is not enough."
+  "version": "revamp84-email-gmail-style-dropdown",
+  "build": "revamp84-email-gmail-style-dropdown",
+  "updatedAt": "2026-05-05T09:30:00+07:00",
+  "note": "Preview page send email composer revamped to a Gmail-like layout with dropdown recipients from store master data, multi-CC chips, and hidden auto-locked passcode 607090."
 }
