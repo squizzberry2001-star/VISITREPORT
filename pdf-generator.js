@@ -906,18 +906,18 @@
 
   function buildObservationSummaryField(doc, label, value, width, options) {
     const opts = options || {};
-    let fontSize = clampNumber(opts.fontSize || pdfTableFontSize() - 1.0, 6.6, 10.2, 8.0);
-    const maxInnerWidth = Math.max(12, width - 4.8);
+    let fontSize = clampNumber(opts.fontSize || pdfTableFontSize() - 1.2, 6.3, 9.8, 7.6);
+    const maxInnerWidth = Math.max(12, width - 3.2);
     let richLines = [];
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
       doc.setFontSize(fontSize);
       richLines = splitRichTextToLines(doc, value, maxInnerWidth, Boolean(opts.boldValue));
-      if (richLines.length <= (opts.preferredMaxLines || 6) || fontSize <= 6.8) break;
-      fontSize -= 0.3;
+      if (richLines.length <= (opts.preferredMaxLines || 6) || fontSize <= 6.2) break;
+      fontSize -= 0.25;
     }
-    const lineHeight = Math.max(2.8, fontSize * 0.44);
-    const labelFontSize = clampNumber((opts.labelFontSize || pdfTableTitleFontSize() - 1.4), 7.0, 10.8, 8.1);
-    const contentHeight = 8.2 + Math.max(1, richLines.length) * lineHeight + 2.6;
+    const lineHeight = Math.max(2.35, fontSize * 0.40);
+    const labelFontSize = clampNumber((opts.labelFontSize || pdfTableTitleFontSize() - 1.6), 6.4, 10.0, 7.4);
+    const contentHeight = 6.8 + Math.max(1, richLines.length) * lineHeight + 1.6;
     return {
       label: label,
       richLines: richLines.length ? richLines : splitRichTextToLines(doc, '-', maxInnerWidth, Boolean(opts.boldValue)),
@@ -928,31 +928,34 @@
       fontSize: fontSize,
       labelFontSize: labelFontSize,
       lineHeight: lineHeight,
-      height: Math.max(opts.minHeight || 12.5, contentHeight)
+      height: Math.max(opts.minHeight || 10.8, contentHeight)
     };
   }
 
   function drawObservationSummaryField(doc, field, x, y, width, height, palette) {
-    const labelFontSize = field.labelFontSize || clampNumber(pdfTableTitleFontSize() - 1.4, 7.0, 10.8, 8.1);
-    const valueFontSize = field.fontSize || clampNumber(pdfTableFontSize() - 1.0, 6.6, 10.2, 8.0);
+    const labelFontSize = field.labelFontSize || clampNumber(pdfTableTitleFontSize() - 1.6, 6.4, 10.0, 7.4);
+    const valueFontSize = field.fontSize || clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.6);
     const fill = field.highlight && field.highlight.fill ? field.highlight.fill : [255, 255, 255];
     const textColor = field.valueText || (field.highlight && field.highlight.text ? field.highlight.text : [15, 23, 42]);
-    const lineHeight = field.lineHeight || Math.max(2.8, valueFontSize * 0.44);
+    const lineHeight = field.lineHeight || Math.max(2.35, valueFontSize * 0.40);
+    const insetX = 1.7;
+    const labelY = y + 3.3;
+    const valueY = y + 6.3;
 
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.22);
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.34);
     doc.setFillColor.apply(doc, fill);
-    doc.roundedRect(x, y, width, height, 1.6, 1.6, 'FD');
+    doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(labelFontSize);
     doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
-    doc.text(field.label, x + 2.2, y + 4.2);
+    doc.text(field.label, x + insetX, labelY);
 
     doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
     doc.setFontSize(valueFontSize);
     doc.setTextColor.apply(doc, textColor);
-    drawRichLines(doc, field.richLines, x + 2.2, y + 8.0, lineHeight, {
+    drawRichLines(doc, field.richLines, x + insetX, valueY, lineHeight, {
       bold: field.boldValue,
       textColor: textColor,
       fontSize: valueFontSize
@@ -960,40 +963,44 @@
   }
 
   function buildObservationSummaryCardLayout(doc, row, width) {
-    const pad = 3.2;
-    const headerH = 8.8;
-    const colGap = 2.2;
-    const rowGap = 1.6;
+    const pad = 2.4;
+    const headerH = 8.0;
+    const colGap = 1.4;
+    const rowGap = 1.1;
     const colW = (width - pad * 2 - colGap) / 2;
 
     const topLeft = buildObservationSummaryField(doc, 'Temuan', row.temuan || '-', colW, {
       boldValue: true,
       labelColor: [133, 77, 14],
       highlight: { fill: [254, 249, 195], text: [66, 32, 6] },
-      fontSize: clampNumber(pdfTableFontSize() - 0.7, 6.8, 10.5, 8.3),
+      fontSize: clampNumber(pdfTableFontSize() - 0.9, 6.4, 10.0, 7.8),
       preferredMaxLines: 7,
-      minHeight: 15.5
+      minHeight: 13.4
     });
     const topRight = buildObservationSummaryField(doc, 'Dampak', row.dampak || '-', colW, {
-      fontSize: clampNumber(pdfTableFontSize() - 1.0, 6.6, 10.0, 7.8),
-      preferredMaxLines: 5
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
     });
     const midLeft = buildObservationSummaryField(doc, 'Kondisi Ideal', row.kondisiIdeal || '-', colW, {
-      fontSize: clampNumber(pdfTableFontSize() - 1.0, 6.6, 10.0, 7.8),
-      preferredMaxLines: 5
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
     });
     const midRight = buildObservationSummaryField(doc, 'Tindakan Perbaikan', row.tindakan || '-', colW, {
-      fontSize: clampNumber(pdfTableFontSize() - 1.0, 6.6, 10.0, 7.8),
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
       preferredMaxLines: 7,
-      minHeight: 14.5
+      minHeight: 13.0
     });
     const botLeft = buildObservationSummaryField(doc, 'Penyebab', row.penyebab || '-', colW, {
-      fontSize: clampNumber(pdfTableFontSize() - 1.0, 6.6, 10.0, 7.8),
-      preferredMaxLines: 5
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
     });
     const botRight = buildObservationSummaryField(doc, 'Hasil', row.hasil || '-', colW, {
-      fontSize: clampNumber(pdfTableFontSize() - 1.0, 6.6, 10.0, 7.8),
-      preferredMaxLines: 5
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
     });
 
     const row1H = Math.max(topLeft.height, topRight.height);
@@ -1021,31 +1028,17 @@
     };
   }
 
-  function observationSegmentRows(layout, startRow, endRow) {
-    const rows = [
-      { left: layout.fields.topLeft, right: layout.fields.topRight, height: layout.row1H },
-      { left: layout.fields.midLeft, right: layout.fields.midRight, height: layout.row2H },
-      { left: layout.fields.botLeft, right: layout.fields.botRight, height: layout.row3H }
-    ];
-    return rows.slice(startRow, endRow + 1);
-  }
-
-  function observationSegmentHeight(layout, startRow, endRow) {
-    const rows = observationSegmentRows(layout, startRow, endRow);
-    const rowsHeight = rows.reduce(function (sum, row) { return sum + row.height; }, 0);
-    const rowGaps = Math.max(0, rows.length - 1) * layout.rowGap;
-    return layout.headerH + 2.0 + rowsHeight + rowGaps + 3.2;
-  }
-
-  function drawObservationSummaryCardSegment(doc, row, rowIndex, totalRows, x, y, width, layout, palette, startRow, endRow) {
+  function drawObservationSummaryCard(doc, row, rowIndex, totalRows, x, y, width, layout, palette) {
     const pad = layout.pad;
     const headerH = layout.headerH;
     const colW = layout.colW;
     const rowGap = layout.rowGap;
     const leftX = x + pad;
     const rightX = leftX + colW + layout.colGap;
-    const segmentRows = observationSegmentRows(layout, startRow, endRow);
-    const height = observationSegmentHeight(layout, startRow, endRow);
+    const row1Y = y + headerH + 2.0;
+    const row2Y = row1Y + layout.row1H + rowGap;
+    const row3Y = row2Y + layout.row2H + rowGap;
+    const height = layout.cardHeight;
 
     doc.setDrawColor(148, 163, 184);
     doc.setLineWidth(0.26);
@@ -1057,8 +1050,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.8);
     doc.setTextColor(255, 255, 255);
-    const title = 'Temuan ' + String(rowIndex + 1) + '/' + String(totalRows) + (startRow > 0 ? ' - lanjutan' : '');
-    doc.text(title, x + 3.2, y + 5.7);
+    doc.text('Temuan ' + String(rowIndex + 1) + '/' + String(totalRows), x + 3.2, y + 5.7);
 
     const dueDate = row.deadline ? formatDate(row.deadline) : 'Belum diisi';
     const dueLabel = 'Deadline Perbaikan: ' + dueDate;
@@ -1074,16 +1066,12 @@
     doc.setTextColor.apply(doc, badgeText);
     doc.text(dueLabel, badgeX + badgeWidth / 2, y + 5.2, { align: 'center' });
 
-    let currentRowY = y + headerH + 2.0;
-    segmentRows.forEach(function (segmentRow, segmentIndex) {
-      drawObservationSummaryField(doc, segmentRow.left, leftX, currentRowY, colW, segmentRow.height, palette);
-      drawObservationSummaryField(doc, segmentRow.right, rightX, currentRowY, colW, segmentRow.height, palette);
-      currentRowY += segmentRow.height + (segmentIndex < segmentRows.length - 1 ? rowGap : 0);
-    });
-  }
-
-  function drawObservationSummaryCard(doc, row, rowIndex, totalRows, x, y, width, layout, palette) {
-    drawObservationSummaryCardSegment(doc, row, rowIndex, totalRows, x, y, width, layout, palette, 0, 2);
+    drawObservationSummaryField(doc, layout.fields.topLeft, leftX, row1Y, colW, layout.row1H, palette);
+    drawObservationSummaryField(doc, layout.fields.topRight, rightX, row1Y, colW, layout.row1H, palette);
+    drawObservationSummaryField(doc, layout.fields.midLeft, leftX, row2Y, colW, layout.row2H, palette);
+    drawObservationSummaryField(doc, layout.fields.midRight, rightX, row2Y, colW, layout.row2H, palette);
+    drawObservationSummaryField(doc, layout.fields.botLeft, leftX, row3Y, colW, layout.row3H, palette);
+    drawObservationSummaryField(doc, layout.fields.botRight, rightX, row3Y, colW, layout.row3H, palette);
   }
 
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
@@ -1095,51 +1083,26 @@
     const contentBottom = pageHeight - 8;
     const cardGap = 4.2;
     const cardWidth = pageWidth - sideMargin * 2;
-    const maxFindingsPerPage = 2;
+    const maxCardsPerPage = 2;
 
     let currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
-    let findingsOnPage = 0;
-
-    function newObservationPage() {
-      currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
-      findingsOnPage = 0;
-    }
+    let cardsOnPage = 0;
 
     cleanRows.forEach(function (row, index) {
       const layout = buildObservationSummaryCardLayout(doc, row, cardWidth);
-      let startRow = 0;
-      let isFirstSegment = true;
+      const gapBefore = cardsOnPage > 0 ? cardGap : 0;
+      const remainingHeight = contentBottom - currentY;
+      const fitsCurrentPage = (layout.cardHeight + gapBefore) <= remainingHeight;
 
-      while (startRow < 3) {
-        if (findingsOnPage >= maxFindingsPerPage && isFirstSegment) newObservationPage();
-
-        const gapBefore = currentY > pageStartY ? cardGap : 0;
-        let availableHeight = contentBottom - currentY - gapBefore;
-
-        if (availableHeight <= observationSegmentHeight(layout, startRow, startRow) && currentY > pageStartY) {
-          newObservationPage();
-          availableHeight = contentBottom - currentY;
-        }
-
-        let endRow = startRow;
-        let bestHeight = observationSegmentHeight(layout, startRow, endRow);
-        while (endRow + 1 < 3) {
-          const nextHeight = observationSegmentHeight(layout, startRow, endRow + 1);
-          if (nextHeight > availableHeight) break;
-          endRow += 1;
-          bestHeight = nextHeight;
-        }
-
-        const drawY = currentY + (currentY > pageStartY ? cardGap : 0);
-        drawObservationSummaryCardSegment(doc, row, index, cleanRows.length, sideMargin, drawY, cardWidth, layout, palette, startRow, endRow);
-        currentY = drawY + bestHeight;
-
-        if (isFirstSegment) findingsOnPage += 1;
-        isFirstSegment = false;
-        startRow = endRow + 1;
-
-        if (startRow < 3) newObservationPage();
+      if (cardsOnPage >= maxCardsPerPage || (cardsOnPage > 0 && !fitsCurrentPage)) {
+        currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
+        cardsOnPage = 0;
       }
+
+      const drawY = currentY + (cardsOnPage > 0 ? cardGap : 0);
+      drawObservationSummaryCard(doc, row, index, cleanRows.length, sideMargin, drawY, cardWidth, layout, palette);
+      currentY = drawY + layout.cardHeight;
+      cardsOnPage += 1;
     });
   }
 
