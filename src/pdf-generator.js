@@ -908,30 +908,19 @@
     const opts = options || {};
     let fontSize = clampNumber(opts.fontSize || pdfTableFontSize() - 1.0, 6.6, 10.2, 8.0);
     const maxInnerWidth = Math.max(12, width - 4.8);
-    const maxLines = Math.max(1, Number(opts.preferredMaxLines || 6));
     let richLines = [];
     for (let attempt = 0; attempt < 5; attempt += 1) {
       doc.setFontSize(fontSize);
       richLines = splitRichTextToLines(doc, value, maxInnerWidth, Boolean(opts.boldValue));
-      if (richLines.length <= maxLines * 2 || fontSize <= 6.8) break;
+      if (richLines.length <= (opts.preferredMaxLines || 6) || fontSize <= 6.8) break;
       fontSize -= 0.3;
     }
-    if (!richLines.length) richLines = splitRichTextToLines(doc, '-', maxInnerWidth, Boolean(opts.boldValue));
     const lineHeight = Math.max(2.8, fontSize * 0.44);
     const labelFontSize = clampNumber((opts.labelFontSize || pdfTableTitleFontSize() - 1.4), 7.0, 10.8, 8.1);
-    const visibleLines = Math.min(maxLines, Math.max(1, richLines.length));
-    const contentHeight = 8.2 + visibleLines * lineHeight + 2.6;
-    const chunks = [];
-    for (let i = 0; i < richLines.length; i += maxLines) {
-      chunks.push(richLines.slice(i, i + maxLines));
-    }
-    if (!chunks.length) chunks.push([[{ text: '-' }]]);
+    const contentHeight = 8.2 + Math.max(1, richLines.length) * lineHeight + 2.6;
     return {
       label: label,
-      richLines: chunks[0],
-      allRichLines: richLines,
-      chunks: chunks,
-      maxLines: maxLines,
+      richLines: richLines.length ? richLines : splitRichTextToLines(doc, '-', maxInnerWidth, Boolean(opts.boldValue)),
       boldValue: Boolean(opts.boldValue),
       highlight: opts.highlight || null,
       labelColor: opts.labelColor || null,
@@ -1054,8 +1043,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.8);
     doc.setTextColor(255, 255, 255);
-    const cardTitle = 'Temuan ' + String(rowIndex + 1) + '/' + String(totalRows) + (layout.continuationIndex > 0 ? ' (Lanjutan ' + String(layout.continuationIndex + 1) + ')' : '');
-    doc.text(cardTitle, x + 3.2, y + 5.7);
+    doc.text('Temuan ' + String(rowIndex + 1) + '/' + String(totalRows), x + 3.2, y + 5.7);
 
     const dueDate = row.deadline ? formatDate(row.deadline) : 'Belum diisi';
     const dueLabel = 'Deadline Perbaikan: ' + dueDate;
@@ -1079,77 +1067,35 @@
     drawObservationSummaryField(doc, layout.fields.botRight, rightX, row3Y, colW, layout.row3H, palette);
   }
 
-  function cloneObservationFieldChunk(field, chunkIndex) {
-    const chunks = field.chunks && field.chunks.length ? field.chunks : [field.richLines || [[{ text: '-' }]]];
-    return Object.assign({}, field, {
-      richLines: chunks[chunkIndex] || [[{ text: '-' }]]
-    });
-  }
-
-  function cloneObservationLayoutChunk(layout, chunkIndex) {
-    return Object.assign({}, layout, {
-      continuationIndex: chunkIndex,
-      fields: {
-        topLeft: cloneObservationFieldChunk(layout.fields.topLeft, chunkIndex),
-        topRight: cloneObservationFieldChunk(layout.fields.topRight, chunkIndex),
-        midLeft: cloneObservationFieldChunk(layout.fields.midLeft, chunkIndex),
-        midRight: cloneObservationFieldChunk(layout.fields.midRight, chunkIndex),
-        botLeft: cloneObservationFieldChunk(layout.fields.botLeft, chunkIndex),
-        botRight: cloneObservationFieldChunk(layout.fields.botRight, chunkIndex)
-      }
-    });
-  }
-
-  function expandObservationCardQueue(doc, rows, cardWidth) {
-    const cleanRows = normalizeRows(rows);
-    const queue = [];
-    cleanRows.forEach(function (row, index) {
-      const layout = buildObservationSummaryCardLayout(doc, row, cardWidth);
-      const fields = layout.fields || {};
-      const chunkCount = Math.max(
-        1,
-        fields.topLeft && fields.topLeft.chunks ? fields.topLeft.chunks.length : 1,
-        fields.topRight && fields.topRight.chunks ? fields.topRight.chunks.length : 1,
-        fields.midLeft && fields.midLeft.chunks ? fields.midLeft.chunks.length : 1,
-        fields.midRight && fields.midRight.chunks ? fields.midRight.chunks.length : 1,
-        fields.botLeft && fields.botLeft.chunks ? fields.botLeft.chunks.length : 1,
-        fields.botRight && fields.botRight.chunks ? fields.botRight.chunks.length : 1
-      );
-      for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
-        queue.push({
-          row: row,
-          rowIndex: index,
-          totalRows: cleanRows.length,
-          layout: cloneObservationLayoutChunk(layout, chunkIndex)
-        });
-      }
-    });
-    return queue;
-  }
-
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
+
     const sideMargin = 8;
     const pageStartY = 27;
-    const contentBottom = pageHeight - 10;
+    const contentBottom = pageHeight - 8;
     const cardGap = 4.2;
     const cardWidth = pageWidth - sideMargin * 2;
-    const cards = expandObservationCardQueue(doc, cleanRows, cardWidth);
-    let currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
-    let remainingHeight = contentBottom - currentY;
+    const maxCardsPerPage = 2;
 
-    cards.forEach(function (card) {
-      const gap = currentY > pageStartY ? cardGap : 0;
-      const neededHeight = gap + card.layout.cardHeight;
-      if (neededHeight > remainingHeight && currentY > pageStartY) {
+    let currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
+    let cardsOnPage = 0;
+
+    cleanRows.forEach(function (row, index) {
+      const layout = buildObservationSummaryCardLayout(doc, row, cardWidth);
+      const gapBefore = cardsOnPage > 0 ? cardGap : 0;
+      const remainingHeight = contentBottom - currentY;
+      const fitsCurrentPage = (layout.cardHeight + gapBefore) <= remainingHeight;
+
+      if (cardsOnPage >= maxCardsPerPage || (cardsOnPage > 0 && !fitsCurrentPage)) {
         currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
-        remainingHeight = contentBottom - currentY;
+        cardsOnPage = 0;
       }
-      if (currentY > pageStartY) currentY += cardGap;
-      drawObservationSummaryCard(doc, card.row, card.rowIndex, card.totalRows, sideMargin, currentY, cardWidth, card.layout, palette);
-      currentY += card.layout.cardHeight;
-      remainingHeight = contentBottom - currentY;
+
+      const drawY = currentY + (cardsOnPage > 0 ? cardGap : 0);
+      drawObservationSummaryCard(doc, row, index, cleanRows.length, sideMargin, drawY, cardWidth, layout, palette);
+      currentY = drawY + layout.cardHeight;
+      cardsOnPage += 1;
     });
   }
 

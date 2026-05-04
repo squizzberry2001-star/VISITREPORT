@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp78-vr74-fill-empty-space-next-card';
+const APP_VERSION = 'revamp79-pdf-two-cards-per-page';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

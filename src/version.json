@@ -1,6 +1,6 @@
 {
-  "version": "revamp78-vr74-fill-empty-space-next-card",
-  "build": "revamp78-vr74-fill-empty-space-next-card",
-  "updatedAt": "2026-05-04T02:10:00+07:00",
-  "note": "Based on uploaded VR74, observation PDF keeps the same card design and fills remaining page space with next finding cards"
+  "version": "revamp79-pdf-two-cards-per-page",
+  "build": "revamp79-pdf-two-cards-per-page",
+  "updatedAt": "2026-05-04T06:00:00+07:00",
+  "note": "Observation PDF pagination now keeps up to two summary cards per page and automatically moves the next card to a new slide only when the remaining space is not enough."
 }
