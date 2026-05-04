@@ -1,6 +1,6 @@
 {
-  "version": "revamp79-pdf-two-cards-per-page",
-  "build": "revamp79-pdf-two-cards-per-page",
-  "updatedAt": "2026-05-04T06:00:00+07:00",
-  "note": "Observation PDF pagination now keeps up to two summary cards per page and automatically moves the next card to a new slide only when the remaining space is not enough."
+  "version": "revamp80-pdf-observation-split-continuation",
+  "build": "revamp80-pdf-observation-split-continuation",
+  "updatedAt": "2026-05-04T06:25:00+07:00",
+  "note": "Observation PDF keeps the VR74 card design, packs up to two findings per page, and splits only the table rows that do not fit into a continuation card."
 }

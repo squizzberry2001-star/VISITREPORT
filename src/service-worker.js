@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp79-pdf-two-cards-per-page';
+const APP_VERSION = 'revamp80-pdf-observation-split-continuation';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
