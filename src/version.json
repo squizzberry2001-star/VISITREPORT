@@ -1,6 +1,6 @@
 {
-  "version": "revamp72-cloudflare-d1-migration",
-  "build": "revamp72-cloudflare-d1-migration",
-  "updatedAt": "2026-05-04T00:00:00+07:00",
-  "note": "Cloudflare D1 backend migration with Netlify disabled by default"
+  "version": "revamp73-pdf-observation-multi-findings",
+  "build": "revamp73-pdf-observation-multi-findings",
+  "updatedAt": "2026-05-04T00:30:00+07:00",
+  "note": "Observation PDF redesigned so one page can fit multiple findings with lighter, easier-to-read cards"
 }

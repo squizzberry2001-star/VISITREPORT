@@ -890,122 +890,145 @@
     drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.2, valueY, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
   }
 
-  function addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin) {
+
+  function addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight) {
     doc.addPage();
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageWidth, pageHeight, 'F');
     drawTopBar(doc, title, palette, pageWidth);
-    return 22;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Ringkasan observasi - beberapa temuan per halaman', 12, 23.5);
+    return 27;
   }
 
-  function observationCompactSegmentHeight(rows) {
-    const density = pdfTableExtraRows();
-    const titleFontSize = clampNumber(pdfTableTitleFontSize() - 1.3, 7.4, 10.8, 8.6);
-    const titleH = Math.max(5.8, titleFontSize * 0.62);
-    const titleGap = Math.max(1.6, 2.4 - density * 0.08);
-    const pad = Math.max(1.45, 2.2 - density * 0.16);
-    const rowGap = Math.max(0.35, 0.75 - density * 0.08);
-    let bodyH = pad * 2;
-    rows.forEach(function (row, index) {
-      bodyH += observationCompactRowHeight(row) + (index ? rowGap : 0);
-    });
-    return titleH + titleGap + bodyH;
+  function buildObservationSummaryField(doc, label, value, width, maxLines, options) {
+    const opts = options || {};
+    const fontSize = clampNumber(opts.fontSize || pdfTableFontSize() - 1.0, 7.2, 10.2, 8.2);
+    const richLines = splitRichTextToLines(doc, value, Math.max(12, width - 4.8), Boolean(opts.boldValue));
+    const fitted = fitRichLinesToBox(doc, richLines, maxLines, Math.max(12, width - 4.8), Boolean(opts.boldValue));
+    return {
+      label: label,
+      richLines: fitted,
+      boldValue: Boolean(opts.boldValue),
+      highlight: opts.highlight || null,
+      labelColor: opts.labelColor || null,
+      valueText: opts.valueText || null,
+      fontSize: fontSize
+    };
   }
 
-  function drawObservationCompactSegment(doc, rowIndex, totalRows, rows, x, y, width, palette, continuation) {
-    const density = pdfTableExtraRows();
-    const titleFontSize = clampNumber(pdfTableTitleFontSize() - 1.3, 7.4, 10.8, 8.6);
-    const titleH = Math.max(5.8, titleFontSize * 0.62);
-    const titleGap = Math.max(1.6, 2.4 - density * 0.08);
-    const pad = Math.max(1.45, 2.2 - density * 0.16);
-    const rowGap = Math.max(0.35, 0.75 - density * 0.08);
-    const cellGap = 1.0;
-    const tableY = y + titleH + titleGap;
-    const tableW = width;
-    const innerW = tableW - pad * 2;
-    const halfW = (innerW - cellGap) / 2;
-    let bodyH = pad * 2;
-    rows.forEach(function (row, index) {
-      bodyH += observationCompactRowHeight(row) + (index ? rowGap : 0);
-    });
+  function drawObservationSummaryField(doc, field, x, y, width, height, palette) {
+    const labelFontSize = clampNumber(pdfTableTitleFontSize() - 1.4, 7.0, 10.8, 8.1);
+    const valueFontSize = field.fontSize || clampNumber(pdfTableFontSize() - 1.0, 7.2, 10.2, 8.2);
+    const fill = field.highlight && field.highlight.fill ? field.highlight.fill : [255, 255, 255];
+    const textColor = field.valueText || (field.highlight && field.highlight.text ? field.highlight.text : [15, 23, 42]);
+    const lineHeight = Math.max(3.0, valueFontSize * 0.42);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.22);
+    doc.setFillColor.apply(doc, fill);
+    doc.roundedRect(x, y, width, height, 1.6, 1.6, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(titleFontSize);
-    doc.setTextColor.apply(doc, palette.primary);
-    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), x, y + Math.max(4.8, titleFontSize * 0.42));
+    doc.setFontSize(labelFontSize);
+    doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
+    doc.text(field.label, x + 2.2, y + 4.2);
+
+    doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
+    doc.setFontSize(valueFontSize);
+    doc.setTextColor.apply(doc, textColor);
+    drawRichLines(doc, field.richLines, x + 2.2, y + 8.3, lineHeight, {
+      bold: field.boldValue,
+      textColor: textColor,
+      fontSize: valueFontSize
+    });
+  }
+
+  function drawObservationSummaryCard(doc, row, rowIndex, totalRows, x, y, width, height, palette) {
+    const pad = 3.2;
+    const headerH = 8.8;
+    const gridY = y + headerH + 2.0;
+    const gridH = height - headerH - 5.2;
+    const colGap = 2.2;
+    const rowGap = 1.6;
+    const colW = (width - pad * 2 - colGap) / 2;
+    const rowH = (gridH - rowGap * 2) / 3;
+    const leftX = x + pad;
+    const rightX = leftX + colW + colGap;
+    const row1Y = gridY;
+    const row2Y = gridY + rowH + rowGap;
+    const row3Y = gridY + (rowH + rowGap) * 2;
 
     doc.setDrawColor(148, 163, 184);
-    doc.setLineWidth(0.34);
+    doc.setLineWidth(0.26);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x, tableY, tableW, bodyH, 2.2, 2.2, 'FD');
+    doc.roundedRect(x, y, width, height, 2.4, 2.4, 'FD');
     doc.setFillColor.apply(doc, palette.primary);
-    doc.roundedRect(x, tableY, tableW, 0.8, 2.2, 2.2, 'F');
+    doc.roundedRect(x, y, width, headerH, 2.4, 2.4, 'F');
 
-    let cy = tableY + pad;
-    rows.forEach(function (row, index) {
-      if (index) cy += rowGap;
-      const rowH = observationCompactRowHeight(row);
-      const fill = index % 2 ? [249, 250, 251] : [255, 255, 255];
-      if (row.full) {
-        drawObservationCompactCell(doc, row.cells[0], x + pad, cy, innerW, rowH, palette, fill);
-      } else {
-        drawObservationCompactCell(doc, row.cells[0], x + pad, cy, halfW, rowH, palette, fill);
-        drawObservationCompactCell(doc, row.cells[1], x + pad + halfW + cellGap, cy, halfW, rowH, palette, fill);
-      }
-      cy += rowH;
-    });
-    return observationCompactSegmentHeight(rows);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Temuan ' + String(rowIndex + 1) + '/' + String(totalRows), x + 3.2, y + 5.7);
+
+    const dueLabel = row.deadline ? formatDate(row.deadline) : 'Belum diisi';
+    const dueBadge = deadlineHighlight(row.deadline);
+    const badgeWidth = Math.min(48, Math.max(26, doc.getTextWidth(dueLabel) + 7));
+    const badgeX = x + width - badgeWidth - 3.0;
+    const badgeFill = dueBadge && dueBadge.fill ? dueBadge.fill : [237, 242, 247];
+    const badgeText = dueBadge && dueBadge.text ? dueBadge.text : [51, 65, 85];
+    doc.setFillColor.apply(doc, badgeFill);
+    doc.roundedRect(badgeX, y + 1.8, badgeWidth, 5.2, 2.2, 2.2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor.apply(doc, badgeText);
+    doc.text(dueLabel, badgeX + badgeWidth / 2, y + 5.3, { align: 'center' });
+
+    drawObservationSummaryField(doc, buildObservationSummaryField(doc, 'Temuan', row.temuan || '-', colW, 3, {
+      boldValue: true,
+      labelColor: [133, 77, 14],
+      highlight: { fill: [254, 249, 195], text: [66, 32, 6] },
+      fontSize: clampNumber(pdfTableFontSize() - 0.7, 7.4, 10.5, 8.4)
+    }), leftX, row1Y, colW, rowH, palette);
+    drawObservationSummaryField(doc, buildObservationSummaryField(doc, 'Dampak', row.dampak || '-', colW, 2, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.0, 7.0, 10.0, 8.0)
+    }), rightX, row1Y, colW, rowH, palette);
+
+    drawObservationSummaryField(doc, buildObservationSummaryField(doc, 'Kondisi Ideal', row.kondisiIdeal || '-', colW, 2, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.0, 7.0, 10.0, 8.0)
+    }), leftX, row2Y, colW, rowH, palette);
+    drawObservationSummaryField(doc, buildObservationSummaryField(doc, 'Tindakan Perbaikan', row.tindakan || '-', colW, 3, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.0, 7.0, 10.0, 8.0)
+    }), rightX, row2Y, colW, rowH, palette);
+
+    drawObservationSummaryField(doc, buildObservationSummaryField(doc, 'Penyebab', row.penyebab || '-', colW, 2, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.0, 7.0, 10.0, 8.0)
+    }), leftX, row3Y, colW, rowH, palette);
+    drawObservationSummaryField(doc, buildObservationSummaryField(doc, 'Hasil', row.hasil || '-', colW, 2, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.0, 7.0, 10.0, 8.0)
+    }), rightX, row3Y, colW, rowH, palette);
   }
 
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
     const cleanRows = normalizeRows(rows);
     if (!cleanRows.length) return;
-    // Full-paper request applies only to left/right spacing.
-    // Keep the existing observation table layout and normal vertical safe area.
-    const tableSideMargin = 3.2;
-    const x = tableSideMargin;
-    const width = pageWidth - tableSideMargin * 2;
-    const density = pdfTableExtraRows();
-    const bottom = pageHeight - margin;
-    const gap = Math.max(1.2, 2.4 - density * 0.22);
-    const innerTableWidth = width - 3.6;
-    let y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
+    const sideMargin = 8;
+    const cardsPerPage = 3;
+    const pageStartY = 27;
+    const contentBottom = pageHeight - 10;
+    const cardGap = 4.2;
+    const availableHeight = contentBottom - pageStartY;
+    const cardHeight = (availableHeight - cardGap * (cardsPerPage - 1)) / cardsPerPage;
+    const cardWidth = pageWidth - sideMargin * 2;
+    let currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
 
-    cleanRows.forEach(function (row, rowIndex) {
-      const allRows = makeObservationCompactRows(doc, row, innerTableWidth);
-      let remaining = allRows.slice();
-      let continuation = false;
-      while (remaining.length) {
-        const available = Math.max(36, bottom - y);
-        const segment = [];
-        let used = observationCompactSegmentHeight(segment);
-        for (let i = 0; i < remaining.length; i += 1) {
-          const candidate = segment.concat([remaining[i]]);
-          const candidateHeight = observationCompactSegmentHeight(candidate);
-          if (segment.length && candidateHeight > available) break;
-          segment.push(remaining[i]);
-          used = candidateHeight;
-          if (used > available) break;
-        }
-        if (!segment.length) {
-          y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
-          continue;
-        }
-        if (y + used > bottom && y > 26) {
-          y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
-          continue;
-        }
-        const drawnHeight = drawObservationCompactSegment(doc, rowIndex, cleanRows.length, segment, x, y, width, palette, continuation);
-        y += drawnHeight + gap;
-        remaining = remaining.slice(segment.length);
-        continuation = true;
-        if (remaining.length && y > bottom - 18) {
-          y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
-        }
-      }
-      if (y > bottom - 22 && rowIndex < cleanRows.length - 1) {
-        y = addObservationListPage(doc, title, palette, pageWidth, pageHeight, margin);
-      }
+    cleanRows.forEach(function (row, index) {
+      const slot = index % cardsPerPage;
+      if (index && slot === 0) currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
+      const y = currentY + slot * (cardHeight + cardGap);
+      drawObservationSummaryCard(doc, row, index, cleanRows.length, sideMargin, y, cardWidth, cardHeight, palette);
     });
   }
 

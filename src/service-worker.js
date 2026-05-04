@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp72-cloudflare-d1-migration';
+const APP_VERSION = 'revamp73-pdf-observation-multi-findings';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
