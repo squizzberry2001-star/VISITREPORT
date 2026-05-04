@@ -1,6 +1,6 @@
 {
-  "version": "revamp81-pdf-dense-table-borders",
-  "build": "revamp81-pdf-dense-table-borders",
-  "updatedAt": "2026-05-04T06:00:00+07:00",
-  "note": "Observation PDF pagination now keeps up to two summary cards per page and automatically moves the next card to a new slide only when the remaining space is not enough."
+  "version": "revamp82-preview-send-email-gmail-api",
+  "build": "revamp82-preview-send-email-gmail-api",
+  "updatedAt": "2026-05-04T18:20:00+07:00",
+  "note": "Preview page now includes Send Email with locked Gmail sender, editable to/cc/body, and PDF plus CA Assignment Excel attachments."
 }
