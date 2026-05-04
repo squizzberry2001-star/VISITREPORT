@@ -1021,17 +1021,31 @@
     };
   }
 
-  function drawObservationSummaryCard(doc, row, rowIndex, totalRows, x, y, width, layout, palette) {
+  function observationSegmentRows(layout, startRow, endRow) {
+    const rows = [
+      { left: layout.fields.topLeft, right: layout.fields.topRight, height: layout.row1H },
+      { left: layout.fields.midLeft, right: layout.fields.midRight, height: layout.row2H },
+      { left: layout.fields.botLeft, right: layout.fields.botRight, height: layout.row3H }
+    ];
+    return rows.slice(startRow, endRow + 1);
+  }
+
+  function observationSegmentHeight(layout, startRow, endRow) {
+    const rows = observationSegmentRows(layout, startRow, endRow);
+    const rowsHeight = rows.reduce(function (sum, row) { return sum + row.height; }, 0);
+    const rowGaps = Math.max(0, rows.length - 1) * layout.rowGap;
+    return layout.headerH + 2.0 + rowsHeight + rowGaps + 3.2;
+  }
+
+  function drawObservationSummaryCardSegment(doc, row, rowIndex, totalRows, x, y, width, layout, palette, startRow, endRow) {
     const pad = layout.pad;
     const headerH = layout.headerH;
     const colW = layout.colW;
     const rowGap = layout.rowGap;
     const leftX = x + pad;
     const rightX = leftX + colW + layout.colGap;
-    const row1Y = y + headerH + 2.0;
-    const row2Y = row1Y + layout.row1H + rowGap;
-    const row3Y = row2Y + layout.row2H + rowGap;
-    const height = layout.cardHeight;
+    const segmentRows = observationSegmentRows(layout, startRow, endRow);
+    const height = observationSegmentHeight(layout, startRow, endRow);
 
     doc.setDrawColor(148, 163, 184);
     doc.setLineWidth(0.26);
@@ -1043,7 +1057,8 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.8);
     doc.setTextColor(255, 255, 255);
-    doc.text('Temuan ' + String(rowIndex + 1) + '/' + String(totalRows), x + 3.2, y + 5.7);
+    const title = 'Temuan ' + String(rowIndex + 1) + '/' + String(totalRows) + (startRow > 0 ? ' - lanjutan' : '');
+    doc.text(title, x + 3.2, y + 5.7);
 
     const dueDate = row.deadline ? formatDate(row.deadline) : 'Belum diisi';
     const dueLabel = 'Deadline Perbaikan: ' + dueDate;
@@ -1059,12 +1074,16 @@
     doc.setTextColor.apply(doc, badgeText);
     doc.text(dueLabel, badgeX + badgeWidth / 2, y + 5.2, { align: 'center' });
 
-    drawObservationSummaryField(doc, layout.fields.topLeft, leftX, row1Y, colW, layout.row1H, palette);
-    drawObservationSummaryField(doc, layout.fields.topRight, rightX, row1Y, colW, layout.row1H, palette);
-    drawObservationSummaryField(doc, layout.fields.midLeft, leftX, row2Y, colW, layout.row2H, palette);
-    drawObservationSummaryField(doc, layout.fields.midRight, rightX, row2Y, colW, layout.row2H, palette);
-    drawObservationSummaryField(doc, layout.fields.botLeft, leftX, row3Y, colW, layout.row3H, palette);
-    drawObservationSummaryField(doc, layout.fields.botRight, rightX, row3Y, colW, layout.row3H, palette);
+    let currentRowY = y + headerH + 2.0;
+    segmentRows.forEach(function (segmentRow, segmentIndex) {
+      drawObservationSummaryField(doc, segmentRow.left, leftX, currentRowY, colW, segmentRow.height, palette);
+      drawObservationSummaryField(doc, segmentRow.right, rightX, currentRowY, colW, segmentRow.height, palette);
+      currentRowY += segmentRow.height + (segmentIndex < segmentRows.length - 1 ? rowGap : 0);
+    });
+  }
+
+  function drawObservationSummaryCard(doc, row, rowIndex, totalRows, x, y, width, layout, palette) {
+    drawObservationSummaryCardSegment(doc, row, rowIndex, totalRows, x, y, width, layout, palette, 0, 2);
   }
 
   function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
@@ -1076,26 +1095,51 @@
     const contentBottom = pageHeight - 8;
     const cardGap = 4.2;
     const cardWidth = pageWidth - sideMargin * 2;
-    const maxCardsPerPage = 2;
+    const maxFindingsPerPage = 2;
 
     let currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
-    let cardsOnPage = 0;
+    let findingsOnPage = 0;
+
+    function newObservationPage() {
+      currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
+      findingsOnPage = 0;
+    }
 
     cleanRows.forEach(function (row, index) {
       const layout = buildObservationSummaryCardLayout(doc, row, cardWidth);
-      const gapBefore = cardsOnPage > 0 ? cardGap : 0;
-      const remainingHeight = contentBottom - currentY;
-      const fitsCurrentPage = (layout.cardHeight + gapBefore) <= remainingHeight;
+      let startRow = 0;
+      let isFirstSegment = true;
 
-      if (cardsOnPage >= maxCardsPerPage || (cardsOnPage > 0 && !fitsCurrentPage)) {
-        currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
-        cardsOnPage = 0;
+      while (startRow < 3) {
+        if (findingsOnPage >= maxFindingsPerPage && isFirstSegment) newObservationPage();
+
+        const gapBefore = currentY > pageStartY ? cardGap : 0;
+        let availableHeight = contentBottom - currentY - gapBefore;
+
+        if (availableHeight <= observationSegmentHeight(layout, startRow, startRow) && currentY > pageStartY) {
+          newObservationPage();
+          availableHeight = contentBottom - currentY;
+        }
+
+        let endRow = startRow;
+        let bestHeight = observationSegmentHeight(layout, startRow, endRow);
+        while (endRow + 1 < 3) {
+          const nextHeight = observationSegmentHeight(layout, startRow, endRow + 1);
+          if (nextHeight > availableHeight) break;
+          endRow += 1;
+          bestHeight = nextHeight;
+        }
+
+        const drawY = currentY + (currentY > pageStartY ? cardGap : 0);
+        drawObservationSummaryCardSegment(doc, row, index, cleanRows.length, sideMargin, drawY, cardWidth, layout, palette, startRow, endRow);
+        currentY = drawY + bestHeight;
+
+        if (isFirstSegment) findingsOnPage += 1;
+        isFirstSegment = false;
+        startRow = endRow + 1;
+
+        if (startRow < 3) newObservationPage();
       }
-
-      const drawY = currentY + (cardsOnPage > 0 ? cardGap : 0);
-      drawObservationSummaryCard(doc, row, index, cleanRows.length, sideMargin, drawY, cardWidth, layout, palette);
-      currentY = drawY + layout.cardHeight;
-      cardsOnPage += 1;
     });
   }
 
