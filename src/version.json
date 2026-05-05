@@ -1,6 +1,6 @@
 {
-  "version": "revamp87-email-portal-no-overlap",
-  "build": "revamp87-email-portal-no-overlap",
+  "version": "revamp88-email-send-size-safe",
+  "build": "revamp88-email-send-size-safe",
   "updatedAt": "2026-05-05T22:10:00+07:00",
   "note": "Fix Send Email as true React portal fullscreen overlay so Preview PDF and top navbar cannot overlap the compose screen. Also bumps index cache keys and service worker cache."
 }
