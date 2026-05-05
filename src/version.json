@@ -1,6 +1,6 @@
 {
-  "version": "revamp89-email-remove-auto-note",
-  "build": "revamp89-email-remove-auto-note",
-  "updatedAt": "2026-05-05T22:10:00+07:00",
-  "note": "Fix Send Email as true React portal fullscreen overlay so Preview PDF and top navbar cannot overlap the compose screen. Also bumps index cache keys and service worker cache."
+  "version": "revamp92-hide-clear-topnav-redownload",
+  "build": "revamp92-hide-clear-topnav-redownload",
+  "updatedAt": "2026-05-05T23:55:00+07:00",
+  "note": "Hide Clear button from top/mobile navbar. Navbar now keeps Home, Audit, and Preview only."
 }

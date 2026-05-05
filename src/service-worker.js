@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp89-email-remove-auto-note';
+const APP_VERSION = 'revamp92-hide-clear-topnav-redownload';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
