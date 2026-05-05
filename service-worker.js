@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp99-preview-email-cloudflare-focused';
+const APP_VERSION = 'revamp100-welcome-background-navbar-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -15,7 +15,8 @@ const LOCAL_ASSETS = [
   './email-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/welcome-handshake-bg.jpg'
 ];
 const CORE_ASSETS = [
   './',
