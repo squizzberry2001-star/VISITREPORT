@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp92-hide-clear-topnav-redownload';
+const APP_VERSION = 'revamp93-email-compose-ui-fixes';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
