@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp87-email-portal-no-overlap';
+const APP_VERSION = 'revamp88-email-send-size-safe';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

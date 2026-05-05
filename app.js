@@ -81,7 +81,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp87-email-portal-no-overlap';
+const APP_BUILD_VERSION = 'revamp88-email-send-size-safe';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -781,7 +781,7 @@ function Button({ variant = 'primary', className = '', icon, children, ...props 
         danger: 'btn-danger',
         icon: 'btn-icon'
     };
-    return (React.createElement("button", { className: cx(styles[variant] || styles.primary, className), ...props },
+    return (React.createElement("button", { type: "button", className: cx(styles[variant] || styles.primary, className), ...props },
         icon ? React.createElement(Icon, { name: icon, className: "h-5 w-5" }) : null,
         children));
 }
@@ -2101,7 +2101,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp87-email-portal-no-overlap" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp88-email-send-size-safe" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -2314,6 +2314,9 @@ function getVisitStoreEmail(visit) {
 
 const CUSTOM_EMAIL_DIRECTORY_KEY = 'visitreport_custom_email_directory_v1';
 const SCHEDULED_REPORT_EMAIL_QUEUE_KEY = 'visitreport_scheduled_email_queue_v1';
+const EMAIL_SAFE_REQUEST_BYTES = 3.25 * 1024 * 1024;
+const EMAIL_PDF_SAFE_BYTES = 2.65 * 1024 * 1024;
+const EMAIL_EXCEL_SAFE_BYTES = 850 * 1024;
 function isEmailSyntax(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanText(value).toLowerCase());
 }
@@ -2479,6 +2482,91 @@ function blobToBase64Payload(blob) {
         reader.onerror = () => reject(reader.error || new Error('Gagal membaca file attachment.'));
         reader.readAsDataURL(blob);
     });
+}
+function formatFileSize(bytes) {
+    const size = Number(bytes || 0);
+    if (size >= 1024 * 1024)
+        return `${(size / 1024 / 1024).toFixed(1)} MB`;
+    if (size >= 1024)
+        return `${Math.max(1, Math.round(size / 1024))} KB`;
+    return `${Math.max(0, Math.round(size))} B`;
+}
+function approxBase64Bytes(base64) {
+    return Math.ceil(cleanText(base64).length * 0.75);
+}
+function estimateEmailPayloadBytes(payload) {
+    try {
+        return new Blob([JSON.stringify(payload || {})]).size;
+    }
+    catch (_) {
+        return JSON.stringify(payload || {}).length;
+    }
+}
+function getEmailSafeRequestBytes() {
+    const raw = Number(window.VISIT_EMAIL_CONFIG?.clientMaxRequestBytes || EMAIL_SAFE_REQUEST_BYTES);
+    return Number.isFinite(raw) && raw > 0 ? raw : EMAIL_SAFE_REQUEST_BYTES;
+}
+function stripPhotoImages(value) {
+    if (Array.isArray(value))
+        return value.map((item) => stripPhotoImages(item));
+    if (!value || typeof value !== 'object')
+        return value;
+    const next = { ...value };
+    if ('image' in next && typeof next.image === 'string')
+        next.image = '';
+    if ('dataUrl' in next && typeof next.dataUrl === 'string')
+        next.dataUrl = '';
+    if ('src' in next && typeof next.src === 'string' && next.src.startsWith('data:image/'))
+        next.src = '';
+    Object.keys(next).forEach((key) => {
+        if (key.toLowerCase().includes('photo') || key.toLowerCase().includes('image'))
+            next[key] = stripPhotoImages(next[key]);
+    });
+    return next;
+}
+function buildEmailOptimizedVisit(visit) {
+    const optimized = stripPhotoImages(visit || {});
+    return {
+        ...optimized,
+        qscResultPhoto: optimized.qscResultPhoto ? { ...optimized.qscResultPhoto, image: '' } : optimized.qscResultPhoto,
+        qscResultPhotos: (optimized.qscResultPhotos || []).map((item) => ({ ...(item || {}), image: '' })),
+        findingEvidencePhotos: (optimized.findingEvidencePhotos || []).map((item) => ({ ...(item || {}), image: '' })),
+        correctiveActionPhotos: (optimized.correctiveActionPhotos || []).map((item) => ({ ...(item || {}), image: '' }))
+    };
+}
+async function buildPdfAttachmentForEmail(visit, currentPdfBlob) {
+    if (!window.ReportVisitPDF?.createBlob)
+        throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+    const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+    let blob = currentPdfBlob || await window.ReportVisitPDF.createBlob(visit);
+    let optimized = false;
+    if (blob.size > EMAIL_PDF_SAFE_BYTES) {
+        blob = await window.ReportVisitPDF.createBlob(buildEmailOptimizedVisit(visit));
+        optimized = true;
+    }
+    return { blob, fileName, optimized };
+}
+function addEmailNote(body, notes) {
+    const cleanNotes = (notes || []).map((item) => cleanText(item)).filter(Boolean);
+    if (!cleanNotes.length)
+        return cleanText(body);
+    return cleanText(body) + '\n\nCatatan otomatis attachment:\n' + cleanNotes.map((item) => '- ' + item).join('\n');
+}
+function fitEmailPayloadToClientLimit(payload, notes) {
+    const limit = getEmailSafeRequestBytes();
+    const draft = { ...(payload || {}), attachments: [...(payload.attachments || [])] };
+    const skipped = [];
+    while (draft.attachments.length && estimateEmailPayloadBytes(draft) > limit) {
+        let largestIndex = 0;
+        draft.attachments.forEach((item, index) => {
+            if (cleanText(item.dataBase64).length > cleanText(draft.attachments[largestIndex].dataBase64).length)
+                largestIndex = index;
+        });
+        const [removed] = draft.attachments.splice(largestIndex, 1);
+        skipped.push(`${removed.filename || 'Attachment'} dilepas otomatis karena ukuran request email melebihi batas Vercel.`);
+        draft.body = addEmailNote(payload.body, [...(notes || []), ...skipped]);
+    }
+    return { payload: draft, notes: [...(notes || []), ...skipped], skipped };
 }
 function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, ...props }) {
     const ref = useRef(null);
@@ -2926,32 +3014,46 @@ function PreviewPage({ visit, onBack }) {
         setEmailStatus('Menyiapkan attachment...');
         try {
             const attachments = [];
+            const attachmentNotes = [];
             if (emailForm.attachPdf) {
-                if (!window.ReportVisitPDF?.createBlob)
-                    throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-                const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
-                const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
-                attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
+                setEmailStatus('Menyiapkan PDF email...');
+                const { blob, fileName, optimized } = await buildPdfAttachmentForEmail(visit, pdfBlob);
+                if (optimized)
+                    attachmentNotes.push('PDF dibuat versi ringan tanpa foto agar bisa masuk batas request Vercel/Gmail. Gunakan tombol Download PDF untuk file lengkap dengan foto.');
+                if (blob.size <= EMAIL_PDF_SAFE_BYTES) {
+                    attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
+                }
+                else {
+                    attachmentNotes.push(`PDF Report tidak dilampirkan karena masih terlalu besar (${formatFileSize(blob.size)}). Download PDF manual lalu attach dari Gmail jika perlu.`);
+                }
             }
             if (emailForm.attachExcel) {
+                setEmailStatus('Menyiapkan Excel CA Assignment...');
                 if (!window.__caAssignmentExport?.buildWorkbook)
                     throw new Error('Mesin export Excel belum siap.');
                 const blob = await window.__caAssignmentExport.buildWorkbook(visit);
                 const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx';
-                attachments.push({ filename: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dataBase64: await blobToBase64Payload(blob) });
+                if (blob.size <= EMAIL_EXCEL_SAFE_BYTES) {
+                    attachments.push({ filename: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dataBase64: await blobToBase64Payload(blob) });
+                }
+                else {
+                    attachmentNotes.push(`Excel CA Assignment tidak dilampirkan karena terlalu besar (${formatFileSize(blob.size)}).`);
+                }
             }
-            const payload = { mode: mode === 'schedule' ? 'send' : mode, to: emailForm.to, cc: emailForm.cc, subject: emailForm.subject, body: emailForm.body, passcode: emailForm.passcode, attachments, visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal } };
+            const basePayload = { mode: mode === 'schedule' ? 'send' : mode, to: emailForm.to, cc: emailForm.cc, subject: emailForm.subject, body: addEmailNote(emailForm.body, attachmentNotes), passcode: emailForm.passcode, attachments, visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal } };
+            const fitted = fitEmailPayloadToClientLimit(basePayload, attachmentNotes);
+            const payload = fitted.payload;
             if (mode === 'schedule') {
                 setEmailStatus('Email dijadwalkan otomatis 30 menit ke depan...');
                 scheduleReportEmailJob(config.endpoint, payload, 30 * 60 * 1000);
-                setEmailStatus('Email berhasil dijadwalkan 30 menit ke depan.');
-                window.setTimeout(() => setEmailOpen(false), 900);
+                setEmailStatus(fitted.skipped.length ? 'Email dijadwalkan 30 menit. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dijadwalkan 30 menit ke depan.');
+                window.setTimeout(() => setEmailOpen(false), 1300);
                 return;
             }
             setEmailStatus('Membuat draft email...');
             await postReportEmailPayload(config.endpoint, payload);
-            setEmailStatus('Draft Gmail berhasil dibuat.');
-            window.setTimeout(() => setEmailOpen(false), 800);
+            setEmailStatus(fitted.skipped.length ? 'Draft Gmail berhasil dibuat. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft Gmail berhasil dibuat.');
+            window.setTimeout(() => setEmailOpen(false), 1100);
         }
         catch (error) {
             setEmailStatus(`Gagal: ${error?.message || 'Gagal memproses email.'}`);
