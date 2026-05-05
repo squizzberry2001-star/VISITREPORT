@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp88-email-send-size-safe';
+const APP_VERSION = 'revamp89-email-remove-auto-note';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
