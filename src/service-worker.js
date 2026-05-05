@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp98-email-footer-button-design-fix';
+const APP_VERSION = 'revamp99-preview-email-cloudflare-focused';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

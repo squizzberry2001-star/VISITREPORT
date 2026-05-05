@@ -1,6 +1,6 @@
 {
-  "version": "revamp98-email-footer-button-design-fix",
-  "build": "revamp98-email-footer-button-design-fix",
-  "updatedAt": "2026-05-05T16:45:00+07:00",
-  "note": "VR96 plus regional.bestie, dengan desain tombol footer email dibuat compact dan icon diperbaiki."
+  "version": "revamp99-preview-email-cloudflare-focused",
+  "build": "revamp99-preview-email-cloudflare-focused",
+  "updatedAt": "2026-05-05T17:30:00+07:00",
+  "note": "Revamp focused: preview action grid, email template admin, no send countdown, QSC cleanup, home stability, Cloudflare D1 panel."
 }
