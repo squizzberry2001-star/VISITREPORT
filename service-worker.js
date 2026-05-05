@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp82-preview-send-email-gmail-api';
+const APP_VERSION = 'revamp87-email-portal-no-overlap';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

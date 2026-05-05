@@ -81,7 +81,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp85-email-final-layout-schedule';
+const APP_BUILD_VERSION = 'revamp87-email-portal-no-overlap';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2101,7 +2101,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp85-email-final-layout-schedule" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp87-email-portal-no-overlap" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
@@ -2628,15 +2628,16 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement(Button, { variant: "secondary", onClick: onClose, disabled: busy }, "Tutup"),
             React.createElement(Button, { variant: "secondary", icon: "pdf", onClick: () => onSubmit('draft'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Create Draft'),
             React.createElement(Button, { icon: "calendar", onClick: () => onSubmit('schedule'), disabled: busy || !form.to || !form.subject }, busy ? 'Memproses...' : 'Schedule 30 Menit')));
-    return React.createElement("div", { className: "fixed inset-0 z-[9999] bg-[#f6f8fc]", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f6f8fc]" },
+    const overlay = React.createElement("div", { className: "rbv-email-compose-portal fixed inset-0 bg-[#f6f8fc]", role: "dialog", "aria-modal": "true", style: { position: 'fixed', inset: '0px', width: '100vw', height: '100dvh', minHeight: '100vh', zIndex: 2147483647, isolation: 'isolate', overflow: 'hidden', background: '#f6f8fc' } },
+        React.createElement("div", { className: "flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f6f8fc]", style: { height: '100dvh', maxHeight: '100dvh', width: '100vw', overflow: 'hidden' } },
             React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3" },
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("p", { className: "text-[11px] font-black uppercase tracking-[0.22em] text-audit-primary" }, "Email Report"),
                     React.createElement("h2", { className: "truncate text-lg font-black text-slate-950" }, "New Message")),
                 React.createElement(Button, { variant: "icon", onClick: onClose, disabled: busy, "aria-label": "Tutup" }, React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("div", { className: "flex-1 overflow-y-auto p-3 md:p-5" }, composeCard),
+            React.createElement("div", { className: "flex-1 overflow-y-auto p-3 md:p-5", style: { minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } }, composeCard),
             footer));
+    return (typeof document !== 'undefined' && ReactDOM?.createPortal) ? ReactDOM.createPortal(overlay, document.body) : overlay;
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
