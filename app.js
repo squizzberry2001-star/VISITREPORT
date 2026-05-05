@@ -27,8 +27,8 @@ const DEFAULT_UPDATE_NOTICE_CONFIG = {
     enabled: true,
     title: 'Info Update Website',
     messages: [
-    
-        'Area ini untuk mengumumkan perubahan fitur, maintenance, atau instruksi terbaru.'
+        'Konten informasi update dapat diatur dari panel rahasia.',
+        'Gunakan area ini untuk mengumumkan perubahan fitur, maintenance, atau instruksi terbaru.'
     ],
     intervalSeconds: 4
 };
@@ -2317,6 +2317,11 @@ function getVisitStoreEmail(visit) {
 
 const CUSTOM_EMAIL_DIRECTORY_KEY = 'visitreport_custom_email_directory_v1';
 const SCHEDULED_REPORT_EMAIL_QUEUE_KEY = 'visitreport_scheduled_email_queue_v1';
+const LOCKED_CC_EMAILS = [
+    'muhammad.aufar@familymartindonesia.com',
+    'mekarsari.pramawati@familymartindonesia.com',
+    'nugraha.amijaya@familymartindonesia.com'
+];
 const EMAIL_SAFE_REQUEST_BYTES = 3.25 * 1024 * 1024;
 const EMAIL_PDF_SAFE_BYTES = 2.65 * 1024 * 1024;
 const EMAIL_EXCEL_SAFE_BYTES = 850 * 1024;
@@ -2501,6 +2506,12 @@ function parseEmailList(value) {
 function joinEmailList(items) {
     return uniqueBy((items || []).map((item) => cleanText(item).toLowerCase()).filter(Boolean), (item) => normalize(item)).join(', ');
 }
+function ensureLockedEmailList(value, lockedEmails = LOCKED_CC_EMAILS) {
+    return joinEmailList([...(lockedEmails || []), ...parseEmailList(value)]);
+}
+function getLockedCcContacts() {
+    return LOCKED_CC_EMAILS.map((email) => buildEmailContact('locked-cc', email, 'Auto locked CC', { role: 'Locked CC' })).filter(Boolean);
+}
 function buildInitialEmailForm(visit) {
     const config = getEmailReportConfig();
     const toOptions = getVisitToEmailContactOptions(visit);
@@ -2508,7 +2519,7 @@ function buildInitialEmailForm(visit) {
     return {
         from: config.sender,
         to: defaultTo,
-        cc: joinEmailList(parseEmailList(config.defaultCc)),
+        cc: ensureLockedEmailList(config.defaultCc),
         subject: applyEmailTemplate(config.defaultSubjectTemplate, visit),
         body: applyEmailTemplate(config.defaultBodyTemplate, visit),
         passcode: config.lockedPasscode,
@@ -2620,11 +2631,13 @@ function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, ...p
     }, [value, minRows]);
     return React.createElement("textarea", { ref: ref, value: value, onChange: onChange, rows: minRows, className: className, ...props });
 }
-function EmailRecipientPicker({ label, value, onChange, options, placeholder, multiple = false, required = false }) {
+function EmailRecipientPicker({ label, value, onChange, options, placeholder, multiple = false, required = false, lockedEmails = [] }) {
     const [query, setQuery] = useState('');
     const [open, setOpen] = useState(false);
     const wrapperRef = useRef(null);
     const selectedEmails = useMemo(() => parseEmailList(value), [value]);
+    const lockedEmailSet = useMemo(() => new Set((lockedEmails || []).map((item) => normalize(item)).filter(Boolean)), [lockedEmails]);
+    const isLockedEmail = (email) => lockedEmailSet.has(normalize(email));
     const optionMap = useMemo(() => {
         const map = new Map();
         (options || []).forEach((item) => map.set(normalize(item.email), item));
@@ -2642,7 +2655,7 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
             document.removeEventListener('touchstart', handlePointer);
         };
     }, []);
-    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: 'Manual' });
+    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: isLockedEmail(email) ? 'Auto locked CC' : 'Manual' });
     const recipientChipStyle = {
         maxWidth: '100%',
         gap: '4px',
@@ -2692,6 +2705,8 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
             setOpen(false);
     }
     function removeEmail(email) {
+        if (isLockedEmail(email))
+            return;
         onChange(joinEmailList(selectedEmails.filter((item) => normalize(item) !== normalize(email))));
     }
     function handleKeyDown(event) {
@@ -2705,13 +2720,19 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
             }
         }
         if (event.key === 'Backspace' && !query && selectedEmails.length) {
-            event.preventDefault();
-            removeEmail(selectedEmails[selectedEmails.length - 1]);
+            const removableEmail = [...selectedEmails].reverse().find((email) => !isLockedEmail(email));
+            if (removableEmail) {
+                event.preventDefault();
+                removeEmail(removableEmail);
+            }
         }
     }
-    const chipEls = selectedItems.map((item) => React.createElement("span", { key: item.email, className: "inline-flex max-w-full items-center rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200", style: recipientChipStyle },
-        React.createElement("span", { className: "truncate", style: recipientChipEmailStyle }, item.email),
-        React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" }))));
+    const chipEls = selectedItems.map((item) => {
+        const locked = isLockedEmail(item.email);
+        return React.createElement("span", { key: item.email, className: cx("inline-flex max-w-full items-center rounded-full ring-1", locked ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
+            React.createElement("span", { className: "truncate", style: recipientChipEmailStyle }, item.email),
+            locked ? React.createElement("span", { className: "rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-emerald-700" }, "Lock") : React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" })));
+    });
     const customButton = customAllowed ? React.createElement("button", { type: "button", className: "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-slate-50", onMouseDown: (event) => {
             event.preventDefault();
             commitEmail(customQuery);
@@ -2769,6 +2790,13 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         }
     }, [open]);
     useEffect(() => {
+        if (!open)
+            return;
+        const lockedCcValue = ensureLockedEmailList(form.cc);
+        if (normalize(lockedCcValue) !== normalize(form.cc))
+            onChange({ cc: lockedCcValue });
+    }, [open, form.cc]);
+    useEffect(() => {
         if (!open || !sendConfirmOpen)
             return undefined;
         const expiresAt = Date.now() + 20000;
@@ -2787,8 +2815,18 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         return null;
     const config = getEmailReportConfig();
     const toOptions = getVisitToEmailContactOptions(visit);
-    const ccOptions = getAllMasterEmailContactOptions(visit);
+    const lockedCcEmails = LOCKED_CC_EMAILS;
+    const ccOptions = uniqueBy([...getLockedCcContacts(), ...getAllMasterEmailContactOptions(visit)], (item) => normalize(item.email));
     const ccCount = parseEmailList(form.cc).length;
+    const statusText = cleanText(status);
+    const statusKind = /gagal/i.test(statusText) ? 'error' : /dijadwalkan|jadwal/i.test(statusText) ? 'schedule' : /draft/i.test(statusText) ? 'draft' : /berhasil dikirim|terkirim/i.test(statusText) ? 'sent' : statusText ? 'progress' : '';
+    const statusTheme = statusKind === 'error' ? { box: '#fef2f2', border: '#fecaca', text: '#991b1b', badge: '#fee2e2', icon: 'close', label: 'Perlu dicek' } : statusKind === 'schedule' ? { box: '#fffbeb', border: '#fde68a', text: '#92400e', badge: '#fef3c7', icon: 'history', label: 'Terjadwal' } : statusKind === 'draft' ? { box: '#eef2ff', border: '#c7d2fe', text: '#3730a3', badge: '#e0e7ff', icon: 'pdf', label: 'Masuk draft' } : { box: '#ecfdf5', border: '#a7f3d0', text: '#047857', badge: '#d1fae5', icon: statusKind === 'sent' ? 'send' : 'spark', label: statusKind === 'sent' ? 'Terkirim' : 'Memproses' };
+    const statusDisplay = statusText ? React.createElement("div", { className: `rbv-email-status rbv-email-status-${statusKind} mt-3 rounded-2xl border px-4 py-3 text-left shadow-sm`, style: { backgroundColor: statusTheme.box, borderColor: statusTheme.border, color: statusTheme.text } },
+        React.createElement("div", { className: "flex items-center gap-3" },
+            React.createElement("span", { className: "rbv-email-status-icon grid h-10 w-10 shrink-0 place-items-center rounded-full", style: { backgroundColor: statusTheme.badge } }, React.createElement(Icon, { name: statusTheme.icon, className: "h-5 w-5" })),
+            React.createElement("span", { className: "min-w-0" },
+                React.createElement("span", { className: "block text-[10px] font-black uppercase tracking-[0.16em]" }, statusTheme.label),
+                React.createElement("span", { className: "mt-0.5 block text-sm font-bold leading-5" }, statusText)))) : null;
     function handleCancelSchedule(jobId) {
         setScheduledJobs(cancelScheduledReportEmailJob(jobId));
     }
@@ -2828,7 +2866,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement("span", { className: "break-all text-center font-extrabold text-slate-900", style: { fontSize: '12px', lineHeight: '16px', letterSpacing: '-0.01em' } }, config.sender),
                 React.createElement("span", { className: "rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "Locked"))),
         React.createElement(EmailRecipientPicker, { label: "To", required: true, value: form.to, onChange: (value) => onChange({ to: value }), options: toOptions, placeholder: "Auto email store" }),
-        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: value }), options: ccOptions, multiple: true, placeholder: "Cari semua email master data" }),
+        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: ensureLockedEmailList(value) }), options: ccOptions, multiple: true, lockedEmails: lockedCcEmails, placeholder: "Cari semua email master data" }),
         React.createElement("div", { className: "border-b border-slate-100 px-4 py-3 text-center" },
             React.createElement("label", { className: "mb-2 block text-center text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" }, "Subject"),
             React.createElement(AutoResizeTextarea, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), minRows: 1, className: "mx-auto w-full overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-semibold leading-6 text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", style: { fontSize: '16px' }, placeholder: "Subject email" })),
@@ -2848,33 +2886,31 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "mt-3 flex flex-wrap items-center justify-center gap-2" },
                 React.createElement("span", { className: "rounded-2xl bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500" }, `CC ${ccCount}`),
                 React.createElement("span", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "TO auto store")),
-            status ? React.createElement("p", { className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900 ring-1 ring-emerald-100" }, status) : null));
-    const footerButtonClass = "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-50";
-    const primaryFooterClass = "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-600 px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-white shadow-lg shadow-emerald-300 transition hover:bg-emerald-700 disabled:opacity-50";
-    const scheduleFooterButtonClass = "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:opacity-50";
-    const footerCancelSchedule = React.createElement("div", { className: "mt-2 rounded-2xl border border-rose-200 bg-rose-50 p-2.5 text-left shadow-sm", style: { backgroundColor: '#fee2e2', borderColor: '#fecaca' } },
-        React.createElement("div", { className: "flex items-center justify-between gap-2" },
-            React.createElement("div", { className: "min-w-0" },
-                React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.16em] text-rose-700", style: { color: '#b91c1c' } }, "Cancel Schedule"),
-                React.createElement("p", { className: "truncate text-[11px] font-bold text-rose-900", style: { color: '#7f1d1d' } }, scheduledJobs.length ? `${scheduledJobs.length} jadwal aktif` : 'Tidak ada schedule aktif')),
-            React.createElement("button", { type: "button", onClick: handleCancelAllSchedules, disabled: busy || !scheduledJobs.length, className: "inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-rose-200 bg-rose-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-rose-700 disabled:bg-rose-200 disabled:text-rose-500 disabled:shadow-none", style: { backgroundColor: scheduledJobs.length ? '#dc2626' : '#fecaca', color: scheduledJobs.length ? '#ffffff' : '#991b1b', borderColor: '#b91c1c' } },
-                React.createElement(Icon, { name: "trash", className: "h-3.5 w-3.5" }),
-                React.createElement("span", null, scheduledJobs.length ? 'Batal Semua' : 'Nonaktif'))),
-        scheduledJobs.length ? React.createElement("div", { className: "mt-2 grid gap-1.5" }, scheduledJobs.slice(0, 3).map((job) => React.createElement("button", { key: job.id, type: "button", onClick: () => handleCancelSchedule(job.id), disabled: busy, className: "flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-left text-[11px] font-bold text-rose-900 ring-1 ring-rose-100 transition hover:bg-rose-100", style: { backgroundColor: '#ffffff', color: '#7f1d1d', boxShadow: '0 0 0 1px #fecaca inset' } },
-            React.createElement("span", { className: "min-w-0 truncate" }, `${job.payload?.subject || 'Visit Report'} • ${new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`),
-            React.createElement("span", { className: "shrink-0 rounded-full bg-rose-100 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-rose-700", style: { backgroundColor: '#fee2e2', color: '#b91c1c' } }, "Batal")))) : null);
-    const footer = React.createElement("div", { className: "border-t border-emerald-300 bg-emerald-100 px-4 py-3 shadow-[0_-10px_30px_rgba(16,185,129,0.16)]", style: { backgroundColor: '#dcfce7', borderTop: '1px solid #86efac', boxShadow: '0 -10px 30px rgba(16,185,129,0.16)' } },
+            statusDisplay));
+    const footerButtonClass = "inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-50";
+    const primaryFooterClass = "inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border border-emerald-800 bg-emerald-600 px-3 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-50";
+    const scheduleFooterButtonClass = "inline-flex min-h-[32px] items-center justify-center gap-1 rounded-xl border border-emerald-200 bg-white px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.06em] text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:opacity-50";
+    const footerCancelSchedule = React.createElement("button", { type: "button", onClick: handleCancelAllSchedules, disabled: busy || !scheduledJobs.length, className: "inline-flex min-h-[34px] w-full items-center justify-center gap-2 rounded-xl border border-rose-700 bg-rose-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.10em] text-white shadow-sm transition hover:bg-rose-700 disabled:border-rose-200 disabled:bg-rose-100 disabled:text-rose-500", style: { backgroundColor: scheduledJobs.length ? '#dc2626' : '#ffe4e6', color: scheduledJobs.length ? '#ffffff' : '#be123c', borderColor: scheduledJobs.length ? '#b91c1c' : '#fecdd3' } },
+        React.createElement(Icon, { name: "trash", className: "h-3.5 w-3.5" }),
+        React.createElement("span", null, scheduledJobs.length ? `Cancel Schedule (${scheduledJobs.length})` : 'Cancel Schedule'));
+    const footer = React.createElement("div", { className: "border-t border-emerald-200 bg-emerald-50 px-3 py-2 shadow-[0_-8px_24px_rgba(16,185,129,0.12)]", style: { backgroundColor: '#ecfdf5', borderTop: '1px solid #a7f3d0', boxShadow: '0 -8px 24px rgba(16,185,129,0.12)', paddingBottom: 'calc(8px + env(safe-area-inset-bottom))' } },
         React.createElement("div", { className: "mx-auto max-w-3xl" },
             React.createElement("div", { className: "grid grid-cols-2 gap-2" },
                 React.createElement("button", { type: "button", className: footerButtonClass, onClick: () => onSubmit('draft'), disabled: busy || !form.to || !form.subject }, busy ? 'Proses...' : 'Draft'),
                 React.createElement("button", { type: "button", className: primaryFooterClass, onClick: openSendConfirmation, disabled: busy || !form.to || !form.subject, style: { backgroundColor: '#059669', color: '#ffffff', borderColor: '#047857' } },
-                    React.createElement(Icon, { name: "send", className: "h-4 w-4 text-white" }),
+                    React.createElement(Icon, { name: "send", className: "h-3.5 w-3.5 text-white" }),
                     React.createElement("span", null, busy ? 'Proses...' : 'Send'))),
-            footerCancelSchedule,
-            React.createElement("div", { className: "mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3" },
-                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:10'), disabled: busy || !form.to || !form.subject }, "10 Mnt"),
-                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:20'), disabled: busy || !form.to || !form.subject }, "20 Mnt"),
-                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:30'), disabled: busy || !form.to || !form.subject }, "30 Mnt"))));
+            React.createElement("div", { className: "mt-1.5" }, footerCancelSchedule),
+            scheduledJobs.length ? React.createElement("div", { className: "mt-1.5 flex gap-1.5 overflow-x-auto pb-0.5" }, scheduledJobs.slice(0, 3).map((job) => React.createElement("button", { key: job.id, type: "button", onClick: () => handleCancelSchedule(job.id), disabled: busy, className: "inline-flex min-h-[30px] shrink-0 items-center gap-1.5 rounded-xl bg-white px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.08em] text-rose-700 ring-1 ring-rose-100" },
+                React.createElement(Icon, { name: "trash", className: "h-3 w-3" }),
+                React.createElement("span", null, new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))))) : null,
+            React.createElement("div", { className: "mt-1.5 grid grid-cols-4 gap-1.5" },
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:10'), disabled: busy || !form.to || !form.subject }, "10m"),
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:20'), disabled: busy || !form.to || !form.subject }, "20m"),
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:30'), disabled: busy || !form.to || !form.subject }, "30m"),
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:60'), disabled: busy || !form.to || !form.subject },
+                    React.createElement(Icon, { name: "history", className: "h-3 w-3" }),
+                    React.createElement("span", null, "1 Jam")))));
     const sendConfirmDialog = sendConfirmOpen ? React.createElement("div", { className: "fixed inset-0 grid place-items-center bg-slate-950/55 px-5 backdrop-blur-sm", style: { zIndex: 2147483647, backgroundColor: 'rgba(15, 23, 42, 0.55)' } },
         React.createElement("div", { className: "w-full max-w-sm rounded-[28px] border border-emerald-100 bg-white p-5 text-center shadow-2xl", style: { backgroundColor: '#ffffff', borderColor: '#d1fae5' } },
             React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700", style: { color: '#047857' } }, "Konfirmasi Send"),
@@ -3211,7 +3247,7 @@ function PreviewPage({ visit, onBack }) {
                     attachmentNotes.push(`Excel CA Assignment tidak dilampirkan karena terlalu besar (${formatFileSize(blob.size)}).`);
                 }
             }
-            const scheduleMatch = /^schedule:(10|20|30)$/.exec(String(mode || ''));
+            const scheduleMatch = /^schedule:(10|20|30|60)$/.exec(String(mode || ''));
             const scheduleMinutes = scheduleMatch ? Number(scheduleMatch[1]) : 0;
             const payloadMode = scheduleMinutes || mode === 'send' ? 'send' : 'draft';
             const basePayload = { mode: payloadMode, to: emailForm.to, cc: emailForm.cc, subject: emailForm.subject, body: addEmailNote(emailForm.body, attachmentNotes), passcode: emailForm.passcode, attachments, visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal } };
@@ -3226,7 +3262,7 @@ function PreviewPage({ visit, onBack }) {
             setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
             await postReportEmailPayload(config.endpoint, payload);
             setEmailStatus(mode === 'send' ? (fitted.skipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (fitted.skipped.length ? 'Draft Gmail berhasil dibuat. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft Gmail berhasil dibuat.'));
-            window.setTimeout(() => setEmailOpen(false), 1100);
+            window.setTimeout(() => setEmailOpen(false), 2000);
         }
         catch (error) {
             setEmailStatus(`Gagal: ${error?.message || 'Gagal memproses email.'}`);

@@ -1,6 +1,6 @@
 {
-  "version": "revamp95-email-send-confirm-schedule",
-  "build": "revamp95-email-send-confirm-schedule",
-  "updatedAt": "2026-05-05T13:45:00+07:00",
-  "note": "Revamp email send footer: stronger green Send container, red cancel schedule container, and 20-second Send confirmation popup."
+  "version": "revamp96-email-locked-cc-animations-navbar",
+  "build": "revamp96-email-locked-cc-animations-navbar",
+  "updatedAt": "2026-05-05T15:10:00+07:00",
+  "note": "Revamp email page: locked default CC recipients, animated send/draft/schedule feedback, compact green bottom navbar, red cancel schedule, and 1 hour schedule timer."
 }
