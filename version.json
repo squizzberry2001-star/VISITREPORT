@@ -1,6 +1,6 @@
 {
-  "version": "revamp93-email-compose-ui-fixes",
-  "build": "revamp93-email-compose-ui-fixes",
-  "updatedAt": "2026-05-05T13:05:00+07:00",
-  "note": "Fix email compose UI: smaller email labels, left-aligned body, visible Send button with colored footer, and cancel buttons for scheduled send jobs."
+  "version": "revamp94-email-recipient-gmail-size",
+  "build": "revamp94-email-recipient-gmail-size",
+  "updatedAt": "2026-05-05T13:15:00+07:00",
+  "note": "Make email recipient chips compact like Gmail and prevent iOS input zoom in email compose."
 }

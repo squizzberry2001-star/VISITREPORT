@@ -2643,6 +2643,34 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
         };
     }, []);
     const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: 'Manual' });
+    const recipientChipStyle = {
+        maxWidth: '100%',
+        gap: '4px',
+        padding: '4px 7px',
+        fontSize: '11px',
+        lineHeight: '14px',
+        fontWeight: 700,
+        letterSpacing: '-0.01em'
+    };
+    const recipientChipEmailStyle = {
+        display: 'block',
+        minWidth: 0,
+        maxWidth: 'min(238px, calc(100vw - 132px))',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+    };
+    const recipientRemoveButtonStyle = {
+        width: '18px',
+        height: '18px',
+        fontSize: '10px'
+    };
+    const recipientInputStyle = {
+        fontSize: '16px',
+        lineHeight: '20px',
+        minHeight: '28px',
+        textAlign: 'left'
+    };
     const availableOptions = (options || []).filter((item) => {
         if (selectedEmails.some((email) => normalize(email) === normalize(item.email)))
             return false;
@@ -2681,9 +2709,9 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
             removeEmail(selectedEmails[selectedEmails.length - 1]);
         }
     }
-    const chipEls = selectedItems.map((item) => React.createElement("span", { key: item.email, className: "inline-flex max-w-full items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[9.5px] font-semibold leading-none text-slate-700 ring-1 ring-slate-200 sm:text-[10px]" },
-        React.createElement("span", { className: "max-w-[190px] truncate sm:max-w-[235px]" }, item.email),
-        React.createElement("button", { type: "button", className: "grid h-5 w-5 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3.5 w-3.5" }))));
+    const chipEls = selectedItems.map((item) => React.createElement("span", { key: item.email, className: "inline-flex max-w-full items-center rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-200", style: recipientChipStyle },
+        React.createElement("span", { className: "truncate", style: recipientChipEmailStyle }, item.email),
+        React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" }))));
     const customButton = customAllowed ? React.createElement("button", { type: "button", className: "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-slate-50", onMouseDown: (event) => {
             event.preventDefault();
             commitEmail(customQuery);
@@ -2712,7 +2740,7 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
                 React.createElement("input", { value: query, onChange: (event) => {
                         setQuery(event.target.value);
                         setOpen(true);
-                    }, onFocus: () => setOpen(true), onKeyDown: handleKeyDown, className: "min-w-[120px] flex-1 border-0 bg-transparent px-1 py-1 text-left text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400 sm:text-sm", placeholder: selectedItems.length ? "Tambah" : placeholder || (multiple ? "Tambah email" : "Pilih email") })),
+                    }, onFocus: () => setOpen(true), onKeyDown: handleKeyDown, className: "min-w-[120px] flex-1 border-0 bg-transparent px-1 py-1 text-left font-semibold text-slate-900 outline-none placeholder:text-slate-400", style: recipientInputStyle, placeholder: selectedItems.length ? "Tambah" : placeholder || (multiple ? "Tambah email" : "Pilih email") })),
             dropdown));
 }
 
@@ -2759,16 +2787,16 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         React.createElement("div", { className: "border-b border-slate-100 px-4 py-4 text-center" },
             React.createElement("p", { className: "mb-2 text-center text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" }, "From"),
             React.createElement("div", { className: "mx-auto flex max-w-full flex-col items-center justify-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-center ring-1 ring-slate-200" },
-                React.createElement("span", { className: "break-all text-center text-xs font-extrabold text-slate-900 sm:text-sm" }, config.sender),
+                React.createElement("span", { className: "break-all text-center font-extrabold text-slate-900", style: { fontSize: '12px', lineHeight: '16px', letterSpacing: '-0.01em' } }, config.sender),
                 React.createElement("span", { className: "rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "Locked"))),
         React.createElement(EmailRecipientPicker, { label: "To", required: true, value: form.to, onChange: (value) => onChange({ to: value }), options: toOptions, placeholder: "Auto email store" }),
         React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: value }), options: ccOptions, multiple: true, placeholder: "Cari semua email master data" }),
         React.createElement("div", { className: "border-b border-slate-100 px-4 py-3 text-center" },
             React.createElement("label", { className: "mb-2 block text-center text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" }, "Subject"),
-            React.createElement(AutoResizeTextarea, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), minRows: 1, className: "mx-auto w-full overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold leading-6 text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", placeholder: "Subject email" })),
+            React.createElement(AutoResizeTextarea, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), minRows: 1, className: "mx-auto w-full overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-semibold leading-6 text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", style: { fontSize: '16px' }, placeholder: "Subject email" })),
         React.createElement("div", { className: "px-4 py-4 text-left" },
             React.createElement("label", { className: "mb-2 block text-left text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" }, "Body"),
-            React.createElement(AutoResizeTextarea, { value: form.body, onChange: (e) => onChange({ body: e.target.value }), minRows: 7, className: "mx-auto w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-left text-sm leading-7 text-slate-800 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", placeholder: "Tulis isi email..." })),
+            React.createElement(AutoResizeTextarea, { value: form.body, onChange: (e) => onChange({ body: e.target.value }), minRows: 7, className: "mx-auto w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-left leading-7 text-slate-800 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", style: { fontSize: '16px', textAlign: 'left' }, placeholder: "Tulis isi email..." })),
         React.createElement("div", { className: "border-t border-slate-100 bg-slate-50 px-4 py-4 text-center" },
             React.createElement("div", { className: "grid grid-cols-2 gap-2" },
                 React.createElement("label", { className: cx('flex cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-xs font-bold text-slate-800 shadow-sm', form.attachPdf ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white') },
