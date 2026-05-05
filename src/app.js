@@ -2746,6 +2746,8 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
 
 function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, status, visit }) {
     const [scheduledJobs, setScheduledJobs] = useState(() => readScheduledReportEmailQueue());
+    const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
+    const [sendConfirmCountdown, setSendConfirmCountdown] = useState(20);
     useEffect(() => {
         if (!open)
             return undefined;
@@ -2760,6 +2762,27 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             window.clearInterval(timer);
         };
     }, [open]);
+    useEffect(() => {
+        if (!open) {
+            setSendConfirmOpen(false);
+            setSendConfirmCountdown(20);
+        }
+    }, [open]);
+    useEffect(() => {
+        if (!open || !sendConfirmOpen)
+            return undefined;
+        const expiresAt = Date.now() + 20000;
+        setSendConfirmCountdown(20);
+        const timer = window.setInterval(() => {
+            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+            setSendConfirmCountdown(remaining);
+            if (remaining <= 0) {
+                setSendConfirmOpen(false);
+                window.clearInterval(timer);
+            }
+        }, 250);
+        return () => window.clearInterval(timer);
+    }, [open, sendConfirmOpen]);
     if (!open)
         return null;
     const config = getEmailReportConfig();
@@ -2771,6 +2794,21 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
     }
     function handleCancelAllSchedules() {
         setScheduledJobs(cancelAllScheduledReportEmailJobs());
+    }
+    function openSendConfirmation() {
+        if (busy || !form.to || !form.subject)
+            return;
+        setSendConfirmCountdown(20);
+        setSendConfirmOpen(true);
+    }
+    function cancelSendConfirmation() {
+        setSendConfirmOpen(false);
+        setSendConfirmCountdown(20);
+    }
+    function confirmSendNow() {
+        setSendConfirmOpen(false);
+        setSendConfirmCountdown(20);
+        onSubmit('send');
     }
     const scheduleEls = scheduledJobs.length ? React.createElement("div", { className: "mt-3 rounded-2xl border border-amber-100 bg-amber-50 p-3 text-left" },
         React.createElement("div", { className: "mb-2 flex items-center justify-between gap-2" },
@@ -2810,19 +2848,44 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "mt-3 flex flex-wrap items-center justify-center gap-2" },
                 React.createElement("span", { className: "rounded-2xl bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500" }, `CC ${ccCount}`),
                 React.createElement("span", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "TO auto store")),
-            scheduleEls,
             status ? React.createElement("p", { className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900 ring-1 ring-emerald-100" }, status) : null));
     const footerButtonClass = "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-50";
-    const primaryFooterClass = "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-700 bg-emerald-600 px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-50";
-    const footer = React.createElement("div", { className: "border-t border-emerald-200 bg-emerald-50 px-4 py-3 shadow-[0_-10px_30px_rgba(16,185,129,0.10)]" },
-        React.createElement("div", { className: "mx-auto grid max-w-3xl grid-cols-2 gap-2 sm:grid-cols-5" },
-            React.createElement("button", { type: "button", className: footerButtonClass, onClick: () => onSubmit('draft'), disabled: busy || !form.to || !form.subject }, busy ? 'Proses...' : 'Draft'),
-            React.createElement("button", { type: "button", className: primaryFooterClass, onClick: () => onSubmit('send'), disabled: busy || !form.to || !form.subject },
-                React.createElement(Icon, { name: "send", className: "h-4 w-4" }),
-                React.createElement("span", null, busy ? 'Proses...' : 'Send')),
-            React.createElement("button", { type: "button", className: footerButtonClass, onClick: () => onSubmit('schedule:10'), disabled: busy || !form.to || !form.subject }, "10 Mnt"),
-            React.createElement("button", { type: "button", className: footerButtonClass, onClick: () => onSubmit('schedule:20'), disabled: busy || !form.to || !form.subject }, "20 Mnt"),
-            React.createElement("button", { type: "button", className: footerButtonClass, onClick: () => onSubmit('schedule:30'), disabled: busy || !form.to || !form.subject }, "30 Mnt")));
+    const primaryFooterClass = "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-600 px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-white shadow-lg shadow-emerald-300 transition hover:bg-emerald-700 disabled:opacity-50";
+    const scheduleFooterButtonClass = "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-xs font-black uppercase tracking-[0.08em] text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:opacity-50";
+    const footerCancelSchedule = React.createElement("div", { className: "mt-2 rounded-2xl border border-rose-200 bg-rose-50 p-2.5 text-left shadow-sm", style: { backgroundColor: '#fee2e2', borderColor: '#fecaca' } },
+        React.createElement("div", { className: "flex items-center justify-between gap-2" },
+            React.createElement("div", { className: "min-w-0" },
+                React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.16em] text-rose-700", style: { color: '#b91c1c' } }, "Cancel Schedule"),
+                React.createElement("p", { className: "truncate text-[11px] font-bold text-rose-900", style: { color: '#7f1d1d' } }, scheduledJobs.length ? `${scheduledJobs.length} jadwal aktif` : 'Tidak ada schedule aktif')),
+            React.createElement("button", { type: "button", onClick: handleCancelAllSchedules, disabled: busy || !scheduledJobs.length, className: "inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-rose-200 bg-rose-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-rose-700 disabled:bg-rose-200 disabled:text-rose-500 disabled:shadow-none", style: { backgroundColor: scheduledJobs.length ? '#dc2626' : '#fecaca', color: scheduledJobs.length ? '#ffffff' : '#991b1b', borderColor: '#b91c1c' } },
+                React.createElement(Icon, { name: "trash", className: "h-3.5 w-3.5" }),
+                React.createElement("span", null, scheduledJobs.length ? 'Batal Semua' : 'Nonaktif'))),
+        scheduledJobs.length ? React.createElement("div", { className: "mt-2 grid gap-1.5" }, scheduledJobs.slice(0, 3).map((job) => React.createElement("button", { key: job.id, type: "button", onClick: () => handleCancelSchedule(job.id), disabled: busy, className: "flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-left text-[11px] font-bold text-rose-900 ring-1 ring-rose-100 transition hover:bg-rose-100", style: { backgroundColor: '#ffffff', color: '#7f1d1d', boxShadow: '0 0 0 1px #fecaca inset' } },
+            React.createElement("span", { className: "min-w-0 truncate" }, `${job.payload?.subject || 'Visit Report'} • ${new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`),
+            React.createElement("span", { className: "shrink-0 rounded-full bg-rose-100 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-rose-700", style: { backgroundColor: '#fee2e2', color: '#b91c1c' } }, "Batal")))) : null);
+    const footer = React.createElement("div", { className: "border-t border-emerald-300 bg-emerald-100 px-4 py-3 shadow-[0_-10px_30px_rgba(16,185,129,0.16)]", style: { backgroundColor: '#dcfce7', borderTop: '1px solid #86efac', boxShadow: '0 -10px 30px rgba(16,185,129,0.16)' } },
+        React.createElement("div", { className: "mx-auto max-w-3xl" },
+            React.createElement("div", { className: "grid grid-cols-2 gap-2" },
+                React.createElement("button", { type: "button", className: footerButtonClass, onClick: () => onSubmit('draft'), disabled: busy || !form.to || !form.subject }, busy ? 'Proses...' : 'Draft'),
+                React.createElement("button", { type: "button", className: primaryFooterClass, onClick: openSendConfirmation, disabled: busy || !form.to || !form.subject, style: { backgroundColor: '#059669', color: '#ffffff', borderColor: '#047857' } },
+                    React.createElement(Icon, { name: "send", className: "h-4 w-4 text-white" }),
+                    React.createElement("span", null, busy ? 'Proses...' : 'Send'))),
+            footerCancelSchedule,
+            React.createElement("div", { className: "mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3" },
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:10'), disabled: busy || !form.to || !form.subject }, "10 Mnt"),
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:20'), disabled: busy || !form.to || !form.subject }, "20 Mnt"),
+                React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:30'), disabled: busy || !form.to || !form.subject }, "30 Mnt"))));
+    const sendConfirmDialog = sendConfirmOpen ? React.createElement("div", { className: "fixed inset-0 grid place-items-center bg-slate-950/55 px-5 backdrop-blur-sm", style: { zIndex: 2147483647, backgroundColor: 'rgba(15, 23, 42, 0.55)' } },
+        React.createElement("div", { className: "w-full max-w-sm rounded-[28px] border border-emerald-100 bg-white p-5 text-center shadow-2xl", style: { backgroundColor: '#ffffff', borderColor: '#d1fae5' } },
+            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700", style: { color: '#047857' } }, "Konfirmasi Send"),
+            React.createElement("div", { className: "mx-auto mt-4 grid h-24 w-24 place-items-center rounded-full border-4 border-emerald-200 bg-emerald-50 text-4xl font-black text-emerald-700", style: { backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' } }, sendConfirmCountdown),
+            React.createElement("h3", { className: "mt-4 text-xl font-black text-slate-950" }, "Kirim email sekarang?"),
+            React.createElement("p", { className: "mt-2 text-sm font-semibold leading-6 text-slate-500" }, "Pilih Ya untuk mengirim. Pilih Batal untuk kembali ke halaman email. Popup otomatis tertutup saat hitungan selesai."),
+            React.createElement("div", { className: "mt-5 grid grid-cols-2 gap-2" },
+                React.createElement("button", { type: "button", onClick: cancelSendConfirmation, disabled: busy, className: "inline-flex min-h-[46px] items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-rose-700 transition hover:bg-rose-100 disabled:opacity-50", style: { backgroundColor: '#fee2e2', borderColor: '#fecaca', color: '#b91c1c' } }, "Batal"),
+                React.createElement("button", { type: "button", onClick: confirmSendNow, disabled: busy, className: "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-600 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-50", style: { backgroundColor: '#059669', color: '#ffffff', borderColor: '#047857' } },
+                    React.createElement(Icon, { name: "send", className: "h-4 w-4 text-white" }),
+                    React.createElement("span", null, "Ya"))))) : null;
     const overlay = React.createElement("div", { className: "rbv-email-compose-portal fixed inset-0 bg-[#f6f8fc]", role: "dialog", "aria-modal": "true", style: { position: 'fixed', inset: '0px', width: '100vw', height: '100dvh', minHeight: '100vh', zIndex: 2147483647, isolation: 'isolate', overflow: 'hidden', background: '#f6f8fc' } },
         React.createElement("div", { className: "flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f6f8fc]", style: { height: '100dvh', maxHeight: '100dvh', width: '100vw', overflow: 'hidden' } },
             React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4" },
@@ -2831,7 +2894,8 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                     React.createElement("h2", { className: "truncate text-2xl font-black text-slate-950" }, "New Message")),
                 React.createElement(Button, { variant: "icon", onClick: onClose, disabled: busy, "aria-label": "Tutup" }, React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "flex-1 overflow-y-auto p-4 md:p-5", style: { minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } }, composeCard),
-            footer));
+            footer),
+        sendConfirmDialog);
     return (typeof document !== 'undefined' && ReactDOM?.createPortal) ? ReactDOM.createPortal(overlay, document.body) : overlay;
 }
 
