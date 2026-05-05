@@ -9,7 +9,7 @@
 
 window.RB_CLOUDFLARE_CONFIG = {
   enabled: true,
-  endpoint: '',
+  endpoint: 'https://visitreport-rbv-api.domainsquizzberry.workers.dev',
   apiPath: '/api/rbv-data',
   adminToken: '',
   pollMs: 5000,
