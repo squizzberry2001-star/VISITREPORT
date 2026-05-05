@@ -1,6 +1,6 @@
 {
-  "version": "revamp99-preview-email-cloudflare-focused",
-  "build": "revamp99-preview-email-cloudflare-focused",
-  "updatedAt": "2026-05-05T17:30:00+07:00",
-  "note": "Revamp focused: preview action grid, email template admin, no send countdown, QSC cleanup, home stability, Cloudflare D1 panel."
+  "version": "revamp100-welcome-background-navbar-fix",
+  "build": "revamp100-welcome-background-navbar-fix",
+  "updatedAt": "2026-05-05T21:10:00+07:00",
+  "note": "Welcome animation memakai background gambar handshake seamless dan mobile navbar disembunyikan selama welcome tampil."
 }
