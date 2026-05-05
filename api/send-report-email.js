@@ -2,13 +2,13 @@ const { json, ensureAllowedOrigin, readBody, cleanText, buildMimeMessage, getAcc
 
 const GMAIL_SEND_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
 const GMAIL_DRAFT_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/drafts';
-const MAX_ATTACHMENT_BYTES = Number(process.env.EMAIL_MAX_ATTACHMENT_BYTES || 22 * 1024 * 1024);
+const MAX_ATTACHMENT_BYTES = Number(process.env.EMAIL_MAX_ATTACHMENT_BYTES || 18 * 1024 * 1024);
 
 module.exports = async function handler(req, res) {
   const origin = ensureAllowedOrigin(req, res);
   if (!origin) return;
   if (req.method === 'OPTIONS') return json(res, 200, { ok: true }, origin);
-  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Method tidak diizinkan.' }, origin);
+  if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'Endpoint email hanya menerima POST dari aplikasi. Jangan dibuka langsung dari browser.' }, origin);
   try {
     const payload = await readBody(req);
     const lockedSender = cleanText(process.env.GMAIL_LOCKED_SENDER);
@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
     if (passcode && cleanText(payload.passcode) !== passcode) throw new Error('Kode kirim email salah.');
     const attachments = Array.isArray(payload.attachments) ? payload.attachments : [];
     const approxBytes = attachments.reduce((sum, item) => sum + Math.ceil(cleanText(item.dataBase64).length * 0.75), 0);
-    if (approxBytes > MAX_ATTACHMENT_BYTES) throw new Error('Ukuran attachment terlalu besar. Kurangi foto/PDF atau gunakan link Drive.');
+    if (approxBytes > MAX_ATTACHMENT_BYTES) throw new Error('Ukuran attachment terlalu besar untuk Gmail API. Sistem frontend harus mengirim PDF versi ringan atau melepas attachment besar.');
     const raw = buildMimeMessage({
       from: lockedSender,
       to: payload.to,
