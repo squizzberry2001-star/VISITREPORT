@@ -1,6 +1,6 @@
 {
-  "version": "revamp92-hide-clear-topnav-redownload",
-  "build": "revamp92-hide-clear-topnav-redownload",
-  "updatedAt": "2026-05-05T23:55:00+07:00",
-  "note": "Hide Clear button from top/mobile navbar. Navbar now keeps Home, Audit, and Preview only."
+  "version": "revamp93-email-compose-ui-fixes",
+  "build": "revamp93-email-compose-ui-fixes",
+  "updatedAt": "2026-05-05T13:05:00+07:00",
+  "note": "Fix email compose UI: smaller email labels, left-aligned body, visible Send button with colored footer, and cancel buttons for scheduled send jobs."
 }
