@@ -1,6 +1,6 @@
 {
-  "version": "revamp94-email-recipient-gmail-size",
-  "build": "revamp94-email-recipient-gmail-size",
-  "updatedAt": "2026-05-05T13:15:00+07:00",
-  "note": "Make email recipient chips compact like Gmail and prevent iOS input zoom in email compose."
+  "version": "revamp95-email-send-confirm-schedule",
+  "build": "revamp95-email-send-confirm-schedule",
+  "updatedAt": "2026-05-05T13:45:00+07:00",
+  "note": "Revamp email send footer: stronger green Send container, red cancel schedule container, and 20-second Send confirmation popup."
 }
