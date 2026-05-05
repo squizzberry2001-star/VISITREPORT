@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp95-email-send-confirm-schedule';
+const APP_VERSION = 'revamp96-email-locked-cc-animations-navbar';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
