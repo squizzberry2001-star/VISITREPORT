@@ -536,7 +536,7 @@
   }
 
   async function drawQscResultSlide(doc, data, palette, pageWidth, pageHeight, margin) {
-    if (data && data.showQSCResult !== true) return;
+    // QSC slide is always included in revamp99.
     doc.addPage();
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageWidth, pageHeight, 'F');

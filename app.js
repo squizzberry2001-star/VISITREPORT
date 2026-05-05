@@ -7,6 +7,7 @@ const MASTER_STORES = Array.isArray(window.DEFAULT_STORE_MASTER_DATA) ? window.D
 const JOB_LEVELS = ['', '1A', 'NS3', 'NS1', 'MG3', 'MG1'];
 const HISTORY_META_KEY = 'rbv_react_history_meta_v3';
 const ACTIVE_VISIT_KEY = 'rbv_react_active_visit_v3';
+const SESSION_SCREEN_KEY = 'rbv_session_screen_v99';
 const MANUAL_STORE_REQUEST_KEY = 'rbv_manual_store_requests_v6';
 const MANUAL_STORE_APPROVED_KEY = 'rbv_manual_store_approved_v6';
 const REPORT_DB_NAME = 'regional_bestie_visit_react_db';
@@ -21,7 +22,8 @@ const DEFAULT_WELCOME_CONFIG = {
 const UPDATE_NOTICE_CONFIG_KEY = 'rbv_update_notice_config_v1';
 const APP_CONFIG_KEYS = {
     welcome: 'welcome_animation',
-    updateNotice: 'home_update_notice'
+    updateNotice: 'home_update_notice',
+    emailTemplate: 'email_report_template'
 };
 const DEFAULT_UPDATE_NOTICE_CONFIG = {
     enabled: true,
@@ -32,6 +34,9 @@ const DEFAULT_UPDATE_NOTICE_CONFIG = {
     ],
     intervalSeconds: 4
 };
+const EMAIL_TEMPLATE_ADMIN_KEY = 'rbv_email_template_admin_v99';
+const DEFAULT_EMAIL_SUBJECT_TEMPLATE = 'Visit Report - {store} - {date}';
+const DEFAULT_EMAIL_BODY_TEMPLATE = 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store} pada tanggal kunjungan {date}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.\n\nBest Regards,\n{bestie}';
 const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
 const DEFAULT_ASSIGNMENT_LINK = 'https://tinyurl.com/store-caassignment';
 const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
@@ -81,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp92-hide-clear-topnav-redownload';
+const APP_BUILD_VERSION = 'revamp99-preview-email-cloudflare-focused';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -193,6 +198,28 @@ function saveUpdateNoticeConfig(config) {
     const next = normalizeUpdateNoticeConfig(config);
     localStorage.setItem(UPDATE_NOTICE_CONFIG_KEY, JSON.stringify(next));
     window.dispatchEvent(new CustomEvent('rbv-update-notice-change', { detail: next }));
+    return next;
+}
+
+function normalizeEmailTemplateConfig(value) {
+    const raw = value && typeof value === 'object' ? value : {};
+    return {
+        subjectTemplate: cleanText(raw.subjectTemplate || raw.defaultSubjectTemplate, DEFAULT_EMAIL_SUBJECT_TEMPLATE),
+        bodyTemplate: cleanText(raw.bodyTemplate || raw.defaultBodyTemplate, DEFAULT_EMAIL_BODY_TEMPLATE)
+    };
+}
+function readEmailTemplateConfig() {
+    try {
+        return normalizeEmailTemplateConfig(JSON.parse(localStorage.getItem(EMAIL_TEMPLATE_ADMIN_KEY) || '{}'));
+    }
+    catch (error) {
+        return normalizeEmailTemplateConfig({});
+    }
+}
+function saveEmailTemplateConfig(config) {
+    const next = normalizeEmailTemplateConfig(config);
+    localStorage.setItem(EMAIL_TEMPLATE_ADMIN_KEY, JSON.stringify({ ...next, updatedAt: Date.now() }));
+    window.dispatchEvent(new CustomEvent('rbv-email-template-change', { detail: next }));
     return next;
 }
 function readAssignmentLinkConfig() {
@@ -430,7 +457,7 @@ function createVisit(bestieName = '', storeName = '') {
         findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
         correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
         storeAssignmentLink: readAssignmentLinkConfig(),
-        showQSCResult: false,
+        showQSCResult: true,
         showOPITable: false,
         showQSCTable: false,
         showFindingEvidence: false,
@@ -1411,7 +1438,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement("span", null, "Simpan"))))));
     return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -1459,7 +1486,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
             React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => cameraRef.current?.click(), "aria-label": "Ambil foto dari kamera" }),
             React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => galleryRef.current?.click(), "aria-label": "Pilih foto dari galeri" })),
-        React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })),
+        !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
@@ -1705,14 +1732,17 @@ function GeneralInfoSection({ visit, update }) {
             React.createElement(CrewEditor, { visit: visit, update: update }))));
 }
 function QscResultSection({ visit, update }) {
-    const enabled = visit.showQSCResult === true;
+    useEffect(() => {
+        if (visit && visit.showQSCResult !== true)
+            update({ showQSCResult: true });
+    }, [visit?.id, visit?.showQSCResult]);
     const missing = normalizeQscPhotos(visit).filter((photo) => !photo.image).length;
-    return (React.createElement(SectionShell, { title: "QSC / FAMITRACK Result", actions: React.createElement(Toggle, { checked: enabled, onChange: (value) => update({ showQSCResult: value }), label: enabled ? 'Hide slide' : 'Unhide slide' }) }, !enabled ? React.createElement(InactiveSection, { title: "Slide QSC/Famitrack disembunyikan" }) : React.createElement(React.Fragment, null,
+    return (React.createElement(SectionShell, { title: "QSC / FAMITRACK Result" },
         missing ? React.createElement("div", { className: "mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900" },
             "Kurang ",
             missing,
             " foto wajib.") : null,
-        React.createElement("div", { className: "qsc-result-photo-grid grid gap-4" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, matchCropFrame: true, cropRatio: QSC_PHOTO_CROP_RATIO, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0] }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true }))))));
+        React.createElement("div", { className: "qsc-result-photo-grid grid gap-4" }, normalizeQscPhotos(visit).map((photo, index) => React.createElement(PhotoInput, { key: index, value: photo, matchCropFrame: true, cropRatio: QSC_PHOTO_CROP_RATIO, hideDescription: true, onChange: (value) => { const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item); update({ qscResultPhotos, qscResultPhoto: qscResultPhotos[0], showQSCResult: true }); }, label: 'Foto QSC / FAMITRACK ' + (index + 1), required: true })))));
 }
 function ObservationSection({ visit, update }) {
     const tab = visit.activeObservationTab === 'qsc' ? 'qsc' : 'opi';
@@ -2290,6 +2320,7 @@ async function downloadBlobManaged(blob, fileName) {
 
 function getEmailReportConfig() {
     const config = window.VISIT_EMAIL_CONFIG || {};
+    const adminTemplate = readEmailTemplateConfig();
     return {
         enabled: config.enabled !== false,
         endpoint: cleanText(config.endpoint, '/api/send-report-email'),
@@ -2297,8 +2328,8 @@ function getEmailReportConfig() {
         defaultTo: cleanText(config.defaultTo),
         defaultCc: cleanText(config.defaultCc),
         lockedPasscode: cleanText(config.lockedPasscode, '607090'),
-        defaultSubjectTemplate: cleanText(config.defaultSubjectTemplate, 'Visit Report - {store} - {date}'),
-        defaultBodyTemplate: cleanText(config.defaultBodyTemplate, 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.')
+        defaultSubjectTemplate: cleanText(adminTemplate.subjectTemplate || config.defaultSubjectTemplate, DEFAULT_EMAIL_SUBJECT_TEMPLATE),
+        defaultBodyTemplate: cleanText(adminTemplate.bodyTemplate || config.defaultBodyTemplate, DEFAULT_EMAIL_BODY_TEMPLATE)
     };
 }
 function applyEmailTemplate(template, visit) {
@@ -2310,6 +2341,23 @@ function applyEmailTemplate(template, visit) {
         '{siteCode}': cleanText(visit?.siteCode || visit?.storeCode || visit?.detail?.siteCode, '-')
     };
     return Object.keys(map).reduce((text, key) => text.split(key).join(map[key]), String(template || ''));
+}
+
+function finalizeEmailBodyTemplate(body, visit) {
+    let text = String(body || '').trim();
+    const dateText = cleanText(formatDate(visit?.tanggal));
+    if (dateText && !text.includes(dateText))
+        text += `
+
+Tanggal kunjungan: ${dateText}`;
+    if (!/best\s*regards/i.test(text)) {
+        const bestieName = cleanText(visit?.nama, 'Regional Bestie');
+        text += `
+
+Best Regards,
+${bestieName}`;
+    }
+    return text;
 }
 function getVisitStoreEmail(visit) {
     return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore || visit?.manualStoreDetail?.emailStore);
@@ -2536,7 +2584,7 @@ function buildInitialEmailForm(visit) {
         to: defaultTo,
         cc: ensureLockedEmailList(config.defaultCc),
         subject: applyEmailTemplate(config.defaultSubjectTemplate, visit),
-        body: applyEmailTemplate(config.defaultBodyTemplate, visit),
+        body: finalizeEmailBodyTemplate(applyEmailTemplate(config.defaultBodyTemplate, visit), visit),
         passcode: config.lockedPasscode,
         attachPdf: true,
         attachExcel: true
@@ -2672,18 +2720,21 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
     }, []);
     const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: isLockedEmail(email) ? 'Auto locked CC' : 'Manual' });
     const recipientChipStyle = {
+        width: '100%',
         maxWidth: '100%',
-        gap: '4px',
-        padding: '4px 7px',
+        minHeight: '34px',
+        gap: '8px',
+        padding: '7px 10px',
         fontSize: '11px',
         lineHeight: '14px',
-        fontWeight: 700,
-        letterSpacing: '-0.01em'
+        fontWeight: 800,
+        letterSpacing: '-0.01em',
+        justifyContent: 'space-between'
     };
     const recipientChipEmailStyle = {
         display: 'block',
         minWidth: 0,
-        maxWidth: 'min(238px, calc(100vw - 132px))',
+        maxWidth: 'calc(100% - 48px)',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap'
@@ -2744,7 +2795,7 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
     }
     const chipEls = selectedItems.map((item) => {
         const locked = isLockedEmail(item.email);
-        return React.createElement("span", { key: item.email, className: cx("inline-flex max-w-full items-center rounded-full ring-1", locked ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
+        return React.createElement("span", { key: item.email, className: cx("rbv-email-recipient-chip-v99 inline-flex max-w-full items-center rounded-2xl ring-1", locked ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
             React.createElement("span", { className: "truncate", style: recipientChipEmailStyle }, item.email),
             locked ? React.createElement("span", { className: "rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-emerald-700" }, "Lock") : React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" })));
     });
@@ -2766,12 +2817,12 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
         React.createElement("div", { className: "max-h-60 overflow-y-auto p-2" },
             customButton,
             optionEls)) : null;
-    return React.createElement("div", { className: "border-b border-slate-100 px-4 py-3 text-left" },
+    return React.createElement("div", { className: "rbv-email-recipient-row-v99 border-b border-slate-100 px-4 py-3 text-left" },
         React.createElement("div", { className: "mb-2 text-left text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" },
             label,
             required ? React.createElement("span", { className: "ml-1 text-rose-500" }, "*") : null),
         React.createElement("div", { className: "min-w-0", ref: wrapperRef },
-            React.createElement("div", { className: "mx-auto flex min-h-[46px] w-full flex-wrap items-center justify-start gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition focus-within:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-100" },
+            React.createElement("div", { className: "rbv-email-recipient-box-v99 mx-auto flex min-h-[46px] w-full flex-wrap items-center justify-start gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition focus-within:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-100" },
                 chipEls,
                 React.createElement("input", { value: query, onChange: (event) => {
                         setQuery(event.target.value);
@@ -2783,7 +2834,7 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
 function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, status, visit }) {
     const [scheduledJobs, setScheduledJobs] = useState(() => readScheduledReportEmailQueue());
     const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
-    const [sendConfirmCountdown, setSendConfirmCountdown] = useState(20);
+    const [feedbackPopup, setFeedbackPopup] = useState(null);
     useEffect(() => {
         if (!open)
             return undefined;
@@ -2799,9 +2850,18 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         };
     }, [open]);
     useEffect(() => {
+        if (!open)
+            return undefined;
+        function showFeedback(event) {
+            setFeedbackPopup(event?.detail || { title: 'Info', message: 'Proses selesai.' });
+        }
+        window.addEventListener('rbv-email-feedback-popup', showFeedback);
+        return () => window.removeEventListener('rbv-email-feedback-popup', showFeedback);
+    }, [open]);
+    useEffect(() => {
         if (!open) {
             setSendConfirmOpen(false);
-            setSendConfirmCountdown(20);
+            setFeedbackPopup(null);
         }
     }, [open]);
     useEffect(() => {
@@ -2811,21 +2871,6 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         if (normalize(lockedCcValue) !== normalize(form.cc))
             onChange({ cc: lockedCcValue });
     }, [open, form.cc]);
-    useEffect(() => {
-        if (!open || !sendConfirmOpen)
-            return undefined;
-        const expiresAt = Date.now() + 20000;
-        setSendConfirmCountdown(20);
-        const timer = window.setInterval(() => {
-            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
-            setSendConfirmCountdown(remaining);
-            if (remaining <= 0) {
-                setSendConfirmOpen(false);
-                window.clearInterval(timer);
-            }
-        }, 250);
-        return () => window.clearInterval(timer);
-    }, [open, sendConfirmOpen]);
     if (!open)
         return null;
     const config = getEmailReportConfig();
@@ -2851,16 +2896,13 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
     function openSendConfirmation() {
         if (busy || !form.to || !form.subject)
             return;
-        setSendConfirmCountdown(20);
         setSendConfirmOpen(true);
     }
     function cancelSendConfirmation() {
         setSendConfirmOpen(false);
-        setSendConfirmCountdown(20);
     }
     function confirmSendNow() {
         setSendConfirmOpen(false);
-        setSendConfirmCountdown(20);
         onSubmit('send');
     }
     const scheduleEls = scheduledJobs.length ? React.createElement("div", { className: "mt-3 rounded-2xl border border-amber-100 bg-amber-50 p-3 text-left" },
@@ -2928,15 +2970,20 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                     React.createElement("span", null, "1J")))));
     const sendConfirmDialog = sendConfirmOpen ? React.createElement("div", { className: "fixed inset-0 grid place-items-center bg-slate-950/55 px-5 backdrop-blur-sm", style: { zIndex: 2147483647, backgroundColor: 'rgba(15, 23, 42, 0.55)' } },
         React.createElement("div", { className: "w-full max-w-sm rounded-[28px] border border-emerald-100 bg-white p-5 text-center shadow-2xl", style: { backgroundColor: '#ffffff', borderColor: '#d1fae5' } },
-            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700", style: { color: '#047857' } }, "Konfirmasi Send"),
-            React.createElement("div", { className: "mx-auto mt-4 grid h-24 w-24 place-items-center rounded-full border-4 border-emerald-200 bg-emerald-50 text-4xl font-black text-emerald-700", style: { backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' } }, sendConfirmCountdown),
-            React.createElement("h3", { className: "mt-4 text-xl font-black text-slate-950" }, "Kirim email sekarang?"),
-            React.createElement("p", { className: "mt-2 text-sm font-semibold leading-6 text-slate-500" }, "Pilih Ya untuk mengirim. Pilih Batal untuk kembali ke halaman email. Popup otomatis tertutup saat hitungan selesai."),
-            React.createElement("div", { className: "mt-5 grid grid-cols-2 gap-2" },
-                React.createElement("button", { type: "button", onClick: cancelSendConfirmation, disabled: busy, className: "inline-flex min-h-[46px] items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-rose-700 transition hover:bg-rose-100 disabled:opacity-50", style: { backgroundColor: '#fee2e2', borderColor: '#fecaca', color: '#b91c1c' } }, "Batal"),
-                React.createElement("button", { type: "button", onClick: confirmSendNow, disabled: busy, className: "inline-flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-600 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-50", style: { backgroundColor: '#059669', color: '#ffffff', borderColor: '#047857' } },
+            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700", style: { color: '#047857' } }, "Konfirmasi Send Email"),
+            React.createElement("div", { className: "mx-auto mt-4 grid h-20 w-20 place-items-center rounded-full border-4 border-emerald-200 bg-emerald-50 text-emerald-700", style: { backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' } }, React.createElement(Icon, { name: "send", className: "h-9 w-9" })),
+            React.createElement("h3", { className: "mt-4 text-lg font-black leading-6 text-slate-950" }, "Pastikan data email sudah sesuai, email yang sudah dikirim tidak dapat dibatalkan"),
+            React.createElement("div", { className: "mt-5 grid gap-2" },
+                React.createElement("button", { type: "button", onClick: confirmSendNow, disabled: busy, className: "inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-600 px-4 py-3 text-[12px] font-black uppercase tracking-[0.08em] text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-50", style: { backgroundColor: '#059669', color: '#ffffff', borderColor: '#047857' } },
                     React.createElement(Icon, { name: "send", className: "h-4 w-4 text-white" }),
-                    React.createElement("span", null, "Ya"))))) : null;
+                    React.createElement("span", null, "SAYA YAKIN KIRIM EMAIL")),
+                React.createElement("button", { type: "button", onClick: cancelSendConfirmation, disabled: busy, className: "inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-slate-600 transition hover:bg-slate-50 disabled:opacity-50" }, "Batal")))) : null;
+    const feedbackDialog = feedbackPopup ? React.createElement("div", { className: "fixed inset-0 grid place-items-center bg-slate-950/40 px-5 backdrop-blur-sm", style: { zIndex: 2147483647, backgroundColor: 'rgba(15, 23, 42, 0.40)' } },
+        React.createElement("div", { className: "w-full max-w-sm rounded-[28px] border border-indigo-100 bg-white p-5 text-center shadow-2xl" },
+            React.createElement("div", { className: "mx-auto grid h-16 w-16 place-items-center rounded-full bg-indigo-50 text-indigo-700" }, React.createElement(Icon, { name: feedbackPopup.icon || "check", className: "h-8 w-8" })),
+            React.createElement("h3", { className: "mt-4 text-lg font-black text-slate-950" }, feedbackPopup.title || 'Info'),
+            React.createElement("p", { className: "mt-2 text-sm font-semibold leading-6 text-slate-600" }, feedbackPopup.message || ''),
+            React.createElement("button", { type: "button", onClick: () => setFeedbackPopup(null), className: "mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-white" }, "OK"))) : null;
     const overlay = React.createElement("div", { className: "rbv-email-compose-portal fixed inset-0 bg-[#f6f8fc]", role: "dialog", "aria-modal": "true", style: { position: 'fixed', inset: '0px', width: '100vw', height: '100dvh', minHeight: '100vh', zIndex: 2147483647, isolation: 'isolate', overflow: 'hidden', background: '#f6f8fc' } },
         React.createElement("div", { className: "flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f6f8fc]", style: { height: '100dvh', maxHeight: '100dvh', width: '100vw', overflow: 'hidden' } },
             React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4" },
@@ -2946,7 +2993,8 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement(Button, { variant: "icon", onClick: onClose, disabled: busy, "aria-label": "Tutup" }, React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "flex-1 overflow-y-auto p-4 md:p-5", style: { minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } }, composeCard),
             footer),
-        sendConfirmDialog);
+        sendConfirmDialog,
+        feedbackDialog);
     return (typeof document !== 'undefined' && ReactDOM?.createPortal) ? ReactDOM.createPortal(overlay, document.body) : overlay;
 }
 
@@ -3144,7 +3192,7 @@ function PreviewPage({ visit, onBack }) {
             try {
                 if (!window.ReportVisitPDF?.createBlob)
                     throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-                const blob = await window.ReportVisitPDF.createBlob(visit);
+                const blob = await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
                 if (cancelled)
                     return;
                 objectUrl = URL.createObjectURL(blob);
@@ -3181,7 +3229,7 @@ function PreviewPage({ visit, onBack }) {
             await new Promise((resolve) => window.setTimeout(resolve, 80));
             if (!window.ReportVisitPDF?.createBlob)
                 throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-            const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
+            const blob = pdfBlob || await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
             const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
             setDownloadMessage('Pilih lokasi simpan...');
             const didSave = await downloadBlobManaged(blob, fileName);
@@ -3272,12 +3320,18 @@ function PreviewPage({ visit, onBack }) {
                 setEmailStatus(`Email dijadwalkan ${scheduleMinutes} menit ke depan...`);
                 scheduleReportEmailJob(config.endpoint, payload, scheduleMinutes * 60 * 1000);
                 setEmailStatus(fitted.skipped.length ? `Email dijadwalkan ${scheduleMinutes} menit. Beberapa attachment dilepas karena ukuran terlalu besar.` : `Email berhasil dijadwalkan ${scheduleMinutes} menit ke depan.`);
+                window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'history', title: 'Email dijadwalkan', message: `Email akan dikirim sesuai waktu yang dipilih (${scheduleMinutes} menit).` } }));
                 return;
             }
             setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
             await postReportEmailPayload(config.endpoint, payload);
-            setEmailStatus(mode === 'send' ? (fitted.skipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (fitted.skipped.length ? 'Draft Gmail berhasil dibuat. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft Gmail berhasil dibuat.'));
-            window.setTimeout(() => setEmailOpen(false), 2000);
+            const successMessage = mode === 'send' ? (fitted.skipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (fitted.skipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
+            setEmailStatus(successMessage);
+            if (mode === 'draft')
+                window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'pdf', title: 'Draft tersimpan', message: 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.' } }));
+            if (mode === 'send')
+                window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'send', title: 'Email terkirim', message: 'Email berhasil dikirim.' } }));
+            window.setTimeout(() => setEmailOpen(false), mode === 'send' ? 1700 : 2600);
         }
         catch (error) {
             setEmailStatus(`Gagal: ${error?.message || 'Gagal memproses email.'}`);
@@ -3289,7 +3343,7 @@ function PreviewPage({ visit, onBack }) {
     }
     if (!visit)
         return React.createElement("main", { className: "preview-page w-full px-4 py-8 md:px-8" },
-            React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif", action: React.createElement(Button, { variant: "secondary", onClick: onBack }, "Kembali") }));
+            React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif" }));
     return (React.createElement("main", { className: "preview-page w-full px-4 py-4 md:px-8 md:py-8" },
         downloadBusy ? React.createElement("div", { className: "download-pdf-overlay", role: "status", "aria-live": "polite" },
             React.createElement("div", { className: "download-pdf-loader" },
@@ -3316,14 +3370,14 @@ function PreviewPage({ visit, onBack }) {
                         visit.nama || 'Bestie belum dipilih',
                         " \u2022 ",
                         formatDate(visit.tanggal))),
-                React.createElement("div", { className: "preview-actions flex flex-wrap gap-2" },
-                    React.createElement(Button, { variant: "secondary", icon: "left", onClick: onBack }, "Kembali"),
-                    React.createElement(Button, { icon: downloadBusy ? null : "download", onClick: handleDownloadPdf, disabled: busy || downloadBusy }, downloadBusy ? 'Memproses...' : 'Download PDF'),
-                    React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy || downloadBusy, className: "excel-export-button" },
-                        React.createElement("span", { className: "text-left leading-tight" },
-                            React.createElement("span", { className: "block" }, "Export Excel CA Assigment"),
-                            React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store"))),
-                    React.createElement(Button, { icon: "upload", onClick: openEmailReportModal, disabled: busy || downloadBusy }, "Send Email"))),
+                React.createElement("div", { className: "preview-actions-v99" },
+                    React.createElement("div", { className: "preview-actions-left-v99" },
+                        React.createElement(Button, { icon: downloadBusy ? null : "download", onClick: handleDownloadPdf, disabled: busy || downloadBusy, className: "preview-secondary-action-v99" }, downloadBusy ? 'Memproses...' : 'Download PDF'),
+                        React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy || downloadBusy, className: "excel-export-button preview-secondary-action-v99" },
+                            React.createElement("span", { className: "text-left leading-tight" },
+                                React.createElement("span", { className: "block" }, "Export Excel CA"),
+                                React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store")))),
+                    React.createElement(Button, { icon: "upload", onClick: openEmailReportModal, disabled: busy || downloadBusy, className: "preview-send-action-v99" }, "Send Email"))),
             React.createElement("div", { className: "preview-frame-wrap" },
                 React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status })))));
 }
@@ -3681,7 +3735,7 @@ async function fetchAppConfigsFromCloudflare() {
     if (!cloudflareEnabled())
         return null;
     try {
-        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice].join(',') } });
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -3842,7 +3896,7 @@ async function fetchAppConfigsFromNetlify() {
     if (!netlifyEnabled())
         return null;
     try {
-        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice].join(',') } });
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -4092,7 +4146,7 @@ async function fetchAppConfigsFromSupabase() {
         const { data, error } = await client
             .from(table)
             .select('config_key,payload,updated_at')
-            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice]);
+            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate]);
         if (error)
             throw error;
         return normalizeRemoteAppConfigRows((data || []).map((item) => ({
@@ -4358,6 +4412,8 @@ function applyRemoteAppConfigRows(rows) {
             saveWelcomeConfig(row.payload);
         if (row.key === APP_CONFIG_KEYS.updateNotice)
             saveUpdateNoticeConfig(row.payload);
+        if (row.key === APP_CONFIG_KEYS.emailTemplate)
+            saveEmailTemplateConfig(row.payload);
     });
     return normalized;
 }
@@ -4376,7 +4432,7 @@ async function fetchAppConfigsFromConvex() {
         return null;
     try {
         const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-        const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] });
+        const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
         if (rows !== null)
             return normalizeRemoteAppConfigRows(rows);
     }
@@ -4413,6 +4469,9 @@ function syncWelcomeConfigToConvex(config) {
 }
 function syncUpdateNoticeConfigToConvex(config) {
     return syncAppConfigToConvex(APP_CONFIG_KEYS.updateNotice, normalizeUpdateNoticeConfig(config));
+}
+function syncEmailTemplateConfigToConvex(config) {
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.emailTemplate, normalizeEmailTemplateConfig(config));
 }
 function normalizeWelcomeConfigPayload(config) {
     return {
@@ -4547,8 +4606,10 @@ function WelcomeOverlay({ config, onDone }) {
                 React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(20,184,166,.24), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
                 React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)', animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
                 React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 230, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
-                    React.createElement("div", { "aria-hidden": "true", className: "welcome-promise-logo", style: { display: 'grid', placeItems: 'center', width: 132, height: 98, borderRadius: '28px', overflow: 'hidden', background: '#fff7ed', boxShadow: '0 18px 36px rgba(15,23,42,.16)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' } },
-                        React.createElement(WelcomeSparkStarArt, null)),
+                    React.createElement("div", { "aria-hidden": "true", className: "welcome-app-logo-motion-v99", style: { display: 'grid', placeItems: 'center', width: 132, height: 132, borderRadius: '34px', overflow: 'visible', background: 'linear-gradient(145deg,#ffffff,#ecfdf5)', boxShadow: '0 20px 44px rgba(15,23,42,.18)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' } },
+                        React.createElement("span", { className: "welcome-logo-ring-v99 ring-a" }),
+                        React.createElement("span", { className: "welcome-logo-ring-v99 ring-b" }),
+                        React.createElement("img", { src: "icons/icon-192.png", alt: "", className: "welcome-app-icon-v99" })),
                     React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
                     React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
                     React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#475569', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
@@ -4620,6 +4681,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [secretTab, setSecretTab] = useState('settings');
     const [emailDirectory, setEmailDirectory] = useState(() => readCustomEmailDirectory());
     const [emailDirectoryDraft, setEmailDirectoryDraft] = useState({ name: '', email: '', role: '', store: '' });
+    const [emailSubjectTemplate, setEmailSubjectTemplate] = useState(() => readEmailTemplateConfig().subjectTemplate);
+    const [emailBodyTemplate, setEmailBodyTemplate] = useState(() => readEmailTemplateConfig().bodyTemplate);
+    const [cloudflareDbStatus, setCloudflareDbStatus] = useState('');
+    const [cloudflareDbBusy, setCloudflareDbBusy] = useState(false);
     async function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
@@ -4652,6 +4717,59 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     function deleteEmailDirectoryItem(id) {
         const saved = saveCustomEmailDirectory(emailDirectory.filter((item) => item.id !== id));
         setEmailDirectory(saved);
+    }
+
+    async function saveEmailTemplateSettings() {
+        const saved = saveEmailTemplateConfig({ subjectTemplate: emailSubjectTemplate, bodyTemplate: emailBodyTemplate });
+        setEmailSubjectTemplate(saved.subjectTemplate);
+        setEmailBodyTemplate(saved.bodyTemplate);
+        const synced = await syncEmailTemplateConfigToConvex(saved);
+        alert(synced ? 'Template email berhasil disimpan dan disinkronkan ke Cloudflare/remote config.' : 'Template email tersimpan lokal. Cloudflare/remote config belum aktif atau gagal sync.');
+    }
+    function resetEmailTemplateSettings() {
+        const saved = saveEmailTemplateConfig({ subjectTemplate: DEFAULT_EMAIL_SUBJECT_TEMPLATE, bodyTemplate: DEFAULT_EMAIL_BODY_TEMPLATE });
+        setEmailSubjectTemplate(saved.subjectTemplate);
+        setEmailBodyTemplate(saved.bodyTemplate);
+        alert('Template email dikembalikan ke default.');
+    }
+    async function testCloudflareD1Panel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Mengecek koneksi Cloudflare D1...');
+        try {
+            const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
+            const rows = payload?.rows || payload?.data || [];
+            setCloudflareDbStatus(`Cloudflare D1 aktif. App settings terbaca: ${Array.isArray(rows) ? rows.length : 0} item.`);
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Cloudflare D1 belum aktif: ${error?.message || 'request gagal.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function syncHistoryToCloudflarePanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Mengirim history lokal ke Cloudflare D1...');
+        try {
+            const visits = await getAllVisitRecordsForBackup();
+            let success = 0;
+            for (const item of visits) {
+                if (await upsertMonitorVisitToCloudflare(item))
+                    success += 1;
+            }
+            setCloudflareDbStatus(`Sync Cloudflare selesai. ${success}/${visits.length} history terkirim.`);
+            refresh({ quiet: true });
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Sync Cloudflare gagal: ${error?.message || 'unknown error.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
     }
     async function saveNoticeSettings() {
         const saved = saveUpdateNoticeConfig({
@@ -4979,6 +5097,30 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement("button", { type: "button", className: "grid h-8 w-8 place-items-center rounded-full text-rose-500 transition hover:bg-rose-50", onClick: () => deleteEmailDirectoryItem(item.id), "aria-label": "Hapus email" },
                                 React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))) : React.createElement("p", { className: "rounded-2xl bg-white px-3 py-3 text-xs font-bold text-slate-500 ring-1 ring-indigo-100" }, "Belum ada email tambahan."))),
 
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Email Report Template"),
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Template Email Admin")),
+                        React.createElement("div", { className: "flex flex-wrap gap-2" },
+                            React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetEmailTemplateSettings }, "Reset"),
+                            React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveEmailTemplateSettings }, "Simpan Template"))),
+                    React.createElement("div", { className: "grid gap-3 md:grid-cols-[0.9fr_1.6fr]" },
+                        React.createElement(Field, { label: "Subject Template", helper: "Placeholder: {store}, {date}, {bestie}, {storeHead}, {siteCode}" },
+                            React.createElement(TextInput, { value: emailSubjectTemplate, onChange: (event) => setEmailSubjectTemplate(event.target.value), placeholder: DEFAULT_EMAIL_SUBJECT_TEMPLATE })),
+                        React.createElement(Field, { label: "Body Template", helper: "Tanggal kunjungan dan Best Regards + nama bestie otomatis dipastikan saat email dibuat." },
+                            React.createElement(TextArea, { value: emailBodyTemplate, onChange: (event) => setEmailBodyTemplate(event.target.value), minRows: 7, placeholder: DEFAULT_EMAIL_BODY_TEMPLATE })))),
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-sky-100 bg-sky-50/70 p-4" },
+                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-sky-700" }, "Cloudflare D1 Database"),
+                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Panel Database Rahasia")),
+                        React.createElement("div", { className: "flex flex-wrap gap-2" },
+                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
+                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
+                    React.createElement("div", { className: "rounded-2xl bg-white px-4 py-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-sky-100" },
+                        React.createElement("p", null, "Endpoint: ", cleanText(getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data')),
+                        React.createElement("p", { className: "mt-1 text-sky-700" }, cloudflareDbStatus || 'Gunakan Test D1 untuk cek binding database dan Sync History untuk kirim data lokal.'))),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,
@@ -5307,6 +5449,34 @@ function App() {
     const secretTapRef = useRef({ count: 0, timer: null });
     useEffect(() => {
         let cancelled = false;
+        async function restoreActiveVisit() {
+            try {
+                const activeId = localStorage.getItem(ACTIVE_VISIT_KEY);
+                if (!activeId)
+                    return;
+                const data = await getVisitRecord(activeId);
+                if (cancelled || !data)
+                    return;
+                setVisit(data);
+                const savedScreen = sessionStorage.getItem(SESSION_SCREEN_KEY);
+                if (savedScreen === 'preview' || savedScreen === 'audit')
+                    setScreen(savedScreen);
+                else
+                    setScreen('audit');
+            }
+            catch (error) {
+                console.warn('Restore active visit gagal:', error);
+            }
+        }
+        restoreActiveVisit();
+        return () => { cancelled = true; };
+    }, []);
+    useEffect(() => {
+        try { sessionStorage.setItem(SESSION_SCREEN_KEY, screen); }
+        catch (error) { }
+    }, [screen]);
+    useEffect(() => {
+        let cancelled = false;
         let unsubscribe = null;
         let pollId = null;
         function applyConfigRows(rows) {
@@ -5323,7 +5493,7 @@ function App() {
             try {
                 await refreshRemoteConfigs();
                 if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
-                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice] }, (rows) => { if (!cancelled)
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
             }
