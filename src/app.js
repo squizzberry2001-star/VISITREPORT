@@ -2322,6 +2322,15 @@ const LOCKED_CC_EMAILS = [
     'mekarsari.pramawati@familymartindonesia.com',
     'nugraha.amijaya@familymartindonesia.com'
 ];
+const MASTER_EMAIL_CONTACTS = [
+    {
+        kind: 'regional-bestie',
+        email: 'regional.bestie@familymartindonesia.com',
+        helper: 'Regional Bestie • Master Email',
+        store: 'Regional Bestie',
+        role: 'Master Email'
+    }
+];
 const EMAIL_SAFE_REQUEST_BYTES = 3.25 * 1024 * 1024;
 const EMAIL_PDF_SAFE_BYTES = 2.65 * 1024 * 1024;
 const EMAIL_EXCEL_SAFE_BYTES = 850 * 1024;
@@ -2488,6 +2497,12 @@ function getAllMasterEmailContactOptions(visit) {
         push('store', store.emailStore, `${storeName} • Email Store`, { store: storeName, role: 'Email Store' });
         push('area', store.areaManagerEmail, `${storeName} • Area Manager`, { store: storeName, role: 'Area Manager' });
         push('regional', store.regionalManagerEmail, `${storeName} • Regional Manager`, { store: storeName, role: 'Regional Manager' });
+    });
+    (MASTER_EMAIL_CONTACTS || []).forEach((item) => {
+        push(cleanText(item.kind, 'master-email').toLowerCase(), item.email, cleanText(item.helper, 'Master Email'), {
+            store: item.store,
+            role: item.role
+        });
     });
     readCustomEmailDirectory().forEach((item) => {
         push(cleanText(item.role, 'custom').toLowerCase(), item.email, cleanText([item.store, item.role].filter(Boolean).join(' • '), 'Email Directory'), {

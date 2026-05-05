@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp96-email-locked-cc-animations-navbar';
+const APP_VERSION = 'revamp96-email-locked-cc-animations-navbar-regional-bestie-regional-bestie';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

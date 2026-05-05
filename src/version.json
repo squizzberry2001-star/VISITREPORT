@@ -1,6 +1,6 @@
 {
-  "version": "revamp96-email-locked-cc-animations-navbar",
-  "build": "revamp96-email-locked-cc-animations-navbar",
-  "updatedAt": "2026-05-05T15:10:00+07:00",
-  "note": "Revamp email page: locked default CC recipients, animated send/draft/schedule feedback, compact green bottom navbar, red cancel schedule, and 1 hour schedule timer."
+  "version": "revamp96-email-locked-cc-animations-navbar-regional-bestie",
+  "build": "revamp96-email-locked-cc-animations-navbar-regional-bestie",
+  "updatedAt": "2026-05-05T15:20:00+07:00",
+  "note": "VR96 dengan tambahan regional.bestie@familymartindonesia.com di master data email."
 }
