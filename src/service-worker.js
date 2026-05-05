@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp93-email-compose-ui-fixes';
+const APP_VERSION = 'revamp94-email-recipient-gmail-size';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
