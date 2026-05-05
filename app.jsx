@@ -28,8 +28,8 @@ const DEFAULT_UPDATE_NOTICE_CONFIG = {
   enabled: true,
   title: 'Info Update Website',
   messages: [
-    'Konten informasi update dapat diatur dari panel rahasia.',
-    'Gunakan area ini untuk mengumumkan perubahan fitur, maintenance, atau instruksi terbaru.'
+    
+    'Area ini untuk mengumumkan perubahan fitur, maintenance, atau instruksi terbaru.'
   ],
   intervalSeconds: 4
 };
