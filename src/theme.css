@@ -4257,3 +4257,100 @@ body:has(.dashboard-page),
   .home-quick-action-sub { font-size: 7.5px !important; }
   .dashboard-history-title h2 { font-size: 17px !important; }
 }
+
+
+/* Revamp 212 - reliable home history scrolling */
+html.rbv-home-lock,
+body.rbv-home-lock {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+html.rbv-home-lock #root,
+body.rbv-home-lock #root {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+body.rbv-home-lock .dashboard-page,
+.dashboard-page {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: calc(10px + var(--safe-top)) !important;
+  padding-bottom: calc(72px + var(--safe-bottom)) !important;
+}
+.dashboard-history-section {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  display: block !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding: 0 2px calc(7rem + var(--safe-bottom)) !important;
+}
+.dashboard-history-title {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  margin: 0 0 8px !important;
+  padding: 2px 0 8px !important;
+  background: rgba(248, 250, 252, .96) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+.dashboard-history-list {
+  display: grid !important;
+  flex: none !important;
+  min-height: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 2px 2px 14px !important;
+  touch-action: pan-y !important;
+}
+.dashboard-history-empty {
+  min-height: 120px !important;
+}
+.home-quick-action-button {
+  min-height: 52px !important;
+  border-radius: 14px !important;
+  padding: 5px 4px !important;
+  gap: 1px !important;
+}
+.home-quick-action-button .h-4.w-4,
+.home-quick-action-button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+.home-quick-action-label {
+  font-size: 9.5px !important;
+}
+.home-quick-action-sub {
+  font-size: 7.5px !important;
+}
+@media (max-width: 420px) {
+  body.rbv-home-lock .dashboard-page,
+  .dashboard-page {
+    gap: 7px !important;
+    padding-bottom: calc(70px + var(--safe-bottom)) !important;
+  }
+  .home-quick-actions-grid {
+    gap: 6px !important;
+  }
+  .home-quick-action-button {
+    min-height: 48px !important;
+    border-radius: 13px !important;
+  }
+}
