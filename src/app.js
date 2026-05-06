@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp212-history-scroll-fix';
+const APP_BUILD_VERSION = 'revamp217-email-history-admin-stable';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2678,34 +2678,34 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp212-history-scroll-fix" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp217-email-history-admin-stable" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid", style: {
                         display: 'grid',
                         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                         gap: '10px'
                     } },
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '52px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '52px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '52px' }, onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Upload"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '52px' }, onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Tarik"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '52px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '44px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Install"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "App")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '52px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '44px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
                         React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History"))),
@@ -2946,16 +2946,45 @@ ${bestieName}`;
     }
     return text;
 }
+function getVisitStoreLookupKeys(visit) {
+    return uniqueBy([
+        visit?.storeCode,
+        visit?.siteCode,
+        visit?.siteCode4,
+        visit?.detail?.siteCode4,
+        visit?.detail?.siteCode,
+        visit?.storeDetail?.siteCode4,
+        visit?.storeDetail?.siteCode,
+        visit?.manualStoreDetail?.siteCode4,
+        visit?.manualStoreDetail?.siteCode,
+        visit?.store,
+        visit?.storeName,
+        visit?.detail?.siteDescr,
+        visit?.detail?.storeName,
+        visit?.storeDetail?.siteDescr,
+        visit?.storeDetail?.storeName,
+        visit?.manualStoreDetail?.siteDescr,
+        visit?.manualStoreDetail?.storeName
+    ].map((item) => cleanText(item)).filter(Boolean), (item) => normalize(item));
+}
 function getVisitStoreEmail(visit) {
-    const detail = getStoreWebDetail(visit?.store || visit?.storeName || visit?.detail?.siteDescr || visit?.manualStoreDetail?.siteDescr);
-    return cleanText(
+    const direct = cleanText(
         visit?.emailStore ||
         visit?.storeEmail ||
         visit?.detail?.emailStore ||
         visit?.storeDetail?.emailStore ||
-        visit?.manualStoreDetail?.emailStore ||
-        detail?.emailStore
+        visit?.manualStoreDetail?.emailStore
     );
+    if (isEmailSyntax(direct))
+        return direct.toLowerCase();
+    for (const key of getVisitStoreLookupKeys(visit)) {
+        const detail = getStoreWebDetail(key) || {};
+        const master = findMasterStore(key) || {};
+        const email = cleanText(detail.emailStore || master.emailStore).toLowerCase();
+        if (isEmailSyntax(email))
+            return email;
+    }
+    return '';
 }
 
 const CUSTOM_EMAIL_DIRECTORY_KEY = 'visitreport_custom_email_directory_v1';
@@ -3182,24 +3211,41 @@ function buildEmailContact(kind, email, helper, extra = {}) {
     const cleanEmail = cleanText(email).toLowerCase();
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail))
         return null;
+    const role = cleanText(extra.role || kind, cleanText(kind, 'Email'));
+    const store = cleanText(extra.store);
+    const helperText = cleanText(helper || [store, role].filter(Boolean).join(' • '), role);
     return {
-        kind,
+        ...extra,
+        kind: cleanText(kind, 'email'),
         email: cleanEmail,
         label: cleanEmail,
-        helper: cleanText(helper),
-        ...extra
+        helper: helperText,
+        store,
+        role
     };
 }
 function getVisitStoreDetailForEmail(visit) {
-    const webDetail = getStoreWebDetail(visit?.store || visit?.storeName || visit?.detail?.siteDescr || visit?.manualStoreDetail?.siteDescr);
-    const masterDetail = findMasterStore(visit?.storeCode || visit?.siteCode || visit?.detail?.siteCode4 || visit?.detail?.siteCode || visit?.store) || {};
-    return {
+    let webDetail = {};
+    let masterDetail = {};
+    for (const key of getVisitStoreLookupKeys(visit)) {
+        if (!webDetail.emailStore)
+            webDetail = getStoreWebDetail(key) || webDetail || {};
+        if (!masterDetail.emailStore)
+            masterDetail = findMasterStore(key) || masterDetail || {};
+        if (webDetail.emailStore || masterDetail.emailStore)
+            break;
+    }
+    const merged = {
         ...webDetail,
         ...masterDetail,
         ...(visit?.detail || {}),
         ...(visit?.storeDetail || {}),
         ...(visit?.manualStoreDetail || {})
     };
+    const storeEmail = cleanText(getVisitStoreEmail(visit));
+    if (storeEmail)
+        merged.emailStore = storeEmail;
+    return merged;
 }
 function getVisitToEmailContactOptions(visit) {
     const detail = getVisitStoreDetailForEmail(visit);
@@ -3258,7 +3304,7 @@ function getLockedCcContacts() {
 function buildInitialEmailForm(visit) {
     const config = getEmailReportConfig();
     const toOptions = getVisitToEmailContactOptions(visit);
-    const defaultTo = getVisitStoreEmail(visit) || toOptions[0]?.email || config.defaultTo || '';
+    const defaultTo = toOptions[0]?.email || getVisitStoreEmail(visit) || config.defaultTo || '';
     return {
         from: config.sender,
         to: defaultTo,
@@ -3570,9 +3616,11 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement("span", { className: "mt-0.5 block text-sm font-bold leading-5" }, statusText)))) : null;
     function handleCancelSchedule(jobId) {
         setScheduledJobs(cancelScheduledReportEmailJob(jobId));
+        setFeedbackPopup({ icon: 'trash', title: 'Timer email dibatalkan', message: 'Email terjadwal tidak akan dikirim.' });
     }
     function handleCancelAllSchedules() {
         setScheduledJobs(cancelAllScheduledReportEmailJobs());
+        setFeedbackPopup({ icon: 'trash', title: 'Semua timer dibatalkan', message: 'Semua email terjadwal sudah dihapus.' });
     }
     function openSendConfirmation() {
         if (busy || !form.to || !form.subject)
@@ -3624,6 +3672,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "mt-3 flex flex-wrap items-center justify-center gap-2" },
                 React.createElement("span", { className: "rounded-2xl bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500" }, `CC ${ccCount}`),
                 React.createElement("span", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "TO auto store")),
+            scheduleEls,
             statusDisplay,
             null));
     const footerButtonClass = "rbv-email-action-btn-v98 rbv-email-draft-btn-v98";
@@ -3642,7 +3691,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "rbv-email-cancel-wrap-v98" }, footerCancelSchedule),
             scheduledJobs.length ? React.createElement("div", { className: "rbv-email-scheduled-row-v98" }, scheduledJobs.slice(0, 3).map((job) => React.createElement("button", { key: job.id, type: "button", onClick: () => handleCancelSchedule(job.id), disabled: busy, className: "rbv-email-scheduled-chip-v98" },
                 React.createElement(Icon, { name: "trash", className: "rbv-email-footer-icon-v98" }),
-                React.createElement("span", null, new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))))) : null,
+                React.createElement("span", null, `Batal ${new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`)))) : null,
             React.createElement("div", { className: "rbv-email-timer-grid-v98" },
                 React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:10'), disabled: busy || !form.to || !form.subject }, "10M"),
                 React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:20'), disabled: busy || !form.to || !form.subject }, "20M"),
@@ -6097,7 +6146,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Panel Rahasia Admin"),
                         secretTab === 'monitoring' ? React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, sourceBadgeLabel) : React.createElement(Badge, { tone: "default" }, "Setting Web"),
                         secretTab === 'monitoring' ? React.createElement(Badge, { tone: connectionTone }, connectionState) : null),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & Convex'),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Realtime' : 'Admin Control Center'),
                     secretTab === 'monitoring' && lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
                         "Update terakhir: ",
                         formatDateTime(lastSync)) : null),
@@ -6119,12 +6168,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
-                                React.createElement(Badge, { tone: "dark" }, "Revamp 206"),
+                                React.createElement(Badge, { tone: "dark" }, "Revamp 217"),
                                 React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Primary"),
                                 React.createElement("span", { className: "rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-cyan-300/20" }, "No D1 Panel")),
                             React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Convex Control Center"),
-                            React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Ruang Panel Rahasia"),
-                            React.createElement("p", { className: "mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300" }, "Panel ini sudah diarahkan ke Convex sebagai database utama untuk setting web, monitoring realtime, presence, manual request, dan master data detail toko. Cloudflare D1 disembunyikan dari panel agar tidak membingungkan.")),
+                            React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Panel Rahasia")),
                         React.createElement("div", { className: "flex flex-wrap gap-2" },
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testConvexPanel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test Convex'),
                             React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullConvexSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),

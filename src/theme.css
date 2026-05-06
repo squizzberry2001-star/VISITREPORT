@@ -4354,3 +4354,79 @@ body.rbv-home-lock .dashboard-page,
     border-radius: 13px !important;
   }
 }
+
+
+/* Revamp 217 - Email auto TO, compact Home, simplified Admin Panel */
+.home-quick-actions-grid { gap: 5px !important; }
+.home-quick-action-button {
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  padding: 4px 3px !important;
+  gap: 0 !important;
+}
+.home-quick-action-button .h-4.w-4,
+.home-quick-action-button svg {
+  width: 12px !important;
+  height: 12px !important;
+  margin-bottom: 1px !important;
+}
+.home-quick-action-label { font-size: 8.8px !important; line-height: 1 !important; }
+.home-quick-action-sub { font-size: 6.8px !important; line-height: 1 !important; }
+.dashboard-history-section {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding-bottom: calc(7rem + var(--safe-bottom)) !important;
+}
+.dashboard-history-title {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  padding: 3px 0 7px !important;
+  margin-bottom: 6px !important;
+  background: rgba(248,250,252,.98) !important;
+}
+.dashboard-history-list {
+  overflow: visible !important;
+  padding-bottom: 18px !important;
+}
+.rbv-email-scheduled-row-v98 {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+.rbv-email-scheduled-chip-v98 {
+  min-height: 34px !important;
+  border-radius: 14px !important;
+  font-size: 10px !important;
+}
+.secret-admin-panel {
+  max-width: 980px !important;
+  border-radius: 24px !important;
+  padding: 16px !important;
+}
+.secret-admin-panel .secret-convex-command {
+  border-radius: 24px !important;
+  padding: 14px !important;
+}
+.secret-admin-panel .btn-secondary,
+.secret-admin-panel .btn-primary,
+.secret-admin-panel .btn-danger {
+  min-height: 38px !important;
+  padding: 8px 11px !important;
+  border-radius: 14px !important;
+  font-size: 11px !important;
+}
+.secret-panel-tabs { margin-bottom: 12px !important; border-radius: 18px !important; }
+.secret-panel-tab { min-height: 40px !important; border-radius: 14px !important; font-size: 11px !important; }
+@media (max-width: 420px) {
+  .home-quick-action-button { min-height: 40px !important; border-radius: 11px !important; }
+  .home-quick-action-label { font-size: 8px !important; }
+  .home-quick-action-sub { display: none !important; }
+  .secret-admin-panel { padding: 12px !important; border-radius: 20px !important; }
+}
