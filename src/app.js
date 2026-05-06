@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp204-lite-mobile-performance';
+const APP_BUILD_VERSION = 'revamp207-history-sync-pdf-email-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -229,11 +229,58 @@ async function ensureQrScannerReady() {
     await loadScriptOnce(RBV_LIBS.jsqr, () => !!window.jsQR);
     return window.jsQR;
 }
+function getJsPdfConstructor() {
+    return window.jspdf?.jsPDF || window.jsPDF || null;
+}
+function ensureJsPdfAutoTableAttached() {
+    const jsPDF = getJsPdfConstructor();
+    if (!jsPDF)
+        return false;
+    if (typeof jsPDF.API?.autoTable === 'function') {
+        try {
+            const testDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            return typeof testDoc.autoTable === 'function';
+        }
+        catch (error) {
+            return true;
+        }
+    }
+    const plugin = window.jspdfAutoTable || window.jsPDF?.autoTable || window.autoTable;
+    const autoTableFn = typeof plugin === 'function'
+        ? plugin
+        : typeof plugin?.default === 'function'
+            ? plugin.default
+            : typeof plugin?.autoTable === 'function'
+                ? plugin.autoTable
+                : null;
+    try {
+        if (typeof plugin?.applyPlugin === 'function')
+            plugin.applyPlugin(jsPDF);
+        if (typeof window.jspdfAutoTable?.applyPlugin === 'function')
+            window.jspdfAutoTable.applyPlugin(jsPDF);
+    }
+    catch (error) {
+        console.warn('AutoTable applyPlugin gagal:', error);
+    }
+    if (typeof jsPDF.API?.autoTable === 'function')
+        return true;
+    if (autoTableFn && jsPDF.API) {
+        jsPDF.API.autoTable = function autoTableBridge(options) {
+            return autoTableFn(this, options || {});
+        };
+        return true;
+    }
+    return false;
+}
 async function ensurePdfEngineReady() {
-    await loadScriptOnce(RBV_LIBS.jspdf, () => !!window.jspdf?.jsPDF);
-    await loadScriptOnce(RBV_LIBS.autotable, () => !!window.jspdf?.jsPDF?.API?.autoTable || !!window.jspdf?.jsPDF);
+    await loadScriptOnce(RBV_LIBS.jspdf, () => !!getJsPdfConstructor());
+    await loadScriptOnce(RBV_LIBS.autotable, () => ensureJsPdfAutoTableAttached());
+    if (!ensureJsPdfAutoTableAttached())
+        throw new Error('Plugin tabel PDF belum siap. Coba reload halaman lalu buka Preview lagi.');
     await loadScriptOnce(RBV_LIBS.pdfAssets, () => !!window.ReportVisitAssets || !!window.PDF_TEMPLATE_ASSETS || !!window.RBV_PDF_TEMPLATE_ASSETS);
     await loadScriptOnce(RBV_LIBS.pdfGenerator, () => !!window.ReportVisitPDF?.createBlob);
+    if (!ensureJsPdfAutoTableAttached())
+        throw new Error('Plugin tabel PDF belum aktif setelah mesin PDF dimuat.');
     return window.ReportVisitPDF;
 }
 async function ensurePdfPreviewReady() {
@@ -747,12 +794,15 @@ function normalizeQscPhotos(visit) {
 }
 function createVisit(bestieName = '', storeName = '') {
     const detail = getStoreWebDetail(storeName);
+    const login = readBestieLogin();
+    const resolvedBestie = cleanText(bestieName, login.name || '');
     const now = Date.now();
     return {
         id: `visit_${now}_${Math.random().toString(36).slice(2, 8)}`,
         createdAt: now,
         updatedAt: now,
-        nama: cleanText(bestieName),
+        bestieNik: login.name && normalize(login.name) === normalize(resolvedBestie) ? login.nik : '',
+        nama: resolvedBestie,
         store: cleanText(storeName || detail.siteDescr),
         tanggal: new Date().toISOString().slice(0, 10),
         storeLeader: '',
@@ -804,8 +854,11 @@ function visitProgress(visit) {
 }
 function historyMetaFromVisit(visit) {
     const detail = getStoreWebDetail(visit?.store);
+    const login = readBestieLogin();
+    const matchedLogin = login.name && normalize(login.name) === normalize(visit?.nama);
     return {
         id: visit.id,
+        bestieNik: cleanText(visit.bestieNik || (matchedLogin ? login.nik : '')),
         bestieName: cleanText(visit.nama, '-'),
         storeName: cleanText(visit.store, '-'),
         storeCode: cleanText(detail.siteCode4 || detail.siteCode || detail.storeCode || visit.storeCode),
@@ -818,14 +871,14 @@ function historyMetaFromVisit(visit) {
 function readHistoryMeta() {
     try {
         const parsed = JSON.parse(localStorage.getItem(HISTORY_META_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
+        return filterHistoryMetaForLogin(Array.isArray(parsed) ? parsed : []);
     }
     catch (error) {
         return [];
     }
 }
 function saveHistoryMeta(items) {
-    const next = uniqueBy(items.filter((item) => item && item.id), (item) => item.id)
+    const next = filterHistoryMetaForLogin(uniqueBy(items.filter((item) => item && item.id), (item) => item.id))
         .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))
         .slice(0, 80);
     localStorage.setItem(HISTORY_META_KEY, JSON.stringify(next));
@@ -912,75 +965,172 @@ function readBackupFileText(file) {
         reader.readAsText(file);
     });
 }
-async function backupVisitReportData() {
-    const localData = {};
-    for (let index = 0; index < localStorage.length; index += 1) {
-        const key = localStorage.key(index) || '';
-        if (key.indexOf('rbv_') === 0)
-            localData[key] = localStorage.getItem(key);
-    }
-    const visits = await getAllVisitRecordsForBackup();
-    const payload = {
+function getBackupOwnerLogin() {
+    const login = readBestieLogin();
+    if (!login.nik || !login.name)
+        throw new Error('Login NIK dulu sebelum backup atau restore data.');
+    return login;
+}
+function visitBelongsToBestieLogin(visit, login = readBestieLogin()) {
+    if (!login?.name)
+        return true;
+    const nameKey = normalize(login.name);
+    const nikKey = normalizeNik(login.nik);
+    const visitNik = normalizeNik(visit?.bestieNik || visit?.nik || visit?.regionalBestieNik || visit?.loginNik);
+    if (nikKey && visitNik && visitNik === nikKey)
+        return true;
+    return normalize(visit?.nama || visit?.bestieName || visit?.regionalBestie || visit?.detail?.bestieName) === nameKey;
+}
+function filterVisitsForLogin(visits, login = readBestieLogin()) {
+    const safeVisits = Array.isArray(visits) ? visits.filter((item) => item && item.id) : [];
+    if (!login?.name)
+        return safeVisits;
+    return safeVisits.filter((visit) => visitBelongsToBestieLogin(visit, login));
+}
+function filterHistoryMetaForLogin(items, login = readBestieLogin()) {
+    const safeItems = Array.isArray(items) ? items.filter((item) => item && item.id) : [];
+    if (!login?.name)
+        return safeItems;
+    const nameKey = normalize(login.name);
+    const nikKey = normalizeNik(login.nik);
+    return safeItems.filter((item) => {
+        const itemNik = normalizeNik(item.bestieNik || item.nik || item.regionalBestieNik || item.loginNik);
+        if (nikKey && itemNik && itemNik === nikKey)
+            return true;
+        return normalize(item.bestieName || item.nama || item.regionalBestie) === nameKey;
+    });
+}
+function buildHistoryBackupPayload(login, visits) {
+    const filteredVisits = filterVisitsForLogin(visits, login).map((visit) => ({
+        ...visit,
+        bestieNik: login.nik,
+        nama: cleanText(visit.nama, login.name)
+    }));
+    const meta = filteredVisits.map((visit) => ({ ...historyMetaFromVisit(visit), bestieNik: login.nik }));
+    return {
         app: 'regional-bestie-visit-report',
-        type: 'device-transfer-backup',
-        version: 1,
+        type: 'nik-history-transfer-backup',
+        version: 3,
+        ownerNik: login.nik,
+        ownerName: login.name,
         exportedAt: new Date().toISOString(),
-        localStorage: localData,
-        visits
+        build: APP_BUILD_VERSION,
+        localStorage: {
+            [BESTIE_LOGIN_KEY]: JSON.stringify(login),
+            [HISTORY_META_KEY]: JSON.stringify(meta)
+        },
+        visits: filteredVisits
     };
+}
+function validateBackupOwner(payload, login = getBackupOwnerLogin()) {
+    const ownerNik = normalizeNik(payload?.ownerNik || payload?.nik || payload?.loginNik);
+    const ownerName = cleanText(payload?.ownerName || payload?.bestieName || payload?.nama);
+    if (ownerNik && ownerNik !== login.nik)
+        throw new Error(`Backup ini milik NIK ${ownerNik}. Login saat ini ${login.nik}. Restore dibatalkan.`);
+    if (!ownerNik && ownerName && normalize(ownerName) !== normalize(login.name))
+        throw new Error(`Backup ini milik ${ownerName}. Login saat ini ${login.name}. Restore dibatalkan.`);
+    return true;
+}
+async function backupVisitReportData() {
+    const login = getBackupOwnerLogin();
+    const allVisits = await getAllVisitRecordsForBackup();
+    const payload = buildHistoryBackupPayload(login, allVisits);
+    if (!payload.visits.length) {
+        const ok = confirmAction(`Belum ada history milik ${login.name}. Tetap buat file backup kosong?`);
+        if (!ok)
+            return payload;
+    }
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    const safeName = login.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'Bestie';
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-    downloadBlob(blob, `bestie-visit-backup-${stamp}.json`);
+    downloadBlob(blob, `bestie-history-${safeName}-${login.nik}-${stamp}.json`);
     return payload;
 }
 async function restoreVisitReportDataFromFile(file) {
+    const login = getBackupOwnerLogin();
     const raw = await readBackupFileText(file);
     const payload = JSON.parse(raw);
     if (!payload || payload.app !== 'regional-bestie-visit-report') {
         throw new Error('File backup tidak sesuai aplikasi ini.');
     }
-    const visits = Array.isArray(payload.visits) ? payload.visits.filter((item) => item && item.id) : [];
-    const currentVisits = await getAllVisitRecordsForBackup();
-    const ok = confirmAction(`Restore data backup ini? Data backup akan digabung dengan history di perangkat ini, bukan mengganti/menghapus data lama.
-
-History perangkat ini: ${currentVisits.length}
-Jumlah visit backup: ${visits.length}`);
+    validateBackupOwner(payload, login);
+    const visits = filterVisitsForLogin(payload.visits, login);
+    const currentVisits = filterVisitsForLogin(await getAllVisitRecordsForBackup(), login);
+    const ok = confirmAction(`Restore history untuk ${login.name} (${login.nik})?\n\nHistory device ini: ${currentVisits.length}\nJumlah visit backup valid: ${visits.length}\n\nData akan digabung dan hanya history NIK ini yang tampil.`);
     if (!ok)
         return false;
     const mergedVisits = uniqueBy([...visits, ...currentVisits].filter((item) => item && item.id), (item) => item.id)
-        .map((visit) => ({ ...visit, updatedAt: visit.updatedAt || Date.now() }));
+        .map((visit) => ({ ...visit, bestieNik: login.nik, nama: cleanText(visit.nama, login.name), updatedAt: visit.updatedAt || Date.now() }));
     for (const visit of mergedVisits) {
         await putVisitRecord(visit);
     }
-    if (payload.localStorage && typeof payload.localStorage === 'object') {
-        Object.entries(payload.localStorage).forEach(([key, value]) => {
-            if (key.indexOf('rbv_') !== 0)
-                return;
-            if ([HISTORY_META_KEY, ACTIVE_VISIT_KEY].includes(key))
-                return;
-            if (key === PRESENCE_LOCAL_KEY)
-                return;
-            localStorage.setItem(key, String(value ?? ''));
-        });
-    }
-    const backupMeta = (() => {
-        try {
-            const parsed = JSON.parse(String(payload.localStorage?.[HISTORY_META_KEY] || '[]'));
-            return Array.isArray(parsed) ? parsed : [];
-        }
-        catch (error) {
-            return [];
-        }
-    })();
-    const currentMeta = readHistoryMeta();
-    const visitMeta = mergedVisits.map(historyMetaFromVisit);
-    saveHistoryMeta([...backupMeta, ...currentMeta, ...visitMeta]);
-    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && (visits[0]?.id || currentVisits[0]?.id))
-        localStorage.setItem(ACTIVE_VISIT_KEY, visits[0]?.id || currentVisits[0]?.id);
-    alert('Restore data selesai dan history lama tetap aman. Aplikasi akan dimuat ulang.');
+    const visitMeta = mergedVisits.map((visit) => ({ ...historyMetaFromVisit(visit), bestieNik: login.nik }));
+    saveHistoryMeta(visitMeta);
+    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && mergedVisits[0]?.id)
+        localStorage.setItem(ACTIVE_VISIT_KEY, mergedVisits[0].id);
+    alert(`Restore selesai. ${mergedVisits.length} history milik ${login.name} siap digunakan.`);
     window.location.reload();
     return true;
 }
+function getDeviceBackupKeyForLogin(login = getBackupOwnerLogin()) {
+    return `${DEVICE_BACKUP_KEY}:${login.nik}`;
+}
+async function buildDeviceTransferBackupPayload() {
+    const login = getBackupOwnerLogin();
+    const visits = filterVisitsForLogin(await getAllVisitRecordsForBackup(), login);
+    return {
+        ...buildHistoryBackupPayload(login, visits),
+        type: 'convex-nik-history-transfer-backup',
+        version: 4,
+        backupKey: getDeviceBackupKeyForLogin(login),
+        deviceId: getLinkedDeviceId()
+    };
+}
+async function restoreVisitReportDataFromPayload(payload, options = {}) {
+    const login = getBackupOwnerLogin();
+    if (!payload || payload.app !== 'regional-bestie-visit-report') {
+        throw new Error('Payload backup tidak sesuai aplikasi ini.');
+    }
+    validateBackupOwner(payload, login);
+    const visits = filterVisitsForLogin(payload.visits, login);
+    const currentVisits = filterVisitsForLogin(await getAllVisitRecordsForBackup(), login);
+    const shouldAsk = options.confirm !== false;
+    if (shouldAsk) {
+        const ok = confirmAction(`Tarik history cepat dari Convex untuk ${login.name}?\n\nHistory device ini: ${currentVisits.length}\nJumlah visit backup valid: ${visits.length}\n\nHanya data NIK ${login.nik} yang akan tampil.`);
+        if (!ok)
+            return false;
+    }
+    const mergedVisits = uniqueBy([...visits, ...currentVisits].filter((item) => item && item.id), (item) => item.id)
+        .map((visit) => ({ ...visit, bestieNik: login.nik, nama: cleanText(visit.nama, login.name), updatedAt: visit.updatedAt || Date.now() }));
+    for (const visit of mergedVisits) {
+        await putVisitRecord(visit);
+    }
+    const visitMeta = mergedVisits.map((visit) => ({ ...historyMetaFromVisit(visit), bestieNik: login.nik }));
+    saveHistoryMeta(visitMeta);
+    localStorage.setItem(DEVICE_BACKUP_LAST_PULL_KEY, new Date().toISOString());
+    return { visits: mergedVisits.length, ownerNik: login.nik, ownerName: login.name };
+}
+async function pushDeviceBackupToConvex() {
+    if (!convexEnabled())
+        throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
+    const config = getConvexConfig();
+    const payload = await buildDeviceTransferBackupPayload();
+    const mutationName = config.deviceBackupSetMutation || 'deviceBackups:setLatest';
+    await runConvexMutation(mutationName, { backupKey: payload.backupKey || getDeviceBackupKeyForLogin(), deviceId: payload.deviceId, payload });
+    return payload;
+}
+async function pullDeviceBackupFromConvex() {
+    if (!convexEnabled())
+        throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
+    const config = getConvexConfig();
+    const queryName = config.deviceBackupGetQuery || 'deviceBackups:getLatest';
+    const result = await runConvexQuery(queryName, { backupKey: getDeviceBackupKeyForLogin() });
+    const payload = result?.payload || result;
+    if (!payload)
+        throw new Error('Belum ada backup cepat di Convex. Jalankan Upload Device Backup dari device lama dulu.');
+    return restoreVisitReportDataFromPayload(payload, { confirm: true });
+}
+
 function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -2326,7 +2476,45 @@ function HomeUpdateNotice({ config }) {
     const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
     const messages = notice.messages || [];
     const [index, setIndex] = useState(0);
+    const dragRef = useRef(null);
     const messageSignature = messages.join('|');
+    const activeIndex = messages.length ? ((index % messages.length) + messages.length) % messages.length : 0;
+    function goToNotice(nextIndex) {
+        if (!messages.length)
+            return;
+        setIndex(((nextIndex % messages.length) + messages.length) % messages.length);
+    }
+    function nextNotice() {
+        goToNotice(activeIndex + 1);
+    }
+    function prevNotice() {
+        goToNotice(activeIndex - 1);
+    }
+    function readClientX(event) {
+        if (event?.touches?.[0])
+            return event.touches[0].clientX;
+        if (event?.changedTouches?.[0])
+            return event.changedTouches[0].clientX;
+        return event?.clientX || 0;
+    }
+    function startManualSlide(event) {
+        if (messages.length <= 1)
+            return;
+        dragRef.current = { x: readClientX(event), t: Date.now() };
+    }
+    function finishManualSlide(event) {
+        const start = dragRef.current;
+        dragRef.current = null;
+        if (!start || messages.length <= 1)
+            return;
+        const delta = readClientX(event) - start.x;
+        if (Math.abs(delta) < 34)
+            return;
+        if (delta < 0)
+            nextNotice();
+        else
+            prevNotice();
+    }
     useEffect(() => { setIndex(0); }, [messageSignature, notice.enabled]);
     useEffect(() => {
         if (!notice.enabled || messages.length <= 1)
@@ -2336,15 +2524,16 @@ function HomeUpdateNotice({ config }) {
     }, [notice.enabled, messages.length, notice.intervalSeconds, messageSignature]);
     if (!notice.enabled || !messages.length)
         return null;
-    const activeMessage = messages[index % messages.length] || messages[0];
+    const activeMessage = messages[activeIndex] || messages[0];
     return (React.createElement("section", { className: "home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm", style: { overflow: 'hidden' } },
-        React.createElement("style", null, `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
+        React.createElement("style", null, `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}} .home-info-slide-zone{touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}.home-info-slide-zone:active{cursor:grabbing}.home-info-dot{width:6px;height:6px;border-radius:999px;border:0;background:rgba(148,163,184,.55);padding:0;transition:width .22s ease,background .22s ease,transform .22s ease}.home-info-dot.active{width:18px;background:#0f766e;animation:rbvNoticeDot 1.7s ease-in-out infinite}.home-info-dot:focus-visible{outline:2px solid rgba(15,118,110,.35);outline-offset:3px}`),
         React.createElement("div", { className: "mx-auto flex min-h-[112px] max-w-2xl flex-col items-center justify-center text-center" },
             React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary" }, "Informasi Update"),
             React.createElement("h2", { className: "mt-1 max-w-full truncate text-base font-black text-slate-950" }, notice.title),
-            React.createElement("div", { className: "mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2" },
-                React.createElement("p", { key: `${index}-${activeMessage}`, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both', willChange: 'opacity, transform' } }, activeMessage)),
-            messages.length > 1 ? React.createElement("div", { className: "mt-2 flex items-center justify-center gap-1.5", "aria-label": `${index + 1} dari ${messages.length} info` }, messages.map((_, dotIndex) => React.createElement("span", { key: dotIndex, className: "h-1.5 w-1.5 rounded-full", style: { background: dotIndex === index ? '#0f766e' : 'rgba(148,163,184,.5)', animation: dotIndex === index ? 'rbvNoticeDot 1.6s ease-in-out infinite' : 'none' } }))) : null)));
+            React.createElement("div", { className: "home-info-slide-zone mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2", onPointerDown: startManualSlide, onPointerUp: finishManualSlide, onPointerCancel: () => { dragRef.current = null; }, onTouchStart: startManualSlide, onTouchEnd: finishManualSlide, role: "group", "aria-roledescription": "carousel", "aria-label": "Slide informasi update" },
+                React.createElement("p", { key: `${activeIndex}-${activeMessage}`, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both', willChange: 'opacity, transform' } }, activeMessage)),
+            messages.length > 1 ? React.createElement("div", { className: "mt-2 flex items-center justify-center gap-1.5", "aria-label": `${activeIndex + 1} dari ${messages.length} info` }, messages.map((_, dotIndex) => React.createElement("button", { key: dotIndex, type: "button", className: cx('home-info-dot', dotIndex === activeIndex && 'active'), onClick: () => goToNotice(dotIndex), "aria-label": `Buka info ${dotIndex + 1}`, "aria-current": dotIndex === activeIndex ? 'true' : 'false' }))) : null,
+            messages.length > 1 ? React.createElement("p", { className: "mt-1 text-[10px] font-bold text-slate-400 md:hidden" }, "Geser kiri/kanan untuk info lainnya") : null)));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
@@ -2427,7 +2616,40 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         catch (error) {
             console.warn('Restore data gagal:', error);
-            alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
+            alert(error?.message || 'Restore data gagal. Pastikan file backup benar dan NIK login sesuai.');
+        }
+        finally {
+            setRestoreBusy(false);
+        }
+    }
+    async function handlePushHomeBackup() {
+        if (backupBusy)
+            return;
+        try {
+            setBackupBusy(true);
+            const payload = await pushDeviceBackupToConvex();
+            alert(`Backup cepat terkirim untuk ${payload.ownerName || 'Bestie'} (${payload.ownerNik || '-'}). History: ${(payload.visits || []).length}.`);
+        }
+        catch (error) {
+            console.warn('Upload backup cepat gagal:', error);
+            alert(error?.message || 'Upload backup cepat gagal.');
+        }
+        finally {
+            setBackupBusy(false);
+        }
+    }
+    async function handlePullHomeBackup() {
+        if (restoreBusy)
+            return;
+        try {
+            setRestoreBusy(true);
+            const result = await pullDeviceBackupFromConvex();
+            alert(`Tarik backup selesai. History valid: ${result?.visits || 0}.`);
+            window.location.reload();
+        }
+        catch (error) {
+            console.warn('Tarik backup cepat gagal:', error);
+            alert(error?.message || 'Tarik backup cepat gagal. Pastikan sudah login NIK yang sama.');
         }
         finally {
             setRestoreBusy(false);
@@ -2450,13 +2672,19 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
             React.createElement("div", { className: "mt-3", "data-build": "revamp92-hide-clear-topnav-redownload" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
+                React.createElement("div", { className: "grid grid-cols-3 gap-2 sm:grid-cols-6" },
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Backup")),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Backup History")),
                     React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Restore")),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Restore History")),
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
+                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Upload Sync")),
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
+                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Tarik Sync")),
                     React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", style: { animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "block max-w-full truncate" }, "Install")),
@@ -2706,11 +2934,24 @@ ${bestieName}`;
     return text;
 }
 function getVisitStoreEmail(visit) {
-    return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore || visit?.manualStoreDetail?.emailStore);
+    const detail = getStoreWebDetail(visit?.store || visit?.storeName || visit?.detail?.siteDescr || visit?.manualStoreDetail?.siteDescr);
+    return cleanText(
+        visit?.emailStore ||
+        visit?.storeEmail ||
+        visit?.detail?.emailStore ||
+        visit?.storeDetail?.emailStore ||
+        visit?.manualStoreDetail?.emailStore ||
+        detail?.emailStore
+    );
 }
 
 const CUSTOM_EMAIL_DIRECTORY_KEY = 'visitreport_custom_email_directory_v1';
 const SCHEDULED_REPORT_EMAIL_QUEUE_KEY = 'visitreport_scheduled_email_queue_v1';
+const DEVICE_BACKUP_KEY = 'regional-bestie-visit-report-v1';
+const DEVICE_BACKUP_LAST_PULL_KEY = 'rbv_device_backup_last_pull_v207';
+let RBV_EMAIL_SCHEDULER_STARTED = false;
+let RBV_EMAIL_SCHEDULER_TIMER = null;
+let RBV_EMAIL_SCHEDULER_TIMEOUTS = {};
 const LOCKED_CC_EMAILS = [
     'muhammad.aufar@familymartindonesia.com',
     'mekarsari.pramawati@familymartindonesia.com',
@@ -2770,11 +3011,32 @@ function readScheduledReportEmailQueue() {
     }
 }
 function saveScheduledReportEmailQueue(items) {
+    const safeItems = Array.isArray(items) ? items : [];
     try {
-        localStorage.setItem(SCHEDULED_REPORT_EMAIL_QUEUE_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+        localStorage.setItem(SCHEDULED_REPORT_EMAIL_QUEUE_KEY, JSON.stringify(safeItems));
+        return true;
     }
-    catch (_) {
-        // Attachment bisa besar; timer aktif tetap menjalankan schedule selama app tidak ditutup.
+    catch (error) {
+        console.warn('Queue schedule email gagal disimpan penuh:', error);
+        try {
+            const compactItems = safeItems.map((item) => ({
+                ...item,
+                payload: {
+                    ...(item.payload || {}),
+                    attachments: [],
+                    body: addEmailNote(item.payload?.body || '', ['Attachment tidak disimpan di timer karena storage device tidak cukup. Jika email terkirim dari timer, attachment perlu dikirim manual dari Gmail.'])
+                },
+                storageWarning: 'Attachment dilepas karena storage device tidak cukup.'
+            }));
+            localStorage.setItem(SCHEDULED_REPORT_EMAIL_QUEUE_KEY, JSON.stringify(compactItems));
+            window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'history', title: 'Timer disimpan mode ringan', message: 'Storage device tidak cukup untuk menyimpan attachment. Timer tetap tersimpan, tapi attachment dilepas dari email schedule.' } }));
+            return true;
+        }
+        catch (secondError) {
+            console.warn('Queue schedule email gagal disimpan:', secondError);
+            window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'close', title: 'Timer gagal disimpan', message: 'Storage device penuh. Kurangi attachment atau kirim email tanpa timer.' } }));
+            return false;
+        }
     }
 }
 async function postReportEmailPayload(endpoint, payload) {
@@ -2788,25 +3050,81 @@ async function postReportEmailPayload(endpoint, payload) {
         throw new Error(result.error || result.message || 'Gagal mengirim email.');
     return result;
 }
-async function processScheduledReportEmailQueue(endpoint) {
+async function processScheduledReportEmailQueue(endpoint, options = {}) {
     const queue = readScheduledReportEmailQueue();
-    if (!queue.length)
-        return;
     const now = Date.now();
     const remaining = [];
+    let sent = 0;
+    let failed = 0;
+    let skipped = 0;
     for (const job of queue) {
-        if (!job || Number(job.sendAt || 0) > now) {
+        if (!job) {
+            skipped += 1;
+            continue;
+        }
+        const sendAt = Number(job.sendAt || 0);
+        const retryAfter = Number(job.retryAfter || 0);
+        if (sendAt > now || retryAfter > now) {
             remaining.push(job);
             continue;
         }
         try {
             await postReportEmailPayload(job.endpoint || endpoint, { ...(job.payload || {}), mode: 'send' });
+            sent += 1;
         }
         catch (error) {
+            failed += 1;
             remaining.push({ ...job, lastError: error?.message || 'Gagal mengirim schedule email.', retryAfter: Date.now() + 5 * 60 * 1000 });
         }
     }
     saveScheduledReportEmailQueue(remaining);
+    window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: remaining }));
+    if ((sent || failed) && !options.quiet) {
+        window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: {
+            icon: sent ? 'send' : 'close',
+            title: sent ? 'Schedule email diproses' : 'Schedule email belum terkirim',
+            message: sent ? `${sent} email schedule berhasil dikirim${failed ? `, ${failed} gagal dan akan dicoba ulang.` : '.'}` : `${failed} email schedule gagal dan akan dicoba ulang saat app aktif/online.`
+        } }));
+    }
+    return { sent, failed, skipped, remaining: remaining.length };
+}
+function armScheduledReportEmailJob(job, endpoint) {
+    if (!job || !job.id)
+        return;
+    if (RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id]) {
+        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id]);
+        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id];
+    }
+    const delay = Math.max(0, Math.min(Number(job.sendAt || 0) - Date.now(), 2147483647));
+    RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id] = window.setTimeout(() => {
+        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id];
+        processScheduledReportEmailQueue(endpoint || job.endpoint || getEmailReportConfig().endpoint);
+    }, delay);
+}
+function armAllScheduledReportEmailJobs(endpoint) {
+    const queue = readScheduledReportEmailQueue();
+    Object.keys(RBV_EMAIL_SCHEDULER_TIMEOUTS).forEach((key) => {
+        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[key]);
+        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[key];
+    });
+    queue.forEach((job) => armScheduledReportEmailJob(job, endpoint));
+}
+function startPersistentEmailScheduler(endpoint) {
+    if (RBV_EMAIL_SCHEDULER_STARTED)
+        return;
+    RBV_EMAIL_SCHEDULER_STARTED = true;
+    const run = (quiet = false) => {
+        const config = getEmailReportConfig();
+        const effectiveEndpoint = endpoint || config.endpoint;
+        processScheduledReportEmailQueue(effectiveEndpoint, { quiet });
+        armAllScheduledReportEmailJobs(effectiveEndpoint);
+    };
+    run(true);
+    RBV_EMAIL_SCHEDULER_TIMER = window.setInterval(() => run(true), 30000);
+    window.addEventListener('online', () => run(false));
+    window.addEventListener('focus', () => run(false));
+    window.addEventListener('pageshow', () => run(false));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) run(false); });
 }
 function scheduleReportEmailJob(endpoint, payload, delayMs) {
     const job = {
@@ -2814,33 +3132,33 @@ function scheduleReportEmailJob(endpoint, payload, delayMs) {
         sendAt: Date.now() + delayMs,
         endpoint,
         payload: { ...payload, mode: 'send' },
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        persistent: true
     };
-    saveScheduledReportEmailQueue([...readScheduledReportEmailQueue(), job]);
-    window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: readScheduledReportEmailQueue() }));
-    window.setTimeout(() => {
-        const stillScheduled = readScheduledReportEmailQueue().some((item) => item.id === job.id);
-        if (!stillScheduled)
-            return;
-        postReportEmailPayload(endpoint, job.payload).then(() => {
-            const next = readScheduledReportEmailQueue().filter((item) => item.id !== job.id);
-            saveScheduledReportEmailQueue(next);
-            window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: next }));
-        }).catch((error) => {
-            const next = readScheduledReportEmailQueue().map((item) => item.id === job.id ? { ...item, lastError: error?.message || 'Gagal mengirim schedule email.' } : item);
-            saveScheduledReportEmailQueue(next);
-            window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: next }));
-        });
-    }, delayMs);
+    const saved = saveScheduledReportEmailQueue([...readScheduledReportEmailQueue(), job]);
+    if (!saved)
+        throw new Error('Timer email gagal disimpan. Storage device penuh.');
+    const queue = readScheduledReportEmailQueue();
+    window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: queue }));
+    armScheduledReportEmailJob(job, endpoint);
+    startPersistentEmailScheduler(endpoint);
     return job;
 }
 function cancelScheduledReportEmailJob(jobId) {
+    if (RBV_EMAIL_SCHEDULER_TIMEOUTS[jobId]) {
+        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[jobId]);
+        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[jobId];
+    }
     const next = readScheduledReportEmailQueue().filter((item) => item.id !== jobId);
     saveScheduledReportEmailQueue(next);
     window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: next }));
     return next;
 }
 function cancelAllScheduledReportEmailJobs() {
+    Object.keys(RBV_EMAIL_SCHEDULER_TIMEOUTS).forEach((key) => {
+        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[key]);
+        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[key];
+    });
     saveScheduledReportEmailQueue([]);
     window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: [] }));
     return [];
@@ -2860,8 +3178,11 @@ function buildEmailContact(kind, email, helper, extra = {}) {
     };
 }
 function getVisitStoreDetailForEmail(visit) {
+    const webDetail = getStoreWebDetail(visit?.store || visit?.storeName || visit?.detail?.siteDescr || visit?.manualStoreDetail?.siteDescr);
+    const masterDetail = findMasterStore(visit?.storeCode || visit?.siteCode || visit?.detail?.siteCode4 || visit?.detail?.siteCode || visit?.store) || {};
     return {
-        ...(findMasterStore(visit?.storeCode || visit?.siteCode || visit?.detail?.siteCode4 || visit?.detail?.siteCode || visit?.store) || {}),
+        ...webDetail,
+        ...masterDetail,
         ...(visit?.detail || {}),
         ...(visit?.storeDetail || {}),
         ...(visit?.manualStoreDetail || {})
@@ -3290,7 +3611,8 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "mt-3 flex flex-wrap items-center justify-center gap-2" },
                 React.createElement("span", { className: "rounded-2xl bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500" }, `CC ${ccCount}`),
                 React.createElement("span", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "TO auto store")),
-            statusDisplay));
+            statusDisplay,
+            React.createElement("p", { className: "mt-3 rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold leading-5 text-amber-800 ring-1 ring-amber-100" }, "Timer email disimpan permanen di device. Jika app ditutup total, browser tidak menjalankan JavaScript; email yang sudah jatuh tempo akan diproses otomatis saat app dibuka/aktif lagi.")));
     const footerButtonClass = "rbv-email-action-btn-v98 rbv-email-draft-btn-v98";
     const primaryFooterClass = "rbv-email-action-btn-v98 rbv-email-send-btn-v98";
     const scheduleFooterButtonClass = "rbv-email-schedule-chip-v98";
@@ -3346,178 +3668,30 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
-
-
-    const pagesRef = useRef(null);
-    const scrollRef = useRef(null);
-    const [fallback, setFallback] = useState(false);
-    const [renderStatus, setRenderStatus] = useState('');
-    const [zoom, setZoom] = useState(1);
-    const [renderZoom, setRenderZoom] = useState(1);
-    const zoomRef = useRef(1);
-    const pinchRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
-    const zoomFrameRef = useRef(0);
-    const renderZoomTimerRef = useRef(null);
-    const renderSeqRef = useRef(0);
-    const lastWidthRef = useRef(0);
-    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
-    function touchDistance(touches) {
-        if (!touches || touches.length < 2)
-            return 0;
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
+    const [open, setOpen] = useState(false);
+    if (!blob || !pdfUrl) {
+        return React.createElement("div", { className: "pdf-lite-empty" }, status || 'Menyiapkan preview PDF...');
     }
-    function handlePreviewTouchStart(event) {
-        if (!event.touches || event.touches.length < 2)
-            return;
-        const distance = touchDistance(event.touches);
-        if (!distance)
-            return;
-        pinchRef.current = { active: true, startDistance: distance, startZoom: zoomRef.current || 1 };
-    }
-    function applyLivePreviewZoom(nextZoom) {
-        zoomRef.current = nextZoom;
-        if (zoomFrameRef.current)
-            return;
-        zoomFrameRef.current = window.requestAnimationFrame(() => {
-            zoomFrameRef.current = 0;
-            setZoom(zoomRef.current || 1);
-        });
-    }
-    function schedulePreviewRenderZoom() {
-        window.clearTimeout(renderZoomTimerRef.current);
-        renderZoomTimerRef.current = window.setTimeout(() => {
-            const nextRenderZoom = zoomRef.current || 1;
-            setRenderZoom((current) => Math.abs(current - nextRenderZoom) < 0.04 ? current : nextRenderZoom);
-        }, 180);
-    }
-    function handlePreviewTouchMove(event) {
-        if (!pinchRef.current.active || !event.touches || event.touches.length < 2)
-            return;
-        event.preventDefault();
-        event.stopPropagation();
-        const distance = touchDistance(event.touches);
-        const ratio = distance / Math.max(1, pinchRef.current.startDistance);
-        const nextZoom = clampNumber(pinchRef.current.startZoom * ratio, 0.75, 2.6, 1);
-        applyLivePreviewZoom(nextZoom);
-    }
-    function finishPreviewPinch() {
-        if (!pinchRef.current.active)
-            return;
-        pinchRef.current.active = false;
-        schedulePreviewRenderZoom();
-    }
-    useEffect(() => {
-        let cancelled = false;
-        let resizeTimer = null;
-        let observer = null;
-        async function renderPdf(force = false) {
-            const target = pagesRef.current;
-            const scroller = scrollRef.current;
-            if (!target || !blob)
-                return;
-            const measuredWidth = Math.max(280, Math.floor((scroller?.clientWidth || target.clientWidth || 360) - 16));
-            if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 18 && target.childElementCount)
-                return;
-            lastWidthRef.current = measuredWidth;
-            const seq = renderSeqRef.current + 1;
-            renderSeqRef.current = seq;
-            try { await ensurePdfPreviewReady(); } catch (error) { console.warn('PDF preview lazy-load gagal:', error); }
-            const pdfjsLib = window.pdfjsLib;
-            if (!pdfjsLib?.getDocument) {
-                setFallback(true);
-                return;
-            }
-            try {
-                setFallback(false);
-                setRenderStatus('Memuat preview...');
-                if (pdfjsLib.GlobalWorkerOptions) {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                }
-                const scrollTop = scroller?.scrollTop || 0;
-                const data = await blob.arrayBuffer();
-                if (cancelled || renderSeqRef.current !== seq)
-                    return;
-                const pdf = await pdfjsLib.getDocument({ data, disableAutoFetch: true, disableStream: true }).promise;
-                if (cancelled || renderSeqRef.current !== seq)
-                    return;
-                const maxWidth = Math.max(260, Math.min(measuredWidth * renderZoom, 1680));
-                const fragment = document.createDocumentFragment();
-                for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-                    if (cancelled || renderSeqRef.current !== seq)
-                        return;
-                    setRenderStatus(`Memuat preview halaman ${pageNumber}/${pdf.numPages}...`);
-                    const page = await pdf.getPage(pageNumber);
-                    const baseViewport = page.getViewport({ scale: 1 });
-                    const scale = maxWidth / baseViewport.width;
-                    const viewport = page.getViewport({ scale });
-                    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
-                    const pageWrap = document.createElement('div');
-                    pageWrap.className = 'pdf-preview-page-wrap';
-                    const canvas = document.createElement('canvas');
-                    canvas.className = 'pdf-preview-page-canvas';
-                    canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
-                    canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
-                    canvas.style.width = Math.floor(viewport.width) + 'px';
-                    canvas.style.height = Math.floor(viewport.height) + 'px';
-                    pageWrap.appendChild(canvas);
-                    fragment.appendChild(pageWrap);
-                    const context = canvas.getContext('2d', { alpha: false });
-                    await page.render({ canvasContext: context, viewport, transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null }).promise;
-                }
-                if (cancelled || renderSeqRef.current !== seq)
-                    return;
-                target.replaceChildren(fragment);
-                if (scroller)
-                    scroller.scrollTop = Math.min(scrollTop, Math.max(0, scroller.scrollHeight - scroller.clientHeight));
-                setRenderStatus('');
-            }
-            catch (error) {
-                console.warn('PDF canvas preview gagal:', error);
-                if (!cancelled) {
-                    setRenderStatus('');
-                    setFallback(true);
-                }
-            }
-        }
-        renderPdf(true);
-        function scheduleRender() {
-            if (!blob)
-                return;
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => renderPdf(false), 420);
-        }
-        // Hindari ResizeObserver pada container preview karena perubahan canvas dapat memicu render ulang berulang (blinking/stuck scroll).
-        window.addEventListener('resize', scheduleRender, { passive: true });
-        window.addEventListener('orientationchange', scheduleRender);
-        return () => {
-            cancelled = true;
-            clearTimeout(resizeTimer);
-            window.clearTimeout(renderZoomTimerRef.current);
-            if (zoomFrameRef.current)
-                window.cancelAnimationFrame(zoomFrameRef.current);
-            if (observer)
-                observer.disconnect();
-            window.removeEventListener('resize', scheduleRender);
-            window.removeEventListener('orientationchange', scheduleRender);
-            renderSeqRef.current += 1;
-        };
-    }, [blob, renderZoom]);
-    const liveScale = renderZoom ? zoom / renderZoom : 1;
-    const zoomLabel = Math.round((zoom || 1) * 100);
-    if (!blob)
-        return React.createElement("div", { className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600" }, status);
-    if (fallback && pdfUrl)
-        return React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH', title: "Preview Regional Bestie PDF" });
-    return (React.createElement("div", { ref: scrollRef, className: "pdf-canvas-scroll", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: finishPreviewPinch, onTouchCancel: finishPreviewPinch, style: { touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } },
-        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", style: { transform: `translateZ(0) scale(${liveScale})`, transformOrigin: 'top center', transition: pinchRef.current.active ? 'none' : 'transform 180ms cubic-bezier(.22,1,.36,1)', willChange: 'transform' } }),
-        React.createElement("div", { "aria-hidden": "true", style: { position: 'sticky', bottom: 10, left: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' } },
-            React.createElement("span", { style: { borderRadius: 999, background: 'rgba(15,23,42,.72)', color: '#fff', padding: '5px 10px', fontSize: 11, fontWeight: 900, boxShadow: '0 10px 24px rgba(15,23,42,.18)' } },
-                "Zoom ",
-                zoomLabel,
-                "%")),
-        renderStatus ? React.createElement("div", { className: "pdf-render-status" }, renderStatus) : null));
+    return (React.createElement("div", { className: "pdf-lite-preview" },
+        React.createElement("div", { className: "pdf-lite-preview-card" },
+            React.createElement("div", { className: "pdf-lite-icon", "aria-hidden": "true" },
+                React.createElement(Icon, { name: "pdf", className: "h-8 w-8" })),
+            React.createElement("h3", null, "Preview ringan siap"),
+            React.createElement("p", null, "Mode preview ringan tidak memakai canvas/zoom berat, jadi lebih stabil di HP RAM kecil. Gunakan tombol buka preview jika ingin melihat file."),
+            React.createElement("div", { className: "pdf-lite-actions" },
+                React.createElement("button", { type: "button", className: "btn-secondary", onClick: () => setOpen(true) },
+                    React.createElement(Icon, { name: "eye", className: "h-4 w-4" }),
+                    " Buka Preview"),
+                React.createElement("a", { className: "btn-secondary", href: pdfUrl, target: "_blank", rel: "noreferrer" },
+                    React.createElement(Icon, { name: "right", className: "h-4 w-4" }),
+                    " Tab Baru"))),
+        open ? React.createElement("div", { className: "pdf-lite-modal", role: "dialog", "aria-modal": "true" },
+            React.createElement("div", { className: "pdf-lite-modal-panel" },
+                React.createElement("div", { className: "pdf-lite-modal-header" },
+                    React.createElement("strong", null, "Preview PDF"),
+                    React.createElement("button", { type: "button", onClick: () => setOpen(false), "aria-label": "Tutup preview" },
+                        React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
+                React.createElement("iframe", { className: "pdf-lite-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF" }))) : null));
 }
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
@@ -3564,9 +3738,8 @@ function PreviewPage({ visit, onBack }) {
     }, [visit, emailOpen]);
     useEffect(() => {
         const config = getEmailReportConfig();
-        const timer = window.setInterval(() => processScheduledReportEmailQueue(config.endpoint), 60000);
-        processScheduledReportEmailQueue(config.endpoint);
-        return () => window.clearInterval(timer);
+        startPersistentEmailScheduler(config.endpoint);
+        processScheduledReportEmailQueue(config.endpoint, { quiet: true });
     }, []);
     async function handleDownloadPdf() {
         if (!visit || busy || downloadBusy)
@@ -3649,6 +3822,7 @@ function PreviewPage({ visit, onBack }) {
             }
             if (emailForm.attachExcel) {
                 setEmailStatus('Menyiapkan Excel CA Assignment...');
+                await ensureCaExportReady();
                 if (!window.__caAssignmentExport?.buildWorkbook)
                     throw new Error('Mesin export Excel belum siap.');
                 const blob = await window.__caAssignmentExport.buildWorkbook(visit);
@@ -4189,7 +4363,7 @@ function remoteSaveSuccessText(label) {
 }
 function remoteSaveFailText(label) {
     const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
-    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Cek convex-config.js lalu buka ulang dengan ?v=201.`;
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Cek convex-config.js lalu buka ulang dengan ?v=206.`;
 }
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
@@ -5327,7 +5501,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
         }
         catch (error) {
-            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=201.`);
+            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=206.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5404,7 +5578,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setCloudflareDbStatus(`READY: Convex aktif. Settings terbaca ${settingCount} item, sample master toko ${masterCount} baris. URL: ${deployment}${siteUrl ? ` | Site: ${siteUrl}` : ''}`);
         }
         catch (error) {
-            setCloudflareDbStatus(`GAGAL: ${error?.message || 'Convex gagal dites.'} Cek convex-config.js, jalankan npx convex dev, lalu buka ulang ?v=201.`);
+            setCloudflareDbStatus(`GAGAL: ${error?.message || 'Convex gagal dites.'} Cek convex-config.js, jalankan npx convex dev, lalu buka ulang ?v=206.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5491,6 +5665,43 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         }
         catch (error) {
             setCloudflareDbStatus(`Silent Web Sync gagal: ${error?.message || 'unknown error.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function uploadDeviceBackupPanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Membuat backup cepat device ke Convex...');
+        try {
+            const payload = await pushDeviceBackupToConvex();
+            setCloudflareDbStatus(`Backup cepat tersimpan di Convex. Visit: ${payload.visits.length}, master toko: ${payload.masterStores.length}. Di device baru tekan Tarik Device Backup.`);
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Backup cepat gagal: ${error?.message || 'unknown error.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function pullDeviceBackupPanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Menarik backup cepat dari Convex...');
+        try {
+            const result = await pullDeviceBackupFromConvex();
+            if (!result) {
+                setCloudflareDbStatus('Tarik Device Backup dibatalkan.');
+                return;
+            }
+            setHistory(readHistoryMeta());
+            setCloudflareDbStatus(`Tarik Device Backup selesai. Visit lokal: ${result.visits}, master toko: ${result.masterStores}. Reload ringan disarankan setelah ini.`);
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Tarik Device Backup gagal: ${error?.message || 'unknown error.'}`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5895,7 +6106,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
-                                React.createElement(Badge, { tone: "dark" }, "Revamp 201"),
+                                React.createElement(Badge, { tone: "dark" }, "Revamp 206"),
                                 React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Primary"),
                                 React.createElement("span", { className: "rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-cyan-300/20" }, "No D1 Panel")),
                             React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Convex Control Center"),
@@ -5905,6 +6116,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testConvexPanel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test Convex'),
                             React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullConvexSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
                             React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToConvexPanel, disabled: cloudflareDbBusy }, "Sync History"),
+                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: uploadDeviceBackupPanel, disabled: cloudflareDbBusy }, "Upload Device Backup"),
+                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullDeviceBackupPanel, disabled: cloudflareDbBusy }, "Tarik Device Backup"),
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: broadcastSilentWebSync, disabled: cloudflareDbBusy }, "Silent Web Sync"))),
                     React.createElement("div", { className: "mt-4 grid gap-3 md:grid-cols-3" },
                         React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
@@ -6347,6 +6560,10 @@ function App() {
         try { sessionStorage.setItem(SESSION_SCREEN_KEY, screen); }
         catch (error) { }
     }, [screen]);
+    useEffect(() => {
+        const config = getEmailReportConfig();
+        startPersistentEmailScheduler(config.endpoint);
+    }, []);
     useEffect(() => {
         let cancelled = false;
         let unsubscribe = null;
