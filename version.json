@@ -1,6 +1,6 @@
 {
-  "version": "revamp103-cloudflare-save-sync-fix",
-  "build": "revamp103-cloudflare-save-sync-fix",
-  "updatedAt": "2026-05-05T22:15:00+07:00",
-  "note": "Frontend Cloudflare D1 status fix: gunakan endpoint Worker root, bypass service worker cross-origin, dan refresh status Test D1 dari response live."
+  "version": "revamp107-home-start-no-auto-refresh",
+  "build": "revamp107-home-start-no-auto-refresh",
+  "updatedAt": "2026-05-06T12:00:00+07:00",
+  "note": "Fix start point setelah welcome animation ke Home dan matikan auto refresh/auto redirect saat version/service-worker update. Cloudflare D1 Worker fix revamp106 tetap dibawa."
 }

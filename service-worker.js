@@ -1,10 +1,10 @@
-const APP_VERSION = 'revamp103-cloudflare-save-sync-fix';
+const APP_VERSION = 'revamp107-home-start-no-auto-refresh';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
   './src/app.js',
-  './src/pdf-generator.js',
+  './pdf-generator.js',
   './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
