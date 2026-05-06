@@ -90,4 +90,14 @@ export default defineSchema({
     .index("by_requestId", ["requestId"])
     .index("by_status", ["status"])
     .index("by_updatedAt", ["updatedAt"]),
+
+  deviceBackups: defineTable({
+    backupKey: v.string(),
+    deviceId: v.string(),
+    payload: v.any(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_backupKey", ["backupKey"])
+    .index("by_updatedAt", ["updatedAt"]),
 });
