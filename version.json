@@ -1,5 +1,5 @@
 {
-  "version": "revamp212-history-scroll-fix",
-  "build": "revamp212-history-scroll-fix",
+  "version": "revamp217-email-history-admin-stable",
+  "build": "revamp217-email-history-admin-stable",
   "message": "PDF preview fix: crew table no longer depends on jsPDF AutoTable, preventing doc.autoTable is not a function."
 }

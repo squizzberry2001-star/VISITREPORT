@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp212-history-scroll-fix';
+const APP_VERSION = 'revamp217-email-history-admin-stable';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
