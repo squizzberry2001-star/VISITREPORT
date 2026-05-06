@@ -2006,7 +2006,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         return null;
     return React.createElement('div', { className: 'fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm' }, React.createElement('div', { className: 'max-h-[92vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white shadow-2xl ring-1 ring-slate-200' }, React.createElement('div', { className: 'flex items-start justify-between gap-3 border-b border-slate-100 p-5' }, React.createElement('div', null, React.createElement('p', { className: 'text-[11px] font-extrabold uppercase tracking-[0.2em] text-audit-primary' }, 'Linked Device'), React.createElement('h2', { className: 'mt-1 text-xl font-black text-slate-950' }, 'Scan QR Desktop')), React.createElement('button', { type: 'button', className: 'grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600', onClick: () => { stopScanner(); onClose(); }, 'aria-label': 'Tutup linked device' }, React.createElement(Icon, { name: 'close', className: 'h-5 w-5' }))), React.createElement('div', { className: 'space-y-4 p-5' }, React.createElement('div', { className: 'rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100' }, React.createElement('div', { className: 'mx-auto grid h-[270px] w-[270px] max-w-full place-items-center rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200' }, qrDataUrl
         ? React.createElement('img', { src: qrDataUrl, alt: 'QR linked device', className: 'h-full w-full object-contain', onError: () => setQrDataUrl('') })
-        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Netlify untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
+        : React.createElement('div', { className: 'text-center text-sm font-bold text-slate-500' }, 'QR belum tersedia. Gunakan Salin Kode.')), React.createElement('p', { className: 'mt-3 text-center text-xs leading-5 text-slate-500' }, 'Buka menu Linked Device di desktop, lalu scan QR dari device yang ingin dihubungkan.')), React.createElement('div', { className: 'grid grid-cols-2 gap-2' }, React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-audit-primary px-4 text-sm font-extrabold text-white shadow-sm', onClick: startScanner }, React.createElement(Icon, { name: 'qr', className: 'h-5 w-5' }), React.createElement('span', null, 'Scan QR')), React.createElement('button', { type: 'button', className: 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-slate-700 ring-1 ring-slate-200', onClick: () => { navigator.clipboard?.writeText(qrText); setScanStatus('Kode linked device disalin.'); } }, React.createElement(Icon, { name: 'clipboard', className: 'h-5 w-5' }), React.createElement('span', null, 'Salin Kode'))), scanOpen ? React.createElement('div', { className: 'mx-auto max-w-sm overflow-hidden rounded-3xl bg-slate-950 p-2 shadow-inner' }, React.createElement('video', { ref: videoRef, className: 'mx-auto aspect-square w-full rounded-2xl object-cover', muted: true, playsInline: true })) : null, React.createElement('div', { className: 'rounded-2xl bg-sky-50 p-3 text-xs font-semibold leading-5 text-sky-800 ring-1 ring-sky-200' }, 'Linked device memakai identitas perangkat dan siap disambungkan ke Cloudflare D1 untuk sync database.'), scanStatus ? React.createElement('p', { className: 'rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-200' }, scanStatus) : null, React.createElement('p', { className: 'text-center text-[11px] font-bold text-slate-400' }, 'History lokal saat ini: ', String(historyCount)))));
 }
 function HomeUpdateNotice({ config }) {
     const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
@@ -3763,10 +3763,37 @@ async function fetchAppConfigsFromCloudflare() {
         return null;
     }
 }
+let LAST_REMOTE_SYNC_ERROR = '';
+function rememberRemoteSyncError(error, label) {
+    LAST_REMOTE_SYNC_ERROR = error?.message || error?.error || `${label || 'Remote sync'} gagal diproses.`;
+    return LAST_REMOTE_SYNC_ERROR;
+}
+function clearRemoteSyncError() {
+    LAST_REMOTE_SYNC_ERROR = '';
+}
+function remoteSyncLabel() {
+    if (cloudflareEnabled())
+        return 'Cloudflare D1';
+    if (netlifyEnabled())
+        return 'Netlify';
+    if (supabaseEnabled())
+        return 'Supabase';
+    if (convexEnabled())
+        return 'Convex';
+    return 'remote database';
+}
+function remoteSaveSuccessText(label) {
+    return `${label} berhasil disimpan dan disinkronkan ke ${remoteSyncLabel()}.`;
+}
+function remoteSaveFailText(label) {
+    const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=103.`;
+}
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
         return false;
     try {
+        clearRemoteSyncError();
         await cloudflareRequest('setAppSetting', {
             method: 'POST',
             body: { key, payload, updatedBy: SESSION_ID }
@@ -3774,6 +3801,7 @@ async function syncAppConfigToCloudflare(key, payload) {
         return true;
     }
     catch (error) {
+        rememberRemoteSyncError(error, 'Cloudflare app config sync');
         console.warn(normalizeCloudflareError(error, 'Cloudflare app config sync'));
         return false;
     }
@@ -4462,8 +4490,9 @@ async function fetchAppConfigsFromConvex() {
     return null;
 }
 async function syncAppConfigToConvex(key, payload) {
-    if (await syncAppConfigToCloudflare(key, payload))
-        return true;
+    clearRemoteSyncError();
+    if (cloudflareEnabled())
+        return await syncAppConfigToCloudflare(key, payload);
     if (await syncAppConfigToNetlify(key, payload))
         return true;
     if (await syncAppConfigToSupabase(key, payload))
@@ -4712,7 +4741,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         if (typeof onWelcomeConfigChange === 'function')
             onWelcomeConfigChange(saved);
         const synced = await syncWelcomeConfigToConvex(saved);
-        alert(synced ? 'Text welcome berhasil disimpan dan disinkronkan ke Netlify.' : 'Text welcome tersimpan lokal, tapi Netlify belum aktif atau gagal sync.');
+        alert(synced ? remoteSaveSuccessText('Text welcome') : remoteSaveFailText('Text welcome'));
     }
     function saveAssignmentSettings() {
         const saved = saveAssignmentLinkConfig(assignmentLink);
@@ -4746,7 +4775,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setEmailSubjectTemplate(saved.subjectTemplate);
         setEmailBodyTemplate(saved.bodyTemplate);
         const synced = await syncEmailTemplateConfigToConvex(saved);
-        alert(synced ? 'Template email berhasil disimpan dan disinkronkan ke Cloudflare/remote config.' : 'Template email tersimpan lokal. Cloudflare/remote config belum aktif atau gagal sync.');
+        alert(synced ? remoteSaveSuccessText('Template email') : remoteSaveFailText('Template email'));
     }
     function resetEmailTemplateSettings() {
         const saved = saveEmailTemplateConfig({ subjectTemplate: DEFAULT_EMAIL_SUBJECT_TEMPLATE, bodyTemplate: DEFAULT_EMAIL_BODY_TEMPLATE });
@@ -4806,7 +4835,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setNoticeMessagesText(saved.messages.join('\n'));
         setNoticeIntervalSeconds(saved.intervalSeconds);
         const synced = await syncUpdateNoticeConfigToConvex(saved);
-        alert(synced ? 'Informasi update HOME berhasil disimpan dan disinkronkan ke Netlify.' : 'Informasi update tersimpan lokal, tapi Netlify belum aktif atau gagal sync.');
+        alert(synced ? remoteSaveSuccessText('Informasi update HOME') : remoteSaveFailText('Informasi update HOME'));
     }
     function applyPdfSettings(nextSettings, showAlert = false) {
         const saved = savePdfSettings(nextSettings);
