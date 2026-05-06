@@ -1,7 +1,7 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Token,X-Requested-With',
+  'Access-Control-Allow-Headers': 'Accept,Content-Type,Authorization,X-Admin-Token,X-Requested-With',
   'Access-Control-Max-Age': '86400',
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
   'Content-Type': 'application/json; charset=utf-8'
