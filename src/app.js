@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp219-soft-footer-watermark';
+const APP_BUILD_VERSION = 'revamp220-ultra-lite-camera-mode';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -174,8 +174,74 @@ const RBV_LITE_MODE = (() => {
     }
 })();
 window.RBV_LITE_MODE = RBV_LITE_MODE;
+// =============================================================
+// Revamp 220: Ultra Lite Camera Mode for low-memory Android devices
+// =============================================================
+const RBV_ULTRA_LITE_CAMERA_MODE = (() => {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const forced = params.get('ultracam') || params.get('cameraLite') || params.get('camera_lite');
+        if (forced === '0' || forced === 'false') return false;
+        if (forced === '1' || forced === 'true') return true;
+        const ua = String(navigator.userAgent || '').toLowerCase();
+        const memory = Number(navigator.deviceMemory || 0);
+        const cores = Number(navigator.hardwareConcurrency || 0);
+        const smallScreen = Math.min(window.innerWidth || 9999, window.innerHeight || 9999) <= 480;
+        const lowMemoryBrand = /infinix|tecno|itel|redmi|m200|realme|oppo|vivo|android go/i.test(ua);
+        return RBV_LITE_MODE || (smallScreen && lowMemoryBrand) || (memory && memory <= 3) || (smallScreen && cores && cores <= 4);
+    } catch (error) {
+        return RBV_LITE_MODE;
+    }
+})();
+window.RBV_ULTRA_LITE_CAMERA_MODE = RBV_ULTRA_LITE_CAMERA_MODE;
+window.RBV_ACTIVE_MEDIA_STREAMS = window.RBV_ACTIVE_MEDIA_STREAMS || new Set();
+function rbvRememberMediaStream(stream) {
+    try {
+        if (stream && window.RBV_ACTIVE_MEDIA_STREAMS) window.RBV_ACTIVE_MEDIA_STREAMS.add(stream);
+    } catch (error) {}
+    return stream;
+}
+function rbvReleaseCameraResources() {
+    try {
+        if (window.RBV_ACTIVE_MEDIA_STREAMS) {
+            Array.from(window.RBV_ACTIVE_MEDIA_STREAMS).forEach((stream) => {
+                try { stream.getTracks?.().forEach((track) => track.stop()); } catch (error) {}
+                try { window.RBV_ACTIVE_MEDIA_STREAMS.delete(stream); } catch (error) {}
+            });
+        }
+        document.querySelectorAll('video').forEach((video) => {
+            try {
+                const stream = video.srcObject;
+                if (stream?.getTracks) stream.getTracks().forEach((track) => track.stop());
+                video.pause?.();
+                video.srcObject = null;
+                video.removeAttribute('src');
+                video.load?.();
+            } catch (error) {}
+        });
+    } catch (error) {}
+}
+function rbvPrepareCameraCapture() {
+    if (!RBV_ULTRA_LITE_CAMERA_MODE) return;
+    try {
+        document.documentElement.classList.add('rbv-camera-capture-active');
+        document.body?.classList.add('rbv-camera-capture-active');
+        rbvReleaseCameraResources();
+    } catch (error) {}
+}
+function rbvFinishCameraCapture() {
+    if (!RBV_ULTRA_LITE_CAMERA_MODE) return;
+    window.setTimeout(() => {
+        try {
+            document.documentElement.classList.remove('rbv-camera-capture-active');
+            document.body?.classList.remove('rbv-camera-capture-active');
+            rbvReleaseCameraResources();
+        } catch (error) {}
+    }, 80);
+}
 try {
     document.documentElement.classList.toggle('rbv-lite-mode', RBV_LITE_MODE);
+    document.documentElement.classList.toggle('rbv-ultra-lite-camera', RBV_ULTRA_LITE_CAMERA_MODE);
     document.documentElement.classList.add('rbv-lazy-libs');
 } catch (error) {}
 const RBV_LIBS = {
@@ -293,29 +359,39 @@ async function ensureCaExportReady() {
     return window.__caAssignmentExport;
 }
 async function compressImageFileForLite(file, options = {}) {
-    const maxSide = Number(options.maxSide || (RBV_LITE_MODE ? 1280 : 1600));
-    const quality = Number(options.quality || (RBV_LITE_MODE ? 0.72 : 0.82));
+    const maxSide = Number(options.maxSide || (RBV_ULTRA_LITE_CAMERA_MODE ? 960 : (RBV_LITE_MODE ? 1280 : 1600)));
+    const quality = Number(options.quality || (RBV_ULTRA_LITE_CAMERA_MODE ? 0.64 : (RBV_LITE_MODE ? 0.72 : 0.82)));
     if (!file || !/^image\//i.test(file.type || '')) return fileToDataUrl(file);
+    let canvas = null;
+    let image = null;
     try {
         const dataUrl = await fileToDataUrl(file);
-        const image = await loadImageElement(dataUrl);
+        image = await loadImageElement(dataUrl);
         const sourceWidth = image.naturalWidth || image.width || 1;
         const sourceHeight = image.naturalHeight || image.height || 1;
         const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-        if (scale >= 1 && file.size < 900 * 1024) return dataUrl;
-        const canvas = document.createElement('canvas');
+        const skipCompressionLimit = RBV_ULTRA_LITE_CAMERA_MODE ? 260 * 1024 : 900 * 1024;
+        if (scale >= 1 && file.size < skipCompressionLimit) return dataUrl;
+        canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(sourceWidth * scale));
         canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-        const ctx = canvas.getContext('2d', { alpha: false });
+        const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        ctx.imageSmoothingQuality = RBV_ULTRA_LITE_CAMERA_MODE ? 'medium' : 'high';
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/jpeg', Math.max(0.58, Math.min(0.9, quality)));
+        const output = canvas.toDataURL('image/jpeg', Math.max(0.54, Math.min(0.86, quality)));
+        try { ctx.clearRect(0, 0, canvas.width, canvas.height); } catch (error) {}
+        return output;
     } catch (error) {
         console.warn('Kompresi foto gagal, memakai file asli:', error);
         return fileToDataUrl(file);
+    } finally {
+        try {
+            if (image) image.src = '';
+            if (canvas) { canvas.width = 1; canvas.height = 1; }
+        } catch (error) {}
     }
 }
 function rbvIdle(callback, timeout = 600) {
@@ -1903,20 +1979,25 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
     async function handleFiles(event) {
-        const file = event.target.files && event.target.files[0];
-        if (!file)
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (!file) {
+            rbvFinishCameraCapture();
             return;
+        }
         try {
-            const dataUrl = await compressImageFileForLite(file);
+            rbvPrepareCameraCapture();
+            const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 960, quality: 0.64 } : {});
             onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
-            if (!RBV_LITE_MODE)
+            if (!RBV_LITE_MODE && !RBV_ULTRA_LITE_CAMERA_MODE)
                 setEditorOpen(true);
         }
         catch (error) {
             alert('Foto gagal dibaca. Coba pilih ulang foto.');
         }
         finally {
-            event.target.value = '';
+            try { input.value = ''; } catch (error) {}
+            rbvFinishCameraCapture();
         }
     }
     function clearPhoto() {
@@ -1934,19 +2015,19 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
                     label,
                     required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null)),
             React.createElement("div", { className: "flex shrink-0 gap-2" },
-                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
+                value?.image && !RBV_ULTRA_LITE_CAMERA_MODE ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
                 value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
-        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
+        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label, loading: "lazy", decoding: "async" }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
             React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => cameraRef.current?.click(), "aria-label": "Ambil foto dari kamera" }),
-            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => galleryRef.current?.click(), "aria-label": "Pilih foto dari galeri" })),
+            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto dari kamera" }),
+            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto dari galeri" })),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
 }
@@ -2379,6 +2460,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         rafRef.current = 0;
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
+            try { window.RBV_ACTIVE_MEDIA_STREAMS?.delete(streamRef.current); } catch (error) {}
             streamRef.current = null;
         }
         if (videoRef.current)
@@ -2431,7 +2513,10 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
                 setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
                 return;
             }
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+            const videoConstraints = RBV_ULTRA_LITE_CAMERA_MODE
+                ? { facingMode: 'environment', width: { ideal: 640, max: 960 }, height: { ideal: 480, max: 720 }, frameRate: { ideal: 10, max: 15 } }
+                : { facingMode: 'environment' };
+            const stream = rbvRememberMediaStream(await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false }));
             streamRef.current = stream;
             const video = videoRef.current;
             if (!video)
@@ -2543,7 +2628,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     const [syncBusy, setSyncBusy] = useState(false);
     const [syncMessage, setSyncMessage] = useState('');
     const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
+    const [historyRenderLimit, setHistoryRenderLimit] = useState(() => RBV_ULTRA_LITE_CAMERA_MODE ? 12 : 9999);
     const restoreInputRef = useRef(null);
+    const visibleHistory = RBV_ULTRA_LITE_CAMERA_MODE ? history.slice(0, historyRenderLimit) : history;
+    const hiddenHistoryCount = Math.max(0, history.length - visibleHistory.length);
     useEffect(() => {
         document.documentElement.classList.add('rbv-home-lock');
         document.body?.classList.add('rbv-home-lock');
@@ -2678,7 +2766,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp219-soft-footer-watermark" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp220-ultra-lite-camera-mode" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid", style: {
                         display: 'grid',
@@ -2716,23 +2804,26 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         React.createElement("section", { className: "dashboard-history-section" },
             React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
-            history.length ? (React.createElement("div", { className: "dashboard-history-list grid gap-3 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
-                React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
-                    React.createElement("div", { className: "min-w-0" },
-                        React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
-                        React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
-                    React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' },
-                        item.progress || 0,
-                        "%")),
-                React.createElement("div", { className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500" },
-                    React.createElement("span", null, item.storeCode || '-'),
-                    React.createElement("span", null, "\u2022"),
-                    React.createElement("span", null, formatDate(item.visitDate))),
-                React.createElement(ProgressBar, { value: item.progress || 0 }),
-                React.createElement("div", { className: "mt-4 flex gap-2" },
-                    React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
-                    React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
-                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))),
+            history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-3 md:grid-cols-2 xl:grid-cols-3" },
+                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
+                    React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
+                        React.createElement("div", { className: "min-w-0" },
+                            React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
+                            React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
+                        React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' },
+                            item.progress || 0,
+                            "%")),
+                    React.createElement("div", { className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500" },
+                        React.createElement("span", null, item.storeCode || '-'),
+                        React.createElement("span", null, "•"),
+                        React.createElement("span", null, formatDate(item.visitDate))),
+                    React.createElement(ProgressBar, { value: item.progress || 0 }),
+                    React.createElement("div", { className: "mt-4 flex gap-2" },
+                        React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
+                        React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
+                            React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
+                hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
+                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',

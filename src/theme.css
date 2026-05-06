@@ -4448,3 +4448,55 @@ body.rbv-home-lock .dashboard-page,
   text-shadow: none !important;
   pointer-events: none !important;
 }
+
+
+/* Revamp 220 - Ultra Lite Camera Mode */
+.rbv-ultra-lite-camera .photo-input-card {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06) !important;
+}
+.rbv-ultra-lite-camera .photo-frame {
+  min-height: 132px !important;
+  background: #f8fafc !important;
+}
+.rbv-ultra-lite-camera .photo-frame img {
+  max-height: 190px;
+  width: 100%;
+  object-fit: cover;
+  transform: translateZ(0);
+}
+.rbv-ultra-lite-camera .photo-editor-overlay,
+.rbv-ultra-lite-camera .photo-editor-panel {
+  display: none !important;
+}
+.rbv-ultra-lite-camera .history-card {
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06) !important;
+  transform: none !important;
+}
+.rbv-ultra-lite-camera .dashboard-history-list {
+  contain: content;
+}
+.rbv-camera-capture-active .dashboard-history-list,
+.rbv-camera-capture-active .pdf-lite-preview,
+.rbv-camera-capture-active .glass-panel:not(.dashboard-compact) {
+  visibility: hidden !important;
+}
+.history-load-more-button {
+  grid-column: 1 / -1;
+  width: 100%;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  background: rgba(240, 253, 250, 0.94);
+  color: #0f766e;
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 900;
+}
+@media (max-width: 480px) {
+  .rbv-ultra-lite-camera .history-card {
+    padding: 12px !important;
+    border-radius: 18px !important;
+  }
+  .rbv-ultra-lite-camera .photo-actions {
+    padding: 8px !important;
+  }
+}
