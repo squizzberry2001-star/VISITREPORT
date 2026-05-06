@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp107-home-start-no-auto-refresh';
+const APP_VERSION = 'revamp108-secret-panel-d1-safe';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

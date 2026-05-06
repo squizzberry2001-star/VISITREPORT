@@ -1,6 +1,6 @@
 {
-  "version": "revamp107-home-start-no-auto-refresh",
-  "build": "revamp107-home-start-no-auto-refresh",
-  "updatedAt": "2026-05-06T12:00:00+07:00",
-  "note": "Fix start point setelah welcome animation ke Home dan matikan auto refresh/auto redirect saat version/service-worker update. Cloudflare D1 Worker fix revamp106 tetap dibawa."
+  "version": "revamp108-secret-panel-d1-safe",
+  "build": "revamp108-secret-panel-d1-safe",
+  "updatedAt": "2026-05-06T12:30:00+07:00",
+  "note": "Revamp ruang panel rahasia: D1 safe-mode, tidak auto polling saat panel setting dibuka, tombol Test D1 langsung cek Worker + D1 + app settings, tombol Tarik Setting dari Cloudflare D1, dan tampilan panel admin diperbarui."
 }
