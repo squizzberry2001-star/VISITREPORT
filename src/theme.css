@@ -4152,3 +4152,108 @@ html.rbv-lite-mode .pdf-canvas-pages {
     font-size: 9px;
   }
 }
+
+
+/* Revamp 211 - fixed Home with only history list scrolling */
+html:has(.dashboard-page),
+body:has(.dashboard-page),
+#root:has(.dashboard-page) {
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+.dashboard-page {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding-top: calc(10px + var(--safe-top)) !important;
+  padding-bottom: calc(82px + var(--safe-bottom)) !important;
+}
+.dashboard-page > .dashboard-compact,
+.dashboard-page > .home-update-notice {
+  flex: 0 0 auto !important;
+}
+.dashboard-history-section {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin-top: 0 !important;
+  padding: 0 2px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+.dashboard-history-title {
+  flex: 0 0 auto !important;
+  position: relative !important;
+  z-index: 2 !important;
+  margin: 0 0 8px !important;
+  background: transparent !important;
+}
+.dashboard-history-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  padding: 2px 2px calc(6.6rem + var(--safe-bottom)) !important;
+  scroll-padding-bottom: calc(6.6rem + var(--safe-bottom)) !important;
+}
+.dashboard-history-empty {
+  display: grid !important;
+  place-items: center !important;
+}
+.home-quick-actions-grid {
+  gap: 7px !important;
+}
+.home-quick-action-button {
+  min-height: 58px !important;
+  border-radius: 16px !important;
+  padding: 6px 5px !important;
+  gap: 2px !important;
+  box-shadow: 0 4px 12px rgba(15,23,42,.05) !important;
+}
+.home-quick-action-label {
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+.home-quick-action-sub {
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+.dashboard-compact {
+  padding: 12px !important;
+}
+.dashboard-compact .mt-3 {
+  margin-top: 9px !important;
+}
+.home-update-notice {
+  padding-top: 11px !important;
+  padding-bottom: 11px !important;
+}
+.home-update-notice .min-h-\[112px\] {
+  min-height: 72px !important;
+}
+@media (max-width: 420px) {
+  .dashboard-page {
+    gap: 8px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .home-quick-action-button {
+    min-height: 54px !important;
+    border-radius: 14px !important;
+    padding: 5px 4px !important;
+  }
+  .home-quick-action-label { font-size: 9.5px !important; }
+  .home-quick-action-sub { font-size: 7.5px !important; }
+  .dashboard-history-title h2 { font-size: 17px !important; }
+}

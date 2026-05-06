@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp210-clean-ui-narration';
+const APP_BUILD_VERSION = 'revamp211-home-fixed-history-scroll';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2670,35 +2670,35 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp210-clean-ui-narration" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp211-home-fixed-history-scroll" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid", style: {
                         display: 'grid',
                         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                         gap: '10px'
                     } },
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
-                        React.createElement(Icon, { name: "download", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '58px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
-                        React.createElement(Icon, { name: "upload", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '58px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
+                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
-                        React.createElement(Icon, { name: "upload", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '58px' }, onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
+                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Upload"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
-                        React.createElement(Icon, { name: "download", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '58px' }, onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
+                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Tarik"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '88px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
-                        React.createElement(Icon, { name: "spark", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '58px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Install"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "App")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '88px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
-                        React.createElement(Icon, { name: "trash", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '58px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
                         React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History"))),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
@@ -2706,9 +2706,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
-            React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+            React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
-            history.length ? (React.createElement("div", { className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
+            history.length ? (React.createElement("div", { className: "dashboard-history-list grid gap-3 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
                 React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
                     React.createElement("div", { className: "min-w-0" },
                         React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
@@ -2724,7 +2724,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("div", { className: "mt-4 flex gap-2" },
                     React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
                     React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
-                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
