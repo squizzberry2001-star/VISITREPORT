@@ -2,8 +2,8 @@
 // Setelah menjalankan `npx convex dev`, ganti deploymentUrl dengan URL Convex kamu.
 window.RB_CONVEX_CONFIG = {
   enabled: true,
-  deploymentUrl: 'https://third-monitor-660.convex.cloud',
-  httpUrl: '',
+  deploymentUrl: 'https://capable-lion-346.convex.cloud',
+  httpUrl: 'https://capable-lion-346.convex.cloud',
   bundleUrl: 'https://unpkg.com/convex@latest/dist/browser.bundle.js',
 
   // Monitoring realtime.
