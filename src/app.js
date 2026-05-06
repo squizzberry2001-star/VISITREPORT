@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp209-pdf-no-autotable-fallback';
+const APP_BUILD_VERSION = 'revamp210-clean-ui-narration';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2670,7 +2670,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp209-pdf-no-autotable-fallback" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp210-clean-ui-narration" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid", style: {
                         display: 'grid',
@@ -2701,7 +2701,6 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement(Icon, { name: "trash", className: "h-5 w-5 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
                         React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History"))),
-                React.createElement("p", { className: "mt-3 px-1 text-[11px] font-semibold leading-4 text-slate-400" }, "Aksi cepat dibuat grid 3 x 2 agar lebih ringkas di mobile dan tidak menutupi daftar history toko di bawah."),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
@@ -3618,7 +3617,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement("span", { className: "rounded-2xl bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500" }, `CC ${ccCount}`),
                 React.createElement("span", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "TO auto store")),
             statusDisplay,
-            React.createElement("p", { className: "mt-3 rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold leading-5 text-amber-800 ring-1 ring-amber-100" }, "Timer email disimpan permanen di device. Jika app ditutup total, browser tidak menjalankan JavaScript; email yang sudah jatuh tempo akan diproses otomatis saat app dibuka/aktif lagi.")));
+            null));
     const footerButtonClass = "rbv-email-action-btn-v98 rbv-email-draft-btn-v98";
     const primaryFooterClass = "rbv-email-action-btn-v98 rbv-email-send-btn-v98";
     const scheduleFooterButtonClass = "rbv-email-schedule-chip-v98";
