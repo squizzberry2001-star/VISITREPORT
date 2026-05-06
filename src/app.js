@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp202-mobile-convex-nik-sync';
+const APP_BUILD_VERSION = 'revamp203-welcome-nik-unfreeze';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4906,6 +4906,7 @@ function WelcomeOverlay({ config, onDone }) {
     const [loginError, setLoginError] = useState('');
     const [introDone, setIntroDone] = useState(false);
     const [closing, setClosing] = useState(false);
+    const nikInputRef = useRef(null);
     useEffect(() => {
         onDoneRef.current = onDone;
     }, [onDone]);
@@ -4914,9 +4915,15 @@ function WelcomeOverlay({ config, onDone }) {
         setClosing(false);
         setLoginError('');
         setIntroDone(false);
-        const timer = window.setTimeout(() => setIntroDone(true), durationMs + 120);
+        const timer = window.setTimeout(() => setIntroDone(true), Math.max(900, durationMs + 160));
         return () => window.clearTimeout(timer);
     }, [durationMs]);
+    useEffect(() => {
+        if (!introDone || closing)
+            return;
+        const focusTimer = window.setTimeout(() => nikInputRef.current?.focus?.(), 80);
+        return () => window.clearTimeout(focusTimer);
+    }, [introDone, closing]);
     function finishWelcome() {
         if (doneRef.current)
             return;
@@ -4998,6 +5005,9 @@ function WelcomeOverlay({ config, onDone }) {
                 boxShadow: '0 24px 60px rgba(15,23,42,.16)',
                 transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
                 transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
+                animation: 'none',
+                opacity: 1,
+                filter: 'none',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden'
             } },
@@ -5018,7 +5028,7 @@ function WelcomeOverlay({ config, onDone }) {
                                 setIntroDone(true); }, style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })),
                     introDone ? React.createElement("form", { className: "welcome-nik-login", onSubmit: submitBestieLogin },
                         React.createElement("p", { className: "welcome-nik-label" }, "Login NIK Regional Bestie"),
-                        React.createElement("input", { value: nikInput, onChange: handleNikChange, inputMode: "numeric", maxLength: 12, className: "welcome-nik-input", placeholder: "Masukkan NIK", autoFocus: true }),
+                        React.createElement("input", { ref: nikInputRef, value: nikInput, onChange: handleNikChange, inputMode: "numeric", maxLength: 12, className: "welcome-nik-input", placeholder: "Masukkan NIK", autoFocus: true }),
                         loginName ? React.createElement("p", { className: "welcome-nik-name" }, loginName) : React.createElement("p", { className: "welcome-nik-hint" }, "Nama otomatis muncul setelah NIK valid."),
                         loginError ? React.createElement("p", { className: "welcome-nik-error" }, loginError) : null,
                         React.createElement("button", { type: "submit", className: "welcome-nik-button", disabled: !findBestieByNik(nikInput) }, "Masuk")) : null)))));

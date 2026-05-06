@@ -3851,3 +3851,35 @@ button[title*="Hapus"] svg,
     min-height: 360px !important;
   }
 }
+
+
+/* Revamp 203: Welcome NIK unfreeze fix.
+   Legacy welcome CSS used welcomeCardIn with animation-fill-mode: both,
+   so the card became opacity:0 after the intro duration and the NIK form existed
+   but was invisible. Keep the card visible until login is submitted. */
+.welcome-dream-overlay:not(.is-closing) {
+  opacity: 1 !important;
+}
+.welcome-dream-overlay:not(.is-closing) .welcome-dream-card {
+  animation: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+.welcome-dream-overlay:not(.is-closing) .welcome-nik-login {
+  display: grid !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+@media (max-width: 640px) {
+  .welcome-nik-login {
+    width: min(330px, 100%) !important;
+    margin-top: 16px !important;
+  }
+  .welcome-nik-input,
+  .welcome-nik-button {
+    height: 50px !important;
+    font-size: 18px !important;
+  }
+}
