@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp200-convex-master-store';
+const APP_VERSION = 'revamp201-convex-secret-panel';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

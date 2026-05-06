@@ -1,6 +1,6 @@
 {
-  "version": "revamp200-convex-master-store",
-  "build": "revamp200-convex-master-store",
-  "updatedAt": "2026-05-06T13:30:00+07:00",
-  "note": "Revamp Monitoring: upload Master Data Detail Toko Excel, tombol Template Excel, dan integrasi Convex masterStores sebagai database utama."
+  "version": "revamp201-convex-secret-panel",
+  "build": "revamp201-convex-secret-panel",
+  "updatedAt": "2026-05-06T22:15:00+07:00",
+  "note": "Revamp Panel Rahasia: UI Setting Web diarahkan ke Convex Control Center, tombol Test Convex/Tarik Setting/Sync History, dan flow remote sync diprioritaskan ke Convex."
 }

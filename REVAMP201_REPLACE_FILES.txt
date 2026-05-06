@@ -1,0 +1,17 @@
+REVAMP201 - Secret Panel Convex UI
+
+File wajib replace di GitHub:
+1. src/app.js
+2. index.html
+3. service-worker.js
+4. version.json
+
+File yang TIDAK wajib diganti kalau sudah benar:
+- convex-config.js, selama sudah berisi window.RB_CONVEX_CONFIG dengan deploymentUrl https://fabulous-alligator-318.convex.cloud
+- convex/schema.ts, convex/masterStores.ts, convex/monitor.ts, convex/appSettings.ts, selama sudah dari revamp200
+- templates/master-data-detail-toko-template.xlsx
+
+Setelah push:
+- buka web dengan ?v=201 atau ?v=revamp201-convex-secret-panel
+- masuk Panel Rahasia > Setting Web
+- tombol lama Test D1 harus berubah menjadi Test Convex
