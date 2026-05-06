@@ -10,7 +10,8 @@
 window.RB_CLOUDFLARE_CONFIG = {
   enabled: true,
   endpoint: 'https://visitreport-rbv-api.domainsquizzberry.workers.dev',
-  apiPath: '/api/rbv-data',
+  // Standalone Worker sudah memakai endpoint root. Jangan append /api/rbv-data.
+  apiPath: '',
   adminToken: '',
   pollMs: 5000,
   monitorLimit: 500,
