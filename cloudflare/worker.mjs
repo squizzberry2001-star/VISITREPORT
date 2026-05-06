@@ -1,7 +1,8 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Token',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Token,X-Requested-With',
+  'Access-Control-Max-Age': '86400',
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
   'Content-Type': 'application/json; charset=utf-8'
 };
@@ -75,6 +76,86 @@ async function requireDb(env) {
     throw err;
   }
   return env.DB;
+}
+
+async function ensureSchema(db) {
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS monitor_visits (
+      visit_key TEXT PRIMARY KEY,
+      bestie_name TEXT NOT NULL DEFAULT '',
+      store_name TEXT NOT NULL DEFAULT '',
+      store_code TEXT NOT NULL DEFAULT '',
+      visit_date TEXT NOT NULL DEFAULT '',
+      total_visits INTEGER NOT NULL DEFAULT 1,
+      last_visit_at TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL DEFAULT '',
+      session_id TEXT NOT NULL DEFAULT '',
+      event_type TEXT NOT NULL DEFAULT '',
+      page_url TEXT NOT NULL DEFAULT '',
+      user_agent TEXT NOT NULL DEFAULT '',
+      payload_json TEXT NOT NULL DEFAULT '{}'
+    )
+  `).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_monitor_visits_updated_at ON monitor_visits(updated_at DESC)').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_monitor_visits_store_name ON monitor_visits(store_name)').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_monitor_visits_bestie_name ON monitor_visits(bestie_name)').run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS monitor_presence (
+      session_id TEXT PRIMARY KEY,
+      bestie_name TEXT NOT NULL DEFAULT '',
+      store_name TEXT NOT NULL DEFAULT '',
+      store_code TEXT NOT NULL DEFAULT '',
+      screen_name TEXT NOT NULL DEFAULT '',
+      last_seen_at TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL DEFAULT '',
+      page_url TEXT NOT NULL DEFAULT '',
+      user_agent TEXT NOT NULL DEFAULT '',
+      payload_json TEXT NOT NULL DEFAULT '{}'
+    )
+  `).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_monitor_presence_updated_at ON monitor_presence(updated_at DESC)').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_monitor_presence_last_seen ON monitor_presence(last_seen_at DESC)').run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS manual_store_requests (
+      request_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL DEFAULT '',
+      bestie_name TEXT NOT NULL DEFAULT '',
+      store_name TEXT NOT NULL DEFAULT '',
+      store_code TEXT NOT NULL DEFAULT '',
+      address TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT '',
+      session_id TEXT NOT NULL DEFAULT '',
+      page_url TEXT NOT NULL DEFAULT '',
+      user_agent TEXT NOT NULL DEFAULT '',
+      payload_json TEXT NOT NULL DEFAULT '{}'
+    )
+  `).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_manual_store_requests_updated_at ON manual_store_requests(updated_at DESC)').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_manual_store_requests_status ON manual_store_requests(status)').run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      config_key TEXT PRIMARY KEY,
+      payload TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT NOT NULL DEFAULT '',
+      updated_by TEXT NOT NULL DEFAULT ''
+    )
+  `).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_app_settings_updated_at ON app_settings(updated_at DESC)').run();
+}
+
+async function testD1(db) {
+  const result = await db.prepare('SELECT 1 AS ok').first();
+  return json({
+    ok: true,
+    provider: 'cloudflare-d1',
+    d1: result,
+    message: 'Cloudflare D1 aktif dan tabel sudah siap.'
+  });
 }
 
 async function listMonitorVisits(db, url) {
@@ -267,11 +348,21 @@ async function setAppSetting(db, request, env) {
 
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return new Response('', { status: 204, headers: CORS });
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url);
     const action = url.searchParams.get('action') || '';
+    const path = url.pathname.replace(/\/+$/, '') || '/';
+
+    // Health check endpoint. This is intentionally available without query params.
+    if (request.method === 'GET' && !action && (path === '/' || path === '/api' || path === '/health')) {
+      return json({ ok: true, provider: 'cloudflare-d1', message: 'RBV Cloudflare D1 API aktif.' });
+    }
+
     try {
       const db = await requireDb(env);
+      await ensureSchema(db);
+
+      if (request.method === 'GET' && (action === 'testD1' || path === '/api/test-d1' || path === '/test-d1')) return testD1(db);
       if (request.method === 'GET' && action === 'listMonitorVisits') return listMonitorVisits(db, url);
       if (request.method === 'POST' && action === 'upsertMonitorVisit') return upsertMonitorVisit(db, request, env);
       if (request.method === 'GET' && action === 'listPresence') return listPresence(db, url);
