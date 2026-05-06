@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp219-soft-footer-watermark';
+const APP_VERSION = 'revamp220-ultra-lite-camera-mode';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

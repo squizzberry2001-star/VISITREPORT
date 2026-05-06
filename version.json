@@ -1,5 +1,5 @@
 {
-  "version": "revamp219-soft-footer-watermark",
-  "build": "revamp219-soft-footer-watermark",
+  "version": "revamp220-ultra-lite-camera-mode",
+  "build": "revamp220-ultra-lite-camera-mode",
   "message": "PDF preview fix: crew table no longer depends on jsPDF AutoTable, preventing doc.autoTable is not a function."
 }
