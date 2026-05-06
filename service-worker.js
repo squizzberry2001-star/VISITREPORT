@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp210-clean-ui-narration';
+const APP_VERSION = 'revamp211-home-fixed-history-scroll';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

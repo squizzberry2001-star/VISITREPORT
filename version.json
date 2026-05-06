@@ -1,5 +1,5 @@
 {
-  "version": "revamp210-clean-ui-narration",
-  "build": "revamp210-clean-ui-narration",
+  "version": "revamp211-home-fixed-history-scroll",
+  "build": "revamp211-home-fixed-history-scroll",
   "message": "PDF preview fix: crew table no longer depends on jsPDF AutoTable, preventing doc.autoTable is not a function."
 }
