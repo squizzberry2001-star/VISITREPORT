@@ -94,7 +94,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp200-convex-master-store';
+const APP_BUILD_VERSION = 'revamp201-convex-secret-panel';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3882,14 +3882,14 @@ function clearRemoteSyncError() {
     LAST_REMOTE_SYNC_ERROR = '';
 }
 function remoteSyncLabel() {
-    if (cloudflareEnabled())
-        return 'Cloudflare D1';
+    if (convexEnabled())
+        return 'Convex';
     if (netlifyEnabled())
         return 'Netlify';
     if (supabaseEnabled())
         return 'Supabase';
-    if (convexEnabled())
-        return 'Convex';
+    if (cloudflareEnabled())
+        return 'Cloudflare D1 legacy';
     return 'remote database';
 }
 async function fetchMasterStoresFromConvex() {
@@ -3949,7 +3949,7 @@ function remoteSaveSuccessText(label) {
 }
 function remoteSaveFailText(label) {
     const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
-    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=200.`;
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Cek convex-config.js lalu buka ulang dengan ?v=201.`;
 }
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
@@ -4411,161 +4411,175 @@ function monitorPayloadFromVisit(visit) {
     };
 }
 async function upsertMonitorVisit(visit) {
-    if (await upsertMonitorVisitToCloudflare(visit))
-        return;
+    const config = getConvexConfig();
+    if (convexEnabled() && visit && cleanText(visit.nama) && cleanText(visit.store)) {
+        const payload = monitorPayloadFromVisit(visit);
+        try {
+            const mutationName = config.upsertMutation || 'monitor:upsertVisit';
+            const result = await runConvexMutation(mutationName, { payload });
+            if (result !== null)
+                return;
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex monitor mutation');
+            console.warn('Convex realtime mutation gagal, fallback HTTP:', error);
+        }
+        const endpoint = convexUrl(config.upsertPath || 'monitor/upsertVisit');
+        if (endpoint) {
+            try {
+                await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
+                    body: JSON.stringify(payload)
+                });
+                return;
+            }
+            catch (error) {
+                rememberRemoteSyncError(error, 'Convex monitor HTTP');
+                console.warn('Convex upsert gagal:', error);
+            }
+        }
+    }
     if (await upsertMonitorVisitToNetlify(visit))
         return;
     if (await upsertMonitorVisitToSupabase(visit))
         return;
-    const config = getConvexConfig();
-    if (!convexEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
-        return;
-    const payload = monitorPayloadFromVisit(visit);
-    try {
-        const mutationName = config.upsertMutation || 'monitor:upsertVisit';
-        const result = await runConvexMutation(mutationName, { payload });
-        if (result !== null)
-            return;
-    }
-    catch (error) {
-        console.warn('Convex realtime mutation gagal, fallback HTTP:', error);
-    }
-    const endpoint = convexUrl(config.upsertPath || 'monitor/upsertVisit');
-    if (!endpoint)
-        return;
-    try {
-        await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
-            body: JSON.stringify(payload)
-        });
-    }
-    catch (error) {
-        console.warn('Convex upsert gagal:', error);
-    }
+    await upsertMonitorVisitToCloudflare(visit);
 }
 async function upsertPresence(payload) {
     if (!payload)
         return;
     persistPresenceLocal(payload);
-    if (await upsertPresenceToCloudflare(payload))
-        return;
+    const config = getConvexConfig();
+    if (convexEnabled()) {
+        try {
+            await runConvexMutation(config.presenceUpsertMutation || 'monitor:upsertPresence', { payload });
+            return;
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex presence sync');
+            console.warn('Convex presence sync gagal:', error);
+        }
+    }
     if (await upsertPresenceToNetlify(payload))
         return;
     if (await upsertPresenceToSupabase(payload))
         return;
-    const config = getConvexConfig();
-    if (!convexEnabled())
-        return;
-    try {
-        await runConvexMutation(config.presenceUpsertMutation || 'monitor:upsertPresence', { payload });
-    }
-    catch (error) {
-        console.warn('Convex presence sync gagal:', error);
-    }
+    await upsertPresenceToCloudflare(payload);
 }
 async function fetchPresenceRowsFromConvex() {
-    const cloudflareRows = await fetchPresenceRowsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
+    const config = getConvexConfig();
+    if (convexEnabled()) {
+        try {
+            const queryName = config.presenceQuery || 'monitor:listPresence';
+            const rows = await runConvexQuery(queryName, {});
+            if (rows !== null)
+                return normalizePresenceRows(rows);
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex presence query');
+            console.warn('Convex presence query gagal:', error);
+        }
+    }
     const netlifyRows = await fetchPresenceRowsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchPresenceRowsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const config = getConvexConfig();
-    if (!convexEnabled())
-        return readLocalPresenceRows();
-    try {
-        const queryName = config.presenceQuery || 'monitor:listPresence';
-        const rows = await runConvexQuery(queryName, {});
-        if (rows !== null)
-            return normalizePresenceRows(rows);
-    }
-    catch (error) {
-        console.warn('Convex presence query gagal:', error);
-    }
+    const cloudflareRows = await fetchPresenceRowsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     return readLocalPresenceRows();
 }
 async function fetchMonitorRowsFromConvex() {
-    const cloudflareRows = await fetchMonitorRowsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
+    const config = getConvexConfig();
+    if (convexEnabled()) {
+        try {
+            const queryName = config.monitorQuery || 'monitor:listVisits';
+            const rows = await runConvexQuery(queryName, {});
+            if (rows !== null)
+                return normalizeMonitorRows(rows);
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex monitor query');
+            console.warn('Convex realtime query gagal, fallback HTTP:', error);
+        }
+        const endpoint = convexUrl(config.listPath || 'monitor/listVisits');
+        if (endpoint) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
+                });
+                if (response.ok) {
+                    const payload = await response.json();
+                    return normalizeMonitorRows(payload);
+                }
+            }
+            catch (error) {
+                rememberRemoteSyncError(error, 'Convex monitor HTTP');
+                console.warn('Convex monitor HTTP fallback gagal:', error);
+            }
+        }
+    }
     const netlifyRows = await fetchMonitorRowsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchMonitorRowsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const config = getConvexConfig();
-    if (!convexEnabled())
-        return null;
-    try {
-        const queryName = config.monitorQuery || 'monitor:listVisits';
-        const rows = await runConvexQuery(queryName, {});
-        if (rows !== null)
-            return normalizeMonitorRows(rows);
-    }
-    catch (error) {
-        console.warn('Convex realtime query gagal, fallback HTTP:', error);
-    }
-    const endpoint = convexUrl(config.listPath || 'monitor/listVisits');
-    if (!endpoint)
-        return null;
-    const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
-    });
-    if (!response.ok)
-        throw new Error('Convex monitor gagal dibaca.');
-    const payload = await response.json();
-    return normalizeMonitorRows(payload);
-}
-async function fetchManualRequestsFromConvex() {
-    const cloudflareRows = await fetchManualRequestsFromCloudflare();
+    const cloudflareRows = await fetchMonitorRowsFromCloudflare();
     if (cloudflareRows !== null)
         return cloudflareRows;
+    return null;
+}
+async function fetchManualRequestsFromConvex() {
+    const config = getConvexConfig();
+    if (convexEnabled()) {
+        try {
+            const queryName = config.manualRequestsQuery || 'monitor:listManualStoreRequests';
+            const rows = await runConvexQuery(queryName, {});
+            if (rows !== null)
+                return persistManualRequestsFromRemote(rows);
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex manual request query');
+            console.warn('Convex manual request query gagal, fallback HTTP:', error);
+        }
+        const endpoint = convexUrl(config.listManualRequestsPath || 'monitor/listManualStoreRequests');
+        if (endpoint) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
+                });
+                if (response.ok) {
+                    const payload = await response.json();
+                    return persistManualRequestsFromRemote(payload);
+                }
+            }
+            catch (error) {
+                rememberRemoteSyncError(error, 'Convex manual request HTTP');
+                console.warn('HTTP request toko gagal:', error);
+            }
+        }
+    }
     const netlifyRows = await fetchManualRequestsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchManualRequestsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const config = getConvexConfig();
-    if (!convexEnabled())
-        return null;
-    try {
-        const queryName = config.manualRequestsQuery || 'monitor:listManualStoreRequests';
-        const rows = await runConvexQuery(queryName, {});
-        if (rows !== null)
-            return persistManualRequestsFromRemote(rows);
-    }
-    catch (error) {
-        console.warn('Convex manual request query gagal, fallback HTTP:', error);
-    }
-    const endpoint = convexUrl(config.listManualRequestsPath || 'monitor/listManualStoreRequests');
-    if (!endpoint)
-        return null;
-    const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
-    });
-    if (!response.ok)
-        throw new Error('Convex request toko gagal dibaca.');
-    const payload = await response.json();
-    return persistManualRequestsFromRemote(payload);
+    const cloudflareRows = await fetchManualRequestsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
+    return null;
 }
 async function syncManualRequestToConvex(request) {
-    if (await syncManualRequestToCloudflare(request))
-        return;
-    if (await syncManualRequestToNetlify(request))
-        return;
-    if (await syncManualRequestToSupabase(request))
+    if (!request)
         return;
     const config = getConvexConfig();
-    if (!convexEnabled() || !request)
-        return;
     const payload = {
         request_id: request.id,
         status: request.status || 'pending',
@@ -4580,27 +4594,37 @@ async function syncManualRequestToConvex(request) {
         page_url: location.href,
         user_agent: navigator.userAgent
     };
-    try {
-        const result = await runConvexMutation(config.upsertManualRequestMutation || 'monitor:upsertManualStoreRequest', { payload });
-        if (result !== null)
-            return;
+    if (convexEnabled()) {
+        try {
+            const result = await runConvexMutation(config.upsertManualRequestMutation || 'monitor:upsertManualStoreRequest', { payload });
+            if (result !== null)
+                return;
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex request toko mutation');
+            console.warn('Convex request toko gagal, fallback HTTP:', error);
+        }
+        const endpoint = convexUrl(config.upsertManualRequestPath || 'monitor/upsertManualStoreRequest');
+        if (endpoint) {
+            try {
+                await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
+                    body: JSON.stringify(payload)
+                });
+                return;
+            }
+            catch (error) {
+                rememberRemoteSyncError(error, 'Convex request toko HTTP');
+                console.warn('HTTP request toko gagal:', error);
+            }
+        }
     }
-    catch (error) {
-        console.warn('Convex request toko gagal, fallback HTTP:', error);
-    }
-    const endpoint = convexUrl(config.upsertManualRequestPath || 'monitor/upsertManualStoreRequest');
-    if (!endpoint)
+    if (await syncManualRequestToNetlify(request))
         return;
-    try {
-        await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
-            body: JSON.stringify(payload)
-        });
-    }
-    catch (error) {
-        console.warn('HTTP request toko gagal:', error);
-    }
+    if (await syncManualRequestToSupabase(request))
+        return;
+    await syncManualRequestToCloudflare(request);
 }
 async function syncManualRequestStatusToConvex(request) {
     if (!request)
@@ -4628,52 +4652,54 @@ function applyRemoteAppConfigRows(rows) {
     return normalized;
 }
 async function fetchAppConfigsFromConvex() {
-    const cloudflareRows = await fetchAppConfigsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
+    const config = getConvexConfig();
+    if (convexEnabled()) {
+        try {
+            const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
+            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
+            if (rows !== null)
+                return normalizeRemoteAppConfigRows(rows);
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex app config query');
+            console.warn('Convex app config query gagal:', error);
+        }
+    }
     const netlifyRows = await fetchAppConfigsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchAppConfigsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const config = getConvexConfig();
-    if (!convexEnabled())
-        return null;
-    try {
-        const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-        const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
-        if (rows !== null)
-            return normalizeRemoteAppConfigRows(rows);
-    }
-    catch (error) {
-        console.warn('Convex app config query gagal:', error);
-    }
+    const cloudflareRows = await fetchAppConfigsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     return null;
 }
 async function syncAppConfigToConvex(key, payload) {
     clearRemoteSyncError();
-    if (cloudflareEnabled())
-        return await syncAppConfigToCloudflare(key, payload);
+    const config = getConvexConfig();
+    if (convexEnabled() && key) {
+        try {
+            await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
+                key,
+                payload,
+                updatedBy: SESSION_ID
+            });
+            return true;
+        }
+        catch (error) {
+            rememberRemoteSyncError(error, 'Convex app config sync');
+            console.warn('Convex app config sync gagal:', error);
+        }
+    }
     if (await syncAppConfigToNetlify(key, payload))
         return true;
     if (await syncAppConfigToSupabase(key, payload))
         return true;
-    const config = getConvexConfig();
-    if (!convexEnabled() || !key)
-        return false;
-    try {
-        await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
-            key,
-            payload,
-            updatedBy: SESSION_ID
-        });
+    if (await syncAppConfigToCloudflare(key, payload))
         return true;
-    }
-    catch (error) {
-        console.warn('Convex app config sync gagal:', error);
-        return false;
-    }
+    return false;
 }
 function syncWelcomeConfigToConvex(config) {
     return syncAppConfigToConvex(APP_CONFIG_KEYS.welcome, normalizeWelcomeConfigPayload(config));
@@ -4991,7 +5017,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
         }
         catch (error) {
-            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=200.`);
+            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=201.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5045,6 +5071,89 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         }
         catch (error) {
             setCloudflareDbStatus(`Sync Cloudflare gagal: ${error?.message || 'unknown error.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function testConvexPanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        const deployment = cleanText(getConvexDeploymentUrl() || getConvexConfig().deploymentUrl || '');
+        const siteUrl = cleanText(getConvexHttpUrl() || getConvexConfig().siteUrl || '');
+        setCloudflareDbStatus(`Mengecek Convex deployment: ${deployment || 'belum diisi'}`);
+        try {
+            if (!convexEnabled())
+                throw new Error('Convex belum aktif. Isi enabled:true dan deploymentUrl di convex-config.js.');
+            const config = getConvexConfig();
+            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
+            const masterRows = await runConvexQuery(config.masterStoreListQuery || 'masterStores:listStores', { limit: 10 });
+            const settingCount = normalizeRemoteAppConfigRows(settingsRows).length;
+            const masterCount = normalizeMasterStoreRows(masterRows?.rows || masterRows?.data || masterRows).length;
+            setCloudflareDbStatus(`READY: Convex aktif. Settings terbaca ${settingCount} item, sample master toko ${masterCount} baris. URL: ${deployment}${siteUrl ? ` | Site: ${siteUrl}` : ''}`);
+        }
+        catch (error) {
+            setCloudflareDbStatus(`GAGAL: ${error?.message || 'Convex gagal dites.'} Cek convex-config.js, jalankan npx convex dev, lalu buka ulang ?v=201.`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function pullConvexSettingsPanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Menarik setting terbaru dari Convex ke panel lokal...');
+        try {
+            const rows = await fetchAppConfigsFromConvex();
+            if (rows === null)
+                throw new Error(LAST_REMOTE_SYNC_ERROR || 'Convex tidak mengirim data settings.');
+            const applied = applyRemoteAppConfigRows(rows);
+            const nextWelcome = readWelcomeConfig();
+            setWelcomeTitle(nextWelcome.title);
+            setWelcomeSubtitle(nextWelcome.subtitle);
+            setWelcomeDurationSeconds(nextWelcome.durationSeconds);
+            const nextNotice = readUpdateNoticeConfig();
+            setNoticeEnabled(nextNotice.enabled);
+            setNoticeTitle(nextNotice.title);
+            setNoticeMessagesText(nextNotice.messages.join('\n'));
+            setNoticeIntervalSeconds(nextNotice.intervalSeconds);
+            const nextEmailTemplate = readEmailTemplateConfig();
+            setEmailSubjectTemplate(nextEmailTemplate.subjectTemplate);
+            setEmailBodyTemplate(nextEmailTemplate.bodyTemplate);
+            setCloudflareDbStatus(`Tarik setting selesai. ${applied.length} item diterapkan dari Convex ke panel.`);
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Tarik setting gagal: ${error?.message || 'request gagal.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function syncHistoryToConvexPanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Mengirim history lokal ke Convex...');
+        try {
+            if (!convexEnabled())
+                throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
+            const config = getConvexConfig();
+            const visits = await getAllVisitRecordsForBackup();
+            let success = 0;
+            for (const item of visits) {
+                if (!item || !cleanText(item.nama) || !cleanText(item.store))
+                    continue;
+                const payload = monitorPayloadFromVisit(item);
+                await runConvexMutation(config.upsertMutation || 'monitor:upsertVisit', { payload });
+                success += 1;
+            }
+            setCloudflareDbStatus(`Sync Convex selesai. ${success}/${visits.length} history terkirim.`);
+            refresh({ quiet: true });
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Sync Convex gagal: ${error?.message || 'unknown error.'}`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5440,7 +5549,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Panel Rahasia Admin"),
                         secretTab === 'monitoring' ? React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, sourceBadgeLabel) : React.createElement(Badge, { tone: "default" }, "Setting Web"),
                         secretTab === 'monitoring' ? React.createElement(Badge, { tone: connectionTone }, connectionState) : null),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & PDF'),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & Convex'),
                     secretTab === 'monitoring' && lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
                         "Update terakhir: ",
                         formatDateTime(lastSync)) : null),
@@ -5458,30 +5567,31 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
                     React.createElement("span", null, "Monitoring"))),
             secretTab === 'settings' ? (React.createElement(React.Fragment, null,
-                React.createElement("div", { className: "secret-d1-command mb-5 overflow-hidden rounded-[30px] border border-slate-800 bg-slate-950 p-4 text-white shadow-2xl md:p-5" },
+                React.createElement("div", { className: "secret-convex-command mb-5 overflow-hidden rounded-[30px] border border-emerald-900 bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-4 text-white shadow-2xl md:p-5" },
                     React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
-                                React.createElement(Badge, { tone: "dark" }, "Revamp 200"),
-                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Ready")),
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Database Control Center"),
+                                React.createElement(Badge, { tone: "dark" }, "Revamp 201"),
+                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Primary"),
+                                React.createElement("span", { className: "rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-cyan-300/20" }, "No D1 Panel")),
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Convex Control Center"),
                             React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Ruang Panel Rahasia"),
-                            React.createElement("p", { className: "mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300" }, "Panel dibuat safe-mode. Untuk database utama baru, gunakan Convex di tab Monitoring. Cloudflare D1 tetap tersedia sebagai legacy/fallback selama migrasi.")),
+                            React.createElement("p", { className: "mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300" }, "Panel ini sudah diarahkan ke Convex sebagai database utama untuk setting web, monitoring realtime, presence, manual request, dan master data detail toko. Cloudflare D1 disembunyikan dari panel agar tidak membingungkan.")),
                         React.createElement("div", { className: "flex flex-wrap gap-2" },
-                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullCloudflareSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
+                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testConvexPanel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test Convex'),
+                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullConvexSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
+                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToConvexPanel, disabled: cloudflareDbBusy }, "Sync History"))),
                     React.createElement("div", { className: "mt-4 grid gap-3 md:grid-cols-3" },
                         React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Endpoint"),
-                            React.createElement("p", { className: "mt-1 break-all text-xs font-bold leading-5 text-white" }, cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data'))),
+                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Convex URL"),
+                            React.createElement("p", { className: "mt-1 break-all text-xs font-bold leading-5 text-white" }, cleanText(getConvexDeploymentUrl() || getConvexConfig().deploymentUrl || 'Belum diisi di convex-config.js'))),
                         React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Auto Polling"),
-                            React.createElement("p", { className: "mt-1 text-sm font-black text-emerald-200" }, "OFF di Setting Panel"),
-                            React.createElement("p", { className: "mt-1 text-[11px] font-semibold text-slate-400" }, "Monitoring baru fetch saat tab Monitoring / Refresh ditekan.")),
+                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Realtime Mode"),
+                            React.createElement("p", { className: "mt-1 text-sm font-black text-emerald-200" }, convexEnabled() ? "ON via Convex" : "OFF"),
+                            React.createElement("p", { className: "mt-1 text-[11px] font-semibold text-slate-400" }, "Monitoring fetch saat tab Monitoring / Refresh ditekan; setting tidak auto-spam request.")),
                         React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status D1"),
-                            React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-200" }, cloudflareDbStatus || 'Belum dites dari panel ini. Tekan Test D1.')))),
+                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status Convex"),
+                            React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-200" }, cloudflareDbStatus || 'Belum dites dari panel ini. Tekan Test Convex.')))),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,
