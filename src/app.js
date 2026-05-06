@@ -23,7 +23,8 @@ const UPDATE_NOTICE_CONFIG_KEY = 'rbv_update_notice_config_v1';
 const APP_CONFIG_KEYS = {
     welcome: 'welcome_animation',
     updateNotice: 'home_update_notice',
-    emailTemplate: 'email_report_template'
+    emailTemplate: 'email_report_template',
+    webSync: 'web_update_signal'
 };
 const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
 const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
@@ -33,6 +34,57 @@ const MASTER_STORE_TEMPLATE_HEADERS = [
     'regionalManager', 'regionalManagerEmail', 'operationalStatus',
     'latitude', 'longitude', 'notes'
 ];
+
+const BESTIE_LOGIN_KEY = 'rbv_bestie_login_v1';
+const RBV_WEB_SYNC_SIGNAL_KEY = 'rbv_web_sync_signal_v202';
+const BESTIE_LOGIN_DATA = [
+    { nik: '210822947', name: 'Aan Bagus Permana' },
+    { nik: '230723742', name: 'Anggi Novita' },
+    { nik: '210923045', name: 'Aulia Fauziah' },
+    { nik: '210823002', name: 'Bagus Pradika' },
+    { nik: '210923054', name: 'Cindy Silvia Sahyu' },
+    { nik: '210822948', name: 'Edi Sukarno' },
+    { nik: '230623709', name: 'Fajar Saputra' },
+    { nik: '230523581', name: 'Fendi Setiawan' },
+    { nik: '210923070', name: 'Fiqri Amatul Firdaus' },
+    { nik: '211123186', name: 'Karlina Endah Puji Astuti' },
+    { nik: '200622511', name: 'Malik Ibrahim' },
+    { nik: '230723758', name: 'Muhammad Fikri' },
+    { nik: '201222610', name: 'Novilya Dwi Rahman' },
+    { nik: '210722912', name: 'Rani Ismawati' },
+    { nik: '210822981', name: 'Rully Alfandi' },
+    { nik: '220623417', name: 'Seftiana Putri Rahmawati' },
+    { nik: '230523599', name: 'Tia Fitri' },
+    { nik: '230823803', name: 'Yuyun Yuliyanti' }
+];
+function normalizeNik(value) {
+    return String(value || '').replace(/\D/g, '').slice(0, 12);
+}
+function findBestieByNik(value) {
+    const nik = normalizeNik(value);
+    return BESTIE_LOGIN_DATA.find((item) => item.nik === nik) || null;
+}
+function readBestieLogin() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(BESTIE_LOGIN_KEY) || '{}');
+        const nik = normalizeNik(parsed.nik);
+        const found = findBestieByNik(nik);
+        return found ? { nik: found.nik, name: found.name, loggedAt: parsed.loggedAt || 0 } : { nik: '', name: '' };
+    }
+    catch (error) {
+        return { nik: '', name: '' };
+    }
+}
+function saveBestieLogin(payload) {
+    const found = findBestieByNik(payload && payload.nik);
+    if (!found)
+        return null;
+    const next = { nik: found.nik, name: found.name, loggedAt: Date.now() };
+    localStorage.setItem(BESTIE_LOGIN_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('rbv-bestie-login-change', { detail: next }));
+    return next;
+}
+
 const DEFAULT_UPDATE_NOTICE_CONFIG = {
     enabled: true,
     title: 'Info Update Website',
@@ -94,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp201-convex-secret-panel';
+const APP_BUILD_VERSION = 'revamp202-mobile-convex-nik-sync';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -337,8 +389,8 @@ function pickMasterStoreValue(row, keys, fallback = '') {
 }
 function normalizeMasterStoreRow(row, index = 0) {
     const source = row && typeof row === 'object' ? row : {};
-    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Kode Toko', 'kodeToko', 'storeCode', 'store_code']));
-    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'code', 'kode']));
+    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Site', 'SITE', 'Kode Toko', 'kodeToko', 'storeCode', 'store_code']));
+    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'Site', 'SITE', 'code', 'kode']));
     const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'SITE_DESCR', 'Nama Toko', 'namaToko', 'storeName', 'store_name', 'name']));
     const status = cleanText(pickMasterStoreValue(source, ['operationalStatus', 'status', 'Status'], 'active')).toLowerCase();
     return {
@@ -349,7 +401,7 @@ function normalizeMasterStoreRow(row, index = 0) {
         type: cleanText(pickMasterStoreValue(source, ['type', 'Type', 'Jenis', 'jenis'])),
         city: cleanText(pickMasterStoreValue(source, ['city', 'City', 'Kota', 'kota'])),
         address: cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'alamat'])),
-        emailStore: cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'storeEmail', 'email_store'])).toLowerCase(),
+        emailStore: cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'Email', 'EMAIL', 'storeEmail', 'email_store'])).toLowerCase(),
         storeHead: cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'kepalaToko'])),
         areaManager: cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'am'])),
         areaManagerEmail: cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'amEmail'])).toLowerCase(),
@@ -412,7 +464,29 @@ function parseMasterStoreExcelFile(file) {
                 const workbook = window.XLSX.read(new Uint8Array(reader.result), { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const sheet = workbook.Sheets[sheetName];
-                const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                const matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
+                const normalizeHeader = (value) => normalize(String(value || '')).replace(/\s+/g, '');
+                const headerIndex = matrix.findIndex((row) => {
+                    const keys = (row || []).map(normalizeHeader);
+                    const hasCode = keys.includes('site') || keys.includes('sitecode') || keys.includes('sitecode4') || keys.includes('kodetoko');
+                    const hasName = keys.includes('sitedescr') || keys.includes('sitedescription') || keys.includes('namatoko') || keys.includes('storename');
+                    return hasCode && hasName;
+                });
+                let rows;
+                if (headerIndex >= 0) {
+                    const headers = (matrix[headerIndex] || []).map((cell) => cleanText(cell));
+                    rows = matrix.slice(headerIndex + 1).map((line) => {
+                        const object = {};
+                        headers.forEach((header, index) => {
+                            if (header)
+                                object[header] = line[index];
+                        });
+                        return object;
+                    });
+                }
+                else {
+                    rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                }
                 resolve(normalizeMasterStoreRows(rows));
             }
             catch (error) {
@@ -422,7 +496,8 @@ function parseMasterStoreExcelFile(file) {
         reader.readAsArrayBuffer(file);
     });
 }
-const BESTIE_NAMES = uniqueBy(BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
+
+const BESTIE_NAMES = uniqueBy([...BESTIE_LOGIN_DATA.map((item) => item.name), ...BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName))].filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
     return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
 }
@@ -2311,19 +2386,24 @@ function NewVisitModal({ open, onClose, onCreate }) {
     const [manualOpen, setManualOpen] = useState(false);
     const [manualStoreName, setManualStoreName] = useState('');
     const [manualStoreCode, setManualStoreCode] = useState('');
+    const [manualAreaManager, setManualAreaManager] = useState('');
+    const [manualRegionalManager, setManualRegionalManager] = useState('');
     const [manualAddress, setManualAddress] = useState('');
     const [manualNote, setManualNote] = useState('');
     const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
     useEffect(() => {
         if (!open)
             return;
-        const initialBestie = BESTIE_NAMES[0] || '';
+        const login = readBestieLogin();
+        const initialBestie = login.name || BESTIE_NAMES[0] || '';
         const initialStore = getStoresForBestie(initialBestie)[0]?.label || '';
         setBestieName(initialBestie);
         setStoreName(initialStore);
         setManualOpen(false);
         setManualStoreName('');
         setManualStoreCode('');
+        setManualAreaManager('');
+        setManualRegionalManager('');
         setManualAddress('');
         setManualNote('');
     }, [open]);
@@ -2334,17 +2414,40 @@ function NewVisitModal({ open, onClose, onCreate }) {
         }
     }, [bestieName]);
     function submitManualRequest() {
-        if (!cleanText(manualStoreName)) {
+        const storeNameCaps = cleanText(manualStoreName).toUpperCase();
+        const storeCode = normalizeNik(manualStoreCode).slice(0, 4);
+        if (!storeNameCaps) {
             alert('Nama toko manual wajib diisi.');
             return;
         }
-        createManualStoreRequest({ bestieName, storeName: manualStoreName, storeCode: manualStoreCode, address: manualAddress, note: manualNote });
+        if (!/^\d{4}$/.test(storeCode)) {
+            alert('Kode toko wajib 4 digit angka.');
+            return;
+        }
+        const manualStore = {
+            id: `manual-local-${storeCode}-${Date.now()}`,
+            siteDescr: storeNameCaps,
+            storeName: storeNameCaps,
+            siteCode: storeCode,
+            siteCode4: storeCode,
+            areaManager: cleanText(manualAreaManager),
+            regionalManager: cleanText(manualRegionalManager),
+            address: cleanText(manualAddress),
+            source: 'manual-local',
+            operationalStatus: 'active',
+            updatedAt: new Date().toISOString()
+        };
+        saveApprovedManualStores([manualStore, ...readApprovedManualStores()]);
+        saveLocalMasterStores([manualStore, ...readLocalMasterStores()]);
+        setStoreName(storeNameCaps);
         setManualOpen(false);
         setManualStoreName('');
         setManualStoreCode('');
+        setManualAreaManager('');
+        setManualRegionalManager('');
         setManualAddress('');
         setManualNote('');
-        alert('Request toko manual sudah dikirim ke panel admin.');
+        alert('Toko manual dibuat lokal di perangkat ini. Data tidak dikirim ke database.');
     }
     if (!open)
         return null;
@@ -2353,7 +2456,8 @@ function NewVisitModal({ open, onClose, onCreate }) {
             React.createElement("div", { className: "mb-5 flex items-start justify-between gap-3" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Kunjungan Baru"),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store")),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store"),
+                    readBestieLogin().name ? React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-700" }, "Login NIK: ", readBestieLogin().name) : null),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "grid gap-4" },
@@ -2361,18 +2465,21 @@ function NewVisitModal({ open, onClose, onCreate }) {
                 React.createElement(SelectField, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", icon: "store", required: true }),
                 React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
                     React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900", onClick: () => setManualOpen((state) => !state) },
-                        React.createElement("span", null, "Request toko manual"),
+                        React.createElement("span", null, "Buat toko manual"),
                         React.createElement(Icon, { name: "right", className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '') })),
                     manualOpen ? React.createElement("div", { className: "mt-3 grid gap-3" },
                         React.createElement(Field, { label: "Nama Toko" },
-                            React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value), placeholder: "Nama toko" })),
+                            React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value.toUpperCase()), placeholder: "NAMA TOKO" })),
                         React.createElement(Field, { label: "Kode Toko" },
-                            React.createElement(TextInput, { value: manualStoreCode, onChange: (e) => setManualStoreCode(e.target.value), placeholder: "Kode toko" })),
-                        React.createElement(Field, { label: "Alamat" },
-                            React.createElement(TextArea, { value: manualAddress, onChange: (e) => setManualAddress(e.target.value), placeholder: "Alamat toko", minRows: 2 })),
-                        React.createElement(Field, { label: "Catatan" },
-                            React.createElement(TextArea, { value: manualNote, onChange: (e) => setManualNote(e.target.value), placeholder: "Catatan", minRows: 2 })),
-                        React.createElement(Button, { variant: "secondary", icon: "spark", onClick: submitManualRequest }, "Kirim Request Admin")) : null)),
+                            React.createElement(TextInput, { value: manualStoreCode, onChange: (e) => setManualStoreCode(normalizeNik(e.target.value).slice(0, 4)), inputMode: "numeric", maxLength: 4, placeholder: "4 digit angka" })),
+                        React.createElement(Field, { label: "Nama Area Manager" },
+                            React.createElement(TextInput, { value: manualAreaManager, onChange: (e) => setManualAreaManager(e.target.value), placeholder: "Nama Area Manager" })),
+                        React.createElement(Field, { label: "Nama Regional Manager" },
+                            React.createElement(TextInput, { value: manualRegionalManager, onChange: (e) => setManualRegionalManager(e.target.value), placeholder: "Nama Regional Manager" })),
+                        React.createElement(Field, { label: "Alamat Store" },
+                            React.createElement(TextArea, { value: manualAddress, onChange: (e) => setManualAddress(e.target.value), placeholder: "Alamat toko opsional", minRows: 2 })),
+                        React.createElement("p", { className: "rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-100" }, "Toko manual hanya disimpan lokal di device ini dan tidak masuk database Convex."),
+                        React.createElement(Button, { variant: "secondary", icon: "spark", onClick: submitManualRequest }, "Buat Toko Lokal")) : null)),
             React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
                 React.createElement(Button, { variant: "secondary", onClick: onClose }, "Tutup"),
                 React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, storeName), disabled: !bestieName || !storeName }, "Mulai Kunjungan")))));
@@ -2648,13 +2755,13 @@ function getAllMasterEmailContactOptions(visit) {
     const visitDetail = getVisitStoreDetailForEmail(visit);
     const visitStore = cleanText(visit?.store || visitDetail.siteDescr || visitDetail.storeName, 'Store Aktif');
     push('store', visitDetail.emailStore || getVisitStoreEmail(visit), `${visitStore} • Email Store`, { store: visitStore, role: 'Email Store' });
-    push('area', visitDetail.areaManagerEmail, `${visitStore} • Area Manager`, { store: visitStore, role: 'Area Manager' });
-    push('regional', visitDetail.regionalManagerEmail, `${visitStore} • Regional Manager`, { store: visitStore, role: 'Regional Manager' });
+    push('area', visitDetail.areaManagerEmail, 'Area Manager', { store: '', role: 'Area Manager' });
+    push('regional', visitDetail.regionalManagerEmail, 'Regional Manager', { store: '', role: 'Regional Manager' });
     (getEffectiveMasterStores() || []).forEach((store) => {
         const storeName = cleanText(store.siteDescr || store.storeName || store.siteCode || 'Master Store');
         push('store', store.emailStore, `${storeName} • Email Store`, { store: storeName, role: 'Email Store' });
-        push('area', store.areaManagerEmail, `${storeName} • Area Manager`, { store: storeName, role: 'Area Manager' });
-        push('regional', store.regionalManagerEmail, `${storeName} • Regional Manager`, { store: storeName, role: 'Regional Manager' });
+        push('area', store.areaManagerEmail, 'Area Manager', { store: '', role: 'Area Manager' });
+        push('regional', store.regionalManagerEmail, 'Regional Manager', { store: '', role: 'Regional Manager' });
     });
     (MASTER_EMAIL_CONTACTS || []).forEach((item) => {
         push(cleanText(item.kind, 'master-email').toLowerCase(), item.email, cleanText(item.helper, 'Master Email'), {
@@ -3865,7 +3972,7 @@ async function fetchAppConfigsFromCloudflare() {
     if (!cloudflareEnabled())
         return null;
     try {
-        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -4106,7 +4213,7 @@ async function fetchAppConfigsFromNetlify() {
     if (!netlifyEnabled())
         return null;
     try {
-        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -4356,7 +4463,7 @@ async function fetchAppConfigsFromSupabase() {
         const { data, error } = await client
             .from(table)
             .select('config_key,payload,updated_at')
-            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate]);
+            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync]);
         if (error)
             throw error;
         return normalizeRemoteAppConfigRows((data || []).map((item) => ({
@@ -4639,6 +4746,33 @@ function normalizeRemoteAppConfigRows(rows) {
         updatedAt: row.updatedAt || row.updated_at || 0
     })).filter((row) => row.key);
 }
+async function applySilentWebSyncSignal(payload) {
+    const signal = payload && typeof payload === 'object' ? payload : {};
+    const key = cleanText(signal.signalId || signal.sentAt || signal.version);
+    if (!key)
+        return;
+    if (localStorage.getItem(RBV_WEB_SYNC_SIGNAL_KEY) === key)
+        return;
+    localStorage.setItem(RBV_WEB_SYNC_SIGNAL_KEY, key);
+    try {
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.filter((cacheKey) => cacheKey.startsWith('bestie-visit-')).map((cacheKey) => caches.delete(cacheKey)));
+        }
+        if (navigator.serviceWorker?.getRegistrations) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            registrations.forEach((registration) => {
+                registration.update?.().catch(() => { });
+                if (registration.waiting)
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            });
+        }
+    }
+    catch (error) {
+        console.warn('Silent web sync gagal:', error);
+    }
+    window.dispatchEvent(new CustomEvent('rbv-silent-web-sync', { detail: signal }));
+}
 function applyRemoteAppConfigRows(rows) {
     const normalized = normalizeRemoteAppConfigRows(rows);
     normalized.forEach((row) => {
@@ -4648,6 +4782,8 @@ function applyRemoteAppConfigRows(rows) {
             saveUpdateNoticeConfig(row.payload);
         if (row.key === APP_CONFIG_KEYS.emailTemplate)
             saveEmailTemplateConfig(row.payload);
+        if (row.key === APP_CONFIG_KEYS.webSync)
+            applySilentWebSyncSignal(row.payload);
     });
     return normalized;
 }
@@ -4656,7 +4792,7 @@ async function fetchAppConfigsFromConvex() {
     if (convexEnabled()) {
         try {
             const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
+            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] });
             if (rows !== null)
                 return normalizeRemoteAppConfigRows(rows);
         }
@@ -4764,6 +4900,11 @@ function WelcomeOverlay({ config, onDone }) {
     const cardRef = useRef(null);
     const onDoneRef = useRef(onDone);
     const doneRef = useRef(false);
+    const savedLogin = readBestieLogin();
+    const [nikInput, setNikInput] = useState(savedLogin.nik || '');
+    const [loginName, setLoginName] = useState(savedLogin.name || '');
+    const [loginError, setLoginError] = useState('');
+    const [introDone, setIntroDone] = useState(false);
     const [closing, setClosing] = useState(false);
     useEffect(() => {
         onDoneRef.current = onDone;
@@ -4771,7 +4912,9 @@ function WelcomeOverlay({ config, onDone }) {
     useEffect(() => {
         doneRef.current = false;
         setClosing(false);
-        const timer = window.setTimeout(finishWelcome, durationMs + 120);
+        setLoginError('');
+        setIntroDone(false);
+        const timer = window.setTimeout(() => setIntroDone(true), durationMs + 120);
         return () => window.clearTimeout(timer);
     }, [durationMs]);
     function finishWelcome() {
@@ -4783,6 +4926,24 @@ function WelcomeOverlay({ config, onDone }) {
             if (typeof onDoneRef.current === 'function')
                 onDoneRef.current();
         }, 340);
+    }
+    function handleNikChange(event) {
+        const nik = normalizeNik(event.target.value);
+        setNikInput(nik);
+        const found = findBestieByNik(nik);
+        setLoginName(found ? found.name : '');
+        if (loginError)
+            setLoginError('');
+    }
+    function submitBestieLogin(event) {
+        event?.preventDefault?.();
+        const saved = saveBestieLogin({ nik: nikInput });
+        if (!saved) {
+            setLoginError('NIK tidak terdaftar. Cek kembali angka NIK Regional Bestie.');
+            return;
+        }
+        setLoginName(saved.name);
+        finishWelcome();
     }
     function handlePointerMove(event) {
         const card = cardRef.current;
@@ -4820,7 +4981,7 @@ function WelcomeOverlay({ config, onDone }) {
             WebkitBackfaceVisibility: 'hidden',
             animation: closing ? 'rbvWelcomeOverlayOut .34s cubic-bezier(.22,1,.36,1) forwards' : 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
         } },
-        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(6px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.38}50%{transform:translate3d(10px,-8px,0) scale(1.05);opacity:.62}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.92) rotate(0deg)}50%{transform:scale(1) rotate(10deg)}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`),
+        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(6px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.38}50%{transform:translate3d(10px,-8px,0) scale(1.05);opacity:.62}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%{transform:translate3d(0,0,0) rotate(-4deg) scale(.96)}35%{transform:translate3d(0,-10px,0) rotate(8deg) scale(1.03)}70%{transform:translate3d(0,2px,0) rotate(-2deg) scale(.99)}100%{transform:translate3d(0,0,0) rotate(-4deg) scale(.96)}} @keyframes rbvWelcomeOrbit{0%{transform:rotate(0deg) translateX(8px) rotate(0deg);opacity:.48}100%{transform:rotate(360deg) translateX(8px) rotate(-360deg);opacity:.78}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at 18% 18%, rgba(15,118,110,.08), transparent 34%), radial-gradient(circle at 80% 20%, rgba(20,184,166,.10), transparent 30%), radial-gradient(circle at 50% 78%, rgba(148,163,184,.16), transparent 26%)', pointerEvents: 'none' } }),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(15,118,110,.10)', filter: 'blur(24px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' } }),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(20,184,166,.10)', filter: 'blur(28px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' } }),
@@ -4841,20 +5002,26 @@ function WelcomeOverlay({ config, onDone }) {
                 WebkitBackfaceVisibility: 'hidden'
             } },
             React.createElement("div", { style: { position: 'relative', overflow: 'hidden', borderRadius: '35px', padding: '28px 24px 24px', background: '#ededed' } },
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, backgroundColor: '#ededed', backgroundImage: 'url("icons/welcome-handshake-bg.jpg")', backgroundPosition: 'center center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', opacity: 0.28, mixBlendMode: 'multiply', pointerEvents: 'none' } }),
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(237,237,237,.72), rgba(237,237,237,.88) 32%, rgba(237,237,237,.94) 100%), radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(255,255,255,.55), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
+                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, backgroundColor: '#ededed', backgroundImage: 'url("icons/welcome-handshake-bg.jpg")', backgroundPosition: 'center center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', opacity: 0.44, mixBlendMode: 'multiply', pointerEvents: 'none' } }),
+                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(237,237,237,.54), rgba(237,237,237,.76) 34%, rgba(237,237,237,.88) 100%), radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(255,255,255,.55), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
                 React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent)', animation: 'rbvWelcomeShine 3.4s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
                 React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 250, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
-                    React.createElement("div", { "aria-hidden": "true", className: "welcome-app-logo-motion-v99", style: { display: 'grid', placeItems: 'center', width: 120, height: 120, borderRadius: '34px', overflow: 'visible', background: 'rgba(255,255,255,.74)', border: '1px solid rgba(255,255,255,.85)', boxShadow: '0 16px 34px rgba(15,23,42,.10)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' } },
+                    React.createElement("div", { "aria-hidden": "true", className: "welcome-app-logo-motion-v99", style: { display: 'grid', placeItems: 'center', width: 120, height: 120, borderRadius: '34px', overflow: 'visible', background: 'rgba(255,255,255,.74)', border: '1px solid rgba(255,255,255,.85)', boxShadow: '0 16px 34px rgba(15,23,42,.10)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', animation: 'rbvWelcomeSpark 3.8s cubic-bezier(.22,1,.36,1) infinite' } },
                         React.createElement("span", { className: "welcome-logo-ring-v99 ring-a" }),
                         React.createElement("span", { className: "welcome-logo-ring-v99 ring-b" }),
                         React.createElement("img", { src: "icons/icon-192.png", alt: "", className: "welcome-app-icon-v99" })),
                     React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
                     React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', textShadow: '0 1px 0 rgba(255,255,255,.45)', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
-                    React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#334155', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
+                    React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, whiteSpace: 'pre-line', color: '#334155', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
                     React.createElement("div", { "aria-hidden": "true", style: { marginTop: 24, height: 7, width: 'min(260px, 78%)', overflow: 'hidden', borderRadius: '999px', background: 'rgba(15,118,110,.12)' } },
                         React.createElement("span", { onAnimationEnd: (event) => { if (event.animationName === 'rbvWelcomeProgress')
-                                finishWelcome(); }, style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })))))));
+                                setIntroDone(true); }, style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })),
+                    introDone ? React.createElement("form", { className: "welcome-nik-login", onSubmit: submitBestieLogin },
+                        React.createElement("p", { className: "welcome-nik-label" }, "Login NIK Regional Bestie"),
+                        React.createElement("input", { value: nikInput, onChange: handleNikChange, inputMode: "numeric", maxLength: 12, className: "welcome-nik-input", placeholder: "Masukkan NIK", autoFocus: true }),
+                        loginName ? React.createElement("p", { className: "welcome-nik-name" }, loginName) : React.createElement("p", { className: "welcome-nik-hint" }, "Nama otomatis muncul setelah NIK valid."),
+                        loginError ? React.createElement("p", { className: "welcome-nik-error" }, loginError) : null,
+                        React.createElement("button", { type: "submit", className: "welcome-nik-button", disabled: !findBestieByNik(nikInput) }, "Masuk")) : null)))));
 }
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
@@ -5011,7 +5178,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             healthUrl.searchParams.set('_panelCheck', String(Date.now()));
             const healthPayload = await cloudflarePanelFetchJson(healthUrl.toString());
             const d1Payload = await cloudflareRequest('testD1');
-            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
+            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
             const rows = settingsPayload?.rows || settingsPayload?.data || [];
             const count = Array.isArray(rows) ? rows.length : 0;
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
@@ -5087,7 +5254,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             if (!convexEnabled())
                 throw new Error('Convex belum aktif. Isi enabled:true dan deploymentUrl di convex-config.js.');
             const config = getConvexConfig();
-            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
+            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] });
             const masterRows = await runConvexQuery(config.masterStoreListQuery || 'masterStores:listStores', { limit: 10 });
             const settingCount = normalizeRemoteAppConfigRows(settingsRows).length;
             const masterCount = normalizeMasterStoreRows(masterRows?.rows || masterRows?.data || masterRows).length;
@@ -5154,6 +5321,33 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         }
         catch (error) {
             setCloudflareDbStatus(`Sync Convex gagal: ${error?.message || 'unknown error.'}`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function broadcastSilentWebSync() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Mengirim perintah Silent Web Sync ke semua device aktif...');
+        try {
+            if (!convexEnabled())
+                throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
+            const payload = {
+                signalId: `web-sync-${Date.now()}`,
+                version: APP_BUILD_VERSION,
+                sentAt: Date.now(),
+                mode: 'silent-cache-update',
+                message: 'Device aktif akan membersihkan cache dan mengecek service worker tanpa reload paksa.'
+            };
+            const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.webSync, payload);
+            if (!synced)
+                throw new Error(LAST_REMOTE_SYNC_ERROR || 'gagal menyimpan signal ke Convex.');
+            setCloudflareDbStatus('Silent Web Sync terkirim. Device aktif akan update cache tanpa memaksa reload; versi baru penuh dipakai saat user refresh/buka ulang.');
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Silent Web Sync gagal: ${error?.message || 'unknown error.'}`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5369,20 +5563,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
                     React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status"),
                     React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-700" }, masterStoreStatus))),
-            React.createElement("div", { className: "mt-4 max-w-xl" },
-                React.createElement("div", { className: "relative" },
-                    React.createElement(Icon, { name: "search", className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" }),
-                    React.createElement(TextInput, { value: masterStoreQuery, onChange: (event) => setMasterStoreQuery(event.target.value), placeholder: "Cari kode, nama toko, kota, AM...", className: "pl-12" }))),
-            React.createElement("div", { className: "mt-4 grid gap-2 md:grid-cols-2" },
-                previewRows.length ? previewRows.map((store) => React.createElement("div", { key: store.id || store.siteCode4 || store.siteDescr, className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
-                    React.createElement("div", { className: "flex items-start justify-between gap-3" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("p", { className: "truncate text-sm font-black text-slate-950" }, store.siteDescr || '-'),
-                            React.createElement("p", { className: "mt-1 text-xs font-bold text-slate-600" }, [store.siteCode4 || store.siteCode || '-', store.type || '-', store.city || '-'].join(' • ')),
-                            React.createElement("p", { className: "mt-1 truncate text-[11px] font-semibold text-slate-500" }, store.emailStore || store.address || 'Belum ada email/alamat')),
-                        React.createElement(Badge, { tone: store.operationalStatus === 'active' ? 'success' : 'warning' }, store.operationalStatus || 'active'))))
-                    : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-cyan-100 md:col-span-2" }, "Belum ada master toko yang cocok.")),
-            React.createElement("p", { className: "mt-3 text-[11px] font-semibold text-slate-500" }, "Preview menampilkan maksimal 20 baris. Total hasil filter: ", masterStoreFiltered.length));
+            React.createElement("p", { className: "mt-4 rounded-2xl bg-white p-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-cyan-100" }, "Preview toko di panel disembunyikan agar panel mobile lebih ringan. Upload Excel tetap membaca kolom: kode store, Store Head, Area Manager, Regional Manager, Email Store, dan Alamat Store."));
     }
     useEffect(() => {
         if (!open)
@@ -5580,7 +5761,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement("div", { className: "flex flex-wrap gap-2" },
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testConvexPanel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test Convex'),
                             React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullConvexSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToConvexPanel, disabled: cloudflareDbBusy }, "Sync History"))),
+                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToConvexPanel, disabled: cloudflareDbBusy }, "Sync History"),
+                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: broadcastSilentWebSync, disabled: cloudflareDbBusy }, "Silent Web Sync"))),
                     React.createElement("div", { className: "mt-4 grid gap-3 md:grid-cols-3" },
                         React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
                             React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Convex URL"),
@@ -5717,7 +5899,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
                         React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
                         React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
+                React.createElement("div", { className: "hidden" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
                         React.createElement(Badge, { tone: "default" },
@@ -6040,7 +6222,7 @@ function App() {
             try {
                 await refreshRemoteConfigs();
                 if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
-                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] }, (rows) => { if (!cancelled)
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
             }
