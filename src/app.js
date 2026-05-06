@@ -25,6 +25,14 @@ const APP_CONFIG_KEYS = {
     updateNotice: 'home_update_notice',
     emailTemplate: 'email_report_template'
 };
+const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
+const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
+const MASTER_STORE_TEMPLATE_HEADERS = [
+    'siteCode', 'siteCode4', 'siteDescr', 'type', 'city', 'address',
+    'emailStore', 'storeHead', 'areaManager', 'areaManagerEmail',
+    'regionalManager', 'regionalManagerEmail', 'operationalStatus',
+    'latitude', 'longitude', 'notes'
+];
 const DEFAULT_UPDATE_NOTICE_CONFIG = {
     enabled: true,
     title: 'Info Update Website',
@@ -86,7 +94,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp108-secret-panel-d1-safe';
+const APP_BUILD_VERSION = 'revamp200-convex-master-store';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -312,6 +320,108 @@ function findApprovedManualStore(storeName) {
         return null;
     return readApprovedManualStores().find((item) => normalize(item.storeName || item.siteDescr) === key || normalize(item.siteCode || item.siteCode4) === key) || null;
 }
+function normalizeMasterStoreCode(value) {
+    const text = cleanText(value);
+    if (!text)
+        return '';
+    const raw = text.replace(/\.0$/, '');
+    return /^\d+$/.test(raw) ? raw.padStart(Math.min(Math.max(raw.length, 4), 8), '0') : raw;
+}
+function pickMasterStoreValue(row, keys, fallback = '') {
+    const source = row || {};
+    for (const key of keys) {
+        if (source[key] !== undefined && source[key] !== null && String(source[key]).trim() !== '')
+            return source[key];
+    }
+    return fallback;
+}
+function normalizeMasterStoreRow(row, index = 0) {
+    const source = row && typeof row === 'object' ? row : {};
+    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Kode Toko', 'kodeToko', 'storeCode', 'store_code']));
+    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'code', 'kode']));
+    const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'SITE_DESCR', 'Nama Toko', 'namaToko', 'storeName', 'store_name', 'name']));
+    const status = cleanText(pickMasterStoreValue(source, ['operationalStatus', 'status', 'Status'], 'active')).toLowerCase();
+    return {
+        id: cleanText(source.id || source._id || siteCode4 || siteCode || `master-${index}`),
+        siteCode,
+        siteCode4,
+        siteDescr,
+        type: cleanText(pickMasterStoreValue(source, ['type', 'Type', 'Jenis', 'jenis'])),
+        city: cleanText(pickMasterStoreValue(source, ['city', 'City', 'Kota', 'kota'])),
+        address: cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'alamat'])),
+        emailStore: cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'storeEmail', 'email_store'])).toLowerCase(),
+        storeHead: cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'kepalaToko'])),
+        areaManager: cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'am'])),
+        areaManagerEmail: cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'amEmail'])).toLowerCase(),
+        regionalManager: cleanText(pickMasterStoreValue(source, ['regionalManager', 'Regional Manager', 'rm'])),
+        regionalManagerEmail: cleanText(pickMasterStoreValue(source, ['regionalManagerEmail', 'Regional Manager Email', 'rmEmail'])).toLowerCase(),
+        operationalStatus: ['inactive', 'temporary_closed'].includes(status) ? status : 'active',
+        latitude: cleanText(pickMasterStoreValue(source, ['latitude', 'lat'])),
+        longitude: cleanText(pickMasterStoreValue(source, ['longitude', 'lng', 'lon'])),
+        notes: cleanText(pickMasterStoreValue(source, ['notes', 'note', 'Catatan', 'catatan'])),
+        updatedAt: cleanText(source.updatedAt || source.updated_at || new Date().toISOString())
+    };
+}
+function normalizeMasterStoreRows(rows) {
+    const input = Array.isArray(rows) ? rows : [];
+    return uniqueBy(input.map((row, index) => normalizeMasterStoreRow(row, index)).filter((row) => row.siteDescr || row.siteCode4 || row.siteCode), (row) => normalize(row.siteCode4 || row.siteCode || row.siteDescr));
+}
+function readLocalMasterStores() {
+    const local = normalizeMasterStoreRows(readJsonArray(MASTER_STORE_LOCAL_KEY));
+    return local.length ? local : normalizeMasterStoreRows(MASTER_STORES);
+}
+function saveLocalMasterStores(rows) {
+    const normalized = normalizeMasterStoreRows(rows);
+    localStorage.setItem(MASTER_STORE_LOCAL_KEY, JSON.stringify(normalized));
+    window.dispatchEvent(new CustomEvent('rbv-master-store-change', { detail: normalized }));
+    return normalized;
+}
+function getEffectiveMasterStores() {
+    return readLocalMasterStores();
+}
+function downloadMasterStoreTemplateExcel() {
+    const sampleRows = [
+        ['1', '0001', 'CIBUBUR', 'FamiSuper', 'Depok', 'Jl. Alternatif Cibubur, Depok', 'store.fmcibubur@familymartindonesia.com', 'Nama Store Head', 'Nama Area Manager', 'area.manager@email.com', 'Nama Regional Manager', 'regional.manager@email.com', 'active', '', '', 'Contoh baris, boleh dihapus'],
+        ['2', '0002', 'BULUNGAN', 'CVS', 'Jakarta Selatan', 'Jl. Raya Bulungan No. 18', 'store.bulungan@familymartindonesia.com', '', '', '', '', '', 'active', '', '', '']
+    ];
+    if (window.XLSX?.utils?.book_new) {
+        const workbook = window.XLSX.utils.book_new();
+        const sheet = window.XLSX.utils.aoa_to_sheet([MASTER_STORE_TEMPLATE_HEADERS, ...sampleRows]);
+        sheet['!cols'] = MASTER_STORE_TEMPLATE_HEADERS.map((header) => ({ wch: ['address', 'emailStore', 'areaManagerEmail', 'regionalManagerEmail', 'notes'].includes(header) ? 34 : 18 }));
+        window.XLSX.utils.book_append_sheet(workbook, sheet, 'Master Data Toko');
+        window.XLSX.writeFile(workbook, 'master-data-detail-toko-template.xlsx');
+        return;
+    }
+    const link = document.createElement('a');
+    link.href = MASTER_STORE_TEMPLATE_FILE + '?v=' + encodeURIComponent(APP_BUILD_VERSION);
+    link.download = 'master-data-detail-toko-template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+function parseMasterStoreExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        if (!window.XLSX?.read) {
+            reject(new Error('Library Excel belum termuat. Reload halaman lalu coba lagi.'));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error || new Error('File gagal dibaca.'));
+        reader.onload = () => {
+            try {
+                const workbook = window.XLSX.read(new Uint8Array(reader.result), { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                resolve(normalizeMasterStoreRows(rows));
+            }
+            catch (error) {
+                reject(error);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
 const BESTIE_NAMES = uniqueBy(BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
     return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
@@ -333,7 +443,7 @@ function getStoresForBestie(bestieName) {
         master: item,
         value: cleanText(item.storeName || item.siteDescr)
     })).filter((item) => item.label);
-    const fallback = MASTER_STORES.map((item) => ({
+    const fallback = getEffectiveMasterStores().map((item) => ({
         label: cleanText(item.siteDescr),
         source: 'master',
         master: item,
@@ -358,7 +468,7 @@ function findMasterStore(storeName) {
     const key = normalize(storeName);
     if (!key)
         return null;
-    return MASTER_STORES.find((item) => normalize(item.siteDescr) === key || normalize(item.siteCode) === key || normalize(item.siteCode4) === key) || null;
+    return getEffectiveMasterStores().find((item) => normalize(item.siteDescr) === key || normalize(item.siteCode) === key || normalize(item.siteCode4) === key) || null;
 }
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
@@ -2540,7 +2650,7 @@ function getAllMasterEmailContactOptions(visit) {
     push('store', visitDetail.emailStore || getVisitStoreEmail(visit), `${visitStore} • Email Store`, { store: visitStore, role: 'Email Store' });
     push('area', visitDetail.areaManagerEmail, `${visitStore} • Area Manager`, { store: visitStore, role: 'Area Manager' });
     push('regional', visitDetail.regionalManagerEmail, `${visitStore} • Regional Manager`, { store: visitStore, role: 'Regional Manager' });
-    (MASTER_STORES || []).forEach((store) => {
+    (getEffectiveMasterStores() || []).forEach((store) => {
         const storeName = cleanText(store.siteDescr || store.storeName || store.siteCode || 'Master Store');
         push('store', store.emailStore, `${storeName} • Email Store`, { store: storeName, role: 'Email Store' });
         push('area', store.areaManagerEmail, `${storeName} • Area Manager`, { store: storeName, role: 'Area Manager' });
@@ -3782,12 +3892,64 @@ function remoteSyncLabel() {
         return 'Convex';
     return 'remote database';
 }
+async function fetchMasterStoresFromConvex() {
+    clearRemoteSyncError();
+    if (!convexEnabled())
+        return null;
+    try {
+        const config = getConvexConfig();
+        const queryName = config.masterStoreListQuery || 'masterStores:listStores';
+        const rows = await runConvexQuery(queryName, { limit: 5000 });
+        if (rows !== null)
+            return normalizeMasterStoreRows(rows?.rows || rows?.data || rows);
+    }
+    catch (error) {
+        setRemoteSyncError(error?.message || 'Convex master store query gagal.');
+        console.warn('Convex master store query gagal:', error);
+    }
+    return null;
+}
+async function syncMasterStoresToConvex(rows, options = {}) {
+    clearRemoteSyncError();
+    const normalized = normalizeMasterStoreRows(rows);
+    if (!normalized.length)
+        return false;
+    if (!convexEnabled()) {
+        setRemoteSyncError('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
+        return false;
+    }
+    const config = getConvexConfig();
+    try {
+        if (options.replace !== false) {
+            const mutationName = config.masterStoreReplaceMutation || 'masterStores:replaceStores';
+            const result = await runConvexMutation(mutationName, { stores: normalized, updatedBy: SESSION_ID });
+            if (result !== null)
+                return true;
+        }
+    }
+    catch (error) {
+        console.warn('Convex replace master store gagal, coba upsertMany:', error);
+    }
+    try {
+        const mutationName = config.masterStoreUpsertManyMutation || 'masterStores:upsertMany';
+        for (let index = 0; index < normalized.length; index += 200) {
+            const chunk = normalized.slice(index, index + 200);
+            await runConvexMutation(mutationName, { stores: chunk, updatedBy: SESSION_ID });
+        }
+        return true;
+    }
+    catch (error) {
+        setRemoteSyncError(error?.message || 'Convex master store sync gagal.');
+        console.warn('Convex master store sync gagal:', error);
+        return false;
+    }
+}
 function remoteSaveSuccessText(label) {
     return `${label} berhasil disimpan dan disinkronkan ke ${remoteSyncLabel()}.`;
 }
 function remoteSaveFailText(label) {
     const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
-    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=108.`;
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=200.`;
 }
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
@@ -4736,6 +4898,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [emailBodyTemplate, setEmailBodyTemplate] = useState(() => readEmailTemplateConfig().bodyTemplate);
     const [cloudflareDbStatus, setCloudflareDbStatus] = useState('');
     const [cloudflareDbBusy, setCloudflareDbBusy] = useState(false);
+    const masterUploadInputRef = useRef(null);
+    const [masterStoreRows, setMasterStoreRows] = useState(() => readLocalMasterStores());
+    const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap memakai Convex. Upload Excel untuk mengganti data lokal lalu sync ke Convex.');
+    const [masterStoreBusy, setMasterStoreBusy] = useState(false);
+    const [masterStoreQuery, setMasterStoreQuery] = useState('');
     async function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
@@ -4824,7 +4991,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
         }
         catch (error) {
-            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=108.`);
+            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=200.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -4997,6 +5164,117 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setManualRequests(readManualStoreRequests());
         refresh({ quiet: true });
     }
+    async function refreshMasterStoresFromConvex() {
+        if (masterStoreBusy)
+            return;
+        setMasterStoreBusy(true);
+        setMasterStoreStatus('Menarik master data detail toko dari Convex...');
+        try {
+            const rowsFromConvex = await fetchMasterStoresFromConvex();
+            if (rowsFromConvex === null)
+                throw new Error(LAST_REMOTE_SYNC_ERROR || 'Convex belum mengirim data master toko.');
+            const saved = saveLocalMasterStores(rowsFromConvex);
+            setMasterStoreRows(saved);
+            setMasterStoreStatus(`Master data Convex diterapkan: ${saved.length} toko.`);
+        }
+        catch (error) {
+            setMasterStoreStatus(`Tarik master gagal: ${error?.message || 'unknown error.'}`);
+        }
+        finally {
+            setMasterStoreBusy(false);
+        }
+    }
+    async function syncLocalMasterStoresToConvex() {
+        if (masterStoreBusy)
+            return;
+        const rowsToSync = normalizeMasterStoreRows(masterStoreRows);
+        if (!rowsToSync.length) {
+            setMasterStoreStatus('Belum ada master data toko untuk dikirim. Upload Excel dulu.');
+            return;
+        }
+        setMasterStoreBusy(true);
+        setMasterStoreStatus(`Mengirim ${rowsToSync.length} master toko ke Convex...`);
+        try {
+            const ok = await syncMasterStoresToConvex(rowsToSync, { replace: true });
+            setMasterStoreStatus(ok ? `Sync Convex berhasil: ${rowsToSync.length} toko tersimpan.` : `Sync Convex gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek deploymentUrl dan function masterStores.'}`);
+        }
+        finally {
+            setMasterStoreBusy(false);
+        }
+    }
+    async function handleMasterStoreFileChange(event) {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file)
+            return;
+        setMasterStoreBusy(true);
+        setMasterStoreStatus(`Membaca file ${file.name}...`);
+        try {
+            const parsedRows = await parseMasterStoreExcelFile(file);
+            if (!parsedRows.length)
+                throw new Error('Tidak ada baris master toko valid. Pastikan header sesuai template.');
+            const saved = saveLocalMasterStores(parsedRows);
+            setMasterStoreRows(saved);
+            setMasterStoreStatus(`Upload berhasil: ${saved.length} toko terbaca. Mengirim ke Convex...`);
+            const ok = await syncMasterStoresToConvex(saved, { replace: true });
+            setMasterStoreStatus(ok ? `Upload + sync Convex selesai: ${saved.length} toko aktif di database.` : `Upload lokal berhasil (${saved.length} toko), tapi sync Convex gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek config Convex.'}`);
+        }
+        catch (error) {
+            setMasterStoreStatus(`Upload gagal: ${error?.message || 'file tidak valid.'}`);
+        }
+        finally {
+            setMasterStoreBusy(false);
+        }
+    }
+    function clearLocalMasterStoreUpload() {
+        if (!confirmAction('Hapus master data toko lokal hasil upload dan kembali ke data bawaan?'))
+            return;
+        localStorage.removeItem(MASTER_STORE_LOCAL_KEY);
+        const fallbackRows = normalizeMasterStoreRows(MASTER_STORES);
+        setMasterStoreRows(fallbackRows);
+        setMasterStoreStatus(`Data lokal direset. Fallback bawaan: ${fallbackRows.length} toko.`);
+    }
+    function renderMasterStorePanel() {
+        const normalizedMasterRows = normalizeMasterStoreRows(masterStoreRows);
+        const previewRows = masterStoreFiltered.slice(0, 20);
+        return React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/80 p-4" },
+            React.createElement("input", { ref: masterUploadInputRef, type: "file", accept: ".xlsx,.xls,.csv", className: "hidden", onChange: handleMasterStoreFileChange }),
+            React.createElement("div", { className: "mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between" },
+                React.createElement("div", null,
+                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Master Data Detail Toko"),
+                    React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Upload Excel ke Database Convex"),
+                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-600" }, "Upload file template untuk mengganti master store lookup, email toko, area manager, regional manager, alamat, dan status operasional.")),
+                React.createElement("div", { className: "flex flex-wrap gap-2" },
+                    React.createElement(Button, { variant: "secondary", icon: "excel", onClick: downloadMasterStoreTemplateExcel }, "Template Excel"),
+                    React.createElement(Button, { variant: "secondary", icon: "upload", onClick: () => masterUploadInputRef.current?.click(), disabled: masterStoreBusy }, masterStoreBusy ? 'Proses...' : 'Upload Excel'),
+                    React.createElement(Button, { variant: "secondary", icon: "download", onClick: refreshMasterStoresFromConvex, disabled: masterStoreBusy }, "Tarik Convex"),
+                    React.createElement(Button, { variant: "secondary", icon: "spark", onClick: syncLocalMasterStoresToConvex, disabled: masterStoreBusy }, "Sync Convex"),
+                    React.createElement(Button, { variant: "secondary", icon: "trash", onClick: clearLocalMasterStoreUpload, disabled: masterStoreBusy }, "Reset Lokal"))),
+            React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
+                React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
+                    React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Total Master"),
+                    React.createElement("p", { className: "mt-1 text-2xl font-black text-slate-950" }, normalizedMasterRows.length)),
+                React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
+                    React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Database"),
+                    React.createElement("p", { className: "mt-1 text-sm font-black text-cyan-800" }, convexEnabled() ? 'Convex aktif' : 'Convex belum aktif')),
+                React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
+                    React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status"),
+                    React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-700" }, masterStoreStatus))),
+            React.createElement("div", { className: "mt-4 max-w-xl" },
+                React.createElement("div", { className: "relative" },
+                    React.createElement(Icon, { name: "search", className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" }),
+                    React.createElement(TextInput, { value: masterStoreQuery, onChange: (event) => setMasterStoreQuery(event.target.value), placeholder: "Cari kode, nama toko, kota, AM...", className: "pl-12" }))),
+            React.createElement("div", { className: "mt-4 grid gap-2 md:grid-cols-2" },
+                previewRows.length ? previewRows.map((store) => React.createElement("div", { key: store.id || store.siteCode4 || store.siteDescr, className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
+                    React.createElement("div", { className: "flex items-start justify-between gap-3" },
+                        React.createElement("div", { className: "min-w-0" },
+                            React.createElement("p", { className: "truncate text-sm font-black text-slate-950" }, store.siteDescr || '-'),
+                            React.createElement("p", { className: "mt-1 text-xs font-bold text-slate-600" }, [store.siteCode4 || store.siteCode || '-', store.type || '-', store.city || '-'].join(' • ')),
+                            React.createElement("p", { className: "mt-1 truncate text-[11px] font-semibold text-slate-500" }, store.emailStore || store.address || 'Belum ada email/alamat')),
+                        React.createElement(Badge, { tone: store.operationalStatus === 'active' ? 'success' : 'warning' }, store.operationalStatus || 'active'))))
+                    : React.createElement("div", { className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-cyan-100 md:col-span-2" }, "Belum ada master toko yang cocok.")),
+            React.createElement("p", { className: "mt-3 text-[11px] font-semibold text-slate-500" }, "Preview menampilkan maksimal 20 baris. Total hasil filter: ", masterStoreFiltered.length));
+    }
     useEffect(() => {
         if (!open)
             return undefined;
@@ -5020,10 +5298,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         applyRows(localRows(), 'local');
         setManualRequests(readManualStoreRequests());
         setPresenceRows(readLocalPresenceRows());
+        setMasterStoreRows(readLocalMasterStores());
         setConnectionState('idle');
         setLastSync('');
         setLoading(false);
-        // Revamp 108: ruang panel rahasia tidak lagi auto polling Cloudflare/Convex saat dibuka.
+        // Revamp 200: ruang panel rahasia tidak lagi auto polling Cloudflare/Convex saat dibuka.
         // Monitoring tetap bisa di-refresh manual dari tab Monitoring agar panel setting tidak memicu request berulang.
         return undefined;
         let cancelled = false;
@@ -5142,6 +5421,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         const haystack = normalize([row.bestie_name, row.store_name, row.store_code].join(' '));
         return !query || haystack.includes(normalize(query));
     });
+    const masterStoreFiltered = normalizeMasterStoreRows(masterStoreRows).filter((store) => {
+        const haystack = normalize([store.siteCode4, store.siteCode, store.siteDescr, store.type, store.city, store.address, store.emailStore, store.areaManager].join(' '));
+        return !masterStoreQuery || haystack.includes(normalize(masterStoreQuery));
+    });
     const onlinePresence = normalizePresenceRows(presenceRows).filter((row) => row.is_online);
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
@@ -5162,6 +5445,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         "Update terakhir: ",
                         formatDateTime(lastSync)) : null),
                 React.createElement("div", { className: "flex flex-wrap gap-2" },
+                    secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "excel", onClick: downloadMasterStoreTemplateExcel }, "Template Excel") : null,
                     secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "download", onClick: () => exportJson(rows, 'regional-bestie-monitor.json') }, "Export JSON") : null,
                     secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "spark", onClick: () => refresh(), disabled: loading }, loading ? 'Sync...' : 'Refresh') : null,
                     React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
@@ -5178,11 +5462,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
-                                React.createElement(Badge, { tone: "dark" }, "Revamp 108"),
-                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "D1 Safe Mode")),
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Cloudflare D1 Control Center"),
+                                React.createElement(Badge, { tone: "dark" }, "Revamp 200"),
+                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Ready")),
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Database Control Center"),
                             React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Ruang Panel Rahasia"),
-                            React.createElement("p", { className: "mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300" }, "Panel ini dibuat safe-mode: saat dibuka tidak auto polling Cloudflare/Convex. Koneksi D1 hanya dicek saat tombol Test D1 ditekan, jadi tidak memicu refresh atau pindah halaman sendiri.")),
+                            React.createElement("p", { className: "mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300" }, "Panel dibuat safe-mode. Untuk database utama baru, gunakan Convex di tab Monitoring. Cloudflare D1 tetap tersedia sebagai legacy/fallback selama migrasi.")),
                         React.createElement("div", { className: "flex flex-wrap gap-2" },
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
                             React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullCloudflareSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
@@ -5361,6 +5645,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
                         React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
                         React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
+                renderMasterStorePanel(),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,
