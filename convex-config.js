@@ -1,19 +1,12 @@
-// Convex realtime/backend configuration for Bestie Visit.
-// Development URL dari Convex dashboard/terminal: third-monitor-660.
-// Untuk production, ganti deploymentUrl dengan URL production kamu, lalu jalankan npx convex deploy.
+// Convex realtime/backend configuration for Bestie Visit revamp200.
+// Setelah menjalankan `npx convex dev`, ganti deploymentUrl dengan URL Convex kamu.
 window.RB_CONVEX_CONFIG = {
   enabled: true,
-
-  // Realtime WebSocket client URL.
   deploymentUrl: 'https://third-monitor-660.convex.cloud',
-
-  // Optional legacy HTTP fallback URL.
   httpUrl: '',
-
-  // Static browser bundle; app ini tidak memakai build step.
   bundleUrl: 'https://unpkg.com/convex@latest/dist/browser.bundle.js',
 
-  // Secret admin monitor functions.
+  // Monitoring realtime.
   monitorQuery: 'monitor:listVisits',
   manualRequestsQuery: 'monitor:listManualStoreRequests',
   presenceQuery: 'monitor:listPresence',
@@ -21,26 +14,14 @@ window.RB_CONVEX_CONFIG = {
   upsertManualRequestMutation: 'monitor:upsertManualStoreRequest',
   presenceUpsertMutation: 'monitor:upsertPresence',
 
-  // Linked device + visit sync functions.
-  registerDeviceMutation: 'linkedDevices:registerDevice',
-  createLinkMutation: 'linkedDevices:createLinkCode',
-  acceptLinkMutation: 'linkedDevices:acceptLinkCode',
-  linkedDevicesQuery: 'linkedDevices:getLinkedDevices',
-  visitUpsertMutation: 'visits:upsertVisit',
-  visitDeleteMutation: 'visits:deleteVisit',
-  visitListQuery: 'visits:listVisits',
-
-  // Global admin-controlled HOME/welcome content.
+  // App settings.
   appConfigListQuery: 'appSettings:listConfigs',
   appConfigSetMutation: 'appSettings:setConfig',
 
-  // Legacy HTTP action paths, only used as fallback if deploymentUrl is empty/unavailable.
-  upsertPath: 'monitor/upsertVisit',
-  listPath: 'monitor/listVisits',
-  upsertManualRequestPath: 'monitor/upsertManualStoreRequest',
-  listManualRequestsPath: 'monitor/listManualStoreRequests',
-  upsertPresencePath: 'monitor/upsertPresence',
-  listPresencePath: 'monitor/listPresence',
+  // Master Data Detail Toko.
+  masterStoreListQuery: 'masterStores:listStores',
+  masterStoreUpsertManyMutation: 'masterStores:upsertMany',
+  masterStoreReplaceMutation: 'masterStores:replaceStores',
 
   pollMs: 5000,
   token: ''

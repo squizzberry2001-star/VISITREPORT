@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp108-secret-panel-d1-safe';
+const APP_VERSION = 'revamp200-convex-master-store';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -11,12 +11,14 @@ const LOCAL_ASSETS = [
   './ca-assignment-export.js',
   './jszip.min.js',
   './cloudflare-config.js',
+  './convex-config.js',
   './netlify-config.js',
   './email-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/welcome-handshake-bg.jpg'
+  './icons/welcome-handshake-bg.jpg',
+  './templates/master-data-detail-toko-template.xlsx'
 ];
 const CORE_ASSETS = [
   './',

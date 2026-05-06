@@ -1,6 +1,6 @@
 {
-  "version": "revamp108-secret-panel-d1-safe",
-  "build": "revamp108-secret-panel-d1-safe",
-  "updatedAt": "2026-05-06T12:30:00+07:00",
-  "note": "Revamp ruang panel rahasia: D1 safe-mode, tidak auto polling saat panel setting dibuka, tombol Test D1 langsung cek Worker + D1 + app settings, tombol Tarik Setting dari Cloudflare D1, dan tampilan panel admin diperbarui."
+  "version": "revamp200-convex-master-store",
+  "build": "revamp200-convex-master-store",
+  "updatedAt": "2026-05-06T13:30:00+07:00",
+  "note": "Revamp Monitoring: upload Master Data Detail Toko Excel, tombol Template Excel, dan integrasi Convex masterStores sebagai database utama."
 }
