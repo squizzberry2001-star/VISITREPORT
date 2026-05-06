@@ -1,5 +1,5 @@
 {
-  "version": "revamp207-history-sync-pdf-email-fix",
-  "build": "revamp207-history-sync-pdf-email-fix",
-  "message": "Lightweight PDF preview, AutoTable PDF fix, email TO fallback, and NIK-scoped history backup/restore."
+  "version": "revamp209-pdf-no-autotable-fallback",
+  "build": "revamp209-pdf-no-autotable-fallback",
+  "message": "PDF preview fix: crew table no longer depends on jsPDF AutoTable, preventing doc.autoTable is not a function."
 }

@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp207-history-sync-pdf-email-fix';
+const APP_VERSION = 'revamp209-pdf-no-autotable-fallback';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
