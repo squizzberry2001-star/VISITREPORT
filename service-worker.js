@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp201-convex-secret-panel';
+const APP_VERSION = 'revamp202-mobile-convex-nik-sync';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

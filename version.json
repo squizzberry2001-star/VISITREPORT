@@ -1,6 +1,11 @@
 {
-  "version": "revamp201-convex-secret-panel",
-  "build": "revamp201-convex-secret-panel",
-  "updatedAt": "2026-05-06T22:15:00+07:00",
-  "note": "Revamp Panel Rahasia: UI Setting Web diarahkan ke Convex Control Center, tombol Test Convex/Tarik Setting/Sync History, dan flow remote sync diprioritaskan ke Convex."
+  "version": "revamp202-mobile-convex-nik-sync",
+  "build": "revamp202-mobile-convex-nik-sync",
+  "updatedAt": "2026-05-06T16:05:27Z",
+  "notes": [
+    "Mobile secret panel simplified",
+    "NIK login in welcome animation",
+    "Convex silent web sync signal",
+    "List PIC Excel header detection"
+  ]
 }
