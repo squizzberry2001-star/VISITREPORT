@@ -3621,3 +3621,83 @@ button[title*="Hapus"] svg,
   50% { opacity: 1; transform: scale(1.04) rotate(4deg); }
   100% { opacity: .35; transform: scale(.88) rotate(0); }
 }
+
+/* Revamp 108: secret panel D1 safe mode */
+.secret-admin-backdrop {
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+}
+.secret-admin-panel {
+  position: relative !important;
+  isolation: isolate !important;
+  border: 1px solid rgba(226,232,240,.9) !important;
+  box-shadow: 0 30px 90px rgba(15,23,42,.26) !important;
+}
+.secret-admin-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 132px;
+  border-radius: 32px 32px 0 0;
+  background: linear-gradient(135deg, rgba(15,118,110,.12), rgba(14,165,233,.10), transparent 72%);
+  pointer-events: none;
+  z-index: -1;
+}
+.secret-d1-command {
+  position: relative;
+  isolation: isolate;
+}
+.secret-d1-command::before,
+.secret-d1-command::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(28px);
+  opacity: .55;
+  z-index: -1;
+}
+.secret-d1-command::before {
+  width: 240px;
+  height: 240px;
+  right: -90px;
+  top: -120px;
+  background: rgba(20,184,166,.46);
+}
+.secret-d1-command::after {
+  width: 180px;
+  height: 180px;
+  left: -60px;
+  bottom: -96px;
+  background: rgba(56,189,248,.28);
+}
+.secret-panel-tabs {
+  position: sticky;
+  top: 10px;
+  z-index: 2;
+  box-shadow: 0 10px 26px rgba(15,23,42,.07);
+}
+.secret-panel-tab {
+  min-height: 52px !important;
+  border-radius: 22px !important;
+}
+.secret-panel-tab.active {
+  background: linear-gradient(135deg, #0f766e, #0891b2) !important;
+  box-shadow: 0 14px 28px rgba(15,118,110,.25) !important;
+}
+@media (max-width: 640px) {
+  .secret-admin-backdrop {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .secret-admin-panel {
+    width: 100vw !important;
+    min-height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: calc(16px + var(--safe-top)) 14px calc(24px + var(--safe-bottom)) !important;
+    box-shadow: none !important;
+  }
+  .secret-admin-panel::before { border-radius: 0 !important; }
+  .secret-panel-tabs { top: calc(8px + var(--safe-top)); }
+  .secret-d1-command { border-radius: 24px !important; }
+}

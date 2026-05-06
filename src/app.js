@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp107-home-start-no-auto-refresh';
+const APP_BUILD_VERSION = 'revamp108-secret-panel-d1-safe';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3787,7 +3787,7 @@ function remoteSaveSuccessText(label) {
 }
 function remoteSaveFailText(label) {
     const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
-    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=106.`;
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=108.`;
 }
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
@@ -4783,19 +4783,79 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setEmailBodyTemplate(saved.bodyTemplate);
         alert('Template email dikembalikan ke default.');
     }
+    async function cloudflarePanelFetchJson(url, options = {}) {
+        const response = await fetch(url, {
+            method: options.method || 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-store',
+            headers: { Accept: 'application/json', ...(options.headers || {}) },
+            body: options.body
+        });
+        const rawText = await response.text().catch(() => '');
+        let payload = null;
+        if (rawText) {
+            try {
+                payload = JSON.parse(rawText);
+            }
+            catch (error) {
+                throw new Error(`Endpoint tidak mengirim JSON valid: ${rawText.slice(0, 120)}`);
+            }
+        }
+        if (!response.ok || payload?.ok === false) {
+            throw new Error(payload?.error || payload?.message || `HTTP ${response.status}`);
+        }
+        return payload || { ok: true };
+    }
     async function testCloudflareD1Panel() {
         if (cloudflareDbBusy)
             return;
         setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Mengecek koneksi Cloudflare D1 langsung ke endpoint aktif...');
+        const endpoint = cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data');
+        setCloudflareDbStatus(`Mengecek endpoint aktif: ${endpoint}`);
         try {
-            const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
-            const rows = payload?.rows || payload?.data || [];
+            const healthUrl = new URL(endpoint, window.location.origin);
+            healthUrl.searchParams.set('_panelCheck', String(Date.now()));
+            const healthPayload = await cloudflarePanelFetchJson(healthUrl.toString());
+            const d1Payload = await cloudflareRequest('testD1');
+            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
+            const rows = settingsPayload?.rows || settingsPayload?.data || [];
             const count = Array.isArray(rows) ? rows.length : 0;
-            setCloudflareDbStatus(`Cloudflare D1 AKTIF & TERKONEKSI. App settings terbaca: ${count} item. Endpoint sudah valid.`);
+            setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
         }
         catch (error) {
-            setCloudflareDbStatus(`Cloudflare D1 belum terbaca di frontend: ${error?.message || 'request gagal.'}. Jika endpoint manual sudah OK, tutup web lalu buka ulang dengan ?v=106.`);
+            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=108.`);
+        }
+        finally {
+            setCloudflareDbBusy(false);
+        }
+    }
+    async function pullCloudflareSettingsPanel() {
+        if (cloudflareDbBusy)
+            return;
+        setCloudflareDbBusy(true);
+        setCloudflareDbStatus('Menarik setting terbaru dari Cloudflare D1 ke panel lokal...');
+        try {
+            const rows = await fetchAppConfigsFromCloudflare();
+            if (rows === null)
+                throw new Error(LAST_REMOTE_SYNC_ERROR || 'Cloudflare tidak mengirim data settings.');
+            const applied = applyRemoteAppConfigRows(rows);
+            const nextWelcome = readWelcomeConfig();
+            setWelcomeTitle(nextWelcome.title);
+            setWelcomeSubtitle(nextWelcome.subtitle);
+            setWelcomeDurationSeconds(nextWelcome.durationSeconds);
+            const nextNotice = readUpdateNoticeConfig();
+            setNoticeEnabled(nextNotice.enabled);
+            setNoticeTitle(nextNotice.title);
+            setNoticeMessagesText(nextNotice.messages.join('\n'));
+            setNoticeIntervalSeconds(nextNotice.intervalSeconds);
+            const nextEmailTemplate = readEmailTemplateConfig();
+            setEmailSubjectTemplate(nextEmailTemplate.subjectTemplate);
+            setEmailBodyTemplate(nextEmailTemplate.bodyTemplate);
+            setCloudflareDbStatus(`Tarik setting selesai. ${applied.length} item diterapkan dari Cloudflare D1 ke panel.`);
+        }
+        catch (error) {
+            setCloudflareDbStatus(`Tarik setting gagal: ${error?.message || 'request gagal.'}`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -4957,6 +5017,15 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setNoticeMessagesText(currentNotice.messages.join('\n'));
         setNoticeIntervalSeconds(currentNotice.intervalSeconds);
         setSecretTab('settings');
+        applyRows(localRows(), 'local');
+        setManualRequests(readManualStoreRequests());
+        setPresenceRows(readLocalPresenceRows());
+        setConnectionState('idle');
+        setLastSync('');
+        setLoading(false);
+        // Revamp 108: ruang panel rahasia tidak lagi auto polling Cloudflare/Convex saat dibuka.
+        // Monitoring tetap bisa di-refresh manual dari tab Monitoring agar panel setting tidak memicu request berulang.
+        return undefined;
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
@@ -5101,10 +5170,34 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'settings' && 'active'), onClick: () => setSecretTab('settings') },
                     React.createElement(Icon, { name: "settings", className: "h-4 w-4" }),
                     React.createElement("span", null, "Setting Web")),
-                React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'), onClick: () => setSecretTab('monitoring') },
+                React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'), onClick: () => { setSecretTab('monitoring'); refresh(); } },
                     React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
                     React.createElement("span", null, "Monitoring"))),
             secretTab === 'settings' ? (React.createElement(React.Fragment, null,
+                React.createElement("div", { className: "secret-d1-command mb-5 overflow-hidden rounded-[30px] border border-slate-800 bg-slate-950 p-4 text-white shadow-2xl md:p-5" },
+                    React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
+                        React.createElement("div", { className: "min-w-0" },
+                            React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
+                                React.createElement(Badge, { tone: "dark" }, "Revamp 108"),
+                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "D1 Safe Mode")),
+                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Cloudflare D1 Control Center"),
+                            React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Ruang Panel Rahasia"),
+                            React.createElement("p", { className: "mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300" }, "Panel ini dibuat safe-mode: saat dibuka tidak auto polling Cloudflare/Convex. Koneksi D1 hanya dicek saat tombol Test D1 ditekan, jadi tidak memicu refresh atau pindah halaman sendiri.")),
+                        React.createElement("div", { className: "flex flex-wrap gap-2" },
+                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
+                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullCloudflareSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
+                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
+                    React.createElement("div", { className: "mt-4 grid gap-3 md:grid-cols-3" },
+                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
+                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Endpoint"),
+                            React.createElement("p", { className: "mt-1 break-all text-xs font-bold leading-5 text-white" }, cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data'))),
+                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
+                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Auto Polling"),
+                            React.createElement("p", { className: "mt-1 text-sm font-black text-emerald-200" }, "OFF di Setting Panel"),
+                            React.createElement("p", { className: "mt-1 text-[11px] font-semibold text-slate-400" }, "Monitoring baru fetch saat tab Monitoring / Refresh ditekan.")),
+                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
+                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status D1"),
+                            React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-200" }, cloudflareDbStatus || 'Belum dites dari panel ini. Tekan Test D1.')))),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,
@@ -5169,6 +5262,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Panel Database Rahasia")),
                         React.createElement("div", { className: "flex flex-wrap gap-2" },
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
+                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullCloudflareSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
                             React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
                     React.createElement("div", { className: "rounded-2xl bg-white px-4 py-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-sky-100" },
                         React.createElement("p", null, "Endpoint: ", cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data')),
