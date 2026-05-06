@@ -1,9 +1,8 @@
-// Convex realtime/backend configuration for Bestie Visit revamp200.
-// Setelah menjalankan `npx convex dev`, ganti deploymentUrl dengan URL Convex kamu.
-window.RB_CONVEX_CONFIG = {
+window.RBV_CONVEX_CONFIG = {
   enabled: true,
-  deploymentUrl: 'https://third-monitor-660.convex.cloud',
-  httpUrl: '',
+  deploymentUrl: 'https://fabulous-alligator-318.convex.cloud',
+  siteUrl: 'https://fabulous-alligator-318.convex.site',
+  httpUrl: 'https://fabulous-alligator-318.convex.site',
   bundleUrl: 'https://unpkg.com/convex@latest/dist/browser.bundle.js',
 
   // Monitoring realtime.
