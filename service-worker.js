@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp202-mobile-convex-nik-sync';
+const APP_VERSION = 'revamp203-welcome-nik-unfreeze';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
