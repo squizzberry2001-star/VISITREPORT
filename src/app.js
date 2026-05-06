@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp207-history-sync-pdf-email-fix';
+const APP_BUILD_VERSION = 'revamp209-pdf-no-autotable-fallback';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2670,32 +2670,38 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp92-hide-clear-topnav-redownload" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp209-pdf-no-autotable-fallback" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                React.createElement("div", { className: "grid grid-cols-3 gap-2 sm:grid-cols-6" },
-                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
-                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Backup History")),
-                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
-                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Restore History")),
-                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
-                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Upload Sync")),
-                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
-                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Tarik Sync")),
-                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", style: { animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
-                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "block max-w-full truncate" }, "Install")),
-                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-extrabold leading-none shadow-sm transition hover:-translate-y-0.5 active:scale-[0.98]", style: {
-                            background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                            color: '#ffffff',
-                            border: '1px solid rgba(255,255,255,0.28)',
-                            boxShadow: '0 10px 22px rgba(185,28,28,0.24)'
-                        }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
-                        React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "block max-w-full truncate", style: { color: '#ffffff' } }, "Hapus History"))),
+                React.createElement("div", { className: "home-quick-actions-grid", style: {
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        gap: '10px'
+                    } },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                        React.createElement(Icon, { name: "download", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "History")),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
+                        React.createElement(Icon, { name: "upload", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "History")),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
+                        React.createElement(Icon, { name: "upload", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Upload"),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '88px' }, onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
+                        React.createElement(Icon, { name: "download", className: "h-5 w-5 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Tarik"),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '88px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement(Icon, { name: "spark", className: "h-5 w-5 shrink-0" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Install"),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "App")),
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '88px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
+                        React.createElement(Icon, { name: "trash", className: "h-5 w-5 shrink-0" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
+                        React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History"))),
+                React.createElement("p", { className: "mt-3 px-1 text-[11px] font-semibold leading-4 text-slate-400" }, "Aksi cepat dibuat grid 3 x 2 agar lebih ringkas di mobile dan tidak menutupi daftar history toko di bawah."),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
