@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp102-cloudflare-frontend-status-fix';
+const APP_BUILD_VERSION = 'revamp107-home-start-no-auto-refresh';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3787,7 +3787,7 @@ function remoteSaveSuccessText(label) {
 }
 function remoteSaveFailText(label) {
     const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
-    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=103.`;
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=106.`;
 }
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
@@ -4795,7 +4795,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             setCloudflareDbStatus(`Cloudflare D1 AKTIF & TERKONEKSI. App settings terbaca: ${count} item. Endpoint sudah valid.`);
         }
         catch (error) {
-            setCloudflareDbStatus(`Cloudflare D1 belum terbaca di frontend: ${error?.message || 'request gagal.'}. Jika endpoint manual sudah OK, tutup web lalu buka ulang dengan ?v=102.`);
+            setCloudflareDbStatus(`Cloudflare D1 belum terbaca di frontend: ${error?.message || 'request gagal.'}. Jika endpoint manual sudah OK, tutup web lalu buka ulang dengan ?v=106.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5510,11 +5510,17 @@ function App() {
                 if (cancelled || !data)
                     return;
                 setVisit(data);
+                const welcomePending = sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1';
+                if (welcomePending) {
+                    setScreen('dashboard');
+                    sessionStorage.setItem(SESSION_SCREEN_KEY, 'dashboard');
+                    return;
+                }
                 const savedScreen = sessionStorage.getItem(SESSION_SCREEN_KEY);
                 if (savedScreen === 'preview' || savedScreen === 'audit')
                     setScreen(savedScreen);
                 else
-                    setScreen('audit');
+                    setScreen('dashboard');
             }
             catch (error) {
                 console.warn('Restore active visit gagal:', error);
@@ -5575,8 +5581,11 @@ function App() {
     function closeWelcome() {
         try {
             sessionStorage.setItem(WELCOME_SEEN_KEY, '1');
+            sessionStorage.setItem(SESSION_SCREEN_KEY, 'dashboard');
         }
         catch (error) { }
+        setScreen('dashboard');
+        setActiveSection(0);
         setWelcomeOpen(false);
     }
     function applyWelcomeConfig(nextConfig) {
@@ -5603,27 +5612,14 @@ function App() {
         refreshHistory();
         let cancelled = false;
         let versionTimer = null;
-        function reloadWithVersion(version) {
-            if (cancelled || !version)
+        async function clearAppCachesForNewBuild(latest) {
+            if (!('caches' in window) || !latest || latest === APP_BUILD_VERSION)
                 return;
-            const now = Date.now();
-            const lastReload = Number(sessionStorage.getItem(APP_RELOAD_LOCK_KEY) || 0);
-            if (now - lastReload < 12000)
-                return;
-            try {
-                sessionStorage.setItem(APP_RELOAD_LOCK_KEY, String(now));
-                localStorage.setItem(APP_VERSION_KEY, version);
-            }
-            catch (error) { }
-            const url = new URL(window.location.href);
-            url.searchParams.set('v', version);
-            url.searchParams.set('sync', String(now));
-            window.location.replace(url.toString());
-        }
-        async function clearAppCaches() {
-            if (!('caches' in window))
+            const lastCleared = sessionStorage.getItem(APP_RELOAD_LOCK_KEY);
+            if (lastCleared === latest)
                 return;
             try {
+                sessionStorage.setItem(APP_RELOAD_LOCK_KEY, latest);
                 const keys = await caches.keys();
                 await Promise.all(keys.filter((key) => key.startsWith('bestie-visit-')).map((key) => caches.delete(key)));
             }
@@ -5635,18 +5631,11 @@ function App() {
                 if (!response.ok)
                     return;
                 const info = await response.json();
-                const latest = String(info.version || info.build || '').trim();
+                const latest = String(info.version || info.build || APP_BUILD_VERSION).trim();
                 if (!latest)
                     return;
-                const saved = localStorage.getItem(APP_VERSION_KEY);
-                if (!saved)
-                    localStorage.setItem(APP_VERSION_KEY, APP_BUILD_VERSION);
-                if (latest !== APP_BUILD_VERSION) {
-                    await clearAppCaches();
-                    reloadWithVersion(latest);
-                    return;
-                }
                 localStorage.setItem(APP_VERSION_KEY, latest);
+                await clearAppCachesForNewBuild(latest);
             }
             catch (error) { }
         }
@@ -5656,17 +5645,8 @@ function App() {
             try {
                 const registration = await navigator.serviceWorker.register(`service-worker.js?v=${APP_BUILD_VERSION}`);
                 registration.update().catch(() => { });
-                if (registration.waiting)
-                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                registration.addEventListener('updatefound', () => {
-                    const worker = registration.installing;
-                    if (!worker)
-                        return;
-                    worker.addEventListener('statechange', () => {
-                        if (worker.state === 'installed' && navigator.serviceWorker.controller)
-                            reloadWithVersion(APP_BUILD_VERSION);
-                    });
-                });
+                // Jangan paksa reload saat service worker baru terpasang.
+                // Versi baru akan dipakai saat user membuka ulang/refresh manual, sehingga halaman tidak loncat ke Home sendiri.
             }
             catch (error) { }
         }
