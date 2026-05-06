@@ -1,6 +1,6 @@
 {
-  "version": "revamp102-cloudflare-frontend-status-fix",
-  "build": "revamp102-cloudflare-frontend-status-fix",
+  "version": "revamp103-cloudflare-save-sync-fix",
+  "build": "revamp103-cloudflare-save-sync-fix",
   "updatedAt": "2026-05-05T22:15:00+07:00",
   "note": "Frontend Cloudflare D1 status fix: gunakan endpoint Worker root, bypass service worker cross-origin, dan refresh status Test D1 dari response live."
 }
