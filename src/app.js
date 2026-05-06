@@ -146,13 +146,136 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp203-welcome-nik-unfreeze';
+const APP_BUILD_VERSION = 'revamp204-lite-mobile-performance';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
 function cx(...classes) {
     return classes.filter(Boolean).join(' ');
 }
+
+// =============================================================
+// Revamp 204: Lite Mobile Performance Mode
+// =============================================================
+const RBV_LITE_MODE = (() => {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const forced = params.get('lite');
+        if (forced === '0' || forced === 'false') return false;
+        if (forced === '1' || forced === 'true') return true;
+        const memory = Number(navigator.deviceMemory || 0);
+        const cores = Number(navigator.hardwareConcurrency || 0);
+        const smallScreen = Math.min(window.innerWidth || 9999, window.innerHeight || 9999) <= 430;
+        const oldIos = /OS (1[0-4])_/i.test(navigator.userAgent || '');
+        const oldAndroid = /Android\s([5-8])\b/i.test(navigator.userAgent || '');
+        return oldIos || oldAndroid || (memory && memory <= 2) || (cores && cores <= 4 && smallScreen);
+    } catch (error) {
+        return false;
+    }
+})();
+window.RBV_LITE_MODE = RBV_LITE_MODE;
+try {
+    document.documentElement.classList.toggle('rbv-lite-mode', RBV_LITE_MODE);
+    document.documentElement.classList.add('rbv-lazy-libs');
+} catch (error) {}
+const RBV_LIBS = {
+    xlsx: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+    qrcode: 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+    jsqr: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
+    jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    autotable: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js',
+    pdfjs: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+    jszip: 'jszip.min.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
+    pdfAssets: 'src/pdf-template-assets.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
+    pdfGenerator: 'pdf-generator.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
+    caExport: 'ca-assignment-export.js?v=' + encodeURIComponent(APP_BUILD_VERSION)
+};
+const rbvScriptPromises = new Map();
+function loadScriptOnce(src, globalCheck) {
+    if (typeof globalCheck === 'function') {
+        try { if (globalCheck()) return Promise.resolve(true); } catch (error) {}
+    }
+    if (rbvScriptPromises.has(src)) return rbvScriptPromises.get(src);
+    const promise = new Promise((resolve, reject) => {
+        const existing = Array.from(document.scripts || []).find((script) => script.src && script.src.includes(src.split('?')[0]));
+        if (existing) {
+            existing.addEventListener('load', () => resolve(true), { once: true });
+            existing.addEventListener('error', () => reject(new Error('Gagal memuat library: ' + src)), { once: true });
+            if (typeof globalCheck === 'function') {
+                setTimeout(() => { try { if (globalCheck()) resolve(true); } catch (error) {} }, 30);
+            }
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error('Gagal memuat library: ' + src));
+        document.head.appendChild(script);
+    });
+    rbvScriptPromises.set(src, promise);
+    return promise;
+}
+async function ensureXlsxReady() {
+    await loadScriptOnce(RBV_LIBS.xlsx, () => !!window.XLSX?.read);
+    return window.XLSX;
+}
+async function ensureQrGeneratorReady() {
+    await loadScriptOnce(RBV_LIBS.qrcode, () => !!window.QRCode?.toDataURL);
+    return window.QRCode;
+}
+async function ensureQrScannerReady() {
+    await loadScriptOnce(RBV_LIBS.jsqr, () => !!window.jsQR);
+    return window.jsQR;
+}
+async function ensurePdfEngineReady() {
+    await loadScriptOnce(RBV_LIBS.jspdf, () => !!window.jspdf?.jsPDF);
+    await loadScriptOnce(RBV_LIBS.autotable, () => !!window.jspdf?.jsPDF?.API?.autoTable || !!window.jspdf?.jsPDF);
+    await loadScriptOnce(RBV_LIBS.pdfAssets, () => !!window.ReportVisitAssets || !!window.PDF_TEMPLATE_ASSETS || !!window.RBV_PDF_TEMPLATE_ASSETS);
+    await loadScriptOnce(RBV_LIBS.pdfGenerator, () => !!window.ReportVisitPDF?.createBlob);
+    return window.ReportVisitPDF;
+}
+async function ensurePdfPreviewReady() {
+    await loadScriptOnce(RBV_LIBS.pdfjs, () => !!window.pdfjsLib?.getDocument);
+    return window.pdfjsLib;
+}
+async function ensureCaExportReady() {
+    await loadScriptOnce(RBV_LIBS.jszip, () => typeof window.JSZip !== 'undefined');
+    await loadScriptOnce(RBV_LIBS.caExport, () => !!window.__caAssignmentExport?.buildWorkbook);
+    return window.__caAssignmentExport;
+}
+async function compressImageFileForLite(file, options = {}) {
+    const maxSide = Number(options.maxSide || (RBV_LITE_MODE ? 1280 : 1600));
+    const quality = Number(options.quality || (RBV_LITE_MODE ? 0.72 : 0.82));
+    if (!file || !/^image\//i.test(file.type || '')) return fileToDataUrl(file);
+    try {
+        const dataUrl = await fileToDataUrl(file);
+        const image = await loadImageElement(dataUrl);
+        const sourceWidth = image.naturalWidth || image.width || 1;
+        const sourceHeight = image.naturalHeight || image.height || 1;
+        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+        if (scale >= 1 && file.size < 900 * 1024) return dataUrl;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+        const ctx = canvas.getContext('2d', { alpha: false });
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', Math.max(0.58, Math.min(0.9, quality)));
+    } catch (error) {
+        console.warn('Kompresi foto gagal, memakai file asli:', error);
+        return fileToDataUrl(file);
+    }
+}
+function rbvIdle(callback, timeout = 600) {
+    if (window.requestIdleCallback) return window.requestIdleCallback(callback, { timeout });
+    return window.setTimeout(callback, Math.min(timeout, 250));
+}
+
 function cleanText(value, fallback = '') {
     const raw = value === undefined || value === null ? '' : String(value).trim();
     return raw || fallback;
@@ -431,11 +554,12 @@ function saveLocalMasterStores(rows) {
 function getEffectiveMasterStores() {
     return readLocalMasterStores();
 }
-function downloadMasterStoreTemplateExcel() {
+async function downloadMasterStoreTemplateExcel() {
     const sampleRows = [
         ['1', '0001', 'CIBUBUR', 'FamiSuper', 'Depok', 'Jl. Alternatif Cibubur, Depok', 'store.fmcibubur@familymartindonesia.com', 'Nama Store Head', 'Nama Area Manager', 'area.manager@email.com', 'Nama Regional Manager', 'regional.manager@email.com', 'active', '', '', 'Contoh baris, boleh dihapus'],
         ['2', '0002', 'BULUNGAN', 'CVS', 'Jakarta Selatan', 'Jl. Raya Bulungan No. 18', 'store.bulungan@familymartindonesia.com', '', '', '', '', '', 'active', '', '', '']
     ];
+    try { await ensureXlsxReady(); } catch (error) { console.warn('XLSX lazy-load gagal:', error); }
     if (window.XLSX?.utils?.book_new) {
         const workbook = window.XLSX.utils.book_new();
         const sheet = window.XLSX.utils.aoa_to_sheet([MASTER_STORE_TEMPLATE_HEADERS, ...sampleRows]);
@@ -451,7 +575,8 @@ function downloadMasterStoreTemplateExcel() {
     link.click();
     link.remove();
 }
-function parseMasterStoreExcelFile(file) {
+async function parseMasterStoreExcelFile(file) {
+    await ensureXlsxReady();
     return new Promise((resolve, reject) => {
         if (!window.XLSX?.read) {
             reject(new Error('Library Excel belum termuat. Reload halaman lalu coba lagi.'));
@@ -1632,9 +1757,10 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
         if (!file)
             return;
         try {
-            const dataUrl = await fileToDataUrl(file);
+            const dataUrl = await compressImageFileForLite(file);
             onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
-            setEditorOpen(true);
+            if (!RBV_LITE_MODE)
+                setEditorOpen(true);
         }
         catch (error) {
             alert('Foto gagal dibaca. Coba pilih ulang foto.');
@@ -2116,12 +2242,14 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         const payload = buildLinkedDevicePayload();
         setQrText(payload);
         setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
-        if (window.QRCode?.toDataURL) {
-            window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
-                if (!error && url)
-                    setQrDataUrl(url);
-            });
-        }
+        ensureQrGeneratorReady().then(() => {
+            if (window.QRCode?.toDataURL) {
+                window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
+                    if (!error && url)
+                        setQrDataUrl(url);
+                });
+            }
+        }).catch(() => {});
         return () => stopScanner();
     }, [open]);
     function saveLinkedDevice(payload) {
@@ -2148,6 +2276,7 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
                 setScanStatus('Kamera tidak tersedia di browser ini.');
                 return;
             }
+            try { await ensureQrScannerReady(); } catch (error) {}
             if (!window.jsQR) {
                 setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
                 return;
@@ -2870,6 +2999,7 @@ function buildEmailOptimizedVisit(visit) {
     };
 }
 async function buildPdfAttachmentForEmail(visit, currentPdfBlob) {
+    await ensurePdfEngineReady();
     if (!window.ReportVisitPDF?.createBlob)
         throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
     const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
@@ -3293,6 +3423,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             lastWidthRef.current = measuredWidth;
             const seq = renderSeqRef.current + 1;
             renderSeqRef.current = seq;
+            try { await ensurePdfPreviewReady(); } catch (error) { console.warn('PDF preview lazy-load gagal:', error); }
             const pdfjsLib = window.pdfjsLib;
             if (!pdfjsLib?.getDocument) {
                 setFallback(true);
@@ -3407,6 +3538,7 @@ function PreviewPage({ visit, onBack }) {
                 return;
             setStatus('Merender PDF...');
             try {
+                await ensurePdfEngineReady();
                 if (!window.ReportVisitPDF?.createBlob)
                     throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
                 const blob = await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
@@ -3444,6 +3576,7 @@ function PreviewPage({ visit, onBack }) {
         setDownloadMessage('Menyiapkan PDF...');
         try {
             await new Promise((resolve) => window.setTimeout(resolve, 80));
+            await ensurePdfEngineReady();
             if (!window.ReportVisitPDF?.createBlob)
                 throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
             const blob = pdfBlob || await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
@@ -3463,7 +3596,7 @@ function PreviewPage({ visit, onBack }) {
         }
     }
     async function handleExportExcel() { if (!visit)
-        return; if (!window.__caAssignmentExport?.buildWorkbook) {
+        return; try { await ensureCaExportReady(); } catch (error) { console.warn('Export Excel lazy-load gagal:', error); } if (!window.__caAssignmentExport?.buildWorkbook) {
         alert('Mesin export Excel belum siap.');
         return;
     } setBusy(true); try {

@@ -3883,3 +3883,62 @@ button[title*="Hapus"] svg,
     font-size: 18px !important;
   }
 }
+
+
+/* Revamp 204 - Lite Mobile Performance Mode */
+html.rbv-lite-mode *,
+html.rbv-lite-mode *::before,
+html.rbv-lite-mode *::after {
+  scroll-behavior: auto !important;
+}
+html.rbv-lite-mode .welcome-dream-card,
+html.rbv-lite-mode .secret-panel-shell,
+html.rbv-lite-mode .surface-card,
+html.rbv-lite-mode .photo-input-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.10) !important;
+}
+html.rbv-lite-mode .welcome-dream-icon,
+html.rbv-lite-mode .welcome-orbit,
+html.rbv-lite-mode .welcome-glow,
+html.rbv-lite-mode .welcome-particle,
+html.rbv-lite-mode .secret-panel-gradient,
+html.rbv-lite-mode .animated-gradient {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  filter: none !important;
+}
+html.rbv-lite-mode .welcome-dream-bg::before,
+html.rbv-lite-mode .welcome-dream-bg::after {
+  filter: none !important;
+  opacity: .28 !important;
+}
+html.rbv-lite-mode .photo-editor-v10-stage,
+html.rbv-lite-mode .pdf-canvas-pages {
+  will-change: auto !important;
+}
+@media (max-width: 640px) {
+  html.rbv-lite-mode .secret-panel-shell,
+  html.rbv-lite-mode .secret-panel-card,
+  html.rbv-lite-mode .secret-panel-control-card {
+    border-radius: 22px !important;
+    padding: 14px !important;
+  }
+  html.rbv-lite-mode .secret-panel-title,
+  html.rbv-lite-mode .panel-secret-title {
+    font-size: 1.45rem !important;
+    line-height: 1.12 !important;
+  }
+  html.rbv-lite-mode .secret-panel-actions,
+  html.rbv-lite-mode .section-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  html.rbv-lite-mode .secret-panel-actions button,
+  html.rbv-lite-mode .section-actions button {
+    width: 100% !important;
+    min-height: 46px !important;
+  }
+}
