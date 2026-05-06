@@ -1,7 +1,9 @@
+const WORKER_BUILD = 'revamp109-worker-compat-settings-sync-history';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Accept,Content-Type,Authorization,X-Admin-Token,X-Requested-With',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Accept, Content-Type, Authorization, X-Admin-Token, X-Requested-With, Cache-Control, Pragma',
   'Access-Control-Max-Age': '86400',
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
   'Content-Type': 'application/json; charset=utf-8'
@@ -10,13 +12,14 @@ const CORS = {
 const DEFAULT_MONITOR_LIMIT = 500;
 const DEFAULT_MANUAL_LIMIT = 500;
 const DEFAULT_PRESENCE_LIMIT = 300;
+const DEFAULT_HISTORY_LIMIT = 100;
 
 function json(payload, status = 200) {
-  return new Response(JSON.stringify(payload), { status, headers: CORS });
+  return new Response(JSON.stringify({ build: WORKER_BUILD, ...payload }), { status, headers: CORS });
 }
 
-function error(message, status = 500) {
-  return json({ ok: false, error: message || 'Cloudflare D1 error' }, status);
+function error(message, status = 500, extra = {}) {
+  return json({ ok: false, error: message || 'Cloudflare D1 error', ...extra }, status);
 }
 
 function cleanText(value, fallback = '') {
@@ -69,9 +72,17 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+async function readJsonSafe(request) {
+  try {
+    return asObject(await request.json());
+  } catch (_) {
+    return {};
+  }
+}
+
 async function requireDb(env) {
   if (!env.DB) {
-    const err = new Error('Binding D1 DB belum aktif. Pastikan wrangler.toml punya [[d1_databases]] binding = "DB".');
+    const err = new Error('Binding D1 DB belum aktif. Pastikan Worker punya D1 binding bernama DB.');
     err.status = 500;
     throw err;
   }
@@ -146,6 +157,19 @@ async function ensureSchema(db) {
     )
   `).run();
   await db.prepare('CREATE INDEX IF NOT EXISTS idx_app_settings_updated_at ON app_settings(updated_at DESC)').run();
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS rbv_sync_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT NOT NULL DEFAULT '',
+      key TEXT NOT NULL DEFAULT '',
+      ok INTEGER NOT NULL DEFAULT 1,
+      message TEXT NOT NULL DEFAULT '',
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT ''
+    )
+  `).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_rbv_sync_history_created_at ON rbv_sync_history(created_at DESC)').run();
 }
 
 async function testD1(db) {
@@ -308,6 +332,39 @@ async function upsertManualRequest(db, request, env) {
   return json({ ok: true, row: { ...payload, request_id: requestId, updated_at: updatedAt } });
 }
 
+function settingsResponseFromRows(rows) {
+  const settings = {};
+  const meta = {};
+  const normalizedRows = (rows || []).map((row) => {
+    const payload = parsePayload(row.payload);
+    settings[row.config_key] = payload;
+    meta[row.config_key] = {
+      updated_at: row.updated_at,
+      updatedAt: row.updated_at,
+      updated_by: row.updated_by,
+      updatedBy: row.updated_by
+    };
+    return {
+      key: row.config_key,
+      config_key: row.config_key,
+      payload,
+      value: payload,
+      updated_at: row.updated_at,
+      updatedAt: row.updated_at,
+      updated_by: row.updated_by,
+      updatedBy: row.updated_by
+    };
+  });
+
+  return {
+    ok: true,
+    provider: 'cloudflare-d1',
+    rows: normalizedRows,
+    settings,
+    meta
+  };
+}
+
 async function listAppSettings(db, url) {
   const keys = cleanText(url.searchParams.get('keys')).split(',').map((item) => item.trim()).filter(Boolean);
   let result;
@@ -317,24 +374,60 @@ async function listAppSettings(db, url) {
   } else {
     result = await db.prepare('SELECT config_key, payload, updated_at, updated_by FROM app_settings ORDER BY updated_at DESC').all();
   }
-  const rows = (result.results || []).map((row) => ({
+  return json(settingsResponseFromRows(result.results || []));
+}
+
+async function getAppSetting(db, url) {
+  const key = cleanText(url.searchParams.get('key') || url.searchParams.get('config_key'));
+  if (!key) return error('Parameter key wajib diisi.', 400);
+
+  const row = await db.prepare(
+    'SELECT config_key, payload, updated_at, updated_by FROM app_settings WHERE config_key = ?1'
+  ).bind(key).first();
+
+  if (!row) {
+    return json({
+      ok: true,
+      provider: 'cloudflare-d1',
+      exists: false,
+      key,
+      config_key: key,
+      payload: null,
+      value: null
+    });
+  }
+
+  const payload = parsePayload(row.payload);
+  return json({
+    ok: true,
+    provider: 'cloudflare-d1',
+    exists: true,
     key: row.config_key,
     config_key: row.config_key,
-    payload: parsePayload(row.payload),
+    payload,
+    value: payload,
     updated_at: row.updated_at,
     updatedAt: row.updated_at,
     updated_by: row.updated_by,
     updatedBy: row.updated_by
-  }));
-  return json({ ok: true, rows });
+  });
 }
 
 async function setAppSetting(db, request, env) {
   assertWriteAllowed(request, env);
-  const body = asObject(await request.json());
+  const body = await readJsonSafe(request);
   const key = cleanText(body.key || body.config_key);
   if (!key) return error('key wajib diisi.', 400);
+
+  const payload = body.payload !== undefined
+    ? body.payload
+    : body.value !== undefined
+      ? body.value
+      : {};
+
   const updatedAt = nowIso();
+  const updatedBy = cleanText(body.updatedBy || body.updated_by || 'web');
+
   await db.prepare(`
     INSERT INTO app_settings (config_key, payload, updated_at, updated_by)
     VALUES (?1, ?2, ?3, ?4)
@@ -342,40 +435,160 @@ async function setAppSetting(db, request, env) {
       payload = excluded.payload,
       updated_at = excluded.updated_at,
       updated_by = excluded.updated_by
-  `).bind(key, JSON.stringify(body.payload || {}), updatedAt, cleanText(body.updatedBy || body.updated_by || 'web')).run();
-  return json({ ok: true, row: { key, config_key: key, payload: body.payload || {}, updatedAt, updated_at: updatedAt } });
+  `).bind(key, JSON.stringify(payload), updatedAt, updatedBy).run();
+
+  return json({
+    ok: true,
+    provider: 'cloudflare-d1',
+    row: { key, config_key: key, payload, value: payload, updatedAt, updated_at: updatedAt, updatedBy, updated_by: updatedBy }
+  });
+}
+
+async function setManyAppSettings(db, request, env) {
+  assertWriteAllowed(request, env);
+  const body = await readJsonSafe(request);
+  const settings = asObject(body.settings || body.payload || body);
+  const updatedAt = nowIso();
+  const updatedBy = cleanText(body.updatedBy || body.updated_by || 'web');
+  const savedKeys = [];
+
+  for (const [key, value] of Object.entries(settings)) {
+    if (!cleanText(key)) continue;
+    await db.prepare(`
+      INSERT INTO app_settings (config_key, payload, updated_at, updated_by)
+      VALUES (?1, ?2, ?3, ?4)
+      ON CONFLICT(config_key) DO UPDATE SET
+        payload = excluded.payload,
+        updated_at = excluded.updated_at,
+        updated_by = excluded.updated_by
+    `).bind(key, JSON.stringify(value ?? null), updatedAt, updatedBy).run();
+    savedKeys.push(key);
+  }
+
+  return json({
+    ok: true,
+    provider: 'cloudflare-d1',
+    saved_keys: savedKeys,
+    updated_at: updatedAt,
+    updatedAt: updatedAt
+  });
+}
+
+async function listSyncHistory(db, url) {
+  const limit = parseLimit(url.searchParams.get('limit'), DEFAULT_HISTORY_LIMIT);
+  const result = await db.prepare(`
+    SELECT id, action, key, ok, message, payload_json, created_at
+    FROM rbv_sync_history
+    ORDER BY created_at DESC, id DESC
+    LIMIT ?1
+  `).bind(limit).all();
+
+  const history = (result.results || []).map((row) => ({
+    id: row.id,
+    action: row.action,
+    key: row.key,
+    ok: Boolean(row.ok),
+    message: row.message,
+    payload: parsePayload(row.payload_json),
+    created_at: row.created_at,
+    createdAt: row.created_at
+  }));
+
+  return json({ ok: true, provider: 'cloudflare-d1', history, rows: history });
+}
+
+async function saveSyncHistory(db, request, env) {
+  assertWriteAllowed(request, env);
+  const body = await readJsonSafe(request);
+  const items = Array.isArray(body.history)
+    ? body.history
+    : Array.isArray(body.rows)
+      ? body.rows
+      : [body];
+
+  let saved = 0;
+  const createdAt = nowIso();
+
+  for (const raw of items) {
+    const item = asObject(raw);
+    await db.prepare(`
+      INSERT INTO rbv_sync_history (action, key, ok, message, payload_json, created_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+    `).bind(
+      cleanText(item.action || item.type || 'sync'),
+      cleanText(item.key || item.config_key || ''),
+      item.ok === false ? 0 : 1,
+      cleanText(item.message || ''),
+      JSON.stringify(item),
+      cleanText(item.created_at || item.createdAt || createdAt)
+    ).run();
+    saved += 1;
+  }
+
+  return json({
+    ok: true,
+    provider: 'cloudflare-d1',
+    saved,
+    message: `Sync history tersimpan: ${saved}.`
+  });
 }
 
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS });
+    }
+
     const url = new URL(request.url);
     const action = url.searchParams.get('action') || '';
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
-    // Health check endpoint. This is intentionally available without query params.
+    // Health check endpoint. This is intentionally available without DB.
     if (request.method === 'GET' && !action && (path === '/' || path === '/api' || path === '/health')) {
-      return json({ ok: true, provider: 'cloudflare-d1', message: 'RBV Cloudflare D1 API aktif.' });
+      return json({
+        ok: true,
+        provider: 'cloudflare-d1',
+        message: 'RBV Cloudflare D1 API aktif.'
+      });
     }
 
     try {
       const db = await requireDb(env);
       await ensureSchema(db);
 
+      // New direct routes for revamp108/revamp109 frontend.
       if (request.method === 'GET' && (action === 'testD1' || path === '/api/test-d1' || path === '/test-d1')) return testD1(db);
+
+      if (request.method === 'GET' && (path === '/api/settings' || path === '/settings' || path === '/api/panel' || action === 'listAppSettings')) return listAppSettings(db, url);
+      if ((request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') && (path === '/api/settings' || path === '/settings' || path === '/api/panel')) return setManyAppSettings(db, request, env);
+
+      if (request.method === 'GET' && (path === '/api/setting' || path === '/setting')) return getAppSetting(db, url);
+      if ((request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') && (path === '/api/setting' || path === '/setting' || action === 'setAppSetting')) return setAppSetting(db, request, env);
+
+      if (request.method === 'GET' && (path === '/api/sync-history' || path === '/sync-history')) return listSyncHistory(db, url);
+      if ((request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') && (path === '/api/sync-history' || path === '/sync-history')) return saveSyncHistory(db, request, env);
+
+      // Backward-compatible action routes.
       if (request.method === 'GET' && action === 'listMonitorVisits') return listMonitorVisits(db, url);
       if (request.method === 'POST' && action === 'upsertMonitorVisit') return upsertMonitorVisit(db, request, env);
       if (request.method === 'GET' && action === 'listPresence') return listPresence(db, url);
       if (request.method === 'POST' && action === 'upsertPresence') return upsertPresence(db, request, env);
       if (request.method === 'GET' && action === 'listManualRequests') return listManualRequests(db);
       if (request.method === 'POST' && action === 'upsertManualRequest') return upsertManualRequest(db, request, env);
-      if (request.method === 'GET' && action === 'listAppSettings') return listAppSettings(db, url);
-      if (request.method === 'POST' && action === 'setAppSetting') return setAppSetting(db, request, env);
-      if (request.method === 'GET' && !action) return json({ ok: true, provider: 'cloudflare-d1', message: 'RBV Cloudflare D1 API aktif.' });
-      return error('Action tidak dikenal.', 404);
+
+      if (request.method === 'GET' && !action) {
+        return json({
+          ok: true,
+          provider: 'cloudflare-d1',
+          message: 'RBV Cloudflare D1 API aktif.',
+          path
+        });
+      }
+
+      return error('Action atau route tidak dikenal.', 404, { path, action, method: request.method });
     } catch (err) {
       console.error('RBV Cloudflare D1 error:', err);
-      return error(err?.message || 'Cloudflare D1 gagal.', err?.status || 500);
+      return error(err?.message || 'Cloudflare D1 gagal.', err?.status || 500, { path, action, method: request.method });
     }
   }
 };
