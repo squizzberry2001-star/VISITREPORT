@@ -1,5 +1,5 @@
 {
-  "version": "revamp209-pdf-no-autotable-fallback",
-  "build": "revamp209-pdf-no-autotable-fallback",
+  "version": "revamp210-clean-ui-narration",
+  "build": "revamp210-clean-ui-narration",
   "message": "PDF preview fix: crew table no longer depends on jsPDF AutoTable, preventing doc.autoTable is not a function."
 }

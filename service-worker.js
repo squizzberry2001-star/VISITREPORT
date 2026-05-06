@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp209-pdf-no-autotable-fallback';
+const APP_VERSION = 'revamp210-clean-ui-narration';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
