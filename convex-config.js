@@ -5,7 +5,6 @@ window.RB_CONVEX_CONFIG = {
   siteUrl: 'https://fabulous-alligator-318.convex.site',
   bundleUrl: 'https://unpkg.com/convex@latest/dist/browser.bundle.js',
 
-  // Monitoring realtime.
   monitorQuery: 'monitor:listVisits',
   manualRequestsQuery: 'monitor:listManualStoreRequests',
   presenceQuery: 'monitor:listPresence',
@@ -13,11 +12,9 @@ window.RB_CONVEX_CONFIG = {
   upsertManualRequestMutation: 'monitor:upsertManualStoreRequest',
   presenceUpsertMutation: 'monitor:upsertPresence',
 
-  // App settings.
   appConfigListQuery: 'appSettings:listConfigs',
   appConfigSetMutation: 'appSettings:setConfig',
 
-  // Master Data Detail Toko.
   masterStoreListQuery: 'masterStores:listStores',
   masterStoreUpsertManyMutation: 'masterStores:upsertMany',
   masterStoreReplaceMutation: 'masterStores:replaceStores',
