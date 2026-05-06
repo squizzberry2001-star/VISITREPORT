@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp99-preview-email-cloudflare-focused';
+const APP_BUILD_VERSION = 'revamp102-cloudflare-frontend-status-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3609,10 +3609,16 @@ function cloudflareEnabled() {
 function getCloudflareApiUrl() {
     const config = getCloudflareConfig();
     const endpoint = cleanText(config.endpoint || config.workerUrl || '');
-    const apiPath = cleanText(config.apiPath || '/api/rbv-data');
+    const rawApiPath = config.apiPath === undefined ? '/api/rbv-data' : config.apiPath;
+    const apiPath = cleanText(rawApiPath);
     if (endpoint) {
         if (/^https?:\/\//i.test(endpoint)) {
-            if (!apiPath || endpoint.endsWith(apiPath) || endpoint.includes('?'))
+            // Standalone Cloudflare Worker endpoint already points to the API root.
+            // Do not append /api/rbv-data to an absolute workers.dev URL, because that
+            // can make the frontend test a different URL than the one verified manually.
+            if (/workers\.dev\/?$/i.test(endpoint) || endpoint.includes('?') || !apiPath)
+                return endpoint.replace(/\/$/, '');
+            if (endpoint.endsWith(apiPath))
                 return endpoint;
             return endpoint.replace(/\/$/, '') + '/' + apiPath.replace(/^\//, '');
         }
@@ -3631,6 +3637,7 @@ async function cloudflareRequest(action, options = {}) {
     const method = options.method || 'GET';
     const url = new URL(getCloudflareApiUrl(), window.location.origin);
     url.searchParams.set('action', action);
+    url.searchParams.set('_rbv', String(Date.now()));
     if (options.params && typeof options.params === 'object') {
         Object.entries(options.params).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '')
@@ -3643,21 +3650,34 @@ async function cloudflareRequest(action, options = {}) {
         headers['Content-Type'] = 'application/json';
     if (cleanText(config.adminToken))
         headers['X-Admin-Token'] = cleanText(config.adminToken);
-    const response = await fetch(url.toString(), {
-        method,
-        headers,
-        body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        cache: 'no-store'
-    });
-    let payload = null;
+    let response;
     try {
-        payload = await response.json();
+        response = await fetch(url.toString(), {
+            method,
+            mode: 'cors',
+            credentials: 'omit',
+            headers,
+            body: options.body === undefined ? undefined : JSON.stringify(options.body),
+            cache: 'no-store'
+        });
     }
-    catch (error) { }
-    if (!response.ok) {
+    catch (error) {
+        throw new Error(`Fetch Cloudflare gagal: ${error?.message || 'request diblokir/cache lama'}`);
+    }
+    let payload = null;
+    const rawText = await response.text().catch(() => '');
+    if (rawText) {
+        try {
+            payload = JSON.parse(rawText);
+        }
+        catch (error) {
+            throw new Error(`Cloudflare tidak mengirim JSON valid: ${rawText.slice(0, 120)}`);
+        }
+    }
+    if (!response.ok || payload?.ok === false) {
         throw new Error(payload?.error || payload?.message || `Cloudflare D1 request gagal (${response.status})`);
     }
-    return payload;
+    return payload || { ok: true };
 }
 async function upsertMonitorVisitToCloudflare(visit) {
     if (!cloudflareEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
@@ -4738,14 +4758,15 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         if (cloudflareDbBusy)
             return;
         setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Mengecek koneksi Cloudflare D1...');
+        setCloudflareDbStatus('Mengecek koneksi Cloudflare D1 langsung ke endpoint aktif...');
         try {
             const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
             const rows = payload?.rows || payload?.data || [];
-            setCloudflareDbStatus(`Cloudflare D1 aktif. App settings terbaca: ${Array.isArray(rows) ? rows.length : 0} item.`);
+            const count = Array.isArray(rows) ? rows.length : 0;
+            setCloudflareDbStatus(`Cloudflare D1 AKTIF & TERKONEKSI. App settings terbaca: ${count} item. Endpoint sudah valid.`);
         }
         catch (error) {
-            setCloudflareDbStatus(`Cloudflare D1 belum aktif: ${error?.message || 'request gagal.'}`);
+            setCloudflareDbStatus(`Cloudflare D1 belum terbaca di frontend: ${error?.message || 'request gagal.'}. Jika endpoint manual sudah OK, tutup web lalu buka ulang dengan ?v=102.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -5121,8 +5142,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
                             React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
                     React.createElement("div", { className: "rounded-2xl bg-white px-4 py-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-sky-100" },
-                        React.createElement("p", null, "Endpoint: ", cleanText(getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data')),
-                        React.createElement("p", { className: "mt-1 text-sky-700" }, cloudflareDbStatus || 'Gunakan Test D1 untuk cek binding database dan Sync History untuk kirim data lokal.'))),
+                        React.createElement("p", null, "Endpoint: ", cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data')),
+                        React.createElement("p", { className: "mt-1 text-sky-700" }, cloudflareDbStatus || 'Endpoint manual sudah aktif. Tekan Test D1 untuk refresh status dari Cloudflare, bukan dari cache lama.'))),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,

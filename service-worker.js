@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp100-welcome-background-navbar-fix';
+const APP_VERSION = 'revamp102-cloudflare-frontend-status-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -74,10 +74,14 @@ function cacheFirst(request) {
     const copy = response.clone();
     caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined);
     return response;
-  }).catch(() => cached));
+  }).catch(() => cached || Response.error()));
 }
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  // Jangan intercept request ke endpoint luar seperti Cloudflare Workers.
+  // Browser harus langsung fetch ke Worker agar status D1 tidak tertahan cache lama.
+  if (url.origin !== self.location.origin) return;
   event.respondWith(shouldNetworkFirst(event.request) ? networkFirst(event.request) : cacheFirst(event.request));
 });

@@ -1,6 +1,6 @@
 {
-  "version": "revamp100-welcome-background-navbar-fix",
-  "build": "revamp100-welcome-background-navbar-fix",
-  "updatedAt": "2026-05-05T21:10:00+07:00",
-  "note": "Welcome animation memakai background gambar handshake seamless dan mobile navbar disembunyikan selama welcome tampil."
+  "version": "revamp102-cloudflare-frontend-status-fix",
+  "build": "revamp102-cloudflare-frontend-status-fix",
+  "updatedAt": "2026-05-05T22:15:00+07:00",
+  "note": "Frontend Cloudflare D1 status fix: gunakan endpoint Worker root, bypass service worker cross-origin, dan refresh status Test D1 dari response live."
 }
