@@ -4430,3 +4430,21 @@ body.rbv-home-lock .dashboard-page,
   .home-quick-action-sub { display: none !important; }
   .secret-admin-panel { padding: 12px !important; border-radius: 20px !important; }
 }
+
+
+/* Revamp 219 - softer footer watermark typography */
+.footer-watermark,
+.app-footer-watermark,
+.rbv-footer-watermark,
+.pdf-footer-watermark,
+[data-footer-watermark="true"] {
+  opacity: 0.16 !important;
+  color: rgba(100, 116, 139, 0.42) !important;
+  font-family: "Times New Roman", ui-serif, Georgia, Cambria, serif !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+  pointer-events: none !important;
+}
