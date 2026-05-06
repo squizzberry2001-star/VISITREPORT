@@ -1,8 +1,8 @@
-window.RBV_CONVEX_CONFIG = {
+window.RB_CONVEX_CONFIG = {
   enabled: true,
   deploymentUrl: 'https://fabulous-alligator-318.convex.cloud',
-  siteUrl: 'https://fabulous-alligator-318.convex.site',
   httpUrl: 'https://fabulous-alligator-318.convex.site',
+  siteUrl: 'https://fabulous-alligator-318.convex.site',
   bundleUrl: 'https://unpkg.com/convex@latest/dist/browser.bundle.js',
 
   // Monitoring realtime.
