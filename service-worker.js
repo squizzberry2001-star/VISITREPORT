@@ -1,15 +1,11 @@
-const APP_VERSION = 'revamp203-welcome-nik-unfreeze';
+const APP_VERSION = 'revamp204-lite-mobile-performance';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
   './src/app.js',
-  './pdf-generator.js',
-  './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
-  './ca-assignment-export.js',
-  './jszip.min.js',
   './cloudflare-config.js',
   './convex-config.js',
   './netlify-config.js',
@@ -17,8 +13,7 @@ const LOCAL_ASSETS = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/welcome-handshake-bg.jpg',
-  './templates/master-data-detail-toko-template.xlsx'
+  './icons/welcome-handshake-bg.jpg'
 ];
 const CORE_ASSETS = [
   './',

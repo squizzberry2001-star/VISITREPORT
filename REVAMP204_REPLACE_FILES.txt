@@ -1,0 +1,23 @@
+REVAMP 204 - Lite Mobile Performance Mode
+
+Replace these files in GitHub:
+- index.html
+- service-worker.js
+- version.json
+- src/app.js
+- src/theme.css
+
+What changed:
+- Heavy PDF/Excel/QR libraries are no longer loaded at first page open.
+- PDF engine, Excel upload/export, QR generator/scanner are lazy-loaded only when used.
+- Auto Lite Mode for low-memory/old phones using deviceMemory/hardwareConcurrency/screen size.
+- Photo upload is auto-compressed before storing in browser.
+- On Lite Mode, photo editor no longer auto-opens after upload. User can tap edit manually.
+- Lite CSS reduces blur, heavy shadows, and animated layers on old phones.
+
+Open after deploy:
+?v=204
+
+Optional testing:
+?v=204&lite=1 forces Lite Mode.
+?v=204&lite=0 disables Lite Mode.
