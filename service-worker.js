@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp241-direct-pdf-canvas-all-devices';
+const APP_VERSION = 'revamp242-pdf-text-flush';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

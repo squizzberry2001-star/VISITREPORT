@@ -386,22 +386,30 @@
     }
   }
 
+  function pickRowValue(row, keys) {
+    for (var i = 0; i < keys.length; i += 1) {
+      var key = keys[i];
+      if (row && row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== '') return String(row[key]);
+    }
+    return '';
+  }
+
   function normalizeRows(rows) {
     return (Array.isArray(rows) ? rows : [])
       .map(function (row) {
         return {
-          temuan: row && row.temuan !== undefined && row.temuan !== null ? String(row.temuan) : '',
-          kondisiIdeal: row && row.kondisiIdeal !== undefined && row.kondisiIdeal !== null ? String(row.kondisiIdeal) : '',
-          dampak: row && row.dampak !== undefined && row.dampak !== null ? String(row.dampak) : '',
-          penyebab: row && row.penyebab !== undefined && row.penyebab !== null ? String(row.penyebab) : '',
-          tindakan: row && row.tindakan !== undefined && row.tindakan !== null ? String(row.tindakan) : '',
-          deadline: text(row && row.deadline, ''),
-          hasil: row && row.hasil !== undefined && row.hasil !== null ? String(row.hasil) : ''
+          temuan: pickRowValue(row, ['temuan', 'finding', 'observation', 'observasi', 'issue', 'desc', 'description']),
+          kondisiIdeal: pickRowValue(row, ['kondisiIdeal', 'kondisi_ideal', 'idealCondition', 'standard', 'targetCondition']),
+          dampak: pickRowValue(row, ['dampak', 'impact', 'risk', 'risiko']),
+          penyebab: pickRowValue(row, ['penyebab', 'rootCause', 'root_cause', 'cause']),
+          tindakan: pickRowValue(row, ['tindakan', 'action', 'correctiveAction', 'corrective_action', 'aksi']),
+          deadline: text(pickRowValue(row, ['deadline', 'dueDate', 'due_date', 'targetDate']), ''),
+          hasil: pickRowValue(row, ['hasil', 'result', 'status', 'followUp', 'follow_up'])
         };
       })
       .filter(function (row) {
         return Object.keys(row).some(function (key) {
-          const value = text(row[key], '');
+          var value = plainText(row[key], '');
           return value && value !== '-';
         });
       });
