@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp232-native-gallery-picker-fix';
+const APP_BUILD_VERSION = 'revamp233-email-cc-removable-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3021,7 +3021,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp232-native-gallery-picker-fix" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp233-email-cc-removable-fix" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',
@@ -3621,7 +3621,7 @@ function ensureLockedEmailList(value, lockedEmails = LOCKED_CC_EMAILS) {
     return joinEmailList([...(lockedEmails || []), ...parseEmailList(value)]);
 }
 function getLockedCcContacts() {
-    return LOCKED_CC_EMAILS.map((email) => buildEmailContact('locked-cc', email, 'Auto locked CC', { role: 'Locked CC' })).filter(Boolean);
+    return LOCKED_CC_EMAILS.map((email) => buildEmailContact('locked-cc', email, 'Auto CC default', { role: 'Auto CC' })).filter(Boolean);
 }
 function buildInitialEmailForm(visit) {
     const config = getEmailReportConfig();
@@ -3879,6 +3879,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
     const [scheduledJobs, setScheduledJobs] = useState(() => readScheduledReportEmailQueue());
     const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
     const [feedbackPopup, setFeedbackPopup] = useState(null);
+    const autoCcSeededRef = useRef(false);
     useEffect(() => {
         if (!open)
             return undefined;
@@ -3909,12 +3910,17 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         }
     }, [open]);
     useEffect(() => {
-        if (!open)
+        if (!open) {
+            autoCcSeededRef.current = false;
             return;
-        const lockedCcValue = ensureLockedEmailList(form.cc);
-        if (normalize(lockedCcValue) !== normalize(form.cc))
-            onChange({ cc: lockedCcValue });
-    }, [open, form.cc]);
+        }
+        if (autoCcSeededRef.current)
+            return;
+        autoCcSeededRef.current = true;
+        const initialCcValue = ensureLockedEmailList(form.cc);
+        if (normalize(initialCcValue) !== normalize(form.cc))
+            onChange({ cc: initialCcValue });
+    }, [open]);
     if (!open)
         return null;
     const config = getEmailReportConfig();
