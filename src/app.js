@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp235-crop-marker-preview-match';
+const APP_BUILD_VERSION = 'revamp238-stable-pdf-email-attachment';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3030,8 +3030,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp235-crop-marker-preview-match" },
-                React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
+            React.createElement("div", { className: "mt-3", "data-build": "revamp237-redmi-restore-native-picker" },
+                React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "restore-file-input-fallback", onChange: handleRestoreFile, tabIndex: -1, "aria-hidden": "true" }),
                 React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',
                         gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -3041,10 +3041,11 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
+                    React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, role: "button", tabIndex: restoreBusy ? -1 : 0, "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "History")),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "History"),
+                        React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native", onChange: handleRestoreFile, disabled: restoreBusy, "aria-label": "Pilih file restore history" })),
                     React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '42px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Install"),
@@ -3700,22 +3701,143 @@ function stripPhotoImages(value) {
     return next;
 }
 function buildEmailOptimizedVisit(visit) {
-    const optimized = stripPhotoImages(visit || {});
-    return {
-        ...optimized,
-        qscResultPhoto: optimized.qscResultPhoto ? { ...optimized.qscResultPhoto, image: '' } : optimized.qscResultPhoto,
-        qscResultPhotos: (optimized.qscResultPhotos || []).map((item) => ({ ...(item || {}), image: '' })),
-        findingEvidencePhotos: (optimized.findingEvidencePhotos || []).map((item) => ({ ...(item || {}), image: '' })),
-        correctiveActionPhotos: (optimized.correctiveActionPhotos || []).map((item) => ({ ...(item || {}), image: '' }))
-    };
+    // Legacy helper kept for older scheduled payloads. Do not use it for the main email PDF,
+    // because stripping photos is the root cause of random photo-less PDF attachments.
+    return { ...(visit || {}) };
+}
+function rbvCollectPdfPhotoCandidates(visit) {
+    const items = [];
+    function pushPhoto(photo) {
+        if (!photo || typeof photo !== 'object') return;
+        const src = cleanText(photo.image || photo.dataUrl || photo.src || photo.objectUrl);
+        if (src) items.push(src);
+    }
+    pushPhoto(visit?.qscResultPhoto);
+    (visit?.qscResultPhotos || []).forEach(pushPhoto);
+    (visit?.findingEvidencePhotos || []).forEach(pushPhoto);
+    (visit?.correctiveActionPhotos || []).forEach(pushPhoto);
+    return items;
+}
+function rbvCanBrowserLoadImageSource(src) {
+    const value = cleanText(src);
+    if (!value) return false;
+    if (/^data:image\/(jpeg|jpg|png|webp|gif|bmp|svg\+xml|svg)/i.test(value)) return true;
+    if (/^blob:/i.test(value)) return true;
+    if (/^https?:/i.test(value)) return true;
+    return false;
+}
+function rbvLoadImageForPdfEmail(src, timeoutMs = 9000) {
+    return new Promise((resolve, reject) => {
+        const value = cleanText(src);
+        if (!value) return reject(new Error('Sumber foto kosong.'));
+        const image = new Image();
+        let done = false;
+        const finish = (fn, payload) => {
+            if (done) return;
+            done = true;
+            window.clearTimeout(timer);
+            fn(payload);
+        };
+        const timer = window.setTimeout(() => finish(reject, new Error('Timeout memuat foto PDF.')), Math.max(2500, timeoutMs));
+        image.onload = () => finish(resolve, image);
+        image.onerror = () => finish(reject, new Error('Foto tidak bisa dimuat browser.'));
+        try { if (/^https?:/i.test(value)) image.crossOrigin = 'anonymous'; } catch (_) {}
+        image.decoding = 'async';
+        image.src = value;
+        try {
+            if (image.complete && (image.naturalWidth || image.width)) finish(resolve, image);
+        } catch (_) {}
+    });
+}
+async function rbvCompressImageSourceForPdfEmail(src, options = {}) {
+    const value = cleanText(src);
+    if (!value) return '';
+    if (!rbvCanBrowserLoadImageSource(value)) return '';
+    const maxSide = Math.max(420, Number(options.maxSide || 1180));
+    const quality = Math.max(0.45, Math.min(0.82, Number(options.quality || 0.68)));
+    const image = await rbvLoadImageForPdfEmail(value, options.timeoutMs || 9000);
+    const naturalWidth = image.naturalWidth || image.width || 1;
+    const naturalHeight = image.naturalHeight || image.height || 1;
+    const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
+    const width = Math.max(1, Math.round(naturalWidth * scale));
+    const height = Math.max(1, Math.round(naturalHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
+    if (!ctx) throw new Error('Canvas PDF email tidak siap.');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = RBV_ULTRA_LITE_CAMERA_MODE ? 'low' : 'medium';
+    ctx.drawImage(image, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    try { canvas.width = 1; canvas.height = 1; } catch (_) {}
+    return dataUrl;
+}
+async function rbvNormalizePhotoForPdfEmail(photo, options = {}) {
+    if (!photo || typeof photo !== 'object') return photo;
+    const src = cleanText(photo.image || photo.dataUrl || photo.src || photo.objectUrl);
+    const next = { ...photo, image: src };
+    if (!src) return next;
+    try {
+        const compressed = await rbvCompressImageSourceForPdfEmail(src, options);
+        if (compressed) next.image = compressed;
+    } catch (error) {
+        console.warn('Foto PDF email gagal dikompres, mencoba sumber asli:', error);
+        if (/^data:image\/(jpeg|jpg|png|webp)/i.test(src)) next.image = src;
+        else next.image = '';
+        next.pdfEmailImageError = error?.message || 'Foto tidak bisa dimuat untuk PDF email.';
+    }
+    delete next.objectUrl;
+    delete next.dataUrl;
+    delete next.src;
+    return next;
+}
+async function rbvNormalizePhotoArrayForPdfEmail(items, options = {}) {
+    const source = Array.isArray(items) ? items : [];
+    const output = [];
+    for (const item of source) {
+        const photo = await rbvNormalizePhotoForPdfEmail(item, options);
+        if (photo && (cleanText(photo.image) || cleanText(photo.description))) output.push(photo);
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+    }
+    return output;
+}
+async function buildPdfVisitForEmail(visit, options = {}) {
+    const next = { ...(visit || {}), showQSCResult: true };
+    next.qscResultPhoto = await rbvNormalizePhotoForPdfEmail(next.qscResultPhoto || blankPhoto(), options);
+    next.qscResultPhotos = await rbvNormalizePhotoArrayForPdfEmail(next.qscResultPhotos || [], options);
+    next.findingEvidencePhotos = await rbvNormalizePhotoArrayForPdfEmail(next.findingEvidencePhotos || [], options);
+    next.correctiveActionPhotos = await rbvNormalizePhotoArrayForPdfEmail(next.correctiveActionPhotos || [], options);
+    if ((next.findingEvidencePhotos || []).some((photo) => cleanText(photo.image) || cleanText(photo.description))) next.showFindingEvidence = true;
+    if ((next.correctiveActionPhotos || []).some((photo) => cleanText(photo.image) || cleanText(photo.description))) next.showCorrectiveAction = true;
+    return next;
+}
+function assertValidPdfBlob(blob, context = 'PDF') {
+    if (!blob || typeof blob.size !== 'number' || blob.size < 1200) {
+        throw new Error(`${context} gagal dibuat. Attachment dibatalkan agar email tidak terkirim tanpa PDF.`);
+    }
+    if (!/pdf/i.test(String(blob.type || 'application/pdf'))) {
+        console.warn('Blob PDF tanpa MIME application/pdf:', blob.type);
+    }
 }
 async function buildPdfAttachmentForEmail(visit, currentPdfBlob) {
     await ensurePdfEngineReady();
     if (!window.ReportVisitPDF?.createBlob)
         throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
     const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
-    const blob = currentPdfBlob || await window.ReportVisitPDF.createBlob(visit);
-    return { blob, fileName, optimized: false };
+    let optimized = false;
+    let emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 1180, quality: 0.68 });
+    let blob = await window.ReportVisitPDF.createBlob(emailVisit);
+    assertValidPdfBlob(blob, 'PDF email');
+    if (blob.size > EMAIL_PDF_SAFE_BYTES) {
+        optimized = true;
+        emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 860, quality: 0.56, timeoutMs: 7000 });
+        blob = await window.ReportVisitPDF.createBlob(emailVisit);
+        assertValidPdfBlob(blob, 'PDF email ringan');
+    }
+    return { blob, fileName, optimized, visit: emailVisit };
 }
 function addEmailNote(body, notes) {
     return cleanText(body);
@@ -4203,15 +4325,15 @@ function PreviewPage({ visit, onBack }) {
             const attachments = [];
             const attachmentNotes = [];
             if (emailForm.attachPdf) {
-                setEmailStatus('Menyiapkan PDF email...');
-                const { blob, fileName, optimized } = await buildPdfAttachmentForEmail(visit, pdfBlob);
+                setEmailStatus('Menyiapkan foto untuk PDF...');
+                const { blob, fileName, optimized } = await buildPdfAttachmentForEmail(visit, null);
                 if (optimized)
-                    attachmentNotes.push('PDF dibuat versi ringan tanpa foto agar bisa masuk batas request Vercel/Gmail. Gunakan tombol Download PDF untuk file lengkap dengan foto.');
+                    attachmentNotes.push('PDF dikompres agar attachment stabil dan foto tetap ikut terkirim.');
                 if (blob.size <= EMAIL_PDF_SAFE_BYTES) {
                     attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
                 }
                 else {
-                    attachmentNotes.push(`PDF Report tidak dilampirkan karena masih terlalu besar (${formatFileSize(blob.size)}). Download PDF manual lalu attach dari Gmail jika perlu.`);
+                    throw new Error(`PDF Report terlalu besar (${formatFileSize(blob.size)}) sehingga email dibatalkan. Coba kurangi jumlah foto atau download PDF manual.`);
                 }
             }
             if (emailForm.attachExcel) {
@@ -4234,6 +4356,9 @@ function PreviewPage({ visit, onBack }) {
             const basePayload = { mode: payloadMode, to: emailForm.to, cc: emailForm.cc, subject: emailForm.subject, body: addEmailNote(emailForm.body, attachmentNotes), passcode: emailForm.passcode, attachments, visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal } };
             const fitted = fitEmailPayloadToClientLimit(basePayload, attachmentNotes);
             const payload = fitted.payload;
+            if (emailForm.attachPdf && !payload.attachments.some((item) => String(item.mimeType || '').toLowerCase().includes('pdf'))) {
+                throw new Error('PDF attachment wajib ada. Email dibatalkan supaya tidak terkirim tanpa PDF.');
+            }
             if (scheduleMinutes) {
                 setEmailStatus(`Email dijadwalkan ${scheduleMinutes} menit ke depan...`);
                 scheduleReportEmailJob(config.endpoint, payload, scheduleMinutes * 60 * 1000);

@@ -4934,3 +4934,40 @@ body.rbv-lite-mode .evidence-empty-state {
     padding: .78rem !important;
   }
 }
+
+/* Revamp 237 - Redmi/native browser restore picker fix */
+.restore-file-input-fallback {
+  position: fixed !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  left: -9999px !important;
+  top: auto !important;
+}
+.home-restore-native-picker {
+  position: relative !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.home-restore-native-picker .restore-file-input-native {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0.001 !important;
+  cursor: pointer !important;
+  z-index: 8 !important;
+  font-size: 120px !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.home-restore-native-picker > svg,
+.home-restore-native-picker > span,
+.home-restore-native-picker > small {
+  pointer-events: none !important;
+}
