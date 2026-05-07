@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp242-pdf-text-flush';
+const APP_BUILD_VERSION = 'revamp243-grand-preview-sync';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1608,7 +1608,78 @@ async function rbvWaitForReactInputFlush() {
     rbvFlushActiveEditableValue({ blur: true });
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
     rbvFlushActiveEditableValue({ blur: false });
-    await new Promise((resolve) => window.setTimeout(resolve, 80));
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+    await new Promise((resolve) => window.setTimeout(resolve, 120));
+    rbvFlushActiveEditableValue({ blur: false });
+}
+function rbvWaitForPdfFrame() {
+    return new Promise((resolve) => {
+        const raf = typeof window !== 'undefined' && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null;
+        if (!raf) {
+            window.setTimeout(resolve, 60);
+            return;
+        }
+        raf(() => raf(() => resolve()));
+    });
+}
+async function rbvWaitForPdfAssets(root = document) {
+    try {
+        const images = Array.from((root || document).querySelectorAll ? (root || document).querySelectorAll('img') : []);
+        await Promise.all(images.map((image) => {
+            if (!image || (image.complete && image.naturalWidth > 0)) return Promise.resolve();
+            return new Promise((resolve) => {
+                const done = () => resolve();
+                image.addEventListener('load', done, { once: true });
+                image.addEventListener('error', done, { once: true });
+                window.setTimeout(done, 2500);
+            });
+        }));
+    }
+    catch (error) {
+        console.warn('Menunggu asset preview PDF gagal:', error);
+    }
+    try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready.catch(() => undefined);
+    }
+    catch (error) { }
+}
+function rbvDeepCloneForPdf(value) {
+    try {
+        if (typeof structuredClone === 'function') return structuredClone(value);
+    }
+    catch (error) { }
+    try { return JSON.parse(JSON.stringify(value || {})); } catch (error) { return { ...(value || {}) }; }
+}
+function rbvNormalizeObservationRowsForPdf(rows) {
+    const source = Array.isArray(rows) ? rows : [];
+    return source.map((row) => ({
+        temuan: richValue(row && row.temuan),
+        kondisiIdeal: richValue(row && row.kondisiIdeal),
+        dampak: richValue(row && row.dampak),
+        penyebab: richValue(row && row.penyebab),
+        tindakan: richValue(row && row.tindakan),
+        deadline: cleanText(row && row.deadline),
+        hasil: richValue(row && row.hasil)
+    })).filter((row) => isMeaningfulObservation(row));
+}
+async function rbvPrepareVisitForPdf(visit, options = {}) {
+    await rbvWaitForReactInputFlush();
+    await rbvWaitForPdfFrame();
+    await rbvWaitForPdfAssets(document);
+    const snapshot = rbvDeepCloneForPdf(visit || {});
+    snapshot.opiData = rbvNormalizeObservationRowsForPdf(snapshot.opiData);
+    snapshot.qscData = rbvNormalizeObservationRowsForPdf(snapshot.qscData);
+    if (!snapshot.opiData.length && Array.isArray(visit && visit.opiData)) snapshot.opiData = rbvDeepCloneForPdf(visit.opiData);
+    if (!snapshot.qscData.length && Array.isArray(visit && visit.qscData)) snapshot.qscData = rbvDeepCloneForPdf(visit.qscData);
+    snapshot.showQSCResult = true;
+    if (options.forceAllSections !== false) {
+        snapshot.showOPITable = true;
+        snapshot.showQSCTable = true;
+        snapshot.showFindingEvidence = true;
+        snapshot.showCorrectiveAction = true;
+    }
+    snapshot.__pdfPreparedAt = Date.now();
+    return snapshot;
 }
 
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
@@ -3891,7 +3962,8 @@ async function rbvNormalizePhotoArrayForPdfEmail(items, options = {}) {
     return output;
 }
 async function buildPdfVisitForEmail(visit, options = {}) {
-    const next = { ...(visit || {}), showQSCResult: true };
+    const prepared = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
+    const next = { ...(prepared || {}), showQSCResult: true };
     next.qscResultPhoto = await rbvNormalizePhotoForPdfEmail(next.qscResultPhoto || blankPhoto(), options);
     next.qscResultPhotos = await rbvNormalizePhotoArrayForPdfEmail(next.qscResultPhotos || [], options);
     next.findingEvidencePhotos = await rbvNormalizePhotoArrayForPdfEmail(next.findingEvidencePhotos || [], options);
@@ -4398,7 +4470,10 @@ function PreviewPage({ visit, onBack }) {
                 await ensurePdfEngineReady();
                 if (!window.ReportVisitPDF?.createBlob)
                     throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-                const blob = await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
+                const pdfVisit = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
+                if (cancelled)
+                    return;
+                const blob = await window.ReportVisitPDF.createBlob(pdfVisit);
                 if (cancelled)
                     return;
                 objectUrl = URL.createObjectURL(blob);
@@ -4435,8 +4510,9 @@ function PreviewPage({ visit, onBack }) {
             await ensurePdfEngineReady();
             if (!window.ReportVisitPDF?.createBlob)
                 throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-            const blob = pdfBlob || await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
-            const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+            const pdfVisit = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
+            const blob = await window.ReportVisitPDF.createBlob(pdfVisit);
+            const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(pdfVisit) : 'Regional_Bestie_Visit_Report.pdf';
             setDownloadMessage('Pilih lokasi simpan...');
             const didSave = await downloadBlobManaged(blob, fileName);
             setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
@@ -7616,6 +7692,9 @@ function App() {
             return;
         }
         await rbvWaitForReactInputFlush();
+        await rbvWaitForPdfFrame();
+        setVisit((current) => current ? { ...current, updatedAt: Date.now() } : current);
+        await rbvWaitForPdfFrame();
         setScreen('preview');
     }
     function navigateScreen(nextScreen) {
