@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp241-direct-pdf-canvas-all-devices';
+const APP_BUILD_VERSION = 'revamp242-pdf-text-flush';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1571,6 +1571,46 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
     useEffect(() => { resize(); }, [value]);
     return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
+
+function rbvDispatchInputAndChange(target) {
+    if (!target)
+        return;
+    try {
+        target.dispatchEvent(new Event('input', { bubbles: true, cancelable: false }));
+    }
+    catch (error) { }
+    try {
+        target.dispatchEvent(new Event('change', { bubbles: true, cancelable: false }));
+    }
+    catch (error) { }
+}
+function rbvFlushActiveEditableValue(options = {}) {
+    const active = document.activeElement;
+    const shouldBlur = options.blur !== false;
+    const editableSelector = 'input:not([type="file"]):not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea, [contenteditable="true"]';
+    let target = null;
+    if (active && active.matches && active.matches(editableSelector))
+        target = active;
+    if (!target && active && active.closest)
+        target = active.closest(editableSelector);
+    if (!target)
+        return false;
+    rbvDispatchInputAndChange(target);
+    if (target.isContentEditable) {
+        try { target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: null })); } catch (error) { }
+    }
+    if (shouldBlur) {
+        try { target.blur(); } catch (error) { }
+    }
+    return true;
+}
+async function rbvWaitForReactInputFlush() {
+    rbvFlushActiveEditableValue({ blur: true });
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+    rbvFlushActiveEditableValue({ blur: false });
+    await new Promise((resolve) => window.setTimeout(resolve, 80));
+}
+
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
     const [activeTools, setActiveTools] = useState({});
@@ -1681,7 +1721,7 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         editor.focus({ preventScroll: true });
     }
     return (React.createElement("div", { className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className) },
-        React.createElement("div", { ref: editorRef, className: "rich-editor-input rbv-mobile-editable px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
+        React.createElement("div", { ref: editorRef, className: "rich-editor-input rbv-mobile-editable px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyUp: emit, onCompositionEnd: emit, onPaste: () => window.requestAnimationFrame(emit), onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
         React.createElement("div", { className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
 }
 function SelectInput({ children, className = '', ...props }) {
@@ -7570,7 +7610,25 @@ function App() {
     function updateVisit(patch) {
         setVisit((current) => current ? { ...current, ...patch, updatedAt: Date.now() } : current);
     }
+    async function openPreviewScreen() {
+        if (!visit) {
+            setScreen('dashboard');
+            return;
+        }
+        await rbvWaitForReactInputFlush();
+        setScreen('preview');
+    }
+    function navigateScreen(nextScreen) {
+        if (nextScreen === 'preview') {
+            openPreviewScreen();
+            return;
+        }
+        if (nextScreen !== 'preview')
+            rbvFlushActiveEditableValue({ blur: true });
+        setScreen(nextScreen);
+    }
     function goSection(index) {
+        rbvFlushActiveEditableValue({ blur: true });
         setActiveSection(Math.max(0, Math.min(SECTION_DEFS.length - 1, index)));
     }
     function handleTitleTap() {
@@ -7658,17 +7716,17 @@ function App() {
         content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap });
     }
     else if (screen === 'preview') {
-        content = React.createElement(PreviewPage, { visit: visit, onBack: () => setScreen('audit') });
+        content = React.createElement(PreviewPage, { visit: visit, onBack: () => navigateScreen('audit') });
     }
     else {
-        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: () => setScreen('preview'), masterStoreRevision: masterStoreRevision });
+        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, masterStoreRevision: masterStoreRevision });
     }
     return (React.createElement("div", { className: cx("audit-shell min-h-screen", screen !== 'dashboard' && "md:grid md:grid-cols-[300px_minmax(0,1fr)]") },
-        screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
+        screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-col" },
-            !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
+            !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
-            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: setScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
+            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
         React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
