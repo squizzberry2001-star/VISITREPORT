@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp245-identical-pdf-zoom-preview';
+const APP_BUILD_VERSION = 'revamp246-textbox-focus-stable';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1544,22 +1544,36 @@ function Field({ label, helper, children, required }) {
         helper ? React.createElement("span", { className: "mt-2 block text-xs leading-5 text-slate-500" }, helper) : null));
 }
 function rbvFocusEditableOnTap(event) {
-    const target = event.currentTarget;
+    const target = event.currentTarget || event.target;
     if (!target || target === document.activeElement)
         return;
-    if (event.pointerType && event.pointerType !== 'touch')
+    if (target.disabled || target.readOnly)
         return;
+    if (event.pointerType && event.pointerType !== 'touch' && event.pointerType !== 'pen')
+        return;
+    // Android browsers can ignore delayed focus from synthetic wrappers. Focus immediately
+    // inside the user gesture, then repeat once on the next frame as a fallback.
+    try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
     window.requestAnimationFrame(() => {
-        try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+        if (document.activeElement !== target) {
+            try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+        }
     });
 }
-function TextInput(props) {
-    return React.createElement("input", { className: cx('form-control rbv-mobile-editable', props.className), onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, ...props });
+function rbvComposeEditableTapHandler(userHandler) {
+    return function handleEditableTap(event) {
+        try { userHandler?.(event); } catch (error) { }
+        if (!event.defaultPrevented)
+            rbvFocusEditableOnTap(event);
+    };
 }
-function DateInput({ className = '', ...props }) {
-    return React.createElement("input", { type: "date", className: cx('form-control date-control rbv-mobile-editable', className), onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, ...props });
+function TextInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
+    return React.createElement("input", { ...props, className: cx('form-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
 }
-function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
+function DateInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
+    return React.createElement("input", { ...props, type: "date", className: cx('form-control date-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
+}
+function TextArea({ value, onChange, className = '', minRows = 3, onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
     const ref = useRef(null);
     function resize() {
         const el = ref.current;
@@ -1569,7 +1583,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
+    return (React.createElement("textarea", { ...props, ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick), onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize }));
 }
 
 function rbvDispatchInputAndChange(target) {
@@ -1653,24 +1667,58 @@ function rbvDeepCloneForPdf(value) {
 function rbvNormalizeObservationRowsForPdf(rows) {
     const source = Array.isArray(rows) ? rows : [];
     return source.map((row) => ({
-        temuan: richValue(row && row.temuan),
-        kondisiIdeal: richValue(row && row.kondisiIdeal),
-        dampak: richValue(row && row.dampak),
-        penyebab: richValue(row && row.penyebab),
-        tindakan: richValue(row && row.tindakan),
-        deadline: cleanText(row && row.deadline),
-        hasil: richValue(row && row.hasil)
+        temuan: richValue(row && (row.temuan ?? row.finding ?? row.observation ?? row.observasi ?? row.description ?? row.desc)),
+        kondisiIdeal: richValue(row && (row.kondisiIdeal ?? row.kondisi_ideal ?? row.idealCondition ?? row.standard ?? row.targetCondition)),
+        dampak: richValue(row && (row.dampak ?? row.impact ?? row.risk ?? row.risiko)),
+        penyebab: richValue(row && (row.penyebab ?? row.rootCause ?? row.root_cause ?? row.cause)),
+        tindakan: richValue(row && (row.tindakan ?? row.action ?? row.correctiveAction ?? row.corrective_action ?? row.aksi)),
+        deadline: cleanText(row && (row.deadline ?? row.dueDate ?? row.due_date ?? row.targetDate)),
+        hasil: richValue(row && (row.hasil ?? row.result ?? row.status ?? row.followUp ?? row.follow_up))
     })).filter((row) => isMeaningfulObservation(row));
+}
+function rbvNormalizePhotoForPdf(photo) {
+    const source = photo && typeof photo === 'object' ? photo : {};
+    return {
+        ...source,
+        image: cleanText(source.image || source.dataUrl || source.dataURL || source.url || source.src || source.previewUrl || source.previewURL || source.blobUrl || source.blobURL),
+        description: richValue(source.description ?? source.desc ?? source.caption ?? source.note ?? source.notes ?? source.text ?? source.keterangan ?? source.label)
+    };
+}
+function rbvNormalizePhotoArrayForPdfSnapshot(photos) {
+    return (Array.isArray(photos) ? photos : [])
+        .map(rbvNormalizePhotoForPdf)
+        .filter((photo) => cleanText(photo.image) || cleanText(rbvPreviewPlainText ? rbvPreviewPlainText(photo.description, '') : photo.description));
+}
+function rbvEnrichVisitSnapshotForPdf(snapshot) {
+    const detail = getStoreWebDetail(snapshot?.store);
+    const manual = snapshot && snapshot.manualStoreDetail && typeof snapshot.manualStoreDetail === 'object' ? snapshot.manualStoreDetail : {};
+    const merged = { ...(detail || {}), ...(manual || {}) };
+    snapshot.manualStoreDetail = { ...(manual || {}) };
+    snapshot.storeCode = cleanText(snapshot.storeCode || merged.siteCode4 || merged.siteCode || merged.storeCode);
+    snapshot.typeStore = cleanText(snapshot.typeStore || merged.typeStore || merged.storeType || merged.type);
+    snapshot.emailStore = cleanText(snapshot.emailStore || merged.emailStore || merged.storeEmail || merged.email);
+    snapshot.areaManager = cleanText(snapshot.areaManager || merged.areaManager);
+    snapshot.regionalManager = cleanText(snapshot.regionalManager || merged.regionalManager);
+    snapshot.storeHead = cleanText(snapshot.storeHead || merged.storeHead || merged.storeLeader);
+    if (!cleanText(snapshot.storeLeader)) snapshot.storeLeader = snapshot.storeHead;
+    if (!cleanText(snapshot.storeLeaderLevel)) snapshot.storeLeaderLevel = cleanText(merged.storeLeaderLevel || merged.storeHeadLevel);
+    return snapshot;
 }
 async function rbvPrepareVisitForPdf(visit, options = {}) {
     await rbvWaitForReactInputFlush();
     await rbvWaitForPdfFrame();
+    await rbvWaitForReactInputFlush();
+    await rbvWaitForPdfFrame();
     await rbvWaitForPdfAssets(document);
-    const snapshot = rbvDeepCloneForPdf(visit || {});
+    const snapshot = rbvEnrichVisitSnapshotForPdf(rbvDeepCloneForPdf(visit || {}));
     snapshot.opiData = rbvNormalizeObservationRowsForPdf(snapshot.opiData);
     snapshot.qscData = rbvNormalizeObservationRowsForPdf(snapshot.qscData);
-    if (!snapshot.opiData.length && Array.isArray(visit && visit.opiData)) snapshot.opiData = rbvDeepCloneForPdf(visit.opiData);
-    if (!snapshot.qscData.length && Array.isArray(visit && visit.qscData)) snapshot.qscData = rbvDeepCloneForPdf(visit.qscData);
+    if (!snapshot.opiData.length && Array.isArray(visit && visit.opiData)) snapshot.opiData = rbvNormalizeObservationRowsForPdf(visit.opiData);
+    if (!snapshot.qscData.length && Array.isArray(visit && visit.qscData)) snapshot.qscData = rbvNormalizeObservationRowsForPdf(visit.qscData);
+    snapshot.qscResultPhotos = rbvNormalizePhotoArrayForPdfSnapshot(snapshot.qscResultPhotos || normalizeQscPhotos(snapshot));
+    snapshot.qscResultPhoto = snapshot.qscResultPhotos[0] || blankPhoto();
+    snapshot.findingEvidencePhotos = rbvNormalizePhotoArrayForPdfSnapshot(snapshot.findingEvidencePhotos);
+    snapshot.correctiveActionPhotos = rbvNormalizePhotoArrayForPdfSnapshot(snapshot.correctiveActionPhotos);
     snapshot.showQSCResult = true;
     if (options.forceAllSections !== false) {
         snapshot.showOPITable = true;
@@ -1678,6 +1726,8 @@ async function rbvPrepareVisitForPdf(visit, options = {}) {
         snapshot.showFindingEvidence = true;
         snapshot.showCorrectiveAction = true;
     }
+    if (snapshot.findingEvidencePhotos.length) snapshot.showFindingEvidence = true;
+    if (snapshot.correctiveActionPhotos.length) snapshot.showCorrectiveAction = true;
     snapshot.__pdfPreparedAt = Date.now();
     return snapshot;
 }
@@ -4022,7 +4072,7 @@ function fitEmailPayloadToClientLimit(payload, notes) {
     }
     return { payload: draft, notes: [...(notes || []), ...skipped], skipped };
 }
-function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, ...props }) {
+function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
     const ref = useRef(null);
     useEffect(() => {
         if (!ref.current)
@@ -4031,7 +4081,7 @@ function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, ...p
         const minHeight = Math.max(28, Number(minRows || 1) * 24);
         ref.current.style.height = `${Math.max(ref.current.scrollHeight, minHeight)}px`;
     }, [value, minRows]);
-    return React.createElement("textarea", { ref: ref, value: value, onChange: onChange, rows: minRows, className: className, ...props });
+    return React.createElement("textarea", { ...props, ref: ref, value: value, onChange: onChange, rows: minRows, className: cx('rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
 }
 function EmailRecipientPicker({ label, value, onChange, options, placeholder, multiple = false, required = false, lockedEmails = [] }) {
     const [query, setQuery] = useState('');
@@ -7729,10 +7779,9 @@ function App() {
         };
     }, []);
     useEffect(() => {
-        const touchState = { target: null, x: 0, y: 0, moved: false, startedAt: 0 };
-        const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]';
+        const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"], .rich-editor-input';
         const findTextTarget = (target) => target?.closest?.(textTargetSelector) || null;
-        const movementLimit = () => (window.matchMedia?.('(pointer: coarse)')?.matches ? 16 : 11);
+        let lastPointer = { x: 0, y: 0, target: null, moved: false };
         function canFocusOnTap(target) {
             if (!target || target.disabled || target.readOnly)
                 return false;
@@ -7740,73 +7789,59 @@ function App() {
             if (tag === 'select')
                 return false;
             const type = String(target.getAttribute?.('type') || '').toLowerCase();
-            return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
+            return target.isContentEditable || target.classList?.contains('rich-editor-input') || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
         }
         function focusTapTarget(target) {
-            if (!canFocusOnTap(target) || document.activeElement === target)
+            if (!canFocusOnTap(target))
                 return;
-            window.setTimeout(() => {
-                try {
-                    target.focus({ preventScroll: true });
-                }
-                catch (error) {
-                    try {
-                        target.focus();
-                    }
-                    catch (innerError) { }
-                }
-            }, 0);
+            // Never preventDefault here. Some Android keyboards only open when the native
+            // tap/click default action is preserved.
+            try { target.focus({ preventScroll: true }); }
+            catch (error) { try { target.focus(); } catch (innerError) { } }
         }
-        function handleTouchStart(event) {
+        function handlePointerDown(event) {
             const target = findTextTarget(event.target);
-            if (!target || !event.touches?.[0])
+            if (!target || !canFocusOnTap(target))
                 return;
-            touchState.target = target;
-            touchState.x = event.touches[0].clientX;
-            touchState.y = event.touches[0].clientY;
-            touchState.moved = false;
-            touchState.startedAt = Date.now();
+            lastPointer = { x: event.clientX || 0, y: event.clientY || 0, target, moved: false };
+            if (event.pointerType === 'touch' || event.pointerType === 'pen')
+                focusTapTarget(target);
         }
-        function handleTouchMove(event) {
-            if (!touchState.target || !event.touches?.[0])
+        function handlePointerMove(event) {
+            if (!lastPointer.target)
                 return;
-            const dx = Math.abs(event.touches[0].clientX - touchState.x);
-            const dy = Math.abs(event.touches[0].clientY - touchState.y);
-            const limit = movementLimit();
-            if (dy > limit || dx > limit + 6)
-                touchState.moved = true;
+            const dx = Math.abs((event.clientX || 0) - lastPointer.x);
+            const dy = Math.abs((event.clientY || 0) - lastPointer.y);
+            if (dx > 18 || dy > 18)
+                lastPointer.moved = true;
+        }
+        function handlePointerUp(event) {
+            const target = findTextTarget(event.target) || lastPointer.target;
+            if (target && !lastPointer.moved)
+                focusTapTarget(target);
+            lastPointer = { x: 0, y: 0, target: null, moved: false };
+        }
+        function handleClick(event) {
+            const target = findTextTarget(event.target);
+            if (target)
+                focusTapTarget(target);
         }
         function handleTouchEnd(event) {
-            const target = touchState.target;
-            const wasScroll = Boolean(target && touchState.moved);
-            if (wasScroll) {
-                if (event.cancelable)
-                    event.preventDefault();
-                event.stopPropagation();
-                if (document.activeElement === target)
-                    target.blur?.();
-            }
-            else if (target) {
-                focusTapTarget(target);
-            }
-            touchState.target = null;
-            touchState.moved = false;
-            touchState.startedAt = 0;
+            const target = findTextTarget(event.target);
+            if (target)
+                window.requestAnimationFrame(() => focusTapTarget(target));
         }
-        function handleTouchCancel() {
-            touchState.target = null;
-            touchState.moved = false;
-            touchState.startedAt = 0;
-        }
-        document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
-        document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: true });
-        document.addEventListener('touchend', handleTouchEnd, { capture: true, passive: false });
-        document.addEventListener('touchcancel', handleTouchCancel, { capture: true, passive: true });
+        document.addEventListener('pointerdown', handlePointerDown, { capture: true, passive: true });
+        document.addEventListener('pointermove', handlePointerMove, { capture: true, passive: true });
+        document.addEventListener('pointerup', handlePointerUp, { capture: true, passive: true });
+        document.addEventListener('click', handleClick, { capture: true, passive: true });
+        document.addEventListener('touchend', handleTouchEnd, { capture: true, passive: true });
         return () => {
-            document.removeEventListener('touchstart', handleTouchStart, true);
-            document.removeEventListener('touchmove', handleTouchMove, true);
+            document.removeEventListener('pointerdown', handlePointerDown, true);
+            document.removeEventListener('pointermove', handlePointerMove, true);
+            document.removeEventListener('pointerup', handlePointerUp, true);
+            document.removeEventListener('click', handleClick, true);
             document.removeEventListener('touchend', handleTouchEnd, true);
-            document.removeEventListener('touchcancel', handleTouchCancel, true);
         };
     }, []);
     useEffect(() => {

@@ -5499,3 +5499,46 @@ label.block {
     height: 32px;
   }
 }
+
+
+/* Revamp 246 - universal Android textbox focus/input stability */
+html, body {
+  -webkit-text-size-adjust: 100%;
+}
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+textarea,
+[contenteditable="true"],
+.rich-editor-input,
+.rbv-mobile-editable {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  cursor: text !important;
+  position: relative !important;
+  z-index: 6 !important;
+  min-height: 44px;
+  font-size: max(16px, 1em) !important;
+}
+textarea,
+.rich-editor-input,
+[contenteditable="true"] {
+  touch-action: pan-y !important;
+  overscroll-behavior: contain;
+}
+label:has(input:not([type="file"]):not([type="checkbox"]):not([type="radio"])),
+label:has(textarea),
+.field,
+.form-field,
+.input-shell,
+.rich-editor,
+.rbv-email-recipient-box-v99 {
+  pointer-events: auto !important;
+}
+input:disabled,
+textarea:disabled,
+button:disabled,
+[aria-disabled="true"] {
+  touch-action: manipulation !important;
+}
