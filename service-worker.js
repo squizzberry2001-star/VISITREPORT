@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp242-pdf-text-flush';
+const APP_VERSION = 'revamp243-grand-preview-sync';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
