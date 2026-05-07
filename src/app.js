@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp227-evidence-autoslot-master-store-cleanup';
+const APP_BUILD_VERSION = 'revamp229-master-global-crop-restore';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2164,8 +2164,6 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             rbvPrepareCameraCapture();
             const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 900, quality: 0.58 } : {});
             onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '', uploadedAt: nowIso() });
-            if (!RBV_LITE_MODE && !RBV_ULTRA_LITE_CAMERA_MODE)
-                setEditorOpen(true);
         }
         catch (error) {
             alert(rbvPhotoReadErrorMessage(error));
@@ -2190,7 +2188,7 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
                     label,
                     required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null)),
             React.createElement("div", { className: "flex shrink-0 gap-2" },
-                value?.image && !RBV_ULTRA_LITE_CAMERA_MODE ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
+                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
                 value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
@@ -2436,10 +2434,12 @@ function ProgressBar({ value }) {
         React.createElement("span", { style: { width: safeValue + '%' } })));
 }
 function VisitSetupSection({ visit, update }) {
-    const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label })), [visit.nama]);
-    const baseDetail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
+    // Revamp 229: master store can update from Convex while app is open.
+    // Avoid memoizing against only visit fields so latest remote master data is visible immediately.
+    const storeOptions = getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label }));
+    const baseDetail = getStoreWebDetail(visit.store);
     const manualDetail = visit.manualStoreDetail || {};
-    const detail = useMemo(() => ({ ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr }), [baseDetail, manualDetail, visit.store]);
+    const detail = { ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr };
     const progress = visitProgress(visit);
     const detailValue = (key, fallback = '') => manualDetail[key] ?? fallback ?? '';
     function handleBestieChange(value) {
@@ -2983,7 +2983,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp227-evidence-autoslot-master-store-cleanup" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp229-master-global-crop-restore" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',
@@ -5756,7 +5756,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [cloudflareDbBusy, setCloudflareDbBusy] = useState(false);
     const masterUploadInputRef = useRef(null);
     const [masterStoreRows, setMasterStoreRows] = useState(() => readLocalMasterStores());
-    const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap memakai Convex. Upload Excel untuk mengganti data lokal lalu sync ke Convex.');
+    const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Convex untuk semua device.');
     const [masterStoreBusy, setMasterStoreBusy] = useState(false);
     const [masterStoreQuery, setMasterStoreQuery] = useState('');
     async function saveWelcomeSettings() {
@@ -6199,7 +6199,20 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setMasterStoreStatus(`Mengirim ${rowsToSync.length} master toko ke Convex...`);
         try {
             const ok = await syncMasterStoresToConvex(rowsToSync, { replace: true });
-            setMasterStoreStatus(ok ? `Sync Convex berhasil: ${rowsToSync.length} toko tersimpan.` : `Sync Convex gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek deploymentUrl dan function masterStores.'}`);
+            if (ok) {
+                const remoteRows = await fetchMasterStoresFromConvex();
+                if (remoteRows && remoteRows.length) {
+                    const confirmed = saveLocalMasterStores(remoteRows);
+                    setMasterStoreRows(confirmed);
+                    setMasterStoreStatus(`Sync Convex berhasil: ${confirmed.length} toko tersimpan dan siap untuk semua device.`);
+                }
+                else {
+                    setMasterStoreStatus(`Sync Convex berhasil: ${rowsToSync.length} toko terkirim.`);
+                }
+            }
+            else {
+                setMasterStoreStatus(`Sync Convex gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek deploymentUrl dan function masterStores.'}`);
+            }
         }
         finally {
             setMasterStoreBusy(false);
@@ -6218,9 +6231,22 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 throw new Error('Tidak ada baris master toko valid. Pastikan header sesuai template.');
             const saved = saveLocalMasterStores(parsedRows);
             setMasterStoreRows(saved);
-            setMasterStoreStatus(`Upload berhasil: ${saved.length} toko terbaca. Mengirim ke Convex...`);
+            setMasterStoreStatus(`Upload berhasil: ${saved.length} toko terbaca lokal. Publish ke Convex untuk semua device...`);
             const ok = await syncMasterStoresToConvex(saved, { replace: true });
-            setMasterStoreStatus(ok ? `Upload + sync Convex selesai: ${saved.length} toko aktif di database.` : `Upload lokal berhasil (${saved.length} toko), tapi sync Convex gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek config Convex.'}`);
+            if (ok) {
+                const remoteRows = await fetchMasterStoresFromConvex();
+                if (remoteRows && remoteRows.length) {
+                    const confirmed = saveLocalMasterStores(remoteRows);
+                    setMasterStoreRows(confirmed);
+                    setMasterStoreStatus(`Upload + publish Convex selesai: ${confirmed.length} toko aktif untuk semua device.`);
+                }
+                else {
+                    setMasterStoreStatus(`Upload + sync Convex selesai: ${saved.length} toko terkirim. Device lain akan menarik data saat reload/buka ulang.`);
+                }
+            }
+            else {
+                setMasterStoreStatus(`Upload hanya tersimpan lokal (${saved.length} toko), belum masuk Convex: ${LAST_REMOTE_SYNC_ERROR || 'cek config Convex / deploy function masterStores.'}`);
+            }
         }
         catch (error) {
             setMasterStoreStatus(`Upload gagal: ${error?.message || 'file tidak valid.'}`);
@@ -6858,6 +6884,7 @@ function App() {
     const [history, setHistory] = useState(() => readHistoryMeta());
     const [storageLabel, setStorageLabel] = useState('Menghitung storage...');
     const [activeSection, setActiveSection] = useState(0);
+    const [masterStoreRevision, setMasterStoreRevision] = useState(0);
     const [newVisitOpen, setNewVisitOpen] = useState(false);
     const [pinOpen, setPinOpen] = useState(false);
     const [secretOpen, setSecretOpen] = useState(false);
@@ -6908,6 +6935,67 @@ function App() {
     useEffect(() => {
         const config = getEmailReportConfig();
         startPersistentEmailScheduler(config.endpoint);
+    }, []);
+    useEffect(() => {
+        const bump = () => setMasterStoreRevision((value) => value + 1);
+        window.addEventListener('rbv-master-store-change', bump);
+        window.addEventListener('storage', bump);
+        return () => {
+            window.removeEventListener('rbv-master-store-change', bump);
+            window.removeEventListener('storage', bump);
+        };
+    }, []);
+    useEffect(() => {
+        // Revamp 229: make uploaded master data available on every device.
+        // Each device pulls Convex masterStores automatically at startup and while open.
+        let cancelled = false;
+        let unsubscribe = null;
+        let pollId = null;
+        const applyRemoteMasterStores = (rows) => {
+            const normalized = normalizeMasterStoreRows(rows?.rows || rows?.data || rows);
+            if (cancelled || !normalized.length)
+                return;
+            const saved = saveLocalMasterStores(normalized);
+            setMasterStoreRevision((value) => value + 1);
+            console.info(`Master data toko diterapkan dari Convex: ${saved.length} baris.`);
+        };
+        async function refreshRemoteMasterStores() {
+            try {
+                const rows = await fetchMasterStoresFromConvex();
+                if (!cancelled && rows && rows.length)
+                    applyRemoteMasterStores(rows);
+            }
+            catch (error) {
+                console.warn('Auto tarik master data Convex gagal:', error);
+            }
+        }
+        async function startMasterStoreRemoteSync() {
+            if (!convexEnabled())
+                return;
+            await refreshRemoteMasterStores();
+            try {
+                const queryName = getConvexConfig().masterStoreListQuery || 'masterStores:listStores';
+                unsubscribe = await subscribeConvexQuery(queryName, { limit: 5000 }, (rows) => applyRemoteMasterStores(rows), (error) => console.warn('Realtime masterStores gagal:', error));
+            }
+            catch (error) {
+                console.warn('Subscribe master data Convex gagal:', error);
+            }
+            if (!cancelled && !unsubscribe)
+                pollId = window.setInterval(refreshRemoteMasterStores, Math.max(30000, getRemotePollMs() * 3));
+        }
+        startMasterStoreRemoteSync();
+        const onVisible = () => {
+            if (!document.hidden)
+                refreshRemoteMasterStores();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            cancelled = true;
+            document.removeEventListener('visibilitychange', onVisible);
+            if (pollId)
+                window.clearInterval(pollId);
+            try { unsubscribe?.(); } catch (error) {}
+        };
     }, []);
     useEffect(() => {
         let cancelled = false;
@@ -7255,7 +7343,7 @@ function App() {
         content = React.createElement(PreviewPage, { visit: visit, onBack: () => setScreen('audit') });
     }
     else {
-        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: () => setScreen('preview') });
+        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: () => setScreen('preview'), masterStoreRevision: masterStoreRevision });
     }
     return (React.createElement("div", { className: cx("audit-shell min-h-screen", screen !== 'dashboard' && "md:grid md:grid-cols-[300px_minmax(0,1fr)]") },
         screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
@@ -7264,7 +7352,7 @@ function App() {
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
             screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: setScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
-        React.createElement(NewVisitModal, { open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
+        React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
         React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig })));
 }
