@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp249-preview-blank-pinch-handler-fix';
+const APP_VERSION = 'revamp250-preview-rollback-no-blank';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
