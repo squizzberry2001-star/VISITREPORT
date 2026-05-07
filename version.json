@@ -1,1 +1,4 @@
-{"version":"250","build":"revamp250-preview-rollback-no-blank","updatedAt":"2026-05-07T00:00:00.000Z"}
+{
+  "version": "251",
+  "label": "Revamp 251 - Stable PDF Preview Font + Safe Pinch Zoom"
+}
