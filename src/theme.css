@@ -4829,3 +4829,12 @@ body.rbv-lite-mode .evidence-empty-state {
     box-shadow: 0 0 0 9999px rgba(15, 23, 42, .06), 0 0 0 4px rgba(255, 255, 255, .22) !important;
   }
 }
+
+/* Revamp 235: remove side marker preview and keep center preview as the only visual guide. */
+.photo-editor-marker-preview-wrap,
+.photo-editor-marker-preview {
+  display: none !important;
+}
+.photo-editor-marker-center-preview {
+  pointer-events: none !important;
+}
