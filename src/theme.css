@@ -4500,3 +4500,162 @@ body.rbv-home-lock .dashboard-page,
     padding: 8px !important;
   }
 }
+
+/* Revamp 221/222 - Evidence floating upload + observation motion */
+.evidence-photo-grid-system {
+  padding-bottom: calc(6.9rem + var(--safe-bottom));
+}
+.evidence-floating-capture {
+  position: fixed;
+  left: 50%;
+  bottom: calc(5.15rem + var(--safe-bottom));
+  z-index: 92;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(92vw, 420px);
+  padding: 8px;
+  border: 1px solid rgba(203, 213, 225, .86);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.evidence-floating-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 0;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  box-shadow: 0 10px 22px rgba(13, 148, 136, .22);
+  transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+}
+.evidence-floating-button:active {
+  transform: scale(.985);
+}
+.evidence-floating-gallery {
+  color: #0f172a;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(203, 213, 225, .95);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+}
+.evidence-photo-grid .photo-actions {
+  display: none !important;
+}
+@keyframes rbvObservationSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(18px) scale(.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@media (max-width: 767px) {
+  .observation-item-card.mobile-active {
+    animation: rbvObservationSlideIn .26s ease both;
+    will-change: transform, opacity;
+  }
+  .evidence-floating-capture {
+    bottom: calc(5.35rem + var(--safe-bottom));
+    width: min(94vw, 390px);
+  }
+  .evidence-floating-button {
+    height: 46px;
+    font-size: 12px;
+  }
+}
+@media (min-width: 768px) {
+  .evidence-floating-capture {
+    bottom: 24px;
+    width: 360px;
+  }
+}
+body.rbv-ultra-lite-camera .evidence-floating-capture,
+body.rbv-lite-mode .evidence-floating-capture {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .10);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
+/* Revamp 222 - Evidence compact icon-only buttons + auto slots */
+.evidence-floating-capture-compact {
+  width: auto !important;
+  min-width: 148px;
+  max-width: calc(100vw - 28px);
+  gap: 8px !important;
+  padding: 7px 8px !important;
+  border-radius: 26px !important;
+}
+.evidence-floating-icon-button {
+  flex: 0 0 auto !important;
+  width: 62px !important;
+  height: 54px !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 7px 6px !important;
+  border-radius: 20px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+.evidence-floating-label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .01em;
+}
+.evidence-empty-state {
+  display: flex;
+  min-height: 164px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed rgba(148, 163, 184, .82);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .72);
+  color: #64748b;
+  text-align: center;
+  padding: 20px 16px;
+}
+.evidence-empty-state strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+.evidence-empty-state span {
+  max-width: 240px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+@media (max-width: 767px) {
+  .evidence-floating-capture-compact {
+    bottom: calc(5.45rem + var(--safe-bottom)) !important;
+  }
+  .evidence-floating-icon-button {
+    width: 60px !important;
+    height: 52px !important;
+  }
+}
+body.rbv-ultra-lite-camera .evidence-empty-state,
+body.rbv-lite-mode .evidence-empty-state {
+  min-height: 138px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.82);
+}

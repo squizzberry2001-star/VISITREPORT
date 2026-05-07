@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp220-ultra-lite-camera-mode';
+const APP_BUILD_VERSION = 'revamp227-evidence-autoslot-master-store-cleanup';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -254,7 +254,8 @@ const RBV_LIBS = {
     jszip: 'jszip.min.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
     pdfAssets: 'src/pdf-template-assets.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
     pdfGenerator: 'pdf-generator.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
-    caExport: 'ca-assignment-export.js?v=' + encodeURIComponent(APP_BUILD_VERSION)
+    caExport: 'ca-assignment-export.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
+    heic2any: 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js'
 };
 const rbvScriptPromises = new Map();
 function loadScriptOnce(src, globalCheck) {
@@ -358,45 +359,205 @@ async function ensureCaExportReady() {
     await loadScriptOnce(RBV_LIBS.caExport, () => !!window.__caAssignmentExport?.buildWorkbook);
     return window.__caAssignmentExport;
 }
+
+const RBV_PHOTO_EXTENSION_RE = /\.(jpe?g|jfif|pjpeg|png|webp|gif|heic|heif|avif|bmp|dib|tiff?|svg|ico)$/i;
+const RBV_PHOTO_MIME_BY_EXT = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', jfif: 'image/jpeg', pjpeg: 'image/jpeg',
+    png: 'image/png', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic', heif: 'image/heif',
+    avif: 'image/avif', bmp: 'image/bmp', dib: 'image/bmp', tif: 'image/tiff', tiff: 'image/tiff',
+    svg: 'image/svg+xml', ico: 'image/x-icon'
+};
+function rbvPhotoExtension(file) {
+    const name = String(file?.name || '').toLowerCase();
+    const match = name.match(/\.([a-z0-9]+)$/i);
+    return match ? match[1].toLowerCase() : '';
+}
+function rbvGuessPhotoMime(file) {
+    const type = String(file?.type || '').toLowerCase().trim();
+    if (/^image\//i.test(type)) return type;
+    const ext = rbvPhotoExtension(file);
+    return RBV_PHOTO_MIME_BY_EXT[ext] || 'image/jpeg';
+}
+function rbvIsProbablyPhotoFile(file) {
+    if (!file) return false;
+    const type = String(file.type || '').toLowerCase().trim();
+    const name = String(file.name || '').toLowerCase().trim();
+    if (/^image\//i.test(type)) return true;
+    if (RBV_PHOTO_EXTENSION_RE.test(name)) return true;
+    // Be permissive for mobile camera/gallery files: some Android browsers return empty MIME/name.
+    // The input accept already limits the picker to images, so unknown binary is allowed and normalized.
+    if (!type || type === 'application/octet-stream') return true;
+    return false;
+}
+function rbvIsHeicLike(file) {
+    const type = String(file?.type || '').toLowerCase();
+    const ext = rbvPhotoExtension(file);
+    return /heic|heif/.test(type) || ext === 'heic' || ext === 'heif';
+}
+async function ensureHeic2AnyReady() {
+    if (typeof window.heic2any === 'function') return window.heic2any;
+    await loadScriptOnce(RBV_LIBS.heic2any, () => typeof window.heic2any === 'function');
+    if (typeof window.heic2any !== 'function') throw new Error('Converter HEIC belum siap. Pastikan koneksi internet aktif lalu coba lagi.');
+    return window.heic2any;
+}
+async function rbvConvertHeicToJpegDataUrl(file) {
+    const heic2any = await ensureHeic2AnyReady();
+    const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: RBV_ULTRA_LITE_CAMERA_MODE ? 0.62 : 0.76 });
+    const blob = Array.isArray(converted) ? converted[0] : converted;
+    if (!blob) throw new Error('HEIC gagal dikonversi ke JPG.');
+    return fileToDataUrl(blob);
+}
+function rbvNormalizePhotoDataUrl(dataUrl, file) {
+    let value = String(dataUrl || '');
+    if (!value) return '';
+    if (/^data:image\//i.test(value)) return value;
+    const mime = rbvGuessPhotoMime(file);
+    if (/^data:[^;]+;/i.test(value)) return value.replace(/^data:[^;]+;/i, `data:${mime};`);
+    if (/^data:;base64,/i.test(value)) return value.replace(/^data:;base64,/i, `data:${mime};base64,`);
+    return value;
+}
 async function compressImageFileForLite(file, options = {}) {
-    const maxSide = Number(options.maxSide || (RBV_ULTRA_LITE_CAMERA_MODE ? 960 : (RBV_LITE_MODE ? 1280 : 1600)));
-    const quality = Number(options.quality || (RBV_ULTRA_LITE_CAMERA_MODE ? 0.64 : (RBV_LITE_MODE ? 0.72 : 0.82)));
-    if (!file || !/^image\//i.test(file.type || '')) return fileToDataUrl(file);
+    const maxSide = Number(options.maxSide || (RBV_ULTRA_LITE_CAMERA_MODE ? 900 : (RBV_LITE_MODE ? 1180 : 1500)));
+    const quality = Number(options.quality || (RBV_ULTRA_LITE_CAMERA_MODE ? 0.58 : (RBV_LITE_MODE ? 0.68 : 0.78)));
+    if (!file) throw new Error('File foto tidak ditemukan.');
+    if (Number(file.size || 0) <= 0) throw new Error('File foto kosong. Coba ambil/pilih ulang foto.');
+    const type = String(file.type || '').toLowerCase();
+    const name = String(file.name || '').toLowerCase();
+    if (!rbvIsProbablyPhotoFile(file)) throw new Error('File yang dipilih bukan gambar.');
+
     let canvas = null;
-    let image = null;
+    let source = null;
+    let objectUrl = '';
     try {
-        const dataUrl = await fileToDataUrl(file);
-        image = await loadImageElement(dataUrl);
-        const sourceWidth = image.naturalWidth || image.width || 1;
-        const sourceHeight = image.naturalHeight || image.height || 1;
+        try {
+            if (typeof window.createImageBitmap === 'function') {
+                source = await window.createImageBitmap(file, { imageOrientation: 'from-image' });
+            }
+        } catch (bitmapError) {
+            source = null;
+        }
+        if (!source) {
+            objectUrl = URL.createObjectURL(file);
+            source = await loadImageElement(objectUrl);
+        }
+        const sourceWidth = source.naturalWidth || source.width || 1;
+        const sourceHeight = source.naturalHeight || source.height || 1;
         const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-        const skipCompressionLimit = RBV_ULTRA_LITE_CAMERA_MODE ? 260 * 1024 : 900 * 1024;
-        if (scale >= 1 && file.size < skipCompressionLimit) return dataUrl;
         canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(sourceWidth * scale));
         canvas.height = Math.max(1, Math.round(sourceHeight * scale));
         const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
+        if (!ctx) throw new Error('Canvas browser tidak siap.');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = RBV_ULTRA_LITE_CAMERA_MODE ? 'medium' : 'high';
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        const output = canvas.toDataURL('image/jpeg', Math.max(0.54, Math.min(0.86, quality)));
-        try { ctx.clearRect(0, 0, canvas.width, canvas.height); } catch (error) {}
-        return output;
+        ctx.imageSmoothingQuality = RBV_ULTRA_LITE_CAMERA_MODE ? 'low' : 'medium';
+        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((resolve) => {
+            try {
+                canvas.toBlob(resolve, 'image/jpeg', Math.max(0.46, Math.min(0.84, quality)));
+            } catch (error) {
+                resolve(null);
+            }
+        });
+        if (blob) return fileToDataUrl(blob);
+        return canvas.toDataURL('image/jpeg', Math.max(0.46, Math.min(0.84, quality)));
     } catch (error) {
-        console.warn('Kompresi foto gagal, memakai file asli:', error);
-        return fileToDataUrl(file);
+        console.warn('Kompresi/decode foto gagal, mencoba baca file asli:', error);
+        if (rbvIsHeicLike(file)) {
+            try { return await rbvConvertHeicToJpegDataUrl(file); } catch (heicError) { console.warn('Konversi HEIC gagal, simpan file asli:', heicError); }
+        }
+        return rbvNormalizePhotoDataUrl(await fileToDataUrl(file), file);
     } finally {
+        try { if (objectUrl) URL.revokeObjectURL(objectUrl); } catch (error) {}
+        try { if (source && typeof source.close === 'function') source.close(); } catch (error) {}
         try {
-            if (image) image.src = '';
+            if (source && source.tagName === 'IMG') source.src = '';
             if (canvas) { canvas.width = 1; canvas.height = 1; }
         } catch (error) {}
     }
 }
+function rbvPhotoReadErrorMessage(error) {
+    const message = cleanText(error?.message || error, 'Foto gagal dibaca.');
+    if (/quota|storage|disk|space|full|exceeded/i.test(message)) {
+        return 'Storage browser penuh. Hapus beberapa history/foto lama lalu coba lagi.';
+    }
+    if (/heic|heif|converter/i.test(message)) return message;
+    if (/kosong|bukan gambar|tidak ditemukan/i.test(message)) return message;
+    if (/security|permission|denied|notallowed/i.test(message)) return 'Browser menolak akses file/foto. Tutup web lalu buka ulang, kemudian pilih foto lagi.';
+    return 'Foto gagal dibaca: ' + message;
+}
+async function rbvReadEvidenceFiles(files, options = {}) {
+    const list = Array.from(files || []).filter(Boolean);
+    const result = [];
+    const errors = [];
+    const maxFiles = Math.max(1, Number(options.maxFiles || 40));
+    const selected = list.slice(0, maxFiles);
+    async function readAnyPhotoFile(file) {
+        if (!file) throw new Error('File foto tidak ditemukan.');
+        if (Number(file.size || 0) <= 0) throw new Error('File foto kosong. Coba ambil/pilih ulang foto.');
+        const isPhotoLike = rbvIsProbablyPhotoFile(file);
+        let dataUrl = '';
+        if (rbvIsHeicLike(file)) {
+            try { dataUrl = await rbvConvertHeicToJpegDataUrl(file); } catch (error) { console.warn('Konversi HEIC gagal, lanjut raw reader:', error); }
+        }
+        if (!dataUrl) {
+            try { dataUrl = rbvNormalizePhotoDataUrl(await fileToDataUrl(file), file); } catch (error) { console.warn('Raw FileReader gagal:', error); }
+        }
+        // Jika raw data terlalu besar, coba kompres; kalau kompres gagal tetap pakai raw agar upload tidak gagal.
+        const largeRaw = dataUrl && dataUrl.length > (RBV_ULTRA_LITE_CAMERA_MODE ? 900000 : 1800000);
+        if ((largeRaw || !dataUrl) && isPhotoLike && !/^data:image\/(svg|gif)/i.test(dataUrl || '')) {
+            try {
+                const compressed = await compressImageFileForLite(file, options);
+                if (compressed) dataUrl = rbvNormalizePhotoDataUrl(compressed, file);
+            } catch (error) {
+                console.warn('Kompresi fallback gagal, pakai raw/object URL:', error);
+            }
+        }
+        if (dataUrl) return { image: rbvNormalizePhotoDataUrl(dataUrl, file), objectUrl: '' };
+        // Last-resort untuk browser yang menolak FileReader tapi masih bisa preview blob dari picker.
+        try {
+            const objectUrl = URL.createObjectURL(file);
+            if (objectUrl) return { image: objectUrl, objectUrl };
+        } catch (error) {}
+        throw new Error('Browser tidak mengirim data foto. Coba pilih ulang dari Galeri, bukan dari Recent/Cloud.');
+    }
+    for (const file of selected) {
+        try {
+            const { image, objectUrl } = await readAnyPhotoFile(file);
+            result.push({
+                ...blankPhoto(),
+                image,
+                objectUrl: objectUrl || '',
+                cropAspect: ratioToAspectString(PDF_PHOTO_CROP_RATIO),
+                uploadedAt: nowIso(),
+                sourceName: file.name || '',
+                sourceType: rbvGuessPhotoMime(file),
+                sourceSize: Number(file.size || 0)
+            });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        } catch (error) {
+            console.warn('Foto evidence gagal diproses:', error, file);
+            errors.push(error);
+        }
+    }
+    if (list.length > selected.length) {
+        errors.push(new Error(`${list.length - selected.length} foto belum dimasukkan karena batas sekali upload ${maxFiles} foto.`));
+    }
+    return { result, errors };
+}
 function rbvIdle(callback, timeout = 600) {
     if (window.requestIdleCallback) return window.requestIdleCallback(callback, { timeout });
     return window.setTimeout(callback, Math.min(timeout, 250));
+}
+
+function nowIso() {
+    try {
+        return new Date().toISOString();
+    }
+    catch (error) {
+        return String(Date.now());
+    }
 }
 
 function cleanText(value, fallback = '') {
@@ -625,34 +786,47 @@ function normalizeMasterStoreCode(value) {
     const raw = text.replace(/\.0$/, '');
     return /^\d+$/.test(raw) ? raw.padStart(Math.min(Math.max(raw.length, 4), 8), '0') : raw;
 }
+function rbvNormalizeMasterHeaderKey(value) {
+    return normalize(String(value || ''))
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9]/g, '');
+}
 function pickMasterStoreValue(row, keys, fallback = '') {
     const source = row || {};
     for (const key of keys) {
         if (source[key] !== undefined && source[key] !== null && String(source[key]).trim() !== '')
             return source[key];
     }
+    const normalizedKeys = new Set(keys.map(rbvNormalizeMasterHeaderKey));
+    for (const [rawKey, value] of Object.entries(source)) {
+        if (value === undefined || value === null || String(value).trim() === '') continue;
+        if (normalizedKeys.has(rbvNormalizeMasterHeaderKey(rawKey))) return value;
+    }
     return fallback;
 }
 function normalizeMasterStoreRow(row, index = 0) {
     const source = row && typeof row === 'object' ? row : {};
-    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Site', 'SITE', 'Kode Toko', 'kodeToko', 'storeCode', 'store_code']));
-    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'Site', 'SITE', 'code', 'kode']));
-    const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'SITE_DESCR', 'Nama Toko', 'namaToko', 'storeName', 'store_name', 'name']));
-    const status = cleanText(pickMasterStoreValue(source, ['operationalStatus', 'status', 'Status'], 'active')).toLowerCase();
+    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Site', 'SITE', 'Kode Toko', 'Kode Store', 'Store Code', 'kodeToko', 'kodeStore', 'storeCode', 'store_code', 'site']));
+    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'Site', 'SITE', 'code', 'kode', 'kodeStore', 'storeCode']));
+    const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'Site Description', 'SITE_DESCR', 'Nama Toko', 'Nama Store', 'Store Name', 'namaToko', 'namaStore', 'storeName', 'store_name', 'name']));
+    const status = cleanText(pickMasterStoreValue(source, ['operationalStatus', 'Operational Status', 'status', 'Status'], 'active')).toLowerCase();
+    const typeStore = cleanText(pickMasterStoreValue(source, ['type', 'Type', 'typeStore', 'Type Store', 'TYPE STORE', 'Jenis', 'Jenis Store', 'jenis', 'formatStore', 'Format Store']));
+    const emailStore = cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'EMAIL STORE', 'Email Toko', 'Email', 'EMAIL', 'storeEmail', 'Store Email', 'email_store', 'mailStore', 'Mail Store'])).toLowerCase();
     return {
         id: cleanText(source.id || source._id || siteCode4 || siteCode || `master-${index}`),
         siteCode,
         siteCode4,
         siteDescr,
-        type: cleanText(pickMasterStoreValue(source, ['type', 'Type', 'Jenis', 'jenis'])),
+        type: typeStore,
+        typeStore,
         city: cleanText(pickMasterStoreValue(source, ['city', 'City', 'Kota', 'kota'])),
-        address: cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'alamat'])),
-        emailStore: cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'Email', 'EMAIL', 'storeEmail', 'email_store'])).toLowerCase(),
-        storeHead: cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'kepalaToko'])),
-        areaManager: cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'am'])),
-        areaManagerEmail: cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'amEmail'])).toLowerCase(),
-        regionalManager: cleanText(pickMasterStoreValue(source, ['regionalManager', 'Regional Manager', 'rm'])),
-        regionalManagerEmail: cleanText(pickMasterStoreValue(source, ['regionalManagerEmail', 'Regional Manager Email', 'rmEmail'])).toLowerCase(),
+        address: cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'Alamat Store', 'alamat', 'alamatStore'])),
+        emailStore,
+        storeHead: cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'STORE HEAD', 'Kepala Toko', 'kepalaToko', 'headStore'])),
+        areaManager: cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'AREA MANAGER', 'Nama Area Manager', 'am', 'AM'])),
+        areaManagerEmail: cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'Email Area Manager', 'amEmail', 'AM Email'])).toLowerCase(),
+        regionalManager: cleanText(pickMasterStoreValue(source, ['regionalManager', 'Regional Manager', 'REGIONAL MANAGER', 'Nama Regional Manager', 'rm', 'RM'])),
+        regionalManagerEmail: cleanText(pickMasterStoreValue(source, ['regionalManagerEmail', 'Regional Manager Email', 'Email Regional Manager', 'rmEmail', 'RM Email'])).toLowerCase(),
         operationalStatus: ['inactive', 'temporary_closed'].includes(status) ? status : 'active',
         latitude: cleanText(pickMasterStoreValue(source, ['latitude', 'lat'])),
         longitude: cleanText(pickMasterStoreValue(source, ['longitude', 'lng', 'lon'])),
@@ -716,9 +890,10 @@ async function parseMasterStoreExcelFile(file) {
                 const normalizeHeader = (value) => normalize(String(value || '')).replace(/\s+/g, '');
                 const headerIndex = matrix.findIndex((row) => {
                     const keys = (row || []).map(normalizeHeader);
-                    const hasCode = keys.includes('site') || keys.includes('sitecode') || keys.includes('sitecode4') || keys.includes('kodetoko');
-                    const hasName = keys.includes('sitedescr') || keys.includes('sitedescription') || keys.includes('namatoko') || keys.includes('storename');
-                    return hasCode && hasName;
+                    const hasCode = keys.includes('site') || keys.includes('sitecode') || keys.includes('sitecode4') || keys.includes('kodetoko') || keys.includes('kodestore') || keys.includes('storecode');
+                    const hasName = keys.includes('sitedescr') || keys.includes('sitedescription') || keys.includes('namatoko') || keys.includes('namastore') || keys.includes('storename');
+                    const hasUsefulDetail = keys.includes('typestore') || keys.includes('emailstore') || keys.includes('emailtoko') || keys.includes('storehead') || keys.includes('areamanager') || keys.includes('regionalmanager');
+                    return hasCode && (hasName || hasUsefulDetail);
                 });
                 let rows;
                 if (headerIndex >= 0) {
@@ -890,8 +1065,8 @@ function createVisit(bestieName = '', storeName = '') {
         qscResultPhotos: [blankPhoto(), blankPhoto()],
         opiData: [blankObservationRow()],
         qscData: [blankObservationRow()],
-        findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
-        correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
+        findingEvidencePhotos: [],
+        correctiveActionPhotos: [],
         storeAssignmentLink: readAssignmentLinkConfig(),
         showQSCResult: true,
         showOPITable: false,
@@ -1974,7 +2149,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement("span", null, "Simpan"))))));
     return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false, hideActions = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -1987,13 +2162,13 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
         }
         try {
             rbvPrepareCameraCapture();
-            const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 960, quality: 0.64 } : {});
-            onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
+            const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 900, quality: 0.58 } : {});
+            onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '', uploadedAt: nowIso() });
             if (!RBV_LITE_MODE && !RBV_ULTRA_LITE_CAMERA_MODE)
                 setEditorOpen(true);
         }
         catch (error) {
-            alert('Foto gagal dibaca. Coba pilih ulang foto.');
+            alert(rbvPhotoReadErrorMessage(error));
         }
         finally {
             try { input.value = ''; } catch (error) {}
@@ -2023,11 +2198,11 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
-        React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
-            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
+        React.createElement("div", { className: cx('photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3', hideActions && 'hidden') },
+            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "hidden", onChange: handleFiles }),
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto dari kamera" }),
-            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto dari galeri" })),
+            !hideActions ? React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto dari kamera" }) : null,
+            !hideActions ? React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto dari galeri" }) : null),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
 }
@@ -2183,29 +2358,71 @@ function ObservationCards({ title, rows, onChange }) {
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row"))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
-    const minSlots = 8;
+    const cameraRef = useRef(null);
+    const galleryRef = useRef(null);
     const sourcePhotos = Array.isArray(photos) ? photos : [];
-    const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
-    const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
-    const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
-    const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
-    const removeEmpty = () => {
-        if (!confirmAction('Rapihkan dan hapus slot foto kosong?'))
-            return;
-        const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
-        const next = meaningful.length ? meaningful : blankSet();
-        onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
+    const meaningfulPhotos = sourcePhotos.filter((photo) => photo && (photo.image || cleanText(photo.description)));
+    const safePhotos = meaningfulPhotos;
+    const normalizeNextPhotos = (next) => (Array.isArray(next) ? next : []).filter((photo) => photo && (photo.image || cleanText(photo.description)));
+    const updatePhoto = (index, value) => {
+        const next = safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo);
+        onChange(normalizeNextPhotos(next));
     };
-    const renderActions = (position = 'top') => (React.createElement("div", { className: cx('photo-grid-actions flex flex-wrap gap-2', position === 'top'
-            ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2'
-            : 'justify-end pb-20 md:pb-0') },
-        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "eraser", onClick: removeEmpty }, "Rapihkan Slot Foto"),
-        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "plus", onClick: addFour }, "Tambah Slot Foto")));
-    return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
-        renderActions('top'),
-        React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO })))),
-        renderActions('bottom')));
+    async function handleFloatingFiles(event) {
+        const input = event.target;
+        const files = Array.from(input.files || []);
+        if (!files.length) {
+            rbvFinishCameraCapture();
+            return;
+        }
+        try {
+            rbvPrepareCameraCapture();
+            const { result: uploaded, errors } = await rbvReadEvidenceFiles(files, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 900, quality: 0.58 } : {});
+            if (uploaded.length) {
+                const existing = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
+                try {
+                    onChange(normalizeNextPhotos([...uploaded.reverse(), ...existing]));
+                } catch (saveError) {
+                    console.warn('Foto terbaca tapi gagal disimpan ke state/localStorage:', saveError);
+                    alert(rbvPhotoReadErrorMessage(saveError));
+                    return;
+                }
+            }
+            if (!uploaded.length && errors.length) {
+                alert(rbvPhotoReadErrorMessage(errors[0]));
+            }
+            else if (errors.length) {
+                alert(`${uploaded.length} foto berhasil ditambahkan. ${errors.length} foto gagal dibaca.`);
+            }
+        }
+        catch (error) {
+            alert(rbvPhotoReadErrorMessage(error));
+        }
+        finally {
+            try { input.value = ''; } catch (error) {}
+            rbvFinishCameraCapture();
+        }
+    }
+    const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
+        React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "hidden", onChange: handleFloatingFiles }),
+        React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", multiple: true, className: "hidden", "data-gallery-multiple": "true", onClick: (event) => { try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
+        React.createElement("button", { type: "button", className: "evidence-floating-button evidence-floating-camera evidence-floating-icon-button", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto evidence dari kamera" },
+            React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
+            React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
+        React.createElement("button", { type: "button", className: "evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto evidence dari galeri" },
+            React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
+            React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
+    const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
+        ? ReactDOM.createPortal(floatingCapture, document.body)
+        : floatingCapture;
+    return (React.createElement("div", { className: "photo-grid-system evidence-photo-grid-system grid gap-4" },
+        floatingPortal,
+        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
+            React.createElement(Icon, { name: "image", className: "h-7 w-7" }),
+            React.createElement("strong", null, "Belum ada foto"),
+            React.createElement("span", null, "Pilih Kamera atau Galeri untuk menambah foto."))));
 }
+
 const SECTION_DEFS = [
     { id: 'setup', label: 'Visit', title: 'Visit Setup', icon: 'store', hint: 'Bestie & store' },
     { id: 'crew', label: 'Crew', title: 'General Information', icon: 'calendar', hint: 'Tanggal & PIC' },
@@ -2766,34 +2983,26 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp220-ultra-lite-camera-mode" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp227-evidence-autoslot-master-store-cleanup" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
-                React.createElement("div", { className: "home-quick-actions-grid", style: {
+                React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                         gap: '10px'
                     } },
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: handlePushHomeBackup, "aria-label": "Upload backup cepat ke Convex", title: "Upload backup cepat ke Convex" },
-                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Upload"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '44px' }, onClick: handlePullHomeBackup, "aria-label": "Tarik backup cepat dari Convex", title: "Tarik backup cepat dari Convex" },
-                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Tarik"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "Sync")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '44px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '42px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Install"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "App")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '44px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '42px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
                         React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History"))),
@@ -2924,23 +3133,7 @@ function NewVisitModal({ open, onClose, onCreate }) {
             React.createElement("div", { className: "grid gap-4" },
                 React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true }),
                 React.createElement(SelectField, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", icon: "store", required: true }),
-                React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
-                    React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900", onClick: () => setManualOpen((state) => !state) },
-                        React.createElement("span", null, "Buat toko manual"),
-                        React.createElement(Icon, { name: "right", className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '') })),
-                    manualOpen ? React.createElement("div", { className: "mt-3 grid gap-3" },
-                        React.createElement(Field, { label: "Nama Toko" },
-                            React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value.toUpperCase()), placeholder: "NAMA TOKO" })),
-                        React.createElement(Field, { label: "Kode Toko" },
-                            React.createElement(TextInput, { value: manualStoreCode, onChange: (e) => setManualStoreCode(normalizeNik(e.target.value).slice(0, 4)), inputMode: "numeric", maxLength: 4, placeholder: "4 digit angka" })),
-                        React.createElement(Field, { label: "Nama Area Manager" },
-                            React.createElement(TextInput, { value: manualAreaManager, onChange: (e) => setManualAreaManager(e.target.value), placeholder: "Nama Area Manager" })),
-                        React.createElement(Field, { label: "Nama Regional Manager" },
-                            React.createElement(TextInput, { value: manualRegionalManager, onChange: (e) => setManualRegionalManager(e.target.value), placeholder: "Nama Regional Manager" })),
-                        React.createElement(Field, { label: "Alamat Store" },
-                            React.createElement(TextArea, { value: manualAddress, onChange: (e) => setManualAddress(e.target.value), placeholder: "Alamat toko opsional", minRows: 2 })),
-                        React.createElement("p", { className: "rounded-2xl bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800 ring-1 ring-emerald-100" }, "Toko manual hanya disimpan lokal di device ini dan tidak masuk database Convex."),
-                        React.createElement(Button, { variant: "secondary", icon: "spark", onClick: submitManualRequest }, "Buat Toko Lokal")) : null)),
+                null),
             React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
                 React.createElement(Button, { variant: "secondary", onClick: onClose }, "Tutup"),
                 React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, storeName), disabled: !bestieName || !storeName }, "Mulai Kunjungan")))));
