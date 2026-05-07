@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp233-email-cc-removable-fix';
+const APP_VERSION = 'revamp234-crop-marker-center-preview';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
