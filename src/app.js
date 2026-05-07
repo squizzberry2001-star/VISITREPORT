@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp243-grand-preview-sync';
+const APP_BUILD_VERSION = 'revamp244-html-preview-only';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4448,6 +4448,154 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" }),
             React.createElement("a", { className: "pdf-direct-open-link", href: pdfUrl, target: "_blank", rel: "noreferrer" }, "Buka PDF di tab baru")) : null));
 }
+
+function rbvPreviewPlainText(value, fallback = '-') {
+    const raw = value === undefined || value === null ? '' : String(value);
+    if (!raw.trim()) return fallback;
+    if (typeof document !== 'undefined' && /<[a-z][\s\S]*>/i.test(raw)) {
+        const root = document.createElement('div');
+        root.innerHTML = raw
+            .replace(/<br\s*\/?\s*>/gi, '\n')
+            .replace(/<\/p\s*>/gi, '\n')
+            .replace(/<\/div\s*>/gi, '\n')
+            .replace(/<\/li\s*>/gi, '\n');
+        return (root.textContent || '').replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trim() || fallback;
+    }
+    return raw.replace(/<[^>]+>/g, ' ').replace(/\u00a0/g, ' ').replace(/\s+\n/g, '\n').replace(/\n\s+/g, '\n').trim() || fallback;
+}
+function rbvPreviewHasRichValue(value) {
+    return rbvPreviewPlainText(value, '').trim().length > 0;
+}
+function rbvPreviewObservationRows(rows) {
+    return (Array.isArray(rows) ? rows : []).filter((row) => row && ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => rbvPreviewHasRichValue(row[key])));
+}
+function rbvPreviewPhotoItems(photos) {
+    return (Array.isArray(photos) ? photos : []).filter((photo) => photo && (cleanText(photo.image) || rbvPreviewHasRichValue(photo.description)));
+}
+function rbvPreviewChunks(items, size) {
+    const source = Array.isArray(items) ? items : [];
+    const result = [];
+    for (let index = 0; index < source.length; index += size) result.push(source.slice(index, index + size));
+    return result;
+}
+function RbvHtmlPreviewHeader({ title, subtitle, visit, page }) {
+    return React.createElement("div", { className: "rbv-html-pdf-header" },
+        React.createElement("div", { className: "rbv-html-pdf-brand" },
+            React.createElement("div", { className: "rbv-html-pdf-logo" }, "RBV"),
+            React.createElement("div", null,
+                React.createElement("strong", null, title),
+                subtitle ? React.createElement("span", null, subtitle) : null)),
+        React.createElement("div", { className: "rbv-html-pdf-meta" },
+            React.createElement("span", null, cleanText(visit?.store, 'Store belum dipilih')),
+            React.createElement("span", null, formatDate(visit?.tanggal)),
+            page ? React.createElement("span", null, page) : null));
+}
+function RbvHtmlPreviewField({ label, value }) {
+    return React.createElement("div", { className: "rbv-html-pdf-field" },
+        React.createElement("span", null, label),
+        React.createElement("strong", null, rbvPreviewPlainText(value)));
+}
+function RbvHtmlPreviewRichBlock({ label, value }) {
+    return React.createElement("div", { className: "rbv-html-pdf-rich" },
+        React.createElement("span", null, label),
+        React.createElement("p", null, rbvPreviewPlainText(value)));
+}
+function RbvHtmlPreviewPhotoCard({ photo, index }) {
+    const description = rbvPreviewPlainText(photo?.description, '');
+    return React.createElement("article", { className: "rbv-html-pdf-photo-card" },
+        React.createElement("div", { className: "rbv-html-pdf-photo-frame" },
+            cleanText(photo?.image) ? React.createElement("img", { src: photo.image, alt: 'Foto ' + (index + 1), loading: "lazy", decoding: "async" }) : React.createElement("span", null, "Foto")),
+        description ? React.createElement("p", null, description) : null);
+}
+function RbvHtmlPreviewObservationPage({ title, rows, visit, pageLabel }) {
+    const cleanRows = rbvPreviewObservationRows(rows);
+    if (!cleanRows.length) return null;
+    return React.createElement(React.Fragment, null, cleanRows.map((row, index) => React.createElement("section", { key: title + '-' + index, className: "rbv-html-pdf-page rbv-html-observation-page" },
+        React.createElement(RbvHtmlPreviewHeader, { title: title, subtitle: "Findings & Root Cause Analysis", visit: visit, page: `${pageLabel} ${index + 1}/${cleanRows.length}` }),
+        React.createElement("div", { className: "rbv-html-observation-title" },
+            React.createElement("span", null, "Temuan ", index + 1),
+            row.deadline ? React.createElement("em", null, "Deadline: ", formatDate(row.deadline)) : null),
+        React.createElement("div", { className: "rbv-html-observation-grid" },
+            React.createElement(RbvHtmlPreviewRichBlock, { label: "Temuan", value: row.temuan }),
+            React.createElement(RbvHtmlPreviewRichBlock, { label: "Kondisi Ideal", value: row.kondisiIdeal }),
+            React.createElement(RbvHtmlPreviewRichBlock, { label: "Dampak", value: row.dampak }),
+            React.createElement(RbvHtmlPreviewRichBlock, { label: "Penyebab", value: row.penyebab }),
+            React.createElement(RbvHtmlPreviewRichBlock, { label: "Tindakan Aksi", value: row.tindakan }),
+            React.createElement(RbvHtmlPreviewRichBlock, { label: "Hasil", value: row.hasil })))));
+}
+function RbvHtmlPreviewPhotoPages({ title, subtitle, photos, visit }) {
+    const cleanPhotos = rbvPreviewPhotoItems(photos);
+    if (!cleanPhotos.length) return null;
+    const pages = rbvPreviewChunks(cleanPhotos, 4);
+    return React.createElement(React.Fragment, null, pages.map((items, pageIndex) => React.createElement("section", { key: title + '-' + pageIndex, className: "rbv-html-pdf-page rbv-html-photo-page" },
+        React.createElement(RbvHtmlPreviewHeader, { title: title, subtitle: subtitle, visit: visit, page: `Foto ${pageIndex + 1}/${pages.length}` }),
+        React.createElement("div", { className: "rbv-html-photo-grid" }, items.map((photo, index) => React.createElement(RbvHtmlPreviewPhotoCard, { key: (photo.uploadedAt || '') + '-' + pageIndex + '-' + index, photo: photo, index: pageIndex * 4 + index })) )
+    )));
+}
+function RbvHtmlReportPreview({ visit }) {
+    const detail = getStoreWebDetail(visit?.store);
+    const qscPhotos = rbvPreviewPhotoItems(normalizeQscPhotos(visit));
+    const opiRows = rbvPreviewObservationRows(visit?.opiData);
+    const qscRows = rbvPreviewObservationRows(visit?.qscData);
+    const findingPhotos = rbvPreviewPhotoItems(visit?.findingEvidencePhotos);
+    const correctivePhotos = rbvPreviewPhotoItems(visit?.correctiveActionPhotos);
+    const pages = [];
+    pages.push(React.createElement("section", { key: "cover", className: "rbv-html-pdf-page rbv-html-cover-page" },
+        React.createElement("div", { className: "rbv-html-cover-accent" }),
+        React.createElement("div", { className: "rbv-html-cover-content" },
+            React.createElement("p", null, "REGIONAL BESTIE"),
+            React.createElement("h2", null, "Visit Report"),
+            React.createElement("h1", null, cleanText(visit?.store, 'Store belum dipilih')),
+            React.createElement("div", { className: "rbv-html-cover-fields" },
+                React.createElement(RbvHtmlPreviewField, { label: "Bestie", value: visit?.nama }),
+                React.createElement(RbvHtmlPreviewField, { label: "Tanggal", value: formatDate(visit?.tanggal) }),
+                React.createElement(RbvHtmlPreviewField, { label: "Kode Store", value: detail.siteCode4 || detail.siteCode || detail.storeCode || visit?.storeCode }),
+                React.createElement(RbvHtmlPreviewField, { label: "Store Type", value: detail.typeStore || detail.storeType || visit?.typeStore }),
+                React.createElement(RbvHtmlPreviewField, { label: "Store Head", value: detail.storeHead || detail.storeLeader || visit?.storeLeader }),
+                React.createElement(RbvHtmlPreviewField, { label: "Area Manager", value: detail.areaManager || visit?.areaManager }),
+                React.createElement(RbvHtmlPreviewField, { label: "Regional Manager", value: detail.regionalManager || visit?.regionalManager }),
+                React.createElement(RbvHtmlPreviewField, { label: "Email Store", value: detail.emailStore || detail.storeEmail || visit?.emailStore })
+            )
+        )
+    ));
+    pages.push(React.createElement("section", { key: "team", className: "rbv-html-pdf-page rbv-html-team-page" },
+        React.createElement(RbvHtmlPreviewHeader, { title: "Store Team", subtitle: "PIC saat kunjungan", visit: visit, page: "Team" }),
+        React.createElement("div", { className: "rbv-html-team-grid" },
+            React.createElement(RbvHtmlPreviewField, { label: "Store Leader", value: [visit?.storeLeader, visit?.storeLeaderLevel].filter(Boolean).join(' / ') }),
+            React.createElement(RbvHtmlPreviewField, { label: "Shift Leader", value: [visit?.shiftLeader, visit?.shiftLeaderLevel].filter(Boolean).join(' / ') })
+        ),
+        React.createElement("table", { className: "rbv-html-preview-table" },
+            React.createElement("thead", null, React.createElement("tr", null,
+                React.createElement("th", null, "No"),
+                React.createElement("th", null, "Nama Crew"),
+                React.createElement("th", null, "Level")
+            )),
+            React.createElement("tbody", null, (Array.isArray(visit?.crewList) && visit.crewList.length ? visit.crewList : [{ name: '', level: '' }]).map((crew, index) => React.createElement("tr", { key: index },
+                React.createElement("td", null, index + 1),
+                React.createElement("td", null, cleanText(crew.name, '-')),
+                React.createElement("td", null, cleanText(crew.level, '-'))
+            )))
+        )
+    ));
+    if (qscPhotos.length) {
+        pages.push(React.createElement("section", { key: "qsc-result", className: "rbv-html-pdf-page rbv-html-photo-page" },
+            React.createElement(RbvHtmlPreviewHeader, { title: "QSC / Famitrack Result", subtitle: "Foto hasil QSC", visit: visit, page: "QSC" }),
+            React.createElement("div", { className: "rbv-html-photo-grid two" }, qscPhotos.map((photo, index) => React.createElement(RbvHtmlPreviewPhotoCard, { key: index, photo: photo, index: index })))
+        ));
+    }
+    const opiPages = React.createElement(RbvHtmlPreviewObservationPage, { title: "OPI Project Observation", rows: opiRows, visit: visit, pageLabel: "OPI" });
+    const qscPages = React.createElement(RbvHtmlPreviewObservationPage, { title: "QSC Observation", rows: qscRows, visit: visit, pageLabel: "QSC" });
+    const findingPages = React.createElement(RbvHtmlPreviewPhotoPages, { title: "Finding Evidence", subtitle: "of OPI & QSC Observation", photos: findingPhotos, visit: visit });
+    const correctivePages = React.createElement(RbvHtmlPreviewPhotoPages, { title: "Corrective Action Evidence & Result", subtitle: "by Regional Bestie", photos: correctivePhotos, visit: visit });
+    pages.push(opiPages, qscPages, findingPages, correctivePages);
+    if (!opiRows.length && !qscRows.length && !qscPhotos.length && !findingPhotos.length && !correctivePhotos.length) {
+        pages.push(React.createElement("section", { key: "empty", className: "rbv-html-pdf-page rbv-html-empty-page" },
+            React.createElement(RbvHtmlPreviewHeader, { title: "Report Content", subtitle: "Belum ada detail tambahan", visit: visit, page: "Draft" }),
+            React.createElement("div", { className: "rbv-html-empty-message" }, "Isi data observasi dan evidence untuk melihat preview report.")
+        ));
+    }
+    return React.createElement("div", { className: "rbv-html-preview-stage", "aria-label": "Preview report" }, pages);
+}
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
     const [pdfBlob, setPdfBlob] = useState(null);
@@ -4460,35 +4608,9 @@ function PreviewPage({ visit, onBack }) {
     const [emailStatus, setEmailStatus] = useState('');
     const [emailForm, setEmailForm] = useState(() => buildInitialEmailForm(visit));
     useEffect(() => {
-        let cancelled = false;
-        let objectUrl = '';
-        async function render() {
-            if (!visit)
-                return;
-            setStatus('Merender PDF...');
-            try {
-                await ensurePdfEngineReady();
-                if (!window.ReportVisitPDF?.createBlob)
-                    throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-                const pdfVisit = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
-                if (cancelled)
-                    return;
-                const blob = await window.ReportVisitPDF.createBlob(pdfVisit);
-                if (cancelled)
-                    return;
-                objectUrl = URL.createObjectURL(blob);
-                setPdfBlob(blob);
-                setPdfUrl(objectUrl);
-                setStatus('Preview siap.');
-            }
-            catch (error) {
-                setPdfBlob(null);
-                setStatus(error?.message || 'Preview PDF gagal dibuat.');
-            }
-        }
-        render();
-        return () => { cancelled = true; if (objectUrl)
-            URL.revokeObjectURL(objectUrl); };
+        setPdfBlob(null);
+        setPdfUrl('');
+        setStatus('Preview HTML siap. PDF asli tetap dibuat saat Download atau Send Email.');
     }, [visit]);
     useEffect(() => {
         if (!emailOpen)
@@ -4657,7 +4779,7 @@ function PreviewPage({ visit, onBack }) {
         React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
         React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
             React.createElement("div", null,
-                React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
+                React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview Report"),
                 React.createElement("h1", { className: "mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review Report")),
             React.createElement("div", { className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100" },
                 React.createElement("div", { className: "mb-2 flex items-center justify-between gap-3" },
@@ -4682,8 +4804,8 @@ function PreviewPage({ visit, onBack }) {
                                 React.createElement("span", { className: "block" }, "Export Excel CA"),
                                 React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store")))),
                     React.createElement(Button, { icon: "upload", onClick: openEmailReportModal, disabled: busy || downloadBusy, className: "preview-send-action-v99" }, "Send Email"))),
-            React.createElement("div", { className: "preview-frame-wrap" },
-                React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status })))));
+            React.createElement("div", { className: "preview-frame-wrap rbv-html-preview-wrap" },
+                React.createElement(RbvHtmlReportPreview, { visit: visit })))));
 }
 // =============================================================
 // Secret monitor helpers
