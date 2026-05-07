@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp238-stable-pdf-email-attachment';
+const APP_BUILD_VERSION = 'revamp239-email-pdf-endpoint-diagnostic';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3340,9 +3340,9 @@ const MASTER_EMAIL_CONTACTS = [
         role: 'Master Email'
     }
 ];
-const EMAIL_SAFE_REQUEST_BYTES = 12 * 1024 * 1024;
-const EMAIL_PDF_SAFE_BYTES = 9.5 * 1024 * 1024;
-const EMAIL_EXCEL_SAFE_BYTES = 850 * 1024;
+const EMAIL_SAFE_REQUEST_BYTES = 4 * 1024 * 1024;
+const EMAIL_PDF_SAFE_BYTES = 3.1 * 1024 * 1024;
+const EMAIL_EXCEL_SAFE_BYTES = 520 * 1024;
 function isEmailSyntax(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanText(value).toLowerCase());
 }
@@ -3414,15 +3414,51 @@ function saveScheduledReportEmailQueue(items) {
     }
 }
 async function postReportEmailPayload(endpoint, payload) {
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.ok === false)
-        throw new Error(result.error || result.message || 'Gagal mengirim email.');
+    let response;
+    try {
+        response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    }
+    catch (networkError) {
+        const err = new Error(`Koneksi endpoint email gagal: ${networkError?.message || 'network error'}. Cek internet, endpoint email, dan deploy API.`);
+        err.code = 'EMAIL_NETWORK_ERROR';
+        throw err;
+    }
+    let rawText = '';
+    let result = {};
+    try {
+        rawText = await response.text();
+        result = rawText ? JSON.parse(rawText) : {};
+    }
+    catch (_) {
+        result = { raw: rawText };
+    }
+    if (!response.ok || result.ok === false) {
+        const detail = cleanText(result.error || result.message || result.details || result.raw || rawText);
+        const statusInfo = `HTTP ${response.status}${response.statusText ? ' ' + response.statusText : ''}`;
+        const suffix = detail ? `: ${detail.slice(0, 360)}` : '';
+        const err = new Error(`Gagal mengirim email (${statusInfo})${suffix}`);
+        err.code = 'EMAIL_ENDPOINT_ERROR';
+        err.status = response.status;
+        err.result = result;
+        err.raw = rawText;
+        throw err;
+    }
     return result;
+}
+function isRetryableEmailAttachmentError(error) {
+    const status = Number(error?.status || 0);
+    const text = String(error?.message || error?.raw || '').toLowerCase();
+    if ([413, 414, 415, 422, 429, 500, 502, 503, 504].includes(status)) return true;
+    return /payload|body|limit|size|large|besar|attachment|lampiran|base64|timeout|fetch|network|json|too\s*large/.test(text);
+}
+function keepOnlyPdfAttachments(payload) {
+    const next = { ...(payload || {}) };
+    next.attachments = (payload?.attachments || []).filter((item) => String(item?.mimeType || '').toLowerCase().includes('pdf'));
+    return next;
 }
 async function processScheduledReportEmailQueue(endpoint, options = {}) {
     const queue = readScheduledReportEmailQueue();
@@ -3836,6 +3872,12 @@ async function buildPdfAttachmentForEmail(visit, currentPdfBlob) {
         emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 860, quality: 0.56, timeoutMs: 7000 });
         blob = await window.ReportVisitPDF.createBlob(emailVisit);
         assertValidPdfBlob(blob, 'PDF email ringan');
+    }
+    if (blob.size > EMAIL_PDF_SAFE_BYTES) {
+        optimized = true;
+        emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 640, quality: 0.46, timeoutMs: 6500 });
+        blob = await window.ReportVisitPDF.createBlob(emailVisit);
+        assertValidPdfBlob(blob, 'PDF email ultra ringan');
     }
     return { blob, fileName, optimized, visit: emailVisit };
 }
@@ -4367,8 +4409,26 @@ function PreviewPage({ visit, onBack }) {
                 return;
             }
             setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
-            await postReportEmailPayload(config.endpoint, payload);
-            const successMessage = mode === 'send' ? (fitted.skipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (fitted.skipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
+            let sendSkipped = [...fitted.skipped];
+            try {
+                await postReportEmailPayload(config.endpoint, payload);
+            }
+            catch (sendError) {
+                const hasPdf = payload.attachments.some((item) => String(item.mimeType || '').toLowerCase().includes('pdf'));
+                const hasExcel = payload.attachments.some((item) => String(item.mimeType || '').toLowerCase().includes('sheet'));
+                if (hasPdf && hasExcel && isRetryableEmailAttachmentError(sendError)) {
+                    setEmailStatus('Server email menolak lampiran penuh. Mencoba kirim ulang PDF saja...');
+                    const pdfOnlyPayload = keepOnlyPdfAttachments(payload);
+                    if (!pdfOnlyPayload.attachments.length)
+                        throw sendError;
+                    sendSkipped.push('Excel dilepas otomatis karena server email menolak ukuran/lampiran penuh. PDF tetap dikirim.');
+                    await postReportEmailPayload(config.endpoint, pdfOnlyPayload);
+                }
+                else {
+                    throw sendError;
+                }
+            }
+            const successMessage = mode === 'send' ? (sendSkipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (sendSkipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
             setEmailStatus(successMessage);
             if (mode === 'draft')
                 window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'pdf', title: 'Draft tersimpan', message: 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.' } }));
