@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp243-grand-preview-sync';
+const APP_VERSION = 'revamp244-html-preview-only';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
