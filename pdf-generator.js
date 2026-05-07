@@ -1315,13 +1315,15 @@
     await drawQscResultSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
     drawCrewSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
 
-    if (data && data.showOPITable === true && normalizeRows(data.opiData).length) {
+    const opiRows = normalizeRows(data && data.opiData);
+    const qscRows = normalizeRows(data && data.qscData);
+    if (data && opiRows.length) {
       drawStaticTitleSlide(doc, 'opiTitle', 'OPI Project Observation', 'Findings & Root Cause Analysis', palette, pageWidth, pageHeight, margin);
-      drawObservationTable(doc, 'OPI Project Observation', data.opiData, palette, pageWidth, pageHeight, margin);
+      drawObservationTable(doc, 'OPI Project Observation', opiRows, palette, pageWidth, pageHeight, margin);
     }
-    if (data && data.showQSCTable === true && normalizeRows(data.qscData).length) {
+    if (data && qscRows.length) {
       drawStaticTitleSlide(doc, 'qscTitle', 'QSC Observation', 'Findings & Root Cause Analysis', palette, pageWidth, pageHeight, margin);
-      drawObservationTable(doc, 'QSC Observation', data.qscData, palette, pageWidth, pageHeight, margin);
+      drawObservationTable(doc, 'QSC Observation', qscRows, palette, pageWidth, pageHeight, margin);
     }
     if (data && data.showFindingEvidence === true) await drawPhotoSlides(doc, 'Finding Evidence', 'of OPI & QSC Observation', 'findingTitle', data.findingEvidencePhotos, palette, pageWidth, pageHeight, margin);
     if (data && data.showCorrectiveAction === true) await drawPhotoSlides(doc, 'Corrective Action Evidence & Result', 'by Regional Bestie', 'correctiveTitle', data.correctiveActionPhotos, palette, pageWidth, pageHeight, margin);
