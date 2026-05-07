@@ -4838,3 +4838,99 @@ body.rbv-lite-mode .evidence-empty-state {
 .photo-editor-marker-center-preview {
   pointer-events: none !important;
 }
+
+
+/* Revamp 236: PWA install visibility + phone landscape support */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 560px) {
+  html, body, #root {
+    min-height: 100dvh !important;
+    overflow-x: hidden !important;
+  }
+  .audit-shell {
+    display: block !important;
+    grid-template-columns: none !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .desktop-sidebar,
+  .desktop-section-card {
+    display: none !important;
+  }
+  .mobile-system-nav,
+  .mobile-quick-section {
+    display: block !important;
+  }
+  .mobile-system-nav {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: auto !important;
+    z-index: 90 !important;
+    padding: calc(.34rem + var(--safe-top)) .72rem .4rem !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid rgba(226, 232, 240, .92) !important;
+    background: rgba(255,255,255,.96) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .10) !important;
+  }
+  .mobile-system-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: .44rem !important;
+  }
+  .mobile-system-button {
+    min-height: 40px !important;
+    border-radius: 14px !important;
+    font-size: 10px !important;
+    gap: .08rem !important;
+  }
+  .mobile-system-button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .dashboard-page,
+  .workspace-page,
+  .preview-page {
+    padding-top: calc(4.35rem + var(--safe-top)) !important;
+    padding-bottom: calc(4.7rem + var(--safe-bottom)) !important;
+    padding-left: max(.75rem, env(safe-area-inset-left)) !important;
+    padding-right: max(.75rem, env(safe-area-inset-right)) !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .visit-quick-dock-v54 {
+    bottom: calc(8px + var(--safe-bottom)) !important;
+    width: min(560px, calc(100vw - 24px)) !important;
+    z-index: 82 !important;
+  }
+  .visit-quick-dock-inner-v54 {
+    gap: .45rem !important;
+    padding: .45rem !important;
+  }
+  .visit-quick-dock-button-v54 {
+    min-width: 94px !important;
+    min-height: 46px !important;
+    padding: .44rem .7rem !important;
+    border-radius: 18px !important;
+    font-size: 12px !important;
+  }
+  .section-heading {
+    margin-bottom: .7rem !important;
+  }
+  .surface-card,
+  .panel-card,
+  .rounded-\[28px\],
+  .rounded-\[30px\] {
+    border-radius: 20px !important;
+  }
+  .evidence-photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: .65rem !important;
+  }
+  .photo-editor-panel,
+  .crop-editor-panel {
+    max-height: calc(100dvh - 20px) !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .install-guide-card {
+    padding: .78rem !important;
+  }
+}
