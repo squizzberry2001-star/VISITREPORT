@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp248-preview-input-pinch-desktop-stable';
+const APP_BUILD_VERSION = 'revamp249-preview-blank-pinch-handler-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4420,6 +4420,69 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     function zoomIn() { setZoom((value) => clampZoom(value + 0.15)); }
     function zoomOut() { setZoom((value) => clampZoom(value - 0.15)); }
     function zoomFit() { setZoom(1); }
+    const pinchStateRef = useRef({ active: false, distance: 0, startZoom: 1, frame: 0, pendingZoom: 1 });
+    function getPreviewTouchDistance(touches) {
+        if (!touches || touches.length < 2)
+            return 0;
+        const first = touches[0];
+        const second = touches[1];
+        const dx = Number(second.clientX || 0) - Number(first.clientX || 0);
+        const dy = Number(second.clientY || 0) - Number(first.clientY || 0);
+        return Math.sqrt((dx * dx) + (dy * dy));
+    }
+    function commitPreviewZoom(value) {
+        const next = clampZoom(value);
+        const state = pinchStateRef.current;
+        state.pendingZoom = next;
+        if (state.frame)
+            return;
+        state.frame = window.requestAnimationFrame(() => {
+            state.frame = 0;
+            setZoom((current) => {
+                const target = clampZoom(state.pendingZoom || current);
+                return Math.abs(target - current) < 0.01 ? current : target;
+            });
+        });
+    }
+    function handlePreviewTouchStart(event) {
+        const touches = event?.touches;
+        if (!touches || touches.length < 2)
+            return;
+        const distance = getPreviewTouchDistance(touches);
+        if (!distance)
+            return;
+        pinchStateRef.current.active = true;
+        pinchStateRef.current.distance = distance;
+        pinchStateRef.current.startZoom = clampZoom(zoom);
+    }
+    function handlePreviewTouchMove(event) {
+        const touches = event?.touches;
+        if (!touches || touches.length < 2 || !pinchStateRef.current.active)
+            return;
+        try { event.preventDefault(); } catch (_) { }
+        const distance = getPreviewTouchDistance(touches);
+        const startDistance = Math.max(1, Number(pinchStateRef.current.distance || 1));
+        const ratio = distance / startDistance;
+        if (!Number.isFinite(ratio) || ratio <= 0)
+            return;
+        commitPreviewZoom(Number(pinchStateRef.current.startZoom || 1) * ratio);
+    }
+    function handlePreviewTouchEnd(event) {
+        if (!event?.touches || event.touches.length < 2) {
+            pinchStateRef.current.active = false;
+            pinchStateRef.current.distance = 0;
+            pinchStateRef.current.startZoom = clampZoom(zoom);
+        }
+    }
+    useEffect(() => {
+        return () => {
+            const frame = pinchStateRef.current?.frame;
+            if (frame) {
+                try { window.cancelAnimationFrame(frame); } catch (_) { }
+                pinchStateRef.current.frame = 0;
+            }
+        };
+    }, []);
     useEffect(() => {
         let cancelled = false;
         let pdfDocument = null;
