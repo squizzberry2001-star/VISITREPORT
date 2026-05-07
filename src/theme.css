@@ -4659,3 +4659,39 @@ body.rbv-lite-mode .evidence-empty-state {
   border-radius: 20px;
   background: rgba(255,255,255,.82);
 }
+
+
+/* Revamp 230 - restore crop/marker modal in Ultra Lite mode.
+   Revamp 220 hid old photo-editor overlays to save RAM; the new manual crop modal
+   also uses .photo-editor-overlay/.photo-editor-panel, so it was opened but invisible. */
+.rbv-ultra-lite-camera .photo-editor-v10.photo-editor-overlay {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 999999 !important;
+}
+.rbv-ultra-lite-camera .photo-editor-v10-panel.photo-editor-panel {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.rbv-ultra-lite-camera .photo-editor-v10-stage,
+.rbv-ultra-lite-camera .photo-editor-canvas {
+  touch-action: none !important;
+  -ms-touch-action: none !important;
+}
+.photo-editor-v10 {
+  z-index: 999999 !important;
+}
+.photo-editor-v10-stage,
+.photo-editor-canvas {
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+.photo-editor-tool[disabled] {
+  opacity: .45 !important;
+  pointer-events: none !important;
+}
