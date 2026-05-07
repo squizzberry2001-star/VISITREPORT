@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp223-gallery-multiple-select';
+const APP_BUILD_VERSION = 'revamp220-ultra-lite-camera-mode';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -890,8 +890,8 @@ function createVisit(bestieName = '', storeName = '') {
         qscResultPhotos: [blankPhoto(), blankPhoto()],
         opiData: [blankObservationRow()],
         qscData: [blankObservationRow()],
-        findingEvidencePhotos: [],
-        correctiveActionPhotos: [],
+        findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
+        correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
         storeAssignmentLink: readAssignmentLinkConfig(),
         showQSCResult: true,
         showOPITable: false,
@@ -1974,7 +1974,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement("span", null, "Simpan"))))));
     return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false, hideActions = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -2023,11 +2023,11 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
-        React.createElement("div", { className: cx('photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3', hideActions && 'hidden') },
+        React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
             React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
             React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            !hideActions ? React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto dari kamera" }) : null,
-            !hideActions ? React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto dari galeri" }) : null),
+            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto dari kamera" }),
+            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto dari galeri" })),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
 }
@@ -2183,61 +2183,29 @@ function ObservationCards({ title, rows, onChange }) {
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row"))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
-    const cameraRef = useRef(null);
-    const galleryRef = useRef(null);
+    const minSlots = 8;
     const sourcePhotos = Array.isArray(photos) ? photos : [];
-    const meaningfulPhotos = sourcePhotos.filter((photo) => photo && (photo.image || cleanText(photo.description)));
-    const safePhotos = meaningfulPhotos;
-    const normalizeNextPhotos = (next) => (Array.isArray(next) ? next : []).filter((photo) => photo && (photo.image || cleanText(photo.description)));
-    const updatePhoto = (index, value) => {
-        const next = safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo);
-        onChange(normalizeNextPhotos(next));
-    };
-    async function handleFloatingFiles(event) {
-        const input = event.target;
-        const files = Array.from(input.files || []).filter((file) => file && /^image\//i.test(file.type || 'image/'));
-        if (!files.length) {
-            rbvFinishCameraCapture();
+    const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
+    const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
+    const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
+    const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
+    const removeEmpty = () => {
+        if (!confirmAction('Rapihkan dan hapus slot foto kosong?'))
             return;
-        }
-        try {
-            rbvPrepareCameraCapture();
-            const uploaded = [];
-            for (const file of files) {
-                const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 960, quality: 0.64 } : {});
-                uploaded.push({ ...blankPhoto(), image: dataUrl, cropAspect: ratioToAspectString(PDF_PHOTO_CROP_RATIO), uploadedAt: nowIso() });
-            }
-            const existing = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
-            onChange(normalizeNextPhotos([...uploaded.reverse(), ...existing]));
-        }
-        catch (error) {
-            alert('Foto gagal dibaca. Coba pilih ulang foto.');
-        }
-        finally {
-            try { input.value = ''; } catch (error) {}
-            rbvFinishCameraCapture();
-        }
-    }
-    const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
-        React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFloatingFiles }),
-        React.createElement("input", { ref: galleryRef, type: "file", accept: "image/jpeg,image/png,image/webp,image/*", multiple: true, className: "hidden", "data-gallery-multiple": "true", onClick: (event) => { try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
-        React.createElement("button", { type: "button", className: "evidence-floating-button evidence-floating-camera evidence-floating-icon-button", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto evidence dari kamera" },
-            React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
-            React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
-        React.createElement("button", { type: "button", className: "evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto evidence dari galeri" },
-            React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
-            React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
-    const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
-        ? ReactDOM.createPortal(floatingCapture, document.body)
-        : floatingCapture;
-    return (React.createElement("div", { className: "photo-grid-system evidence-photo-grid-system grid gap-4" },
-        floatingPortal,
-        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
-            React.createElement(Icon, { name: "image", className: "h-7 w-7" }),
-            React.createElement("strong", null, "Belum ada foto"),
-            React.createElement("span", null, "Pilih Kamera atau Galeri untuk menambah foto."))));
+        const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
+        const next = meaningful.length ? meaningful : blankSet();
+        onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
+    };
+    const renderActions = (position = 'top') => (React.createElement("div", { className: cx('photo-grid-actions flex flex-wrap gap-2', position === 'top'
+            ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2'
+            : 'justify-end pb-20 md:pb-0') },
+        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "eraser", onClick: removeEmpty }, "Rapihkan Slot Foto"),
+        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "plus", onClick: addFour }, "Tambah Slot Foto")));
+    return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
+        renderActions('top'),
+        React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO })))),
+        renderActions('bottom')));
 }
-
 const SECTION_DEFS = [
     { id: 'setup', label: 'Visit', title: 'Visit Setup', icon: 'store', hint: 'Bestie & store' },
     { id: 'crew', label: 'Crew', title: 'General Information', icon: 'calendar', hint: 'Tanggal & PIC' },
@@ -2798,7 +2766,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp223-gallery-multiple-select" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp220-ultra-lite-camera-mode" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid", style: {
                         display: 'grid',
