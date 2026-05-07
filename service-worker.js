@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp248-preview-input-pinch-desktop-stable';
+const APP_VERSION = 'revamp249-preview-blank-pinch-handler-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
