@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp231-crop-marker-email-pdf-fix';
+const APP_BUILD_VERSION = 'revamp232-native-gallery-picker-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2233,10 +2233,12 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: cx('photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3', hideActions && 'hidden') },
-            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "hidden", onChange: handleFiles }),
-            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
-            !hideActions ? React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto dari kamera" }) : null,
-            !hideActions ? React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto dari galeri" }) : null),
+            !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Ambil foto dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
+                React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
+                React.createElement(Icon, { name: "camera", className: "h-4 w-4" })) : null,
+            !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Pilih foto dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
+                React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
+                React.createElement(Icon, { name: "gallery", className: "h-4 w-4" })) : null),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
 }
@@ -2438,12 +2440,12 @@ function PhotoGrid({ photos, onChange, prefix }) {
         }
     }
     const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
-        React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "hidden", onChange: handleFloatingFiles }),
-        React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", multiple: true, className: "hidden", "data-gallery-multiple": "true", onClick: (event) => { try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
-        React.createElement("button", { type: "button", className: "evidence-floating-button evidence-floating-camera evidence-floating-icon-button", onClick: () => { rbvPrepareCameraCapture(); cameraRef.current?.click(); }, "aria-label": "Ambil foto evidence dari kamera" },
+        React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-camera evidence-floating-icon-button", "aria-label": "Ambil foto evidence dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
+            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
-        React.createElement("button", { type: "button", className: "evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", onClick: () => { rbvPrepareCameraCapture(); galleryRef.current?.click(); }, "aria-label": "Pilih foto evidence dari galeri" },
+        React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", "aria-label": "Pilih foto evidence dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
+            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
     const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
@@ -3019,7 +3021,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp231-crop-marker-email-pdf-fix" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp232-native-gallery-picker-fix" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',

@@ -4740,3 +4740,51 @@ body.rbv-lite-mode .evidence-empty-state {
   .marker-slider-row { align-items: center !important; }
   .photo-editor-marker-slider-wrap { grid-template-columns: minmax(0, 1fr) 34px 24px !important; gap: .4rem !important; }
 }
+
+/* Revamp 232 - native mobile camera/gallery picker fix.
+   Some mobile browsers block programmatic clicks on display:none file inputs.
+   Keep the real file input inside the visible trigger so the OS picker opens from
+   a direct user tap. */
+.rbv-native-file-trigger {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+.rbv-native-file-input {
+  position: absolute;
+  inset: 0;
+  display: block !important;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+  font-size: 120px;
+}
+.rbv-native-file-trigger > svg,
+.rbv-native-file-trigger > span:not(.rbv-native-file-input) {
+  pointer-events: none;
+}
+.rbv-native-photo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(203, 213, 225, .9);
+  background: #ffffff;
+  color: #0f766e;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+}
+.rbv-native-photo-button:active {
+  transform: scale(.97);
+}
+.evidence-floating-button.rbv-native-file-trigger {
+  text-decoration: none;
+}
