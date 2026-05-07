@@ -8,6 +8,7 @@ export default defineSchema({
     siteCode4: v.optional(v.string()),
     siteDescr: v.string(),
     type: v.optional(v.string()),
+    typeStore: v.optional(v.string()),
     city: v.optional(v.string()),
     address: v.optional(v.string()),
     emailStore: v.optional(v.string()),

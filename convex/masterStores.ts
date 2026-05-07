@@ -11,30 +11,50 @@ function normalizeCode(value: unknown): string {
   return /^\d+$/.test(raw) ? raw.padStart(Math.min(Math.max(raw.length, 4), 8), "0") : raw;
 }
 
+function normalizeHeaderKey(value: unknown): string {
+  return text(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+}
+
+function pick(raw: any, keys: string[], fallback = ""): string {
+  for (const key of keys) {
+    const value = raw?.[key];
+    if (value !== undefined && value !== null && text(value) !== "") return text(value);
+  }
+  const wanted = new Set(keys.map(normalizeHeaderKey));
+  for (const [key, value] of Object.entries(raw || {})) {
+    if (value !== undefined && value !== null && text(value) !== "" && wanted.has(normalizeHeaderKey(key))) {
+      return text(value);
+    }
+  }
+  return fallback;
+}
+
 function normalizeStore(raw: any, updatedBy = "web") {
-  const siteCode4 = normalizeCode(raw.siteCode4 ?? raw.storeCode ?? raw.store_code ?? raw["Kode Toko"]);
-  const siteCode = text(raw.siteCode ?? raw.code ?? raw.kode);
-  const siteDescr = text(raw.siteDescr ?? raw.storeName ?? raw.store_name ?? raw.name ?? raw["Nama Toko"]);
+  const siteCode4 = normalizeCode(pick(raw, ["siteCode4", "storeCode", "store_code", "Kode Toko", "Kode Store", "Store Code", "Site Code 4", "SITE_CODE4"]));
+  const siteCode = pick(raw, ["siteCode", "code", "kode", "site", "Site", "Site Code"]);
+  const siteDescr = pick(raw, ["siteDescr", "storeName", "store_name", "name", "Nama Toko", "Nama Store", "Store Name", "Site Descr", "Site Description"]);
   const sourceKey = text(siteCode4 || siteCode || siteDescr).toLowerCase();
-  const status = text(raw.operationalStatus ?? raw.status ?? "active").toLowerCase();
+  const status = pick(raw, ["operationalStatus", "Operational Status", "status", "Status"], "active").toLowerCase();
+  const typeStore = pick(raw, ["type", "Type", "typeStore", "Type Store", "TYPE STORE", "Jenis", "Jenis Store", "Format Store"]);
   return {
     sourceKey,
     siteCode,
     siteCode4,
     siteDescr,
-    type: text(raw.type ?? raw.Type),
-    city: text(raw.city ?? raw.City ?? raw.Kota),
-    address: text(raw.address ?? raw.Address ?? raw.Alamat),
-    emailStore: text(raw.emailStore ?? raw.storeEmail ?? raw.email_store).toLowerCase(),
-    storeHead: text(raw.storeHead ?? raw["Store Head"]),
-    areaManager: text(raw.areaManager ?? raw["Area Manager"]),
-    areaManagerEmail: text(raw.areaManagerEmail ?? raw.amEmail).toLowerCase(),
-    regionalManager: text(raw.regionalManager ?? raw["Regional Manager"]),
-    regionalManagerEmail: text(raw.regionalManagerEmail ?? raw.rmEmail).toLowerCase(),
+    type: typeStore,
+    typeStore,
+    city: pick(raw, ["city", "City", "Kota"]),
+    address: pick(raw, ["address", "Address", "Alamat", "Alamat Store"]),
+    emailStore: pick(raw, ["emailStore", "Email Store", "EMAIL STORE", "Email Toko", "storeEmail", "Store Email", "email_store", "Email"]).toLowerCase(),
+    storeHead: pick(raw, ["storeHead", "Store Head", "STORE HEAD", "Kepala Toko"]),
+    areaManager: pick(raw, ["areaManager", "Area Manager", "AREA MANAGER", "Nama Area Manager", "am", "AM"]),
+    areaManagerEmail: pick(raw, ["areaManagerEmail", "Area Manager Email", "Email Area Manager", "amEmail", "AM Email"]).toLowerCase(),
+    regionalManager: pick(raw, ["regionalManager", "Regional Manager", "REGIONAL MANAGER", "Nama Regional Manager", "rm", "RM"]),
+    regionalManagerEmail: pick(raw, ["regionalManagerEmail", "Regional Manager Email", "Email Regional Manager", "rmEmail", "RM Email"]).toLowerCase(),
     operationalStatus: ["inactive", "temporary_closed"].includes(status) ? status : "active",
-    latitude: text(raw.latitude ?? raw.lat),
-    longitude: text(raw.longitude ?? raw.lng ?? raw.lon),
-    notes: text(raw.notes ?? raw.note),
+    latitude: pick(raw, ["latitude", "lat"]),
+    longitude: pick(raw, ["longitude", "lng", "lon"]),
+    notes: pick(raw, ["notes", "note", "Catatan"]),
     updatedAt: Date.now(),
     updatedBy,
   };
