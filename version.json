@@ -1,6 +1,5 @@
 {
-  "version": "228",
-  "build": "revamp227-evidence-autoslot-master-store-cleanup",
-  "updatedAt": "2026-05-07T09:35:00+07:00",
-  "label": "Revamp 228 - Fix nowIso photo upload"
+  "version": "revamp229-master-global-crop-restore",
+  "build": "revamp229-master-global-crop-restore",
+  "updatedAt": "2026-05-07T02:45:00.000Z"
 }
