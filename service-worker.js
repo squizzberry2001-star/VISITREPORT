@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp234-crop-marker-center-preview';
+const APP_VERSION = 'revamp235-crop-marker-preview-match';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
