@@ -418,9 +418,18 @@
   function normalizePhotos(photos) {
     return (Array.isArray(photos) ? photos : [])
       .map(function (photo) {
-        return { image: photo && photo.image ? photo.image : '', description: photo && photo.description !== undefined && photo.description !== null ? String(photo.description) : '' };
+        photo = photo || {};
+        const image = photo.image || photo.dataUrl || photo.dataURL || photo.url || photo.src || photo.previewUrl || photo.previewURL || photo.blobUrl || photo.blobURL || '';
+        const description = photo.description !== undefined && photo.description !== null ? photo.description
+          : (photo.desc !== undefined && photo.desc !== null ? photo.desc
+          : (photo.caption !== undefined && photo.caption !== null ? photo.caption
+          : (photo.note !== undefined && photo.note !== null ? photo.note
+          : (photo.notes !== undefined && photo.notes !== null ? photo.notes
+          : (photo.text !== undefined && photo.text !== null ? photo.text
+          : (photo.keterangan !== undefined && photo.keterangan !== null ? photo.keterangan : ''))))));
+        return { image: image ? String(image) : '', description: description !== undefined && description !== null ? String(description) : '' };
       })
-      .filter(function (photo) { return photo.image || photo.description; });
+      .filter(function (photo) { return photo.image || plainText(photo.description, ''); });
   }
 
   function normalizeQscPhotos(data) {
@@ -429,7 +438,8 @@
     const source = modern.length ? modern : legacy;
     return [0, 1].map(function (index) {
       const item = source[index] || {};
-      return { image: item.image || '', description: item.description !== undefined && item.description !== null ? String(item.description) : '' };
+      const normalized = normalizePhotos([item])[0] || { image: '', description: '' };
+      return normalized;
     });
   }
 
@@ -515,7 +525,7 @@
     doc.text('Regional Bestie Visit Report', margin + 2, 126);
 
     const storeCode = detail.siteCode4 || detail.siteCode || detail.storeCode || data.storeCode || '-';
-    const storeHead = text(data && data.storeLeader, '-');
+    const storeHead = text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-');
 
     const leftX = margin + 2;
     let y = 144;
@@ -528,7 +538,7 @@
     const cardX = 180;
     const cardY = 134;
     const cardW = pageWidth - cardX - margin;
-    const cardH = 34;
+    const cardH = 46;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'FD');
@@ -537,13 +547,15 @@
       ['Tanggal Visit', formatDate(data && data.tanggal)],
       ['Kode Store', storeCode],
       ['Area Manager', detail.areaManager || data.areaManager || '-'],
-      ['Regional Manager', detail.regionalManager || data.regionalManager || '-']
+      ['Regional Manager', detail.regionalManager || data.regionalManager || '-'],
+      ['Tipe Store', detail.typeStore || detail.storeType || detail.type || data.typeStore || '-'],
+      ['Email Store', detail.emailStore || detail.storeEmail || data.emailStore || '-']
     ];
     items.forEach(function (item, index) {
       const col = index % 2;
       const row = Math.floor(index / 2);
       const x = cardX + 8 + col * (cardW / 2);
-      const yy = cardY + 9 + row * 12;
+      const yy = cardY + 8 + row * 12;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.7);
       doc.setTextColor(100, 116, 139);
@@ -683,9 +695,14 @@
     const crew = Array.isArray(data && data.crewList) ? data.crewList.filter(function (item) {
       return text(item && item.name, '') || text(item && item.level, '');
     }) : [];
+    const detail = getStoreDetail(data && data.store, data || {});
     const rows = [
-      ['Store Leader', text(data && data.storeLeader, '-'), text(data && data.storeLeaderLevel, '-')],
-      ['Shift Leader', text(data && data.shiftLeader, '-'), text(data && data.shiftLeaderLevel, '-')]
+      ['Store Head', text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-'), text(data && data.storeLeaderLevel, '-')],
+      ['Shift Leader', text(data && data.shiftLeader, '-'), text(data && data.shiftLeaderLevel, '-')],
+      ['Kode Store', text(data && data.storeCode || detail.siteCode4 || detail.siteCode || detail.storeCode, '-'), text(data && data.typeStore || detail.typeStore || detail.storeType || detail.type, '-')],
+      ['Area Manager', text(data && data.areaManager || detail.areaManager, '-'), ''],
+      ['Regional Manager', text(data && data.regionalManager || detail.regionalManager, '-'), ''],
+      ['Email Store', text(data && data.emailStore || detail.emailStore || detail.storeEmail, '-'), '']
     ];
     (crew.length ? crew : [{ name: '-', level: '-' }]).forEach(function (item, index) {
       rows.push(['Crew Store ' + String(index + 1), text(item.name, '-'), text(item.level, '-')]);
