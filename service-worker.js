@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp220-ultra-lite-camera-mode';
+const APP_VERSION = 'revamp228-evidence-autoslot-master-store-cleanup';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

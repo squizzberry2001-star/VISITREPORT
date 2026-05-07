@@ -1,5 +1,6 @@
 {
-  "version": "revamp220-ultra-lite-camera-mode",
-  "build": "revamp220-ultra-lite-camera-mode",
-  "message": "PDF preview fix: crew table no longer depends on jsPDF AutoTable, preventing doc.autoTable is not a function."
+  "version": "228",
+  "build": "revamp227-evidence-autoslot-master-store-cleanup",
+  "updatedAt": "2026-05-07T09:35:00+07:00",
+  "label": "Revamp 228 - Fix nowIso photo upload"
 }
