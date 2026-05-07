@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp249-preview-blank-pinch-handler-fix';
+const APP_BUILD_VERSION = 'revamp246-textbox-focus-stable';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1536,11 +1536,7 @@ function Badge({ children, tone = 'default' }) {
     return React.createElement("span", { className: cx('inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1', tones[tone]) }, children);
 }
 function Field({ label, helper, children, required }) {
-    // Revamp 248: do not wrap inputs in <label>. On several Android/Chromium
-    // browsers the wrapping label/container can receive selection/focus instead
-    // of opening the keyboard. Keep the visual label separate and let the native
-    // input/textarea/contenteditable receive the actual tap.
-    return (React.createElement("div", { className: "field block" },
+    return (React.createElement("label", { className: "block" },
         React.createElement("span", { className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800" },
             label,
             required ? React.createElement("span", { className: "text-rose-600" }, "*") : null),
@@ -1548,19 +1544,21 @@ function Field({ label, helper, children, required }) {
         helper ? React.createElement("span", { className: "mt-2 block text-xs leading-5 text-slate-500" }, helper) : null));
 }
 function rbvFocusEditableOnTap(event) {
-    const rawTarget = event?.target instanceof Element ? event.target : null;
-    const current = event?.currentTarget instanceof Element ? event.currentTarget : null;
-    const selector = 'input:not([type="file"]):not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea, [contenteditable="true"], .rich-editor-input';
-    const target = (rawTarget && rawTarget.matches?.(selector) ? rawTarget : rawTarget?.closest?.(selector)) || (current && current.matches?.(selector) ? current : null);
+    const target = event.currentTarget || event.target;
     if (!target || target === document.activeElement)
         return;
     if (target.disabled || target.readOnly)
         return;
-    // Do not preventDefault and do not force blur elsewhere; the native tap must
-    // be preserved so Android keyboards open reliably.
-    const focusNow = () => { try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} } };
-    focusNow();
-    window.requestAnimationFrame(() => { if (document.activeElement !== target) focusNow(); });
+    if (event.pointerType && event.pointerType !== 'touch' && event.pointerType !== 'pen')
+        return;
+    // Android browsers can ignore delayed focus from synthetic wrappers. Focus immediately
+    // inside the user gesture, then repeat once on the next frame as a fallback.
+    try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+    window.requestAnimationFrame(() => {
+        if (document.activeElement !== target) {
+            try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+        }
+    });
 }
 function rbvComposeEditableTapHandler(userHandler) {
     return function handleEditableTap(event) {
@@ -1570,10 +1568,10 @@ function rbvComposeEditableTapHandler(userHandler) {
     };
 }
 function TextInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
-    return React.createElement("input", { ...props, className: cx('form-control rbv-mobile-editable', className), onPointerDown: onPointerDown, onPointerUp: onPointerUp, onTouchStart: onTouchStart, onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
+    return React.createElement("input", { ...props, className: cx('form-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
 }
 function DateInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
-    return React.createElement("input", { ...props, type: "date", className: cx('form-control date-control rbv-mobile-editable', className), onPointerDown: onPointerDown, onPointerUp: onPointerUp, onTouchStart: onTouchStart, onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
+    return React.createElement("input", { ...props, type: "date", className: cx('form-control date-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
 }
 function TextArea({ value, onChange, className = '', minRows = 3, onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
     const ref = useRef(null);
@@ -1585,7 +1583,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, onPointerDown,
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ...props, ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerDown: onPointerDown, onPointerUp: onPointerUp, onTouchStart: onTouchStart, onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick), onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize }));
+    return (React.createElement("textarea", { ...props, ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick), onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize }));
 }
 
 function rbvDispatchInputAndChange(target) {
@@ -1621,7 +1619,7 @@ function rbvFlushActiveEditableValue(options = {}) {
     return true;
 }
 async function rbvWaitForReactInputFlush() {
-    rbvFlushActiveEditableValue({ blur: false });
+    rbvFlushActiveEditableValue({ blur: true });
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
     rbvFlushActiveEditableValue({ blur: false });
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
@@ -1704,13 +1702,6 @@ function rbvEnrichVisitSnapshotForPdf(snapshot) {
     snapshot.storeHead = cleanText(snapshot.storeHead || merged.storeHead || merged.storeLeader);
     if (!cleanText(snapshot.storeLeader)) snapshot.storeLeader = snapshot.storeHead;
     if (!cleanText(snapshot.storeLeaderLevel)) snapshot.storeLeaderLevel = cleanText(merged.storeLeaderLevel || merged.storeHeadLevel);
-    // Revamp 248: aliases consumed by PDF and preview layers. This prevents
-    // blank cover/general-information cells when older visit records or master
-    // store rows use different naming conventions.
-    snapshot.siteCode4 = cleanText(snapshot.siteCode4 || snapshot.storeCode);
-    snapshot.storeEmail = cleanText(snapshot.storeEmail || snapshot.emailStore);
-    snapshot.storeType = cleanText(snapshot.storeType || snapshot.typeStore);
-    snapshot.storeAddress = cleanText(snapshot.storeAddress || snapshot.address || merged.address || merged.storeAddress);
     return snapshot;
 }
 async function rbvPrepareVisitForPdf(visit, options = {}) {
@@ -4420,69 +4411,6 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     function zoomIn() { setZoom((value) => clampZoom(value + 0.15)); }
     function zoomOut() { setZoom((value) => clampZoom(value - 0.15)); }
     function zoomFit() { setZoom(1); }
-    const pinchStateRef = useRef({ active: false, distance: 0, startZoom: 1, frame: 0, pendingZoom: 1 });
-    function getPreviewTouchDistance(touches) {
-        if (!touches || touches.length < 2)
-            return 0;
-        const first = touches[0];
-        const second = touches[1];
-        const dx = Number(second.clientX || 0) - Number(first.clientX || 0);
-        const dy = Number(second.clientY || 0) - Number(first.clientY || 0);
-        return Math.sqrt((dx * dx) + (dy * dy));
-    }
-    function commitPreviewZoom(value) {
-        const next = clampZoom(value);
-        const state = pinchStateRef.current;
-        state.pendingZoom = next;
-        if (state.frame)
-            return;
-        state.frame = window.requestAnimationFrame(() => {
-            state.frame = 0;
-            setZoom((current) => {
-                const target = clampZoom(state.pendingZoom || current);
-                return Math.abs(target - current) < 0.01 ? current : target;
-            });
-        });
-    }
-    function handlePreviewTouchStart(event) {
-        const touches = event?.touches;
-        if (!touches || touches.length < 2)
-            return;
-        const distance = getPreviewTouchDistance(touches);
-        if (!distance)
-            return;
-        pinchStateRef.current.active = true;
-        pinchStateRef.current.distance = distance;
-        pinchStateRef.current.startZoom = clampZoom(zoom);
-    }
-    function handlePreviewTouchMove(event) {
-        const touches = event?.touches;
-        if (!touches || touches.length < 2 || !pinchStateRef.current.active)
-            return;
-        try { event.preventDefault(); } catch (_) { }
-        const distance = getPreviewTouchDistance(touches);
-        const startDistance = Math.max(1, Number(pinchStateRef.current.distance || 1));
-        const ratio = distance / startDistance;
-        if (!Number.isFinite(ratio) || ratio <= 0)
-            return;
-        commitPreviewZoom(Number(pinchStateRef.current.startZoom || 1) * ratio);
-    }
-    function handlePreviewTouchEnd(event) {
-        if (!event?.touches || event.touches.length < 2) {
-            pinchStateRef.current.active = false;
-            pinchStateRef.current.distance = 0;
-            pinchStateRef.current.startZoom = clampZoom(zoom);
-        }
-    }
-    useEffect(() => {
-        return () => {
-            const frame = pinchStateRef.current?.frame;
-            if (frame) {
-                try { window.cancelAnimationFrame(frame); } catch (_) { }
-                pinchStateRef.current.frame = 0;
-            }
-        };
-    }, []);
     useEffect(() => {
         let cancelled = false;
         let pdfDocument = null;
@@ -4576,10 +4504,12 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             React.createElement("div", { className: "pdf-canvas-statusline" },
                 React.createElement("span", { className: "pdf-canvas-direct-dot", "aria-hidden": "true" }),
                 React.createElement("strong", null, viewerStatus || status || 'Preview PDF final siap.')),
-            React.createElement("div", { className: "pdf-canvas-pinch-hint", "aria-label": "Zoom preview PDF" },
+            React.createElement("div", { className: "pdf-canvas-zoom-controls", "aria-label": "Kontrol zoom preview PDF" },
+                React.createElement("button", { type: "button", onClick: zoomOut, disabled: zoom <= 0.66, "aria-label": "Perkecil preview PDF" }, "−"),
                 React.createElement("span", null, Math.round(clampZoom(zoom) * 100), "%"),
-                React.createElement("small", null, "Cubit untuk zoom"))),
-        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: handlePreviewTouchEnd, onTouchCancel: handlePreviewTouchEnd }),
+                React.createElement("button", { type: "button", onClick: zoomIn, disabled: zoom >= 2.74, "aria-label": "Perbesar preview PDF" }, "+"),
+                React.createElement("button", { type: "button", onClick: zoomFit, disabled: Math.abs(zoom - 1) < 0.01 }, "Fit"))),
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik" }),
         fallback ? React.createElement("div", { className: "pdf-canvas-fallback" },
             React.createElement("p", null, "Browser ini tidak bisa menampilkan preview PDF canvas. Coba reload halaman."),
             React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" })) : null));
