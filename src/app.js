@@ -1536,8 +1536,10 @@ function Badge({ children, tone = 'default' }) {
     return React.createElement("span", { className: cx('inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1', tones[tone]) }, children);
 }
 function Field({ label, helper, children, required }) {
-    return (React.createElement("label", { className: "block" },
-        React.createElement("span", { className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800" },
+    // Do not wrap form controls inside <label>. Some Android/Redmi browsers focus the
+    // container instead of the real textbox when complex rounded cards are tapped.
+    return (React.createElement("div", { className: "block rbv-field-wrap" },
+        React.createElement("div", { className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800", "aria-hidden": false },
             label,
             required ? React.createElement("span", { className: "text-rose-600" }, "*") : null),
         children,
@@ -4404,6 +4406,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const [fallback, setFallback] = useState(false);
     const [zoom, setZoom] = useState(1);
     const [pageCount, setPageCount] = useState(0);
+    const pinchRef = useRef({ active: false, distance: 0, zoom: 1 });
     function clampZoom(value) {
         const next = Number(value || 1);
         return Math.max(0.65, Math.min(2.75, next));
@@ -4434,7 +4437,13 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 const data = await blob.arrayBuffer();
                 if (cancelled)
                     return;
-                const loadingTask = pdfjs.getDocument({ data, disableFontFace: true, isEvalSupported: false, useSystemFonts: true });
+                const loadingTask = pdfjs.getDocument({
+                    data,
+                    disableFontFace: false,
+                    isEvalSupported: false,
+                    useSystemFonts: true,
+                    standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/'
+                });
                 taskRef.current = loadingTask;
                 pdfDocument = await loadingTask.promise;
                 if (cancelled)
@@ -4496,6 +4505,32 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             try { pdfDocument?.destroy?.(); } catch (_) { }
         };
     }, [blob, status, zoom]);
+    function touchDistance(touches) {
+        if (!touches || touches.length < 2) return 0;
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    function handlePreviewTouchStart(event) {
+        if (!event.touches || event.touches.length < 2) return;
+        const distance = touchDistance(event.touches);
+        if (!distance) return;
+        pinchRef.current = { active: true, distance, zoom: clampZoom(zoom) };
+    }
+    function handlePreviewTouchMove(event) {
+        const pinch = pinchRef.current;
+        if (!pinch.active || !event.touches || event.touches.length < 2) return;
+        const distance = touchDistance(event.touches);
+        if (!distance || !pinch.distance) return;
+        try { event.preventDefault(); } catch (_) {}
+        const ratio = distance / pinch.distance;
+        setZoom(clampZoom(pinch.zoom * ratio));
+    }
+    function handlePreviewTouchEnd(event) {
+        if (!event.touches || event.touches.length < 2) {
+            pinchRef.current = { active: false, distance: 0, zoom: clampZoom(zoom) };
+        }
+    }
     if (!blob || !pdfUrl) {
         return React.createElement("div", { className: "pdf-lite-empty pdf-direct-empty", role: "status", "aria-live": "polite" }, status || 'Menyiapkan preview PDF final...');
     }
@@ -4509,7 +4544,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 React.createElement("span", null, Math.round(clampZoom(zoom) * 100), "%"),
                 React.createElement("button", { type: "button", onClick: zoomIn, disabled: zoom >= 2.74, "aria-label": "Perbesar preview PDF" }, "+"),
                 React.createElement("button", { type: "button", onClick: zoomFit, disabled: Math.abs(zoom - 1) < 0.01 }, "Fit"))),
-        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik" }),
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: handlePreviewTouchEnd, onTouchCancel: handlePreviewTouchEnd }),
         fallback ? React.createElement("div", { className: "pdf-canvas-fallback" },
             React.createElement("p", null, "Browser ini tidak bisa menampilkan preview PDF canvas. Coba reload halaman."),
             React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" })) : null));

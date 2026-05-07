@@ -5542,3 +5542,36 @@ button:disabled,
 [aria-disabled="true"] {
   touch-action: manipulation !important;
 }
+
+/* Revamp 251 - stable PDF preview text + safe pinch zoom + textbox focus */
+.rbv-field-wrap {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.rbv-field-wrap input,
+.rbv-field-wrap textarea,
+.rbv-field-wrap select,
+.rbv-field-wrap [contenteditable="true"],
+.form-control,
+.rich-editor-input {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  touch-action: manipulation;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+.pdf-canvas-zoom-preview .pdf-canvas-pages {
+  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior: contain;
+}
+@media (pointer: coarse) {
+  .pdf-canvas-zoom-preview .pdf-canvas-pages {
+    touch-action: none;
+  }
+}
+.pdf-canvas-page-wrap,
+.pdf-canvas-page {
+  -webkit-user-select: none;
+  user-select: none;
+}
