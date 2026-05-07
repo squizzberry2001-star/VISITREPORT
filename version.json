@@ -1,5 +1,5 @@
 {
-  "version": "235",
-  "build": "revamp235-crop-marker-preview-match",
-  "updatedAt": "2026-05-07T00:00:00.000Z"
+  "version": "revamp236-pwa-install-landscape",
+  "build": "revamp236-pwa-install-landscape",
+  "label": "Revamp 236 PWA install and mobile landscape"
 }

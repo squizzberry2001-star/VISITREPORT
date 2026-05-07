@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp235-crop-marker-preview-match';
+const APP_VERSION = 'revamp236-pwa-install-landscape';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
@@ -13,6 +13,13 @@ const LOCAL_ASSETS = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/maskable-icon-512.png',
+  './icons/apple-touch-icon.png',
+  './icons/favicon-128.png',
+  './icons/favicon-64.png',
+  './icons/favicon-48.png',
+  './icons/favicon-32.png',
+  './icons/favicon.ico',
   './icons/welcome-handshake-bg.jpg'
 ];
 const CORE_ASSETS = [
