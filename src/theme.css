@@ -4788,3 +4788,44 @@ body.rbv-lite-mode .evidence-empty-state {
 .evidence-floating-button.rbv-native-file-trigger {
   text-decoration: none;
 }
+
+/* Revamp 234 - crop marker center preview. The marker size visual now sits
+   at the center of the crop/photo area and scales up to fill the frame. */
+.photo-editor-v10-stage {
+  position: relative !important;
+  isolation: isolate !important;
+}
+.photo-editor-marker-center-preview {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: min(var(--marker-preview-size, 18%), calc(100% - 1.1rem)) !important;
+  aspect-ratio: 1 / 1 !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 9999px !important;
+  border: 3px solid rgba(239, 68, 68, .96) !important;
+  background: rgba(239, 68, 68, .10) !important;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, .08), 0 0 0 5px rgba(255, 255, 255, .24), 0 14px 34px rgba(0, 0, 0, .18) !important;
+  pointer-events: none !important;
+  z-index: 6 !important;
+  transition: width .12s ease, opacity .12s ease, transform .12s ease !important;
+}
+.photo-editor-marker-center-preview span {
+  position: absolute !important;
+  inset: 50% auto auto 50% !important;
+  width: 8px !important;
+  height: 8px !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 999px !important;
+  background: rgba(239, 68, 68, .96) !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, .42) !important;
+}
+.photo-editor-v10-stage:not(.marker-preview-active) .photo-editor-marker-center-preview {
+  display: none !important;
+}
+@media (max-width: 767px) {
+  .photo-editor-marker-center-preview {
+    border-width: 2px !important;
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, .06), 0 0 0 4px rgba(255, 255, 255, .22) !important;
+  }
+}

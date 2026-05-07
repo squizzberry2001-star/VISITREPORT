@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp233-email-cc-removable-fix';
+const APP_BUILD_VERSION = 'revamp234-crop-marker-center-preview';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1843,6 +1843,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const [markerSize, setMarkerSize] = useState(48);
     const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
     const [imageReady, setImageReady] = useState(false);
+    const markerMinSize = 16;
+    const markerMaxSize = Math.max(48, Math.round(Math.min(canvasSize.width || 1080, canvasSize.height || 1080) / 2 - 12));
+    const activeMarkerSize = Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(markerSize) || 48)));
+    const markerPreviewDiameterPct = Math.min(100, Math.max(6, Math.round((activeMarkerSize * 2 / Math.max(1, Math.min(canvasSize.width || 1080, canvasSize.height || 1080))) * 100)));
     useEffect(() => {
         if (!open)
             return undefined;
@@ -1918,6 +1922,11 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     }
     useEffect(() => { if (!open)
         return; scheduleDraw(true); }, [zoom, offset, markers, mode, open, canvasSize, imageReady]);
+    useEffect(() => {
+        if (!open)
+            return;
+        setMarkerSize((current) => Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(current) || 48))));
+    }, [open, markerMaxSize]);
     function getDrawMetrics(nextZoom = zoom, nextOffset = offset) {
         const canvas = canvasRef.current;
         const img = imgRef.current;
@@ -2064,7 +2073,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
             const tap = markerTapRef.current;
             markerTapRef.current = null;
             if (!tap.cancelled && !tap.moved && !pinchRef.current && canvasRef.current) {
-                const r = getMarkerRadius(canvasRef.current, markerSize);
+                const r = getMarkerRadius(canvasRef.current, activeMarkerSize);
                 setMarkers((current) => [...current, { x: tap.x, y: tap.y, r }]);
             }
             return;
@@ -2170,13 +2179,15 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                 React.createElement("div", { className: "photo-editor-option-row marker-slider-row" },
                     React.createElement("span", null, "Marker"),
                     React.createElement("div", { className: "photo-editor-marker-slider-wrap" },
-                        React.createElement("input", { type: "range", min: "16", max: "92", step: "2", value: markerSize, className: "photo-editor-marker-slider", onChange: (event) => setMarkerSize(Number(event.target.value) || 48), "aria-label": "Ukuran marker" }),
+                        React.createElement("input", { type: "range", min: markerMinSize, max: markerMaxSize, step: "2", value: activeMarkerSize, className: "photo-editor-marker-slider", onChange: (event) => setMarkerSize(Math.max(markerMinSize, Math.min(markerMaxSize, Number(event.target.value) || 48))), "aria-label": "Ukuran marker" }),
                         React.createElement("div", { className: "photo-editor-marker-preview-wrap", "aria-hidden": "true" },
-                            React.createElement("span", { className: "photo-editor-marker-preview", style: { width: Math.max(10, Math.round(markerSize * 0.42)) + 'px', height: Math.max(10, Math.round(markerSize * 0.42)) + 'px' } })),
-                        React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(markerSize))))),
-            React.createElement("div", { className: "photo-editor-canvas-shell photo-editor-v10-stage" },
+                            React.createElement("span", { className: "photo-editor-marker-preview", style: { width: Math.max(10, Math.round(activeMarkerSize * 0.42)) + 'px', height: Math.max(10, Math.round(activeMarkerSize * 0.42)) + 'px' } })),
+                        React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(activeMarkerSize))))),
+            React.createElement("div", { className: cx('photo-editor-canvas-shell photo-editor-v10-stage', mode === 'marker' && 'marker-preview-active') },
                 !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
-                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
+                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel }),
+                mode === 'marker' && imageReady ? React.createElement("div", { className: "photo-editor-marker-center-preview", style: { '--marker-preview-size': markerPreviewDiameterPct + '%' }, "aria-hidden": "true" },
+                    React.createElement("span", null)) : null),
             React.createElement("div", { className: "photo-editor-v10-footer" },
                 React.createElement("div", { className: "photo-editor-hint" },
                     React.createElement("span", null, mode === 'marker' ? 'Tap 1 jari untuk marker. Cubit 2 jari tidak akan membuat marker.' : 'Cubit untuk zoom, geser foto.')),
@@ -3021,7 +3032,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp233-email-cc-removable-fix" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp234-crop-marker-center-preview" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',
