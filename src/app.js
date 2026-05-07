@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp244-html-preview-only';
+const APP_BUILD_VERSION = 'revamp245-identical-pdf-zoom-preview';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4352,6 +4352,15 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
     const taskRef = useRef(null);
     const [viewerStatus, setViewerStatus] = useState(status || 'Menyiapkan preview PDF...');
     const [fallback, setFallback] = useState(false);
+    const [zoom, setZoom] = useState(1);
+    const [pageCount, setPageCount] = useState(0);
+    function clampZoom(value) {
+        const next = Number(value || 1);
+        return Math.max(0.65, Math.min(2.75, next));
+    }
+    function zoomIn() { setZoom((value) => clampZoom(value + 0.15)); }
+    function zoomOut() { setZoom((value) => clampZoom(value - 0.15)); }
+    function zoomFit() { setZoom(1); }
     useEffect(() => {
         let cancelled = false;
         let pdfDocument = null;
@@ -4361,12 +4370,13 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 return;
             host.innerHTML = '';
             setFallback(false);
+            setPageCount(0);
             if (!blob) {
                 setViewerStatus(status || 'Menyiapkan preview PDF...');
                 return;
             }
             try {
-                setViewerStatus('Memuat preview PDF...');
+                setViewerStatus('Memuat preview PDF final...');
                 const pdfjs = await ensurePdfPreviewReady();
                 if (pdfjs?.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) {
                     pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -4380,9 +4390,10 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 if (cancelled)
                     return;
                 const total = Math.max(1, Number(pdfDocument.numPages || 1));
+                setPageCount(total);
                 const isSmallScreen = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-                const deviceRatio = Math.min(window.devicePixelRatio || 1, isSmallScreen ? 1.25 : 1.65);
-                setViewerStatus(`Preview siap. Menampilkan ${total} halaman...`);
+                const deviceRatio = Math.min(window.devicePixelRatio || 1, isSmallScreen ? 1.35 : 1.75);
+                setViewerStatus(`Preview PDF final siap. Menampilkan ${total} halaman...`);
                 for (let pageNumber = 1; pageNumber <= total; pageNumber += 1) {
                     if (cancelled)
                         break;
@@ -4391,10 +4402,10 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     if (cancelled)
                         break;
                     const baseViewport = page.getViewport({ scale: 1 });
-                    const hostWidth = Math.max(280, Math.floor((host.clientWidth || 360) - 12));
-                    const cssWidth = Math.max(260, Math.min(isSmallScreen ? 760 : 980, hostWidth));
-                    const displayScale = cssWidth / baseViewport.width;
-                    const renderScale = Math.max(0.75, Math.min(2.2, displayScale * deviceRatio));
+                    const hostWidth = Math.max(280, Math.floor((host.clientWidth || 360) - 18));
+                    const fitCssScale = Math.max(0.2, hostWidth / baseViewport.width);
+                    const cssScale = Math.max(0.2, fitCssScale * clampZoom(zoom));
+                    const renderScale = Math.max(0.65, Math.min(4.25, cssScale * deviceRatio));
                     const viewport = page.getViewport({ scale: renderScale });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d', { alpha: false });
@@ -4403,10 +4414,11 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     canvas.className = 'pdf-canvas-page';
                     canvas.width = Math.ceil(viewport.width);
                     canvas.height = Math.ceil(viewport.height);
-                    canvas.style.width = `${Math.ceil(baseViewport.width * displayScale)}px`;
-                    canvas.style.height = `${Math.ceil(baseViewport.height * displayScale)}px`;
+                    canvas.style.width = `${Math.ceil(baseViewport.width * cssScale)}px`;
+                    canvas.style.height = `${Math.ceil(baseViewport.height * cssScale)}px`;
                     const pageWrap = document.createElement('section');
                     pageWrap.className = 'pdf-canvas-page-wrap';
+                    pageWrap.style.width = canvas.style.width;
                     const label = document.createElement('div');
                     label.className = 'pdf-canvas-page-label';
                     label.textContent = `Halaman ${pageNumber} / ${total}`;
@@ -4417,13 +4429,13 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     try { page.cleanup(); } catch (_) { }
                 }
                 if (!cancelled)
-                    setViewerStatus('Preview PDF siap.');
+                    setViewerStatus(`Preview PDF final siap${pageCount ? '' : ''}. Zoom ${Math.round(clampZoom(zoom) * 100)}%.`);
             }
             catch (error) {
                 console.warn('Preview PDF canvas gagal:', error);
                 if (!cancelled) {
                     setFallback(true);
-                    setViewerStatus(error?.message || 'Preview PDF langsung gagal. Gunakan tab baru.');
+                    setViewerStatus(error?.message || 'Preview PDF gagal ditampilkan.');
                 }
             }
         }
@@ -4433,20 +4445,24 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             try { taskRef.current?.destroy?.(); } catch (_) { }
             try { pdfDocument?.destroy?.(); } catch (_) { }
         };
-    }, [blob, status]);
+    }, [blob, status, zoom]);
     if (!blob || !pdfUrl) {
-        return React.createElement("div", { className: "pdf-lite-empty pdf-direct-empty", role: "status", "aria-live": "polite" }, status || 'Menyiapkan preview PDF...');
+        return React.createElement("div", { className: "pdf-lite-empty pdf-direct-empty", role: "status", "aria-live": "polite" }, status || 'Menyiapkan preview PDF final...');
     }
-    return (React.createElement("div", { className: "pdf-canvas-direct-preview" },
-        React.createElement("div", { className: "pdf-canvas-direct-toolbar", role: "status", "aria-live": "polite" },
-            React.createElement("span", { className: "pdf-canvas-direct-dot", "aria-hidden": "true" }),
-            React.createElement("strong", null, viewerStatus || status || 'Preview PDF siap.'),
-            React.createElement("a", { href: pdfUrl, target: "_blank", rel: "noreferrer" }, "Buka tab baru")),
-        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF langsung" }),
+    return (React.createElement("div", { className: "pdf-canvas-direct-preview pdf-canvas-zoom-preview" },
+        React.createElement("div", { className: "pdf-canvas-direct-toolbar pdf-canvas-zoom-toolbar", role: "status", "aria-live": "polite" },
+            React.createElement("div", { className: "pdf-canvas-statusline" },
+                React.createElement("span", { className: "pdf-canvas-direct-dot", "aria-hidden": "true" }),
+                React.createElement("strong", null, viewerStatus || status || 'Preview PDF final siap.')),
+            React.createElement("div", { className: "pdf-canvas-zoom-controls", "aria-label": "Kontrol zoom preview PDF" },
+                React.createElement("button", { type: "button", onClick: zoomOut, disabled: zoom <= 0.66, "aria-label": "Perkecil preview PDF" }, "−"),
+                React.createElement("span", null, Math.round(clampZoom(zoom) * 100), "%"),
+                React.createElement("button", { type: "button", onClick: zoomIn, disabled: zoom >= 2.74, "aria-label": "Perbesar preview PDF" }, "+"),
+                React.createElement("button", { type: "button", onClick: zoomFit, disabled: Math.abs(zoom - 1) < 0.01 }, "Fit"))),
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik" }),
         fallback ? React.createElement("div", { className: "pdf-canvas-fallback" },
-            React.createElement("p", null, "Browser ini tidak bisa menampilkan PDF langsung via canvas."),
-            React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" }),
-            React.createElement("a", { className: "pdf-direct-open-link", href: pdfUrl, target: "_blank", rel: "noreferrer" }, "Buka PDF di tab baru")) : null));
+            React.createElement("p", null, "Browser ini tidak bisa menampilkan preview PDF canvas. Coba reload halaman."),
+            React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" })) : null));
 }
 
 function rbvPreviewPlainText(value, fallback = '-') {
@@ -4608,9 +4624,42 @@ function PreviewPage({ visit, onBack }) {
     const [emailStatus, setEmailStatus] = useState('');
     const [emailForm, setEmailForm] = useState(() => buildInitialEmailForm(visit));
     useEffect(() => {
-        setPdfBlob(null);
-        setPdfUrl('');
-        setStatus('Preview HTML siap. PDF asli tetap dibuat saat Download atau Send Email.');
+        let cancelled = false;
+        let objectUrl = '';
+        async function render() {
+            if (!visit)
+                return;
+            setPdfBlob(null);
+            setPdfUrl('');
+            setStatus('Menyiapkan preview PDF final...');
+            try {
+                await ensurePdfEngineReady();
+                if (!window.ReportVisitPDF?.createBlob)
+                    throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+                const snapshot = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
+                if (cancelled)
+                    return;
+                setStatus('Membuat preview identik dengan PDF...');
+                const blob = await window.ReportVisitPDF.createBlob(snapshot);
+                if (cancelled)
+                    return;
+                objectUrl = URL.createObjectURL(blob);
+                setPdfBlob(blob);
+                setPdfUrl(objectUrl);
+                setStatus('Preview PDF final siap.');
+            }
+            catch (error) {
+                setPdfBlob(null);
+                setPdfUrl('');
+                setStatus(error?.message || 'Preview PDF gagal dibuat.');
+            }
+        }
+        render();
+        return () => {
+            cancelled = true;
+            if (objectUrl)
+                URL.revokeObjectURL(objectUrl);
+        };
     }, [visit]);
     useEffect(() => {
         if (!emailOpen)
@@ -4779,7 +4828,7 @@ function PreviewPage({ visit, onBack }) {
         React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
         React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
             React.createElement("div", null,
-                React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview Report"),
+                React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
                 React.createElement("h1", { className: "mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review Report")),
             React.createElement("div", { className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100" },
                 React.createElement("div", { className: "mb-2 flex items-center justify-between gap-3" },
@@ -4804,8 +4853,8 @@ function PreviewPage({ visit, onBack }) {
                                 React.createElement("span", { className: "block" }, "Export Excel CA"),
                                 React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store")))),
                     React.createElement(Button, { icon: "upload", onClick: openEmailReportModal, disabled: busy || downloadBusy, className: "preview-send-action-v99" }, "Send Email"))),
-            React.createElement("div", { className: "preview-frame-wrap rbv-html-preview-wrap" },
-                React.createElement(RbvHtmlReportPreview, { visit: visit })))));
+            React.createElement("div", { className: "preview-frame-wrap" },
+                React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status })))));
 }
 // =============================================================
 // Secret monitor helpers
