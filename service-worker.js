@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp247-pdf-preview-input-data-sync';
+const APP_VERSION = 'revamp248-preview-input-pinch-desktop-stable';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
