@@ -4971,3 +4971,88 @@ body.rbv-lite-mode .evidence-empty-state {
 .home-restore-native-picker > small {
   pointer-events: none !important;
 }
+
+
+/* Revamp 240 - Android textbox, direct PDF preview, and native picker stability */
+.rbv-mobile-editable,
+input.form-control,
+textarea.form-control,
+.rich-editor-input {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto !important;
+  touch-action: auto !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: text;
+}
+.form-control,
+.rich-editor-input {
+  min-height: 52px;
+}
+.rich-editor-input {
+  -webkit-touch-callout: default;
+}
+.field,
+label.block {
+  pointer-events: auto !important;
+}
+.pdf-direct-preview {
+  position: relative;
+  width: 100%;
+  min-height: min(76vh, 860px);
+  background: #f8fafc;
+}
+.pdf-direct-frame {
+  display: block;
+  width: 100%;
+  min-height: min(76vh, 860px);
+  height: min(76vh, 860px);
+  border: 0;
+  background: #f8fafc;
+}
+.pdf-direct-empty {
+  min-height: 48vh;
+}
+.pdf-direct-open-link {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(203,213,225,.9);
+  box-shadow: 0 10px 24px rgba(15,23,42,.12);
+}
+.rbv-native-file-trigger {
+  isolation: isolate;
+  pointer-events: auto !important;
+}
+.rbv-native-file-input {
+  pointer-events: auto !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.evidence-floating-capture {
+  z-index: 80 !important;
+}
+@media (max-width: 640px) {
+  .pdf-direct-preview,
+  .pdf-direct-frame {
+    min-height: 62svh;
+    height: 62svh;
+  }
+  .pdf-direct-open-link {
+    right: 10px;
+    bottom: 10px;
+  }
+}

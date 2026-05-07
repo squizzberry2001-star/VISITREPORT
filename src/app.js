@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp239-email-pdf-endpoint-diagnostic';
+const APP_BUILD_VERSION = 'revamp240-android-input-pdf-camera-stability';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1543,11 +1543,21 @@ function Field({ label, helper, children, required }) {
         children,
         helper ? React.createElement("span", { className: "mt-2 block text-xs leading-5 text-slate-500" }, helper) : null));
 }
+function rbvFocusEditableOnTap(event) {
+    const target = event.currentTarget;
+    if (!target || target === document.activeElement)
+        return;
+    if (event.pointerType && event.pointerType !== 'touch')
+        return;
+    window.requestAnimationFrame(() => {
+        try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+    });
+}
 function TextInput(props) {
-    return React.createElement("input", { className: cx('form-control', props.className), ...props });
+    return React.createElement("input", { className: cx('form-control rbv-mobile-editable', props.className), onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, ...props });
 }
 function DateInput({ className = '', ...props }) {
-    return React.createElement("input", { type: "date", className: cx('form-control date-control', className), ...props });
+    return React.createElement("input", { type: "date", className: cx('form-control date-control rbv-mobile-editable', className), onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, ...props });
 }
 function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
     const ref = useRef(null);
@@ -1559,7 +1569,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
+    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
@@ -1671,7 +1681,7 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         editor.focus({ preventScroll: true });
     }
     return (React.createElement("div", { className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className) },
-        React.createElement("div", { ref: editorRef, className: "rich-editor-input px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
+        React.createElement("div", { ref: editorRef, className: "rich-editor-input rbv-mobile-editable px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
         React.createElement("div", { className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
 }
 function SelectInput({ children, className = '', ...props }) {
@@ -2243,10 +2253,10 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: cx('photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3', hideActions && 'hidden') },
             !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Ambil foto dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-                React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
+                React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
                 React.createElement(Icon, { name: "camera", className: "h-4 w-4" })) : null,
             !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Pilih foto dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-                React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
+                React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
                 React.createElement(Icon, { name: "gallery", className: "h-4 w-4" })) : null),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
@@ -2450,11 +2460,11 @@ function PhotoGrid({ photos, onChange, prefix }) {
     }
     const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
         React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-camera evidence-floating-icon-button", "aria-label": "Ambil foto evidence dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
+            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
         React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", "aria-label": "Pilih foto evidence dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,.jpg,.jpeg,.jfif,.png,.webp,.gif,.heic,.heif,.avif,.bmp,.tif,.tiff,.svg", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
+            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
     const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
@@ -4226,30 +4236,14 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
-    const [open, setOpen] = useState(false);
     if (!blob || !pdfUrl) {
-        return React.createElement("div", { className: "pdf-lite-empty" }, status || 'Menyiapkan preview PDF...');
+        return React.createElement("div", { className: "pdf-lite-empty pdf-direct-empty", role: "status", "aria-live": "polite" }, status || 'Menyiapkan preview PDF...');
     }
-    return (React.createElement("div", { className: "pdf-lite-preview" },
-        React.createElement("div", { className: "pdf-lite-preview-card" },
-            React.createElement("div", { className: "pdf-lite-icon", "aria-hidden": "true" },
-                React.createElement(Icon, { name: "pdf", className: "h-8 w-8" })),
-            React.createElement("h3", null, "Preview ringan siap"),
-            React.createElement("p", null, "Mode preview ringan tidak memakai canvas/zoom berat, jadi lebih stabil di HP RAM kecil. Gunakan tombol buka preview jika ingin melihat file."),
-            React.createElement("div", { className: "pdf-lite-actions" },
-                React.createElement("button", { type: "button", className: "btn-secondary", onClick: () => setOpen(true) },
-                    React.createElement(Icon, { name: "eye", className: "h-4 w-4" }),
-                    " Buka Preview"),
-                React.createElement("a", { className: "btn-secondary", href: pdfUrl, target: "_blank", rel: "noreferrer" },
-                    React.createElement(Icon, { name: "right", className: "h-4 w-4" }),
-                    " Tab Baru"))),
-        open ? React.createElement("div", { className: "pdf-lite-modal", role: "dialog", "aria-modal": "true" },
-            React.createElement("div", { className: "pdf-lite-modal-panel" },
-                React.createElement("div", { className: "pdf-lite-modal-header" },
-                    React.createElement("strong", null, "Preview PDF"),
-                    React.createElement("button", { type: "button", onClick: () => setOpen(false), "aria-label": "Tutup preview" },
-                        React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
-                React.createElement("iframe", { className: "pdf-lite-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF" }))) : null));
+    return (React.createElement("div", { className: "pdf-direct-preview" },
+        React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF" }),
+        React.createElement("a", { className: "pdf-direct-open-link", href: pdfUrl, target: "_blank", rel: "noreferrer" },
+            React.createElement(Icon, { name: "right", className: "h-4 w-4" }),
+            " Buka di tab baru")));
 }
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
