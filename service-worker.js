@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp251-preview-rollback-no-blank';
+const APP_VERSION = 'revamp252-pdf-pinch-scroll-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
