@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp236-pwa-install-landscape';
+const APP_VERSION = 'revamp238-stable-pdf-email-attachment';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
