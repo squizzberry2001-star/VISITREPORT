@@ -5056,3 +5056,122 @@ label.block {
     bottom: 10px;
   }
 }
+
+
+/* Revamp 241 - Direct PDF canvas preview for Android/iOS/browser compatibility */
+.pdf-canvas-direct-preview {
+  width: 100%;
+  min-height: 62svh;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  overflow: hidden;
+}
+.pdf-canvas-direct-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(203,213,225,.92);
+  background: rgba(255,255,255,.96);
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+.pdf-canvas-direct-toolbar strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pdf-canvas-direct-toolbar a {
+  flex: 0 0 auto;
+  color: #0f766e;
+  text-decoration: none;
+  font-weight: 1000;
+}
+.pdf-canvas-direct-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #10b981;
+  box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+}
+.pdf-canvas-pages {
+  width: 100%;
+  max-height: min(76svh, 980px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 12px 8px 20px;
+}
+.pdf-canvas-page-wrap {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .14);
+  overflow: hidden;
+}
+.pdf-canvas-page-label {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .72);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  pointer-events: none;
+}
+.pdf-canvas-page {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+.pdf-canvas-fallback {
+  position: relative;
+  padding: 12px;
+  background: #fff7ed;
+  border-top: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 800;
+}
+.pdf-canvas-fallback .pdf-direct-frame {
+  margin-top: 8px;
+  min-height: 54svh;
+  height: 54svh;
+}
+@media (max-width: 640px) {
+  .pdf-canvas-pages {
+    max-height: 68svh;
+    padding: 10px 6px 18px;
+  }
+  .pdf-canvas-page-wrap {
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .pdf-canvas-direct-toolbar {
+    min-height: 40px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .pdf-canvas-pages {
+    max-height: 56svh;
+  }
+}

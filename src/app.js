@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp240-android-input-pdf-camera-stability';
+const APP_BUILD_VERSION = 'revamp241-direct-pdf-canvas-all-devices';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4236,14 +4236,105 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
+    const pagesRef = useRef(null);
+    const taskRef = useRef(null);
+    const [viewerStatus, setViewerStatus] = useState(status || 'Menyiapkan preview PDF...');
+    const [fallback, setFallback] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        let pdfDocument = null;
+        async function renderPdfDirectly() {
+            const host = pagesRef.current;
+            if (!host)
+                return;
+            host.innerHTML = '';
+            setFallback(false);
+            if (!blob) {
+                setViewerStatus(status || 'Menyiapkan preview PDF...');
+                return;
+            }
+            try {
+                setViewerStatus('Memuat preview PDF...');
+                const pdfjs = await ensurePdfPreviewReady();
+                if (pdfjs?.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) {
+                    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+                const data = await blob.arrayBuffer();
+                if (cancelled)
+                    return;
+                const loadingTask = pdfjs.getDocument({ data, disableFontFace: true, isEvalSupported: false, useSystemFonts: true });
+                taskRef.current = loadingTask;
+                pdfDocument = await loadingTask.promise;
+                if (cancelled)
+                    return;
+                const total = Math.max(1, Number(pdfDocument.numPages || 1));
+                const isSmallScreen = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+                const deviceRatio = Math.min(window.devicePixelRatio || 1, isSmallScreen ? 1.25 : 1.65);
+                setViewerStatus(`Preview siap. Menampilkan ${total} halaman...`);
+                for (let pageNumber = 1; pageNumber <= total; pageNumber += 1) {
+                    if (cancelled)
+                        break;
+                    setViewerStatus(`Merender halaman ${pageNumber}/${total}...`);
+                    const page = await pdfDocument.getPage(pageNumber);
+                    if (cancelled)
+                        break;
+                    const baseViewport = page.getViewport({ scale: 1 });
+                    const hostWidth = Math.max(280, Math.floor((host.clientWidth || 360) - 12));
+                    const cssWidth = Math.max(260, Math.min(isSmallScreen ? 760 : 980, hostWidth));
+                    const displayScale = cssWidth / baseViewport.width;
+                    const renderScale = Math.max(0.75, Math.min(2.2, displayScale * deviceRatio));
+                    const viewport = page.getViewport({ scale: renderScale });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d', { alpha: false });
+                    if (!context)
+                        throw new Error('Browser tidak mendukung canvas preview PDF.');
+                    canvas.className = 'pdf-canvas-page';
+                    canvas.width = Math.ceil(viewport.width);
+                    canvas.height = Math.ceil(viewport.height);
+                    canvas.style.width = `${Math.ceil(baseViewport.width * displayScale)}px`;
+                    canvas.style.height = `${Math.ceil(baseViewport.height * displayScale)}px`;
+                    const pageWrap = document.createElement('section');
+                    pageWrap.className = 'pdf-canvas-page-wrap';
+                    const label = document.createElement('div');
+                    label.className = 'pdf-canvas-page-label';
+                    label.textContent = `Halaman ${pageNumber} / ${total}`;
+                    pageWrap.appendChild(label);
+                    pageWrap.appendChild(canvas);
+                    host.appendChild(pageWrap);
+                    await page.render({ canvasContext: context, viewport }).promise;
+                    try { page.cleanup(); } catch (_) { }
+                }
+                if (!cancelled)
+                    setViewerStatus('Preview PDF siap.');
+            }
+            catch (error) {
+                console.warn('Preview PDF canvas gagal:', error);
+                if (!cancelled) {
+                    setFallback(true);
+                    setViewerStatus(error?.message || 'Preview PDF langsung gagal. Gunakan tab baru.');
+                }
+            }
+        }
+        renderPdfDirectly();
+        return () => {
+            cancelled = true;
+            try { taskRef.current?.destroy?.(); } catch (_) { }
+            try { pdfDocument?.destroy?.(); } catch (_) { }
+        };
+    }, [blob, status]);
     if (!blob || !pdfUrl) {
         return React.createElement("div", { className: "pdf-lite-empty pdf-direct-empty", role: "status", "aria-live": "polite" }, status || 'Menyiapkan preview PDF...');
     }
-    return (React.createElement("div", { className: "pdf-direct-preview" },
-        React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF" }),
-        React.createElement("a", { className: "pdf-direct-open-link", href: pdfUrl, target: "_blank", rel: "noreferrer" },
-            React.createElement(Icon, { name: "right", className: "h-4 w-4" }),
-            " Buka di tab baru")));
+    return (React.createElement("div", { className: "pdf-canvas-direct-preview" },
+        React.createElement("div", { className: "pdf-canvas-direct-toolbar", role: "status", "aria-live": "polite" },
+            React.createElement("span", { className: "pdf-canvas-direct-dot", "aria-hidden": "true" }),
+            React.createElement("strong", null, viewerStatus || status || 'Preview PDF siap.'),
+            React.createElement("a", { href: pdfUrl, target: "_blank", rel: "noreferrer" }, "Buka tab baru")),
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF langsung" }),
+        fallback ? React.createElement("div", { className: "pdf-canvas-fallback" },
+            React.createElement("p", null, "Browser ini tidak bisa menampilkan PDF langsung via canvas."),
+            React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" }),
+            React.createElement("a", { className: "pdf-direct-open-link", href: pdfUrl, target: "_blank", rel: "noreferrer" }, "Buka PDF di tab baru")) : null));
 }
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
