@@ -4695,3 +4695,48 @@ body.rbv-lite-mode .evidence-empty-state {
   opacity: .45 !important;
   pointer-events: none !important;
 }
+
+
+/* Revamp 231 - crop marker slider + tap-only marker guard */
+.photo-editor-marker-slider-wrap {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 38px 28px !important;
+  align-items: center !important;
+  gap: .55rem !important;
+  border: 1px solid #dbe7e5 !important;
+  background: #f8fafc !important;
+  border-radius: 999px !important;
+  padding: .38rem .55rem !important;
+}
+.photo-editor-marker-slider {
+  width: 100% !important;
+  accent-color: #0f766e !important;
+}
+.photo-editor-marker-preview-wrap {
+  width: 38px !important;
+  height: 30px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.photo-editor-marker-preview {
+  display: block !important;
+  border-radius: 999px !important;
+  border: 2px solid #ef4444 !important;
+  background: rgba(239,68,68,.10) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.08) !important;
+  transition: width .12s ease, height .12s ease !important;
+}
+.photo-editor-marker-size-label {
+  display: grid !important;
+  place-items: center !important;
+  min-width: 24px !important;
+  color: #0f766e !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+}
+@media (max-width: 767px) {
+  .marker-slider-row { align-items: center !important; }
+  .photo-editor-marker-slider-wrap { grid-template-columns: minmax(0, 1fr) 34px 24px !important; gap: .4rem !important; }
+}

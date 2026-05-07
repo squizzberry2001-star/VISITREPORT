@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp230-crop-marker-ultralite-restore';
+const APP_BUILD_VERSION = 'revamp231-crop-marker-email-pdf-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1821,6 +1821,8 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
     };
 }
 function getMarkerRadius(canvas, markerSize) {
+    if (Number.isFinite(Number(markerSize)))
+        return Math.max(10, Math.min(120, Math.round(Number(markerSize))));
     const selected = MARKER_SIZE_OPTIONS.find((item) => item.key === markerSize) || MARKER_SIZE_OPTIONS[1];
     const minSide = Math.min(canvas?.width || 1080, canvas?.height || 1080);
     return Math.max(24, Math.round(minSide * selected.scale));
@@ -1830,6 +1832,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const imgRef = useRef(null);
     const dragRef = useRef(null);
     const pinchRef = useRef(null);
+    const markerTapRef = useRef(null);
     const rafRef = useRef(null);
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -1837,7 +1840,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const [mode, setMode] = useState('move');
     const activeCropRatio = cropRatio && cropRatio.w && cropRatio.h ? cropRatio : PDF_PHOTO_CROP_RATIO;
     const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
-    const [markerSize, setMarkerSize] = useState('medium');
+    const [markerSize, setMarkerSize] = useState(48);
     const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
     const [imageReady, setImageReady] = useState(false);
     useEffect(() => {
@@ -1891,8 +1894,9 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         setMarkers([]);
         setMode('move');
         setSelectedRatio(activeCropRatio);
-        setMarkerSize('medium');
+        setMarkerSize(48);
         pinchRef.current = null;
+        markerTapRef.current = null;
         dragRef.current = null;
         loadImageElement(image).then((loaded) => {
             if (cancelled)
@@ -2016,13 +2020,21 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         if (!canvasRef.current || !imageReady || pinchRef.current)
             return;
         event.preventDefault();
+        const point = canvasPoint(event);
         if (mode === 'marker') {
-            const point = canvasPoint(event);
-            const r = getMarkerRadius(canvasRef.current, markerSize);
-            setMarkers((current) => [...current, { x: point.x, y: point.y, r }]);
+            markerTapRef.current = {
+                pointerId: event.pointerId,
+                x: point.x,
+                y: point.y,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                moved: false,
+                cancelled: false
+            };
+            try { event.currentTarget.setPointerCapture(event.pointerId); } catch (error) { }
             return;
         }
-        const point = canvasPoint(event);
+        markerTapRef.current = null;
         dragRef.current = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: offset.x, offsetY: offset.y };
         try {
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -2030,6 +2042,13 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         catch (error) { }
     }
     function handlePointerMove(event) {
+        if (mode === 'marker' && markerTapRef.current && markerTapRef.current.pointerId === event.pointerId) {
+            const dx = event.clientX - markerTapRef.current.clientX;
+            const dy = event.clientY - markerTapRef.current.clientY;
+            if (Math.sqrt(dx * dx + dy * dy) > 8)
+                markerTapRef.current.moved = true;
+            return;
+        }
         if (!dragRef.current || mode !== 'move' || dragRef.current.pointerId !== event.pointerId)
             return;
         event.preventDefault();
@@ -2041,23 +2060,36 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         setOffset(clampOffset(next, zoom));
     }
     function handlePointerUp(event) {
+        if (mode === 'marker' && markerTapRef.current && markerTapRef.current.pointerId === event?.pointerId) {
+            const tap = markerTapRef.current;
+            markerTapRef.current = null;
+            if (!tap.cancelled && !tap.moved && !pinchRef.current && canvasRef.current) {
+                const r = getMarkerRadius(canvasRef.current, markerSize);
+                setMarkers((current) => [...current, { x: tap.x, y: tap.y, r }]);
+            }
+            return;
+        }
         if (dragRef.current?.pointerId === event?.pointerId)
             dragRef.current = null;
         else
             dragRef.current = null;
     }
     function handleTouchStart(event) {
-        if (event.touches.length === 2) {
+        if (event.touches.length >= 2) {
             event.preventDefault();
             event.stopPropagation();
+            if (markerTapRef.current)
+                markerTapRef.current.cancelled = true;
             dragRef.current = null;
             pinchRef.current = { distance: distanceBetweenTouches(event.touches), zoom, offset, center: touchCenter(event.touches) };
         }
     }
     function handleTouchMove(event) {
-        if (event.touches.length === 2 && pinchRef.current) {
+        if (event.touches.length >= 2 && pinchRef.current) {
             event.preventDefault();
             event.stopPropagation();
+            if (markerTapRef.current)
+                markerTapRef.current.cancelled = true;
             const distance = distanceBetweenTouches(event.touches);
             const nextZoom = clamp(pinchRef.current.zoom * (distance / Math.max(1, pinchRef.current.distance)), 1, 4);
             const currentCenter = touchCenter(event.touches);
@@ -2134,16 +2166,20 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement(Icon, { name: "eraser", className: "h-4 w-4" }),
                     React.createElement("span", null, "Reset"))),
             React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan marker" },
-                React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Crop otomatis mengikuti frame foto PDF."),
-                React.createElement("div", { className: "photo-editor-option-row" },
+                React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Crop otomatis mengikuti frame foto PDF. Marker hanya muncul saat tap 1 jari; cubit 2 jari khusus zoom."),
+                React.createElement("div", { className: "photo-editor-option-row marker-slider-row" },
                     React.createElement("span", null, "Marker"),
-                    React.createElement("div", { className: "photo-editor-chip-group" }, MARKER_SIZE_OPTIONS.map((option) => React.createElement("button", { key: option.key, type: "button", className: cx('photo-editor-chip', markerSize === option.key && 'active'), onClick: () => setMarkerSize(option.key) }, option.label))))),
+                    React.createElement("div", { className: "photo-editor-marker-slider-wrap" },
+                        React.createElement("input", { type: "range", min: "16", max: "92", step: "2", value: markerSize, className: "photo-editor-marker-slider", onChange: (event) => setMarkerSize(Number(event.target.value) || 48), "aria-label": "Ukuran marker" }),
+                        React.createElement("div", { className: "photo-editor-marker-preview-wrap", "aria-hidden": "true" },
+                            React.createElement("span", { className: "photo-editor-marker-preview", style: { width: Math.max(10, Math.round(markerSize * 0.42)) + 'px', height: Math.max(10, Math.round(markerSize * 0.42)) + 'px' } })),
+                        React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(markerSize))))),
             React.createElement("div", { className: "photo-editor-canvas-shell photo-editor-v10-stage" },
                 !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
                 React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
             React.createElement("div", { className: "photo-editor-v10-footer" },
                 React.createElement("div", { className: "photo-editor-hint" },
-                    React.createElement("span", null, mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.')),
+                    React.createElement("span", null, mode === 'marker' ? 'Tap 1 jari untuk marker. Cubit 2 jari tidak akan membuat marker.' : 'Cubit untuk zoom, geser foto.')),
                 React.createElement("button", { type: "button", className: "photo-editor-save", onClick: saveEditedImage, disabled: !imageReady },
                     React.createElement(Icon, { name: "check", className: "h-5 w-5" }),
                     React.createElement("span", null, "Simpan"))))));
@@ -2983,7 +3019,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
                         syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
                         React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp230-crop-marker-ultralite-restore" },
+            React.createElement("div", { className: "mt-3", "data-build": "revamp231-crop-marker-email-pdf-fix" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
                 React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
                         display: 'grid',
@@ -3292,8 +3328,8 @@ const MASTER_EMAIL_CONTACTS = [
         role: 'Master Email'
     }
 ];
-const EMAIL_SAFE_REQUEST_BYTES = 3.25 * 1024 * 1024;
-const EMAIL_PDF_SAFE_BYTES = 2.65 * 1024 * 1024;
+const EMAIL_SAFE_REQUEST_BYTES = 12 * 1024 * 1024;
+const EMAIL_PDF_SAFE_BYTES = 9.5 * 1024 * 1024;
 const EMAIL_EXCEL_SAFE_BYTES = 850 * 1024;
 function isEmailSyntax(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanText(value).toLowerCase());
@@ -3667,13 +3703,8 @@ async function buildPdfAttachmentForEmail(visit, currentPdfBlob) {
     if (!window.ReportVisitPDF?.createBlob)
         throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
     const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
-    let blob = currentPdfBlob || await window.ReportVisitPDF.createBlob(visit);
-    let optimized = false;
-    if (blob.size > EMAIL_PDF_SAFE_BYTES) {
-        blob = await window.ReportVisitPDF.createBlob(buildEmailOptimizedVisit(visit));
-        optimized = true;
-    }
-    return { blob, fileName, optimized };
+    const blob = currentPdfBlob || await window.ReportVisitPDF.createBlob(visit);
+    return { blob, fileName, optimized: false };
 }
 function addEmailNote(body, notes) {
     return cleanText(body);
@@ -3729,7 +3760,7 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
             document.removeEventListener('touchstart', handlePointer);
         };
     }, []);
-    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: isLockedEmail(email) ? 'Auto locked CC' : 'Manual' });
+    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: 'Manual' });
     const recipientChipStyle = {
         width: '100%',
         maxWidth: '100%',
@@ -3806,9 +3837,9 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
     }
     const chipEls = selectedItems.map((item) => {
         const locked = isLockedEmail(item.email);
-        return React.createElement("span", { key: item.email, className: cx("rbv-email-recipient-chip-v99 inline-flex max-w-full items-center rounded-2xl ring-1", locked ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
+        return React.createElement("span", { key: item.email, className: cx("rbv-email-recipient-chip-v99 inline-flex max-w-full items-center rounded-2xl ring-1", "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
             React.createElement("span", { className: "truncate", style: recipientChipEmailStyle }, item.email),
-            locked ? React.createElement("span", { className: "rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-emerald-700" }, "Lock") : React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" })));
+            React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" })));
     });
     const customButton = customAllowed ? React.createElement("button", { type: "button", className: "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-slate-50", onMouseDown: (event) => {
             event.preventDefault();
@@ -3886,8 +3917,8 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         return null;
     const config = getEmailReportConfig();
     const toOptions = getVisitToEmailContactOptions(visit);
-    const lockedCcEmails = LOCKED_CC_EMAILS;
-    const ccOptions = uniqueBy([...getLockedCcContacts(), ...getAllMasterEmailContactOptions(visit)], (item) => normalize(item.email));
+    const lockedCcEmails = [];
+    const ccOptions = uniqueBy([...getLockedCcContacts().map((item) => ({ ...item, helper: 'Auto CC default', role: 'Auto CC' })), ...getAllMasterEmailContactOptions(visit)], (item) => normalize(item.email));
     const ccCount = parseEmailList(form.cc).length;
     const statusText = cleanText(status);
     const statusKind = /gagal/i.test(statusText) ? 'error' : /dijadwalkan|jadwal/i.test(statusText) ? 'schedule' : /draft/i.test(statusText) ? 'draft' : /berhasil dikirim|terkirim/i.test(statusText) ? 'sent' : statusText ? 'progress' : '';
@@ -3936,7 +3967,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement("span", { className: "break-all text-center font-extrabold text-slate-900", style: { fontSize: '12px', lineHeight: '16px', letterSpacing: '-0.01em' } }, config.sender),
                 React.createElement("span", { className: "rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "Locked"))),
         React.createElement(EmailRecipientPicker, { label: "To", required: true, value: form.to, onChange: (value) => onChange({ to: value }), options: toOptions, placeholder: "Auto email store" }),
-        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: ensureLockedEmailList(value) }), options: ccOptions, multiple: true, lockedEmails: lockedCcEmails, placeholder: "Cari semua email master data" }),
+        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: value }), options: ccOptions, multiple: true, lockedEmails: lockedCcEmails, placeholder: "Cari semua email master data" }),
         React.createElement("div", { className: "border-b border-slate-100 px-4 py-3 text-center" },
             React.createElement("label", { className: "mb-2 block text-center text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" }, "Subject"),
             React.createElement(AutoResizeTextarea, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), minRows: 1, className: "mx-auto w-full overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-semibold leading-6 text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", style: { fontSize: '16px' }, placeholder: "Subject email" })),
