@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp259-pdf-slide1-store-fields';
+const APP_VERSION = 'revamp258-final-focused-fixes';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
