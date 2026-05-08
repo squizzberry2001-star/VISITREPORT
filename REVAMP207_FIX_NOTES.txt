@@ -1,6 +1,0 @@
-Revamp207 fixes:
-- PDF generation: strict jsPDF AutoTable loading + attachment bridge to avoid doc.autoTable is not a function.
-- Preview page: replaces heavy canvas/pinch PDF preview with a simple lightweight modal/iframe.
-- Email: auto To now falls back to uploaded/master store detail by store name/code.
-- Home backup/restore: scoped to logged-in NIK and transfers visit history only.
-- Home fast transfer: Upload Sync and Tarik Sync use Convex backup per NIK.
