@@ -1,21 +1,25 @@
-const APP_VERSION = 'revamp255-general-info-hide-fields';
+const APP_VERSION = 'revamp258-plus-pdf-slide1-store-fields';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
   './src/app.js',
-  './src/pdf-generator.js',
-  './src/pdf-template-assets.js',
   './data.js',
   './store-master-data.js',
-  './ca-assignment-export.js',
-  './jszip.min.js',
   './cloudflare-config.js',
+  './convex-config.js',
   './netlify-config.js',
   './email-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/maskable-icon-512.png',
+  './icons/apple-touch-icon.png',
+  './icons/favicon-128.png',
+  './icons/favicon-64.png',
+  './icons/favicon-48.png',
+  './icons/favicon-32.png',
+  './icons/favicon.ico',
   './icons/welcome-handshake-bg.jpg'
 ];
 const CORE_ASSETS = [

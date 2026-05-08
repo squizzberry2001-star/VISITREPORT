@@ -1,6 +1,4 @@
 {
-  "version": "revamp255-general-info-hide-fields",
-  "build": "revamp255-general-info-hide-fields",
-  "updatedAt": "2026-05-08T00:00:00+07:00",
-  "note": "General Information PDF table hides Kode Store, Area Manager, Regional Manager, and Email Store while preserving evidence portrait output."
+  "version": "258-plus-pdf-slide1",
+  "label": "Revamp 258 Plus - PDF Slide 1 Store Fields"
 }

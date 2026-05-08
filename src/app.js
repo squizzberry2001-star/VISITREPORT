@@ -23,68 +23,8 @@ const UPDATE_NOTICE_CONFIG_KEY = 'rbv_update_notice_config_v1';
 const APP_CONFIG_KEYS = {
     welcome: 'welcome_animation',
     updateNotice: 'home_update_notice',
-    emailTemplate: 'email_report_template',
-    webSync: 'web_update_signal'
+    emailTemplate: 'email_report_template'
 };
-const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
-const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
-const MASTER_STORE_TEMPLATE_HEADERS = [
-    'siteCode', 'siteCode4', 'siteDescr', 'type', 'city', 'address',
-    'emailStore', 'storeHead', 'areaManager', 'areaManagerEmail',
-    'regionalManager', 'regionalManagerEmail', 'operationalStatus',
-    'latitude', 'longitude', 'notes'
-];
-
-const BESTIE_LOGIN_KEY = 'rbv_bestie_login_v1';
-const RBV_WEB_SYNC_SIGNAL_KEY = 'rbv_web_sync_signal_v202';
-const BESTIE_LOGIN_DATA = [
-    { nik: '210822947', name: 'Aan Bagus Permana' },
-    { nik: '230723742', name: 'Anggi Novita' },
-    { nik: '210923045', name: 'Aulia Fauziah' },
-    { nik: '210823002', name: 'Bagus Pradika' },
-    { nik: '210923054', name: 'Cindy Silvia Sahyu' },
-    { nik: '210822948', name: 'Edi Sukarno' },
-    { nik: '230623709', name: 'Fajar Saputra' },
-    { nik: '230523581', name: 'Fendi Setiawan' },
-    { nik: '210923070', name: 'Fiqri Amatul Firdaus' },
-    { nik: '211123186', name: 'Karlina Endah Puji Astuti' },
-    { nik: '200622511', name: 'Malik Ibrahim' },
-    { nik: '230723758', name: 'Muhammad Fikri' },
-    { nik: '201222610', name: 'Novilya Dwi Rahman' },
-    { nik: '210722912', name: 'Rani Ismawati' },
-    { nik: '210822981', name: 'Rully Alfandi' },
-    { nik: '220623417', name: 'Seftiana Putri Rahmawati' },
-    { nik: '230523599', name: 'Tia Fitri' },
-    { nik: '230823803', name: 'Yuyun Yuliyanti' }
-];
-function normalizeNik(value) {
-    return String(value || '').replace(/\D/g, '').slice(0, 12);
-}
-function findBestieByNik(value) {
-    const nik = normalizeNik(value);
-    return BESTIE_LOGIN_DATA.find((item) => item.nik === nik) || null;
-}
-function readBestieLogin() {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(BESTIE_LOGIN_KEY) || '{}');
-        const nik = normalizeNik(parsed.nik);
-        const found = findBestieByNik(nik);
-        return found ? { nik: found.nik, name: found.name, loggedAt: parsed.loggedAt || 0 } : { nik: '', name: '' };
-    }
-    catch (error) {
-        return { nik: '', name: '' };
-    }
-}
-function saveBestieLogin(payload) {
-    const found = findBestieByNik(payload && payload.nik);
-    if (!found)
-        return null;
-    const next = { nik: found.nik, name: found.name, loggedAt: Date.now() };
-    localStorage.setItem(BESTIE_LOGIN_KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent('rbv-bestie-login-change', { detail: next }));
-    return next;
-}
-
 const DEFAULT_UPDATE_NOTICE_CONFIG = {
     enabled: true,
     title: 'Info Update Website',
@@ -146,420 +86,13 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp258-final-focused-fixes';
+const APP_BUILD_VERSION = 'revamp258-plus-pdf-slide1-store-fields';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
 function cx(...classes) {
     return classes.filter(Boolean).join(' ');
 }
-
-// =============================================================
-// Revamp 204: Lite Mobile Performance Mode
-// =============================================================
-const RBV_LITE_MODE = (() => {
-    try {
-        const params = new URLSearchParams(window.location.search || '');
-        const forced = params.get('lite');
-        if (forced === '0' || forced === 'false') return false;
-        if (forced === '1' || forced === 'true') return true;
-        const memory = Number(navigator.deviceMemory || 0);
-        const cores = Number(navigator.hardwareConcurrency || 0);
-        const smallScreen = Math.min(window.innerWidth || 9999, window.innerHeight || 9999) <= 430;
-        const oldIos = /OS (1[0-4])_/i.test(navigator.userAgent || '');
-        const oldAndroid = /Android\s([5-8])\b/i.test(navigator.userAgent || '');
-        return oldIos || oldAndroid || (memory && memory <= 2) || (cores && cores <= 4 && smallScreen);
-    } catch (error) {
-        return false;
-    }
-})();
-window.RBV_LITE_MODE = RBV_LITE_MODE;
-// =============================================================
-// Revamp 220: Ultra Lite Camera Mode for low-memory Android devices
-// =============================================================
-const RBV_ULTRA_LITE_CAMERA_MODE = (() => {
-    try {
-        const params = new URLSearchParams(window.location.search || '');
-        const forced = params.get('ultracam') || params.get('cameraLite') || params.get('camera_lite');
-        if (forced === '0' || forced === 'false') return false;
-        if (forced === '1' || forced === 'true') return true;
-        const ua = String(navigator.userAgent || '').toLowerCase();
-        const memory = Number(navigator.deviceMemory || 0);
-        const cores = Number(navigator.hardwareConcurrency || 0);
-        const smallScreen = Math.min(window.innerWidth || 9999, window.innerHeight || 9999) <= 480;
-        const lowMemoryBrand = /infinix|tecno|itel|redmi|m200|realme|oppo|vivo|android go/i.test(ua);
-        return RBV_LITE_MODE || (smallScreen && lowMemoryBrand) || (memory && memory <= 3) || (smallScreen && cores && cores <= 4);
-    } catch (error) {
-        return RBV_LITE_MODE;
-    }
-})();
-window.RBV_ULTRA_LITE_CAMERA_MODE = RBV_ULTRA_LITE_CAMERA_MODE;
-window.RBV_ACTIVE_MEDIA_STREAMS = window.RBV_ACTIVE_MEDIA_STREAMS || new Set();
-function rbvRememberMediaStream(stream) {
-    try {
-        if (stream && window.RBV_ACTIVE_MEDIA_STREAMS) window.RBV_ACTIVE_MEDIA_STREAMS.add(stream);
-    } catch (error) {}
-    return stream;
-}
-function rbvReleaseCameraResources() {
-    try {
-        if (window.RBV_ACTIVE_MEDIA_STREAMS) {
-            Array.from(window.RBV_ACTIVE_MEDIA_STREAMS).forEach((stream) => {
-                try { stream.getTracks?.().forEach((track) => track.stop()); } catch (error) {}
-                try { window.RBV_ACTIVE_MEDIA_STREAMS.delete(stream); } catch (error) {}
-            });
-        }
-        document.querySelectorAll('video').forEach((video) => {
-            try {
-                const stream = video.srcObject;
-                if (stream?.getTracks) stream.getTracks().forEach((track) => track.stop());
-                video.pause?.();
-                video.srcObject = null;
-                video.removeAttribute('src');
-                video.load?.();
-            } catch (error) {}
-        });
-    } catch (error) {}
-}
-function rbvPrepareCameraCapture() {
-    if (!RBV_ULTRA_LITE_CAMERA_MODE) return;
-    try {
-        document.documentElement.classList.add('rbv-camera-capture-active');
-        document.body?.classList.add('rbv-camera-capture-active');
-        rbvReleaseCameraResources();
-    } catch (error) {}
-}
-function rbvFinishCameraCapture() {
-    if (!RBV_ULTRA_LITE_CAMERA_MODE) return;
-    window.setTimeout(() => {
-        try {
-            document.documentElement.classList.remove('rbv-camera-capture-active');
-            document.body?.classList.remove('rbv-camera-capture-active');
-            rbvReleaseCameraResources();
-        } catch (error) {}
-    }, 80);
-}
-try {
-    document.documentElement.classList.toggle('rbv-lite-mode', RBV_LITE_MODE);
-    document.documentElement.classList.toggle('rbv-ultra-lite-camera', RBV_ULTRA_LITE_CAMERA_MODE);
-    document.documentElement.classList.add('rbv-lazy-libs');
-} catch (error) {}
-const RBV_LIBS = {
-    xlsx: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-    qrcode: 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
-    jsqr: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
-    jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-    autotable: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js',
-    pdfjs: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-    jszip: 'jszip.min.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
-    pdfAssets: 'src/pdf-template-assets.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
-    pdfGenerator: 'pdf-generator.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
-    caExport: 'ca-assignment-export.js?v=' + encodeURIComponent(APP_BUILD_VERSION),
-    heic2any: 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js'
-};
-const rbvScriptPromises = new Map();
-function loadScriptOnce(src, globalCheck) {
-    if (typeof globalCheck === 'function') {
-        try { if (globalCheck()) return Promise.resolve(true); } catch (error) {}
-    }
-    if (rbvScriptPromises.has(src)) return rbvScriptPromises.get(src);
-    const promise = new Promise((resolve, reject) => {
-        const existing = Array.from(document.scripts || []).find((script) => script.src && script.src.includes(src.split('?')[0]));
-        if (existing) {
-            existing.addEventListener('load', () => resolve(true), { once: true });
-            existing.addEventListener('error', () => reject(new Error('Gagal memuat library: ' + src)), { once: true });
-            if (typeof globalCheck === 'function') {
-                setTimeout(() => { try { if (globalCheck()) resolve(true); } catch (error) {} }, 30);
-            }
-            return;
-        }
-        const script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error('Gagal memuat library: ' + src));
-        document.head.appendChild(script);
-    });
-    rbvScriptPromises.set(src, promise);
-    return promise;
-}
-async function ensureXlsxReady() {
-    await loadScriptOnce(RBV_LIBS.xlsx, () => !!window.XLSX?.read);
-    return window.XLSX;
-}
-async function ensureQrGeneratorReady() {
-    await loadScriptOnce(RBV_LIBS.qrcode, () => !!window.QRCode?.toDataURL);
-    return window.QRCode;
-}
-async function ensureQrScannerReady() {
-    await loadScriptOnce(RBV_LIBS.jsqr, () => !!window.jsQR);
-    return window.jsQR;
-}
-function getJsPdfConstructor() {
-    return window.jspdf?.jsPDF || window.jsPDF || null;
-}
-function ensureJsPdfAutoTableAttached() {
-    const jsPDF = getJsPdfConstructor();
-    if (!jsPDF)
-        return false;
-    if (typeof jsPDF.API?.autoTable === 'function') {
-        try {
-            const testDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            return typeof testDoc.autoTable === 'function';
-        }
-        catch (error) {
-            return true;
-        }
-    }
-    const plugin = window.jspdfAutoTable || window.jsPDF?.autoTable || window.autoTable;
-    const autoTableFn = typeof plugin === 'function'
-        ? plugin
-        : typeof plugin?.default === 'function'
-            ? plugin.default
-            : typeof plugin?.autoTable === 'function'
-                ? plugin.autoTable
-                : null;
-    try {
-        if (typeof plugin?.applyPlugin === 'function')
-            plugin.applyPlugin(jsPDF);
-        if (typeof window.jspdfAutoTable?.applyPlugin === 'function')
-            window.jspdfAutoTable.applyPlugin(jsPDF);
-    }
-    catch (error) {
-        console.warn('AutoTable applyPlugin gagal:', error);
-    }
-    if (typeof jsPDF.API?.autoTable === 'function')
-        return true;
-    if (autoTableFn && jsPDF.API) {
-        jsPDF.API.autoTable = function autoTableBridge(options) {
-            return autoTableFn(this, options || {});
-        };
-        return true;
-    }
-    return false;
-}
-async function ensurePdfEngineReady() {
-    await loadScriptOnce(RBV_LIBS.jspdf, () => !!getJsPdfConstructor());
-    await loadScriptOnce(RBV_LIBS.autotable, () => ensureJsPdfAutoTableAttached());
-    if (!ensureJsPdfAutoTableAttached())
-        throw new Error('Plugin tabel PDF belum siap. Coba reload halaman lalu buka Preview lagi.');
-    await loadScriptOnce(RBV_LIBS.pdfAssets, () => !!window.ReportVisitAssets || !!window.PDF_TEMPLATE_ASSETS || !!window.RBV_PDF_TEMPLATE_ASSETS);
-    await loadScriptOnce(RBV_LIBS.pdfGenerator, () => !!window.ReportVisitPDF?.createBlob);
-    if (!ensureJsPdfAutoTableAttached())
-        throw new Error('Plugin tabel PDF belum aktif setelah mesin PDF dimuat.');
-    return window.ReportVisitPDF;
-}
-async function ensurePdfPreviewReady() {
-    await loadScriptOnce(RBV_LIBS.pdfjs, () => !!window.pdfjsLib?.getDocument);
-    return window.pdfjsLib;
-}
-async function ensureCaExportReady() {
-    await loadScriptOnce(RBV_LIBS.jszip, () => typeof window.JSZip !== 'undefined');
-    await loadScriptOnce(RBV_LIBS.caExport, () => !!window.__caAssignmentExport?.buildWorkbook);
-    return window.__caAssignmentExport;
-}
-
-const RBV_PHOTO_EXTENSION_RE = /\.(jpe?g|jfif|pjpeg|png|webp|gif|heic|heif|avif|bmp|dib|tiff?|svg|ico)$/i;
-const RBV_PHOTO_MIME_BY_EXT = {
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', jfif: 'image/jpeg', pjpeg: 'image/jpeg',
-    png: 'image/png', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic', heif: 'image/heif',
-    avif: 'image/avif', bmp: 'image/bmp', dib: 'image/bmp', tif: 'image/tiff', tiff: 'image/tiff',
-    svg: 'image/svg+xml', ico: 'image/x-icon'
-};
-function rbvPhotoExtension(file) {
-    const name = String(file?.name || '').toLowerCase();
-    const match = name.match(/\.([a-z0-9]+)$/i);
-    return match ? match[1].toLowerCase() : '';
-}
-function rbvGuessPhotoMime(file) {
-    const type = String(file?.type || '').toLowerCase().trim();
-    if (/^image\//i.test(type)) return type;
-    const ext = rbvPhotoExtension(file);
-    return RBV_PHOTO_MIME_BY_EXT[ext] || 'image/jpeg';
-}
-function rbvIsProbablyPhotoFile(file) {
-    if (!file) return false;
-    const type = String(file.type || '').toLowerCase().trim();
-    const name = String(file.name || '').toLowerCase().trim();
-    if (/^image\//i.test(type)) return true;
-    if (RBV_PHOTO_EXTENSION_RE.test(name)) return true;
-    // Be permissive for mobile camera/gallery files: some Android browsers return empty MIME/name.
-    // The input accept already limits the picker to images, so unknown binary is allowed and normalized.
-    if (!type || type === 'application/octet-stream') return true;
-    return false;
-}
-function rbvIsHeicLike(file) {
-    const type = String(file?.type || '').toLowerCase();
-    const ext = rbvPhotoExtension(file);
-    return /heic|heif/.test(type) || ext === 'heic' || ext === 'heif';
-}
-async function ensureHeic2AnyReady() {
-    if (typeof window.heic2any === 'function') return window.heic2any;
-    await loadScriptOnce(RBV_LIBS.heic2any, () => typeof window.heic2any === 'function');
-    if (typeof window.heic2any !== 'function') throw new Error('Converter HEIC belum siap. Pastikan koneksi internet aktif lalu coba lagi.');
-    return window.heic2any;
-}
-async function rbvConvertHeicToJpegDataUrl(file) {
-    const heic2any = await ensureHeic2AnyReady();
-    const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: RBV_ULTRA_LITE_CAMERA_MODE ? 0.62 : 0.76 });
-    const blob = Array.isArray(converted) ? converted[0] : converted;
-    if (!blob) throw new Error('HEIC gagal dikonversi ke JPG.');
-    return fileToDataUrl(blob);
-}
-function rbvNormalizePhotoDataUrl(dataUrl, file) {
-    let value = String(dataUrl || '');
-    if (!value) return '';
-    if (/^data:image\//i.test(value)) return value;
-    const mime = rbvGuessPhotoMime(file);
-    if (/^data:[^;]+;/i.test(value)) return value.replace(/^data:[^;]+;/i, `data:${mime};`);
-    if (/^data:;base64,/i.test(value)) return value.replace(/^data:;base64,/i, `data:${mime};base64,`);
-    return value;
-}
-async function compressImageFileForLite(file, options = {}) {
-    const maxSide = Number(options.maxSide || (RBV_ULTRA_LITE_CAMERA_MODE ? 900 : (RBV_LITE_MODE ? 1180 : 1500)));
-    const quality = Number(options.quality || (RBV_ULTRA_LITE_CAMERA_MODE ? 0.58 : (RBV_LITE_MODE ? 0.68 : 0.78)));
-    if (!file) throw new Error('File foto tidak ditemukan.');
-    if (Number(file.size || 0) <= 0) throw new Error('File foto kosong. Coba ambil/pilih ulang foto.');
-    const type = String(file.type || '').toLowerCase();
-    const name = String(file.name || '').toLowerCase();
-    if (!rbvIsProbablyPhotoFile(file)) throw new Error('File yang dipilih bukan gambar.');
-
-    let canvas = null;
-    let source = null;
-    let objectUrl = '';
-    try {
-        try {
-            if (typeof window.createImageBitmap === 'function') {
-                source = await window.createImageBitmap(file, { imageOrientation: 'from-image' });
-            }
-        } catch (bitmapError) {
-            source = null;
-        }
-        if (!source) {
-            objectUrl = URL.createObjectURL(file);
-            source = await loadImageElement(objectUrl);
-        }
-        const sourceWidth = source.naturalWidth || source.width || 1;
-        const sourceHeight = source.naturalHeight || source.height || 1;
-        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-        canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-        const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
-        if (!ctx) throw new Error('Canvas browser tidak siap.');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = RBV_ULTRA_LITE_CAMERA_MODE ? 'low' : 'medium';
-        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-        const blob = await new Promise((resolve) => {
-            try {
-                canvas.toBlob(resolve, 'image/jpeg', Math.max(0.46, Math.min(0.84, quality)));
-            } catch (error) {
-                resolve(null);
-            }
-        });
-        if (blob) return fileToDataUrl(blob);
-        return canvas.toDataURL('image/jpeg', Math.max(0.46, Math.min(0.84, quality)));
-    } catch (error) {
-        console.warn('Kompresi/decode foto gagal, mencoba baca file asli:', error);
-        if (rbvIsHeicLike(file)) {
-            try { return await rbvConvertHeicToJpegDataUrl(file); } catch (heicError) { console.warn('Konversi HEIC gagal, simpan file asli:', heicError); }
-        }
-        return rbvNormalizePhotoDataUrl(await fileToDataUrl(file), file);
-    } finally {
-        try { if (objectUrl) URL.revokeObjectURL(objectUrl); } catch (error) {}
-        try { if (source && typeof source.close === 'function') source.close(); } catch (error) {}
-        try {
-            if (source && source.tagName === 'IMG') source.src = '';
-            if (canvas) { canvas.width = 1; canvas.height = 1; }
-        } catch (error) {}
-    }
-}
-function rbvPhotoReadErrorMessage(error) {
-    const message = cleanText(error?.message || error, 'Foto gagal dibaca.');
-    if (/quota|storage|disk|space|full|exceeded/i.test(message)) {
-        return 'Storage browser penuh. Hapus beberapa history/foto lama lalu coba lagi.';
-    }
-    if (/heic|heif|converter/i.test(message)) return message;
-    if (/kosong|bukan gambar|tidak ditemukan/i.test(message)) return message;
-    if (/security|permission|denied|notallowed/i.test(message)) return 'Browser menolak akses file/foto. Tutup web lalu buka ulang, kemudian pilih foto lagi.';
-    return 'Foto gagal dibaca: ' + message;
-}
-async function rbvReadEvidenceFiles(files, options = {}) {
-    const list = Array.from(files || []).filter(Boolean);
-    const result = [];
-    const errors = [];
-    const maxFiles = Math.max(1, Number(options.maxFiles || 40));
-    const selected = list.slice(0, maxFiles);
-    async function readAnyPhotoFile(file) {
-        if (!file) throw new Error('File foto tidak ditemukan.');
-        if (Number(file.size || 0) <= 0) throw new Error('File foto kosong. Coba ambil/pilih ulang foto.');
-        const isPhotoLike = rbvIsProbablyPhotoFile(file);
-        let dataUrl = '';
-        if (rbvIsHeicLike(file)) {
-            try { dataUrl = await rbvConvertHeicToJpegDataUrl(file); } catch (error) { console.warn('Konversi HEIC gagal, lanjut raw reader:', error); }
-        }
-        if (!dataUrl) {
-            try { dataUrl = rbvNormalizePhotoDataUrl(await fileToDataUrl(file), file); } catch (error) { console.warn('Raw FileReader gagal:', error); }
-        }
-        // Jika raw data terlalu besar, coba kompres; kalau kompres gagal tetap pakai raw agar upload tidak gagal.
-        const largeRaw = dataUrl && dataUrl.length > (RBV_ULTRA_LITE_CAMERA_MODE ? 900000 : 1800000);
-        if ((largeRaw || !dataUrl) && isPhotoLike && !/^data:image\/(svg|gif)/i.test(dataUrl || '')) {
-            try {
-                const compressed = await compressImageFileForLite(file, options);
-                if (compressed) dataUrl = rbvNormalizePhotoDataUrl(compressed, file);
-            } catch (error) {
-                console.warn('Kompresi fallback gagal, pakai raw/object URL:', error);
-            }
-        }
-        if (dataUrl) return { image: rbvNormalizePhotoDataUrl(dataUrl, file), objectUrl: '' };
-        // Last-resort untuk browser yang menolak FileReader tapi masih bisa preview blob dari picker.
-        try {
-            const objectUrl = URL.createObjectURL(file);
-            if (objectUrl) return { image: objectUrl, objectUrl };
-        } catch (error) {}
-        throw new Error('Browser tidak mengirim data foto. Coba pilih ulang dari Galeri, bukan dari Recent/Cloud.');
-    }
-    for (const file of selected) {
-        try {
-            const { image, objectUrl } = await readAnyPhotoFile(file);
-            result.push({
-                ...blankPhoto(),
-                image,
-                objectUrl: objectUrl || '',
-                cropAspect: ratioToAspectString(PDF_PHOTO_CROP_RATIO),
-                uploadedAt: nowIso(),
-                sourceName: file.name || '',
-                sourceType: rbvGuessPhotoMime(file),
-                sourceSize: Number(file.size || 0)
-            });
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        } catch (error) {
-            console.warn('Foto evidence gagal diproses:', error, file);
-            errors.push(error);
-        }
-    }
-    if (list.length > selected.length) {
-        errors.push(new Error(`${list.length - selected.length} foto belum dimasukkan karena batas sekali upload ${maxFiles} foto.`));
-    }
-    return { result, errors };
-}
-function rbvIdle(callback, timeout = 600) {
-    if (window.requestIdleCallback) return window.requestIdleCallback(callback, { timeout });
-    return window.setTimeout(callback, Math.min(timeout, 250));
-}
-
-function nowIso() {
-    try {
-        return new Date().toISOString();
-    }
-    catch (error) {
-        return String(Date.now());
-    }
-}
-
 function cleanText(value, fallback = '') {
     const raw = value === undefined || value === null ? '' : String(value).trim();
     return raw || fallback;
@@ -779,148 +312,7 @@ function findApprovedManualStore(storeName) {
         return null;
     return readApprovedManualStores().find((item) => normalize(item.storeName || item.siteDescr) === key || normalize(item.siteCode || item.siteCode4) === key) || null;
 }
-function normalizeMasterStoreCode(value) {
-    const text = cleanText(value);
-    if (!text)
-        return '';
-    const raw = text.replace(/\.0$/, '');
-    return /^\d+$/.test(raw) ? raw.padStart(Math.min(Math.max(raw.length, 4), 8), '0') : raw;
-}
-function rbvNormalizeMasterHeaderKey(value) {
-    return normalize(String(value || ''))
-        .replace(/\s+/g, '')
-        .replace(/[^a-z0-9]/g, '');
-}
-function pickMasterStoreValue(row, keys, fallback = '') {
-    const source = row || {};
-    for (const key of keys) {
-        if (source[key] !== undefined && source[key] !== null && String(source[key]).trim() !== '')
-            return source[key];
-    }
-    const normalizedKeys = new Set(keys.map(rbvNormalizeMasterHeaderKey));
-    for (const [rawKey, value] of Object.entries(source)) {
-        if (value === undefined || value === null || String(value).trim() === '') continue;
-        if (normalizedKeys.has(rbvNormalizeMasterHeaderKey(rawKey))) return value;
-    }
-    return fallback;
-}
-function normalizeMasterStoreRow(row, index = 0) {
-    const source = row && typeof row === 'object' ? row : {};
-    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Site', 'SITE', 'Kode Toko', 'Kode Store', 'Store Code', 'kodeToko', 'kodeStore', 'storeCode', 'store_code', 'site']));
-    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'Site', 'SITE', 'code', 'kode', 'kodeStore', 'storeCode']));
-    const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'Site Description', 'SITE_DESCR', 'Nama Toko', 'Nama Store', 'Store Name', 'namaToko', 'namaStore', 'storeName', 'store_name', 'name']));
-    const status = cleanText(pickMasterStoreValue(source, ['operationalStatus', 'Operational Status', 'status', 'Status'], 'active')).toLowerCase();
-    const typeStore = cleanText(pickMasterStoreValue(source, ['type', 'Type', 'typeStore', 'Type Store', 'TYPE STORE', 'Jenis', 'Jenis Store', 'jenis', 'formatStore', 'Format Store']));
-    const emailStore = cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'EMAIL STORE', 'Email Toko', 'Email', 'EMAIL', 'storeEmail', 'Store Email', 'email_store', 'mailStore', 'Mail Store'])).toLowerCase();
-    return {
-        id: cleanText(source.id || source._id || siteCode4 || siteCode || `master-${index}`),
-        siteCode,
-        siteCode4,
-        siteDescr,
-        type: typeStore,
-        typeStore,
-        city: cleanText(pickMasterStoreValue(source, ['city', 'City', 'Kota', 'kota'])),
-        address: cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'Alamat Store', 'alamat', 'alamatStore'])),
-        emailStore,
-        storeHead: cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'STORE HEAD', 'Kepala Toko', 'kepalaToko', 'headStore'])),
-        areaManager: cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'AREA MANAGER', 'Nama Area Manager', 'am', 'AM'])),
-        areaManagerEmail: cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'Email Area Manager', 'amEmail', 'AM Email'])).toLowerCase(),
-        regionalManager: cleanText(pickMasterStoreValue(source, ['regionalManager', 'Regional Manager', 'REGIONAL MANAGER', 'Nama Regional Manager', 'rm', 'RM'])),
-        regionalManagerEmail: cleanText(pickMasterStoreValue(source, ['regionalManagerEmail', 'Regional Manager Email', 'Email Regional Manager', 'rmEmail', 'RM Email'])).toLowerCase(),
-        operationalStatus: ['inactive', 'temporary_closed'].includes(status) ? status : 'active',
-        latitude: cleanText(pickMasterStoreValue(source, ['latitude', 'lat'])),
-        longitude: cleanText(pickMasterStoreValue(source, ['longitude', 'lng', 'lon'])),
-        notes: cleanText(pickMasterStoreValue(source, ['notes', 'note', 'Catatan', 'catatan'])),
-        updatedAt: cleanText(source.updatedAt || source.updated_at || new Date().toISOString())
-    };
-}
-function normalizeMasterStoreRows(rows) {
-    const input = Array.isArray(rows) ? rows : [];
-    return uniqueBy(input.map((row, index) => normalizeMasterStoreRow(row, index)).filter((row) => row.siteDescr || row.siteCode4 || row.siteCode), (row) => normalize(row.siteCode4 || row.siteCode || row.siteDescr));
-}
-function readLocalMasterStores() {
-    const local = normalizeMasterStoreRows(readJsonArray(MASTER_STORE_LOCAL_KEY));
-    return local.length ? local : normalizeMasterStoreRows(MASTER_STORES);
-}
-function saveLocalMasterStores(rows) {
-    const normalized = normalizeMasterStoreRows(rows);
-    localStorage.setItem(MASTER_STORE_LOCAL_KEY, JSON.stringify(normalized));
-    window.dispatchEvent(new CustomEvent('rbv-master-store-change', { detail: normalized }));
-    return normalized;
-}
-function getEffectiveMasterStores() {
-    return readLocalMasterStores();
-}
-async function downloadMasterStoreTemplateExcel() {
-    const sampleRows = [
-        ['1', '0001', 'CIBUBUR', 'FamiSuper', 'Depok', 'Jl. Alternatif Cibubur, Depok', 'store.fmcibubur@familymartindonesia.com', 'Nama Store Head', 'Nama Area Manager', 'area.manager@email.com', 'Nama Regional Manager', 'regional.manager@email.com', 'active', '', '', 'Contoh baris, boleh dihapus'],
-        ['2', '0002', 'BULUNGAN', 'CVS', 'Jakarta Selatan', 'Jl. Raya Bulungan No. 18', 'store.bulungan@familymartindonesia.com', '', '', '', '', '', 'active', '', '', '']
-    ];
-    try { await ensureXlsxReady(); } catch (error) { console.warn('XLSX lazy-load gagal:', error); }
-    if (window.XLSX?.utils?.book_new) {
-        const workbook = window.XLSX.utils.book_new();
-        const sheet = window.XLSX.utils.aoa_to_sheet([MASTER_STORE_TEMPLATE_HEADERS, ...sampleRows]);
-        sheet['!cols'] = MASTER_STORE_TEMPLATE_HEADERS.map((header) => ({ wch: ['address', 'emailStore', 'areaManagerEmail', 'regionalManagerEmail', 'notes'].includes(header) ? 34 : 18 }));
-        window.XLSX.utils.book_append_sheet(workbook, sheet, 'Master Data Toko');
-        window.XLSX.writeFile(workbook, 'master-data-detail-toko-template.xlsx');
-        return;
-    }
-    const link = document.createElement('a');
-    link.href = MASTER_STORE_TEMPLATE_FILE + '?v=' + encodeURIComponent(APP_BUILD_VERSION);
-    link.download = 'master-data-detail-toko-template.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-}
-async function parseMasterStoreExcelFile(file) {
-    await ensureXlsxReady();
-    return new Promise((resolve, reject) => {
-        if (!window.XLSX?.read) {
-            reject(new Error('Library Excel belum termuat. Reload halaman lalu coba lagi.'));
-            return;
-        }
-        const reader = new FileReader();
-        reader.onerror = () => reject(reader.error || new Error('File gagal dibaca.'));
-        reader.onload = () => {
-            try {
-                const workbook = window.XLSX.read(new Uint8Array(reader.result), { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const sheet = workbook.Sheets[sheetName];
-                const matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
-                const normalizeHeader = (value) => normalize(String(value || '')).replace(/\s+/g, '');
-                const headerIndex = matrix.findIndex((row) => {
-                    const keys = (row || []).map(normalizeHeader);
-                    const hasCode = keys.includes('site') || keys.includes('sitecode') || keys.includes('sitecode4') || keys.includes('kodetoko') || keys.includes('kodestore') || keys.includes('storecode');
-                    const hasName = keys.includes('sitedescr') || keys.includes('sitedescription') || keys.includes('namatoko') || keys.includes('namastore') || keys.includes('storename');
-                    const hasUsefulDetail = keys.includes('typestore') || keys.includes('emailstore') || keys.includes('emailtoko') || keys.includes('storehead') || keys.includes('areamanager') || keys.includes('regionalmanager');
-                    return hasCode && (hasName || hasUsefulDetail);
-                });
-                let rows;
-                if (headerIndex >= 0) {
-                    const headers = (matrix[headerIndex] || []).map((cell) => cleanText(cell));
-                    rows = matrix.slice(headerIndex + 1).map((line) => {
-                        const object = {};
-                        headers.forEach((header, index) => {
-                            if (header)
-                                object[header] = line[index];
-                        });
-                        return object;
-                    });
-                }
-                else {
-                    rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
-                }
-                resolve(normalizeMasterStoreRows(rows));
-            }
-            catch (error) {
-                reject(error);
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-const BESTIE_NAMES = uniqueBy([...BESTIE_LOGIN_DATA.map((item) => item.name), ...BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName))].filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
+const BESTIE_NAMES = uniqueBy(BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName)).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
     return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
 }
@@ -941,7 +333,7 @@ function getStoresForBestie(bestieName) {
         master: item,
         value: cleanText(item.storeName || item.siteDescr)
     })).filter((item) => item.label);
-    const fallback = getEffectiveMasterStores().map((item) => ({
+    const fallback = MASTER_STORES.map((item) => ({
         label: cleanText(item.siteDescr),
         source: 'master',
         master: item,
@@ -966,7 +358,7 @@ function findMasterStore(storeName) {
     const key = normalize(storeName);
     if (!key)
         return null;
-    return getEffectiveMasterStores().find((item) => normalize(item.siteDescr) === key || normalize(item.siteCode) === key || normalize(item.siteCode4) === key) || null;
+    return MASTER_STORES.find((item) => normalize(item.siteDescr) === key || normalize(item.siteCode) === key || normalize(item.siteCode4) === key) || null;
 }
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
@@ -1045,15 +437,12 @@ function normalizeQscPhotos(visit) {
 }
 function createVisit(bestieName = '', storeName = '') {
     const detail = getStoreWebDetail(storeName);
-    const login = readBestieLogin();
-    const resolvedBestie = cleanText(bestieName, login.name || '');
     const now = Date.now();
     return {
         id: `visit_${now}_${Math.random().toString(36).slice(2, 8)}`,
         createdAt: now,
         updatedAt: now,
-        bestieNik: login.name && normalize(login.name) === normalize(resolvedBestie) ? login.nik : '',
-        nama: resolvedBestie,
+        nama: cleanText(bestieName),
         store: cleanText(storeName || detail.siteDescr),
         tanggal: new Date().toISOString().slice(0, 10),
         storeLeader: '',
@@ -1065,8 +454,8 @@ function createVisit(bestieName = '', storeName = '') {
         qscResultPhotos: [blankPhoto(), blankPhoto()],
         opiData: [blankObservationRow()],
         qscData: [blankObservationRow()],
-        findingEvidencePhotos: [],
-        correctiveActionPhotos: [],
+        findingEvidencePhotos: Array.from({ length: 8 }, () => blankPhoto()),
+        correctiveActionPhotos: Array.from({ length: 8 }, () => blankPhoto()),
         storeAssignmentLink: readAssignmentLinkConfig(),
         showQSCResult: true,
         showOPITable: false,
@@ -1086,42 +475,27 @@ function isEditableTarget(target) {
         return false;
     return Boolean(node.closest('input, textarea, select, [contenteditable="true"], .rich-editor-input, .form-control'));
 }
-function rbvProgressValue(value) {
-    if (typeof value === 'boolean') return value;
-    if (Array.isArray(value)) return value.some(Boolean);
-    return Boolean(cleanText(value));
-}
-function rbvProgressFromChecks(checks) {
-    const flat = (checks || []).flat().map(rbvProgressValue);
-    if (!flat.length) return 0;
-    return Math.round((flat.filter(Boolean).length / flat.length) * 100);
-}
-function visitProgress(visit, activeSection = null) {
-    if (!visit) return 0;
-    const qscPhotos = normalizeQscPhotos(visit);
-    const findingRows = visit.findingEvidencePhotos || [];
-    const correctiveRows = visit.correctiveActionPhotos || [];
-    const crewRows = Array.isArray(visit.crewList) ? visit.crewList : [];
-    const sectionChecks = {
-        setup: [visit.nama, visit.store],
-        crew: [visit.tanggal, visit.storeLeader, visit.storeLeaderLevel, visit.shiftLeader, visit.shiftLeaderLevel, crewRows.some((crew) => cleanText(crew.name) || cleanText(crew.level))],
-        qsc: [qscPhotos[0]?.image, qscPhotos[1]?.image],
-        observation: [visit.showOPITable !== false ? (visit.opiData || []).some(isMeaningfulObservation) : true, visit.showQSCTable !== false ? (visit.qscData || []).some(isMeaningfulObservation) : true],
-        evidence: [visit.showFindingEvidence !== false ? findingRows.some((photo) => photo.image || cleanText(photo.description)) : true, visit.showCorrectiveAction !== false ? correctiveRows.some((photo) => photo.image || cleanText(photo.description)) : true]
-    };
-    if (Number.isInteger(activeSection) && SECTION_DEFS && SECTION_DEFS[activeSection]) {
-        const sectionId = SECTION_DEFS[activeSection].id;
-        return rbvProgressFromChecks(sectionChecks[sectionId] || []);
-    }
-    return rbvProgressFromChecks(Object.values(sectionChecks));
+function visitProgress(visit) {
+    if (!visit)
+        return 0;
+    const checks = [
+        cleanText(visit.nama),
+        cleanText(visit.store),
+        cleanText(visit.tanggal),
+        cleanText(visit.storeLeader),
+        cleanText(visit.shiftLeader),
+        normalizeQscPhotos(visit).every((photo) => photo.image),
+        (visit.opiData || []).some(isMeaningfulObservation),
+        (visit.qscData || []).some(isMeaningfulObservation),
+        (visit.findingEvidencePhotos || []).some((photo) => photo.image || cleanText(photo.description)),
+        (visit.correctiveActionPhotos || []).some((photo) => photo.image || cleanText(photo.description))
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 function historyMetaFromVisit(visit) {
     const detail = getStoreWebDetail(visit?.store);
-    const login = readBestieLogin();
-    const matchedLogin = login.name && normalize(login.name) === normalize(visit?.nama);
     return {
         id: visit.id,
-        bestieNik: cleanText(visit.bestieNik || (matchedLogin ? login.nik : '')),
         bestieName: cleanText(visit.nama, '-'),
         storeName: cleanText(visit.store, '-'),
         storeCode: cleanText(detail.siteCode4 || detail.siteCode || detail.storeCode || visit.storeCode),
@@ -1134,14 +508,14 @@ function historyMetaFromVisit(visit) {
 function readHistoryMeta() {
     try {
         const parsed = JSON.parse(localStorage.getItem(HISTORY_META_KEY) || '[]');
-        return filterHistoryMetaForLogin(Array.isArray(parsed) ? parsed : []);
+        return Array.isArray(parsed) ? parsed : [];
     }
     catch (error) {
         return [];
     }
 }
 function saveHistoryMeta(items) {
-    const next = filterHistoryMetaForLogin(uniqueBy(items.filter((item) => item && item.id), (item) => item.id))
+    const next = uniqueBy(items.filter((item) => item && item.id), (item) => item.id)
         .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))
         .slice(0, 80);
     localStorage.setItem(HISTORY_META_KEY, JSON.stringify(next));
@@ -1228,172 +602,75 @@ function readBackupFileText(file) {
         reader.readAsText(file);
     });
 }
-function getBackupOwnerLogin() {
-    const login = readBestieLogin();
-    if (!login.nik || !login.name)
-        throw new Error('Login NIK dulu sebelum backup atau restore data.');
-    return login;
-}
-function visitBelongsToBestieLogin(visit, login = readBestieLogin()) {
-    if (!login?.name)
-        return true;
-    const nameKey = normalize(login.name);
-    const nikKey = normalizeNik(login.nik);
-    const visitNik = normalizeNik(visit?.bestieNik || visit?.nik || visit?.regionalBestieNik || visit?.loginNik);
-    if (nikKey && visitNik && visitNik === nikKey)
-        return true;
-    return normalize(visit?.nama || visit?.bestieName || visit?.regionalBestie || visit?.detail?.bestieName) === nameKey;
-}
-function filterVisitsForLogin(visits, login = readBestieLogin()) {
-    const safeVisits = Array.isArray(visits) ? visits.filter((item) => item && item.id) : [];
-    if (!login?.name)
-        return safeVisits;
-    return safeVisits.filter((visit) => visitBelongsToBestieLogin(visit, login));
-}
-function filterHistoryMetaForLogin(items, login = readBestieLogin()) {
-    const safeItems = Array.isArray(items) ? items.filter((item) => item && item.id) : [];
-    if (!login?.name)
-        return safeItems;
-    const nameKey = normalize(login.name);
-    const nikKey = normalizeNik(login.nik);
-    return safeItems.filter((item) => {
-        const itemNik = normalizeNik(item.bestieNik || item.nik || item.regionalBestieNik || item.loginNik);
-        if (nikKey && itemNik && itemNik === nikKey)
-            return true;
-        return normalize(item.bestieName || item.nama || item.regionalBestie) === nameKey;
-    });
-}
-function buildHistoryBackupPayload(login, visits) {
-    const filteredVisits = filterVisitsForLogin(visits, login).map((visit) => ({
-        ...visit,
-        bestieNik: login.nik,
-        nama: cleanText(visit.nama, login.name)
-    }));
-    const meta = filteredVisits.map((visit) => ({ ...historyMetaFromVisit(visit), bestieNik: login.nik }));
-    return {
-        app: 'regional-bestie-visit-report',
-        type: 'nik-history-transfer-backup',
-        version: 3,
-        ownerNik: login.nik,
-        ownerName: login.name,
-        exportedAt: new Date().toISOString(),
-        build: APP_BUILD_VERSION,
-        localStorage: {
-            [BESTIE_LOGIN_KEY]: JSON.stringify(login),
-            [HISTORY_META_KEY]: JSON.stringify(meta)
-        },
-        visits: filteredVisits
-    };
-}
-function validateBackupOwner(payload, login = getBackupOwnerLogin()) {
-    const ownerNik = normalizeNik(payload?.ownerNik || payload?.nik || payload?.loginNik);
-    const ownerName = cleanText(payload?.ownerName || payload?.bestieName || payload?.nama);
-    if (ownerNik && ownerNik !== login.nik)
-        throw new Error(`Backup ini milik NIK ${ownerNik}. Login saat ini ${login.nik}. Restore dibatalkan.`);
-    if (!ownerNik && ownerName && normalize(ownerName) !== normalize(login.name))
-        throw new Error(`Backup ini milik ${ownerName}. Login saat ini ${login.name}. Restore dibatalkan.`);
-    return true;
-}
 async function backupVisitReportData() {
-    const login = getBackupOwnerLogin();
-    const allVisits = await getAllVisitRecordsForBackup();
-    const payload = buildHistoryBackupPayload(login, allVisits);
-    if (!payload.visits.length) {
-        const ok = confirmAction(`Belum ada history milik ${login.name}. Tetap buat file backup kosong?`);
-        if (!ok)
-            return payload;
+    const localData = {};
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index) || '';
+        if (key.indexOf('rbv_') === 0)
+            localData[key] = localStorage.getItem(key);
     }
+    const visits = await getAllVisitRecordsForBackup();
+    const payload = {
+        app: 'regional-bestie-visit-report',
+        type: 'device-transfer-backup',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        localStorage: localData,
+        visits
+    };
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-    const safeName = login.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'Bestie';
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-    downloadBlob(blob, `bestie-history-${safeName}-${login.nik}-${stamp}.json`);
+    downloadBlob(blob, `bestie-visit-backup-${stamp}.json`);
     return payload;
 }
 async function restoreVisitReportDataFromFile(file) {
-    const login = getBackupOwnerLogin();
     const raw = await readBackupFileText(file);
     const payload = JSON.parse(raw);
     if (!payload || payload.app !== 'regional-bestie-visit-report') {
         throw new Error('File backup tidak sesuai aplikasi ini.');
     }
-    validateBackupOwner(payload, login);
-    const visits = filterVisitsForLogin(payload.visits, login);
-    const currentVisits = filterVisitsForLogin(await getAllVisitRecordsForBackup(), login);
-    const ok = confirmAction(`Restore history untuk ${login.name} (${login.nik})?\n\nHistory device ini: ${currentVisits.length}\nJumlah visit backup valid: ${visits.length}\n\nData akan digabung dan hanya history NIK ini yang tampil.`);
+    const visits = Array.isArray(payload.visits) ? payload.visits.filter((item) => item && item.id) : [];
+    const currentVisits = await getAllVisitRecordsForBackup();
+    const ok = confirmAction(`Restore data backup ini? Data backup akan digabung dengan history di perangkat ini, bukan mengganti/menghapus data lama.
+
+History perangkat ini: ${currentVisits.length}
+Jumlah visit backup: ${visits.length}`);
     if (!ok)
         return false;
     const mergedVisits = uniqueBy([...visits, ...currentVisits].filter((item) => item && item.id), (item) => item.id)
-        .map((visit) => ({ ...visit, bestieNik: login.nik, nama: cleanText(visit.nama, login.name), updatedAt: visit.updatedAt || Date.now() }));
+        .map((visit) => ({ ...visit, updatedAt: visit.updatedAt || Date.now() }));
     for (const visit of mergedVisits) {
         await putVisitRecord(visit);
     }
-    const visitMeta = mergedVisits.map((visit) => ({ ...historyMetaFromVisit(visit), bestieNik: login.nik }));
-    saveHistoryMeta(visitMeta);
-    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && mergedVisits[0]?.id)
-        localStorage.setItem(ACTIVE_VISIT_KEY, mergedVisits[0].id);
-    alert(`Restore selesai. ${mergedVisits.length} history milik ${login.name} siap digunakan.`);
+    if (payload.localStorage && typeof payload.localStorage === 'object') {
+        Object.entries(payload.localStorage).forEach(([key, value]) => {
+            if (key.indexOf('rbv_') !== 0)
+                return;
+            if ([HISTORY_META_KEY, ACTIVE_VISIT_KEY].includes(key))
+                return;
+            if (key === PRESENCE_LOCAL_KEY)
+                return;
+            localStorage.setItem(key, String(value ?? ''));
+        });
+    }
+    const backupMeta = (() => {
+        try {
+            const parsed = JSON.parse(String(payload.localStorage?.[HISTORY_META_KEY] || '[]'));
+            return Array.isArray(parsed) ? parsed : [];
+        }
+        catch (error) {
+            return [];
+        }
+    })();
+    const currentMeta = readHistoryMeta();
+    const visitMeta = mergedVisits.map(historyMetaFromVisit);
+    saveHistoryMeta([...backupMeta, ...currentMeta, ...visitMeta]);
+    if (!localStorage.getItem(ACTIVE_VISIT_KEY) && (visits[0]?.id || currentVisits[0]?.id))
+        localStorage.setItem(ACTIVE_VISIT_KEY, visits[0]?.id || currentVisits[0]?.id);
+    alert('Restore data selesai dan history lama tetap aman. Aplikasi akan dimuat ulang.');
     window.location.reload();
     return true;
 }
-function getDeviceBackupKeyForLogin(login = getBackupOwnerLogin()) {
-    return `${DEVICE_BACKUP_KEY}:${login.nik}`;
-}
-async function buildDeviceTransferBackupPayload() {
-    const login = getBackupOwnerLogin();
-    const visits = filterVisitsForLogin(await getAllVisitRecordsForBackup(), login);
-    return {
-        ...buildHistoryBackupPayload(login, visits),
-        type: 'convex-nik-history-transfer-backup',
-        version: 4,
-        backupKey: getDeviceBackupKeyForLogin(login),
-        deviceId: getLinkedDeviceId()
-    };
-}
-async function restoreVisitReportDataFromPayload(payload, options = {}) {
-    const login = getBackupOwnerLogin();
-    if (!payload || payload.app !== 'regional-bestie-visit-report') {
-        throw new Error('Payload backup tidak sesuai aplikasi ini.');
-    }
-    validateBackupOwner(payload, login);
-    const visits = filterVisitsForLogin(payload.visits, login);
-    const currentVisits = filterVisitsForLogin(await getAllVisitRecordsForBackup(), login);
-    const shouldAsk = options.confirm !== false;
-    if (shouldAsk) {
-        const ok = confirmAction(`Tarik history cepat dari Convex untuk ${login.name}?\n\nHistory device ini: ${currentVisits.length}\nJumlah visit backup valid: ${visits.length}\n\nHanya data NIK ${login.nik} yang akan tampil.`);
-        if (!ok)
-            return false;
-    }
-    const mergedVisits = uniqueBy([...visits, ...currentVisits].filter((item) => item && item.id), (item) => item.id)
-        .map((visit) => ({ ...visit, bestieNik: login.nik, nama: cleanText(visit.nama, login.name), updatedAt: visit.updatedAt || Date.now() }));
-    for (const visit of mergedVisits) {
-        await putVisitRecord(visit);
-    }
-    const visitMeta = mergedVisits.map((visit) => ({ ...historyMetaFromVisit(visit), bestieNik: login.nik }));
-    saveHistoryMeta(visitMeta);
-    localStorage.setItem(DEVICE_BACKUP_LAST_PULL_KEY, new Date().toISOString());
-    return { visits: mergedVisits.length, ownerNik: login.nik, ownerName: login.name };
-}
-async function pushDeviceBackupToConvex() {
-    if (!convexEnabled())
-        throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
-    const config = getConvexConfig();
-    const payload = await buildDeviceTransferBackupPayload();
-    const mutationName = config.deviceBackupSetMutation || 'deviceBackups:setLatest';
-    await runConvexMutation(mutationName, { backupKey: payload.backupKey || getDeviceBackupKeyForLogin(), deviceId: payload.deviceId, payload });
-    return payload;
-}
-async function pullDeviceBackupFromConvex() {
-    if (!convexEnabled())
-        throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
-    const config = getConvexConfig();
-    const queryName = config.deviceBackupGetQuery || 'deviceBackups:getLatest';
-    const result = await runConvexQuery(queryName, { backupKey: getDeviceBackupKeyForLogin() });
-    const payload = result?.payload || result;
-    if (!payload)
-        throw new Error('Belum ada backup cepat di Convex. Jalankan Upload Device Backup dari device lama dulu.');
-    return restoreVisitReportDataFromPayload(payload, { confirm: true });
-}
-
 function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1548,111 +825,20 @@ function Badge({ children, tone = 'default' }) {
     return React.createElement("span", { className: cx('inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1', tones[tone]) }, children);
 }
 function Field({ label, helper, children, required }) {
-    // Do not wrap form controls inside <label>. Some Android/Redmi browsers focus the
-    // container instead of the real textbox when complex rounded cards are tapped.
-    return (React.createElement("div", { className: "block rbv-field-wrap" },
-        React.createElement("div", { className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800", "aria-hidden": false },
+    return (React.createElement("label", { className: "block" },
+        React.createElement("span", { className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800" },
             label,
             required ? React.createElement("span", { className: "text-rose-600" }, "*") : null),
         children,
         helper ? React.createElement("span", { className: "mt-2 block text-xs leading-5 text-slate-500" }, helper) : null));
 }
-function rbvFocusEditableOnTap(event) {
-    const target = event.currentTarget || event.target;
-    if (!target || target.disabled || target.readOnly)
-        return;
-    if (event.pointerType && event.pointerType !== 'touch' && event.pointerType !== 'pen')
-        return;
-    if (document.activeElement !== target) {
-        try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
-    }
-    // Scroll is handled once by focusin/visualViewport to avoid Android jump loops.
+function TextInput(props) {
+    return React.createElement("input", { className: cx('form-control', props.className), ...props });
 }
-
-function rbvKeyboardInsetPx() {
-    try {
-        const viewport = window.visualViewport;
-        if (!viewport) return 0;
-        return Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
-    }
-    catch (error) { return 0; }
+function DateInput({ className = '', ...props }) {
+    return React.createElement("input", { type: "date", className: cx('form-control date-control', className), ...props });
 }
-function rbvApplyKeyboardInset() {
-    const inset = rbvKeyboardInsetPx();
-    try {
-        document.documentElement.style.setProperty('--rbv-keyboard-inset', `${inset}px`);
-        document.documentElement.classList.toggle('rbv-keyboard-visible', inset > 72);
-        document.body?.classList.toggle('rbv-keyboard-visible', inset > 72);
-    }
-    catch (error) { }
-    return inset;
-}
-let rbvLastKeyboardScrollAt = 0;
-function rbvScrollEditableIntoKeyboardSafeView(target, options = {}) {
-    if (!target || !target.getBoundingClientRect) return;
-    const run = () => {
-        try {
-            const inset = rbvApplyKeyboardInset();
-            if (inset < 72 && !options.force) return;
-            const now = Date.now();
-            if (!options.force && now - rbvLastKeyboardScrollAt < 700) return;
-            const viewport = window.visualViewport;
-            const viewportTop = viewport ? viewport.offsetTop : 0;
-            const viewportHeight = viewport ? viewport.height : window.innerHeight;
-            const rect = target.getBoundingClientRect();
-            const topLimit = viewportTop + 78;
-            const bottomLimit = viewportTop + viewportHeight - 92;
-            const tooLow = rect.bottom > bottomLimit;
-            const tooHigh = rect.top < topLimit;
-            if (tooLow || tooHigh || options.force) {
-                rbvLastKeyboardScrollAt = now;
-                const scrollRoot = document.scrollingElement || document.documentElement;
-                const currentY = scrollRoot.scrollTop || window.scrollY || 0;
-                const desiredDelta = tooLow ? (rect.bottom - bottomLimit + 18) : (rect.top - topLimit - 18);
-                const nextY = Math.max(0, Math.round(currentY + desiredDelta));
-                if (Math.abs(nextY - currentY) > 24) window.scrollTo({ top: nextY, behavior: 'auto' });
-            }
-        }
-        catch (error) { }
-    };
-    const delay = Number(options.delay || 0);
-    if (delay > 0) window.setTimeout(run, delay);
-    else window.requestAnimationFrame(run);
-}
-function rbvComposeEditableTapHandler(userHandler) {
-    return function handleEditableTap(event) {
-        try { userHandler?.(event); } catch (error) { }
-        if (event.defaultPrevented)
-            return;
-        const eventType = String(event.type || '').toLowerCase();
-        if (eventType === 'pointerdown' || eventType === 'touchstart')
-            return;
-        rbvFocusEditableOnTap(event);
-    };
-}
-function TextInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
-    return React.createElement("input", { ...props, className: cx('form-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
-}
-function rbvCallInputHandler(handler, event) {
-    try { handler?.(event); } catch (error) { }
-}
-function rbvOpenNativeDatePicker(event) {
-    const input = event.currentTarget;
-    if (!input || event.defaultPrevented || input.disabled || input.readOnly)
-        return;
-    try { input.focus({ preventScroll: true }); } catch (error) { try { input.focus(); } catch (_) { } }
-    if (typeof input.showPicker === 'function') {
-        window.setTimeout(() => {
-            try {
-                if (document.activeElement === input) input.showPicker();
-            } catch (error) { }
-        }, 0);
-    }
-}
-function DateInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
-    return React.createElement("input", { ...props, type: "date", className: cx('form-control date-control', className), onPointerDown: (event) => rbvCallInputHandler(onPointerDown, event), onPointerUp: (event) => rbvCallInputHandler(onPointerUp, event), onTouchStart: (event) => rbvCallInputHandler(onTouchStart, event), onTouchEnd: (event) => rbvCallInputHandler(onTouchEnd, event), onClick: (event) => { rbvCallInputHandler(onClick, event); rbvOpenNativeDatePicker(event); } });
-}
-function TextArea({ value, onChange, className = '', minRows = 3, onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
+function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
     const ref = useRef(null);
     function resize() {
         const el = ref.current;
@@ -1662,155 +848,8 @@ function TextArea({ value, onChange, className = '', minRows = 3, onPointerDown,
         el.style.height = Math.max(46, el.scrollHeight) + 'px';
     }
     useEffect(() => { resize(); }, [value]);
-    return (React.createElement("textarea", { ...props, ref: ref, className: cx('form-control auto-grow-textarea rbv-mobile-editable', className), value: value || '', rows: minRows, onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick), onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize }));
+    return (React.createElement("textarea", { ref: ref, className: cx('form-control auto-grow-textarea', className), value: value || '', rows: minRows, onChange: (event) => { onChange?.(event); window.requestAnimationFrame(resize); }, onInput: resize, ...props }));
 }
-
-function rbvDispatchInputAndChange(target) {
-    if (!target)
-        return;
-    try {
-        target.dispatchEvent(new Event('input', { bubbles: true, cancelable: false }));
-    }
-    catch (error) { }
-    try {
-        target.dispatchEvent(new Event('change', { bubbles: true, cancelable: false }));
-    }
-    catch (error) { }
-}
-function rbvFlushActiveEditableValue(options = {}) {
-    const active = document.activeElement;
-    const shouldBlur = options.blur !== false;
-    const editableSelector = 'input:not([type="file"]):not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="date"]):not([type="time"]):not([type="month"]):not([type="week"]), textarea, [contenteditable="true"]';
-    let target = null;
-    if (active && active.matches && active.matches(editableSelector))
-        target = active;
-    if (!target && active && active.closest)
-        target = active.closest(editableSelector);
-    if (!target)
-        return false;
-    rbvDispatchInputAndChange(target);
-    if (target.isContentEditable) {
-        try { target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: null })); } catch (error) { }
-    }
-    if (shouldBlur) {
-        try { target.blur(); } catch (error) { }
-    }
-    return true;
-}
-async function rbvWaitForReactInputFlush() {
-    rbvFlushActiveEditableValue({ blur: true });
-    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
-    rbvFlushActiveEditableValue({ blur: false });
-    await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
-    await new Promise((resolve) => window.setTimeout(resolve, 120));
-    rbvFlushActiveEditableValue({ blur: false });
-}
-function rbvWaitForPdfFrame() {
-    return new Promise((resolve) => {
-        const raf = typeof window !== 'undefined' && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null;
-        if (!raf) {
-            window.setTimeout(resolve, 60);
-            return;
-        }
-        raf(() => raf(() => resolve()));
-    });
-}
-async function rbvWaitForPdfAssets(root = document) {
-    try {
-        const images = Array.from((root || document).querySelectorAll ? (root || document).querySelectorAll('img') : []);
-        await Promise.all(images.map((image) => {
-            if (!image || (image.complete && image.naturalWidth > 0)) return Promise.resolve();
-            return new Promise((resolve) => {
-                const done = () => resolve();
-                image.addEventListener('load', done, { once: true });
-                image.addEventListener('error', done, { once: true });
-                window.setTimeout(done, 2500);
-            });
-        }));
-    }
-    catch (error) {
-        console.warn('Menunggu asset preview PDF gagal:', error);
-    }
-    try {
-        if (document.fonts && document.fonts.ready) await document.fonts.ready.catch(() => undefined);
-    }
-    catch (error) { }
-}
-function rbvDeepCloneForPdf(value) {
-    try {
-        if (typeof structuredClone === 'function') return structuredClone(value);
-    }
-    catch (error) { }
-    try { return JSON.parse(JSON.stringify(value || {})); } catch (error) { return { ...(value || {}) }; }
-}
-function rbvNormalizeObservationRowsForPdf(rows) {
-    const source = Array.isArray(rows) ? rows : [];
-    return source.map((row) => ({
-        temuan: richValue(row && (row.temuan ?? row.finding ?? row.observation ?? row.observasi ?? row.description ?? row.desc)),
-        kondisiIdeal: richValue(row && (row.kondisiIdeal ?? row.kondisi_ideal ?? row.idealCondition ?? row.standard ?? row.targetCondition)),
-        dampak: richValue(row && (row.dampak ?? row.impact ?? row.risk ?? row.risiko)),
-        penyebab: richValue(row && (row.penyebab ?? row.rootCause ?? row.root_cause ?? row.cause)),
-        tindakan: richValue(row && (row.tindakan ?? row.action ?? row.correctiveAction ?? row.corrective_action ?? row.aksi)),
-        deadline: cleanText(row && (row.deadline ?? row.dueDate ?? row.due_date ?? row.targetDate)),
-        hasil: richValue(row && (row.hasil ?? row.result ?? row.status ?? row.followUp ?? row.follow_up))
-    })).filter((row) => isMeaningfulObservation(row));
-}
-function rbvNormalizePhotoForPdf(photo) {
-    const source = photo && typeof photo === 'object' ? photo : {};
-    return {
-        ...source,
-        image: cleanText(source.image || source.dataUrl || source.dataURL || source.url || source.src || source.previewUrl || source.previewURL || source.blobUrl || source.blobURL),
-        description: richValue(source.description ?? source.desc ?? source.caption ?? source.note ?? source.notes ?? source.text ?? source.keterangan ?? source.label)
-    };
-}
-function rbvNormalizePhotoArrayForPdfSnapshot(photos) {
-    return (Array.isArray(photos) ? photos : [])
-        .map(rbvNormalizePhotoForPdf)
-        .filter((photo) => cleanText(photo.image) || cleanText(rbvPreviewPlainText ? rbvPreviewPlainText(photo.description, '') : photo.description));
-}
-function rbvEnrichVisitSnapshotForPdf(snapshot) {
-    const detail = getStoreWebDetail(snapshot?.store);
-    const manual = snapshot && snapshot.manualStoreDetail && typeof snapshot.manualStoreDetail === 'object' ? snapshot.manualStoreDetail : {};
-    const merged = { ...(detail || {}), ...(manual || {}) };
-    snapshot.manualStoreDetail = { ...(manual || {}) };
-    snapshot.storeCode = cleanText(snapshot.storeCode || merged.siteCode4 || merged.siteCode || merged.storeCode);
-    snapshot.typeStore = cleanText(snapshot.typeStore || merged.typeStore || merged.storeType || merged.type);
-    snapshot.emailStore = cleanText(snapshot.emailStore || merged.emailStore || merged.storeEmail || merged.email);
-    snapshot.areaManager = cleanText(snapshot.areaManager || merged.areaManager);
-    snapshot.regionalManager = cleanText(snapshot.regionalManager || merged.regionalManager);
-    snapshot.storeHead = cleanText(snapshot.storeHead || merged.storeHead || merged.storeLeader);
-    if (!cleanText(snapshot.storeLeader)) snapshot.storeLeader = snapshot.storeHead;
-    if (!cleanText(snapshot.storeLeaderLevel)) snapshot.storeLeaderLevel = cleanText(merged.storeLeaderLevel || merged.storeHeadLevel);
-    return snapshot;
-}
-async function rbvPrepareVisitForPdf(visit, options = {}) {
-    await rbvWaitForReactInputFlush();
-    await rbvWaitForPdfFrame();
-    await rbvWaitForReactInputFlush();
-    await rbvWaitForPdfFrame();
-    await rbvWaitForPdfAssets(document);
-    const snapshot = rbvEnrichVisitSnapshotForPdf(rbvDeepCloneForPdf(visit || {}));
-    snapshot.opiData = rbvNormalizeObservationRowsForPdf(snapshot.opiData);
-    snapshot.qscData = rbvNormalizeObservationRowsForPdf(snapshot.qscData);
-    if (!snapshot.opiData.length && Array.isArray(visit && visit.opiData)) snapshot.opiData = rbvNormalizeObservationRowsForPdf(visit.opiData);
-    if (!snapshot.qscData.length && Array.isArray(visit && visit.qscData)) snapshot.qscData = rbvNormalizeObservationRowsForPdf(visit.qscData);
-    snapshot.qscResultPhotos = rbvNormalizePhotoArrayForPdfSnapshot(snapshot.qscResultPhotos || normalizeQscPhotos(snapshot));
-    snapshot.qscResultPhoto = snapshot.qscResultPhotos[0] || blankPhoto();
-    snapshot.findingEvidencePhotos = rbvNormalizePhotoArrayForPdfSnapshot(snapshot.findingEvidencePhotos);
-    snapshot.correctiveActionPhotos = rbvNormalizePhotoArrayForPdfSnapshot(snapshot.correctiveActionPhotos);
-    snapshot.showQSCResult = true;
-    if (options.forceAllSections !== false) {
-        snapshot.showOPITable = true;
-        snapshot.showQSCTable = true;
-        snapshot.showFindingEvidence = true;
-        snapshot.showCorrectiveAction = true;
-    }
-    if (snapshot.findingEvidencePhotos.length) snapshot.showFindingEvidence = true;
-    if (snapshot.correctiveActionPhotos.length) snapshot.showCorrectiveAction = true;
-    snapshot.__pdfPreparedAt = Date.now();
-    return snapshot;
-}
-
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
     const [activeTools, setActiveTools] = useState({});
@@ -1942,8 +981,8 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         editor.focus({ preventScroll: true });
     }
     return (React.createElement("div", { className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className) },
-        React.createElement("div", { ref: editorRef, className: "rich-editor-input rbv-mobile-editable px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onFocus: () => setToolbarVisible(true), onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onClick: focusEditor, onInput: emit, onBlur: () => { emit(); window.setTimeout(() => { if (!editorRef.current?.matches(':focus')) setToolbarVisible(false); }, 120); }, onKeyUp: emit, onCompositionEnd: emit, onPaste: handlePaste, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
-        React.createElement("div", { className: cx("rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", toolbarVisible && "is-visible"), "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); setToolbarVisible(true); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
+        React.createElement("div", { ref: editorRef, className: "rich-editor-input px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
+        React.createElement("div", { className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
 }
 function SelectInput({ children, className = '', ...props }) {
     return React.createElement("select", { className: cx('form-control appearance-none', className), ...props }, children);
@@ -1959,7 +998,8 @@ function SelectField({ label, value, options, onChange, placeholder = 'Pilih', r
                 normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label }, item.label))))));
 }
 function Toggle({ checked, onChange, label, className = '' }) {
-    return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, "aria-label": label || (checked ? 'Hide section' : 'Unhide section'), onClick: () => onChange(!checked), className: cx('slide-toggle compact-toggle', checked && 'active', className) },
+    return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, onClick: () => onChange(!checked), className: cx('slide-toggle', checked && 'active', className) },
+        label ? React.createElement("span", { className: "slide-toggle-label" }, label) : null,
         React.createElement("span", { className: "slide-toggle-track", "aria-hidden": "true" },
             React.createElement("span", null))));
 }
@@ -2058,19 +1098,10 @@ function distanceBetweenTouches(touches) {
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
-const ORIGINAL_PHOTO_CROP_RATIO = { key: 'original', label: 'Default', original: true };
 const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
-const PHOTO_EDITOR_RATIOS = [
-    ORIGINAL_PHOTO_CROP_RATIO,
-    PDF_PHOTO_CROP_RATIO,
-    QSC_PHOTO_CROP_RATIO,
-    { key: 'square', label: '1:1', w: 1, h: 1 },
-    { key: 'portrait', label: '3:4', w: 3, h: 4 },
-    { key: 'landscape', label: '16:9', w: 16, h: 9 }
-];
+const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
 function ratioToAspectString(ratio) {
-    if (ratio && ratio.original) return '';
     return ratio && ratio.w && ratio.h ? `${ratio.w} / ${ratio.h}` : '';
 }
 const MARKER_SIZE_OPTIONS = [
@@ -2082,13 +1113,6 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
     const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
     const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
     const maxSide = 1400;
-    if (ratio?.original) {
-        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-        return {
-            width: Math.max(360, Math.round(sourceWidth * scale)),
-            height: Math.max(360, Math.round(sourceHeight * scale))
-        };
-    }
     if (ratio?.w && ratio?.h) {
         const targetRatio = ratio.w / ratio.h;
         let width = maxSide;
@@ -2106,10 +1130,8 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
     };
 }
 function getMarkerRadius(canvas, markerSize) {
-    const minSide = Math.max(1, Math.min(canvas?.width || 1080, canvas?.height || 1080));
-    if (Number.isFinite(Number(markerSize)))
-        return Math.max(4, Math.min(Math.floor(minSide / 2), Math.round(Number(markerSize))));
     const selected = MARKER_SIZE_OPTIONS.find((item) => item.key === markerSize) || MARKER_SIZE_OPTIONS[1];
+    const minSide = Math.min(canvas?.width || 1080, canvas?.height || 1080);
     return Math.max(24, Math.round(minSide * selected.scale));
 }
 function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', cropRatio = PDF_PHOTO_CROP_RATIO }) {
@@ -2117,22 +1139,16 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const imgRef = useRef(null);
     const dragRef = useRef(null);
     const pinchRef = useRef(null);
-    const markerTapRef = useRef(null);
     const rafRef = useRef(null);
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [markers, setMarkers] = useState([]);
     const [mode, setMode] = useState('move');
-    const activeCropRatio = cropRatio && (cropRatio.original || (cropRatio.w && cropRatio.h)) ? cropRatio : PDF_PHOTO_CROP_RATIO;
+    const activeCropRatio = cropRatio && cropRatio.w && cropRatio.h ? cropRatio : PDF_PHOTO_CROP_RATIO;
     const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
-    const [markerSize, setMarkerSize] = useState(48);
-    const [markerSliderActive, setMarkerSliderActive] = useState(false);
+    const [markerSize, setMarkerSize] = useState('medium');
     const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
     const [imageReady, setImageReady] = useState(false);
-    const markerMinSize = 16;
-    const markerMaxSize = Math.max(48, Math.round(Math.min(canvasSize.width || 1080, canvasSize.height || 1080) / 2 - 12));
-    const activeMarkerSize = Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(markerSize) || 48)));
-    const markerPreviewDiameterPct = Math.min(100, Math.max(6, Math.round((activeMarkerSize * 2 / Math.max(1, Math.min(canvasSize.width || 1080, canvasSize.height || 1080))) * 100)));
     useEffect(() => {
         if (!open)
             return undefined;
@@ -2184,10 +1200,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         setMarkers([]);
         setMode('move');
         setSelectedRatio(activeCropRatio);
-        setMarkerSize(48);
-        setMarkerSliderActive(false);
+        setMarkerSize('medium');
         pinchRef.current = null;
-        markerTapRef.current = null;
         dragRef.current = null;
         loadImageElement(image).then((loaded) => {
             if (cancelled)
@@ -2209,11 +1223,6 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     }
     useEffect(() => { if (!open)
         return; scheduleDraw(true); }, [zoom, offset, markers, mode, open, canvasSize, imageReady]);
-    useEffect(() => {
-        if (!open)
-            return;
-        setMarkerSize((current) => Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(current) || 48))));
-    }, [open, markerMaxSize]);
     function getDrawMetrics(nextZoom = zoom, nextOffset = offset) {
         const canvas = canvasRef.current;
         const img = imgRef.current;
@@ -2265,27 +1274,13 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, metrics.x, metrics.y, metrics.iw, metrics.ih);
         ctx.save();
+        ctx.lineWidth = Math.max(5, Math.round(Math.min(metrics.cw, metrics.ch) * 0.006));
+        ctx.strokeStyle = '#ef4444';
+        ctx.shadowColor = 'rgba(0,0,0,0.22)';
+        ctx.shadowBlur = 5;
         markers.forEach((marker) => {
-            const radius = marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045);
             ctx.beginPath();
-            ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
-            ctx.lineWidth = Math.max(10, Math.round(Math.min(metrics.cw, metrics.ch) * 0.010));
-            ctx.strokeStyle = 'rgba(255,255,255,0.96)';
-            ctx.shadowColor = 'rgba(15,23,42,0.24)';
-            ctx.shadowBlur = 9;
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
-            ctx.lineWidth = Math.max(7, Math.round(Math.min(metrics.cw, metrics.ch) * 0.0075));
-            ctx.strokeStyle = '#f43f5e';
-            ctx.shadowColor = 'rgba(244,63,94,0.32)';
-            ctx.shadowBlur = 8;
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(marker.x, marker.y, Math.max(2, radius - ctx.lineWidth * 0.7), 0, Math.PI * 2);
-            ctx.lineWidth = Math.max(3, Math.round(Math.min(metrics.cw, metrics.ch) * 0.003));
-            ctx.strokeStyle = 'rgba(250,204,21,0.95)';
-            ctx.shadowBlur = 0;
+            ctx.arc(marker.x, marker.y, marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045), 0, Math.PI * 2);
             ctx.stroke();
         });
         ctx.restore();
@@ -2330,21 +1325,13 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         if (!canvasRef.current || !imageReady || pinchRef.current)
             return;
         event.preventDefault();
-        const point = canvasPoint(event);
         if (mode === 'marker') {
-            markerTapRef.current = {
-                pointerId: event.pointerId,
-                x: point.x,
-                y: point.y,
-                clientX: event.clientX,
-                clientY: event.clientY,
-                moved: false,
-                cancelled: false
-            };
-            try { event.currentTarget.setPointerCapture(event.pointerId); } catch (error) { }
+            const point = canvasPoint(event);
+            const r = getMarkerRadius(canvasRef.current, markerSize);
+            setMarkers((current) => [...current, { x: point.x, y: point.y, r }]);
             return;
         }
-        markerTapRef.current = null;
+        const point = canvasPoint(event);
         dragRef.current = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: offset.x, offsetY: offset.y };
         try {
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -2352,13 +1339,6 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         catch (error) { }
     }
     function handlePointerMove(event) {
-        if (mode === 'marker' && markerTapRef.current && markerTapRef.current.pointerId === event.pointerId) {
-            const dx = event.clientX - markerTapRef.current.clientX;
-            const dy = event.clientY - markerTapRef.current.clientY;
-            if (Math.sqrt(dx * dx + dy * dy) > 8)
-                markerTapRef.current.moved = true;
-            return;
-        }
         if (!dragRef.current || mode !== 'move' || dragRef.current.pointerId !== event.pointerId)
             return;
         event.preventDefault();
@@ -2370,36 +1350,23 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         setOffset(clampOffset(next, zoom));
     }
     function handlePointerUp(event) {
-        if (mode === 'marker' && markerTapRef.current && markerTapRef.current.pointerId === event?.pointerId) {
-            const tap = markerTapRef.current;
-            markerTapRef.current = null;
-            if (!tap.cancelled && !tap.moved && !pinchRef.current && canvasRef.current) {
-                const r = getMarkerRadius(canvasRef.current, activeMarkerSize);
-                setMarkers((current) => [...current, { x: tap.x, y: tap.y, r }]);
-            }
-            return;
-        }
         if (dragRef.current?.pointerId === event?.pointerId)
             dragRef.current = null;
         else
             dragRef.current = null;
     }
     function handleTouchStart(event) {
-        if (event.touches.length >= 2) {
+        if (event.touches.length === 2) {
             event.preventDefault();
             event.stopPropagation();
-            if (markerTapRef.current)
-                markerTapRef.current.cancelled = true;
             dragRef.current = null;
             pinchRef.current = { distance: distanceBetweenTouches(event.touches), zoom, offset, center: touchCenter(event.touches) };
         }
     }
     function handleTouchMove(event) {
-        if (event.touches.length >= 2 && pinchRef.current) {
+        if (event.touches.length === 2 && pinchRef.current) {
             event.preventDefault();
             event.stopPropagation();
-            if (markerTapRef.current)
-                markerTapRef.current.cancelled = true;
             const distance = distanceBetweenTouches(event.touches);
             const nextZoom = clamp(pinchRef.current.zoom * (distance / Math.max(1, pinchRef.current.distance)), 1, 4);
             const currentCenter = touchCenter(event.touches);
@@ -2463,10 +1430,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                 React.createElement("button", { type: "button", className: "photo-editor-close", onClick: onClose, "aria-label": "Tutup editor" },
                     React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
             React.createElement("div", { className: "photo-editor-v10-toolbar", role: "toolbar", "aria-label": "Toolbar edit foto" },
-                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => { setMode('move'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'move' },
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => setMode('move'), "aria-pressed": mode === 'move' },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" }),
                     React.createElement("span", null, "Geser")),
-                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'marker' && 'active'), onClick: () => { setMode('marker'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'marker' },
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'marker' && 'active'), onClick: () => setMode('marker'), "aria-pressed": mode === 'marker' },
                     React.createElement(Icon, { name: "marker", className: "h-4 w-4" }),
                     React.createElement("span", null, "Marker")),
                 React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: () => setMarkers((current) => current.slice(0, -1)), disabled: !hasMarkers },
@@ -2475,52 +1442,40 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                 React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: resetEditor },
                     React.createElement(Icon, { name: "eraser", className: "h-4 w-4" }),
                     React.createElement("span", null, "Reset"))),
-            React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan editor" },
-                mode === 'move' ? React.createElement(React.Fragment, null,
-                    React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Pilih ratio ketika mode Geser aktif, lalu geser/cubit foto agar pas frame."),
-                    React.createElement("div", { className: "photo-editor-ratio-grid" }, PHOTO_EDITOR_RATIOS.map((ratio) => React.createElement("button", { key: ratio.key, type: "button", className: cx('photo-editor-chip', selectedRatio?.key === ratio.key && 'active'), onClick: () => changeRatio(ratio), "aria-pressed": selectedRatio?.key === ratio.key }, ratio.label)))) : null,
-                mode === 'marker' ? React.createElement(React.Fragment, null,
-                    React.createElement("div", { className: "rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-bold leading-4 text-rose-900 ring-1 ring-rose-100" }, "Atur ukuran marker dengan slider, lalu tap area foto untuk memasang circle."),
-                    React.createElement("div", { className: "photo-editor-option-row marker-slider-row" },
-                        React.createElement("span", null, "Marker"),
-                        React.createElement("div", { className: "photo-editor-marker-slider-wrap" },
-                            React.createElement("input", { type: "range", min: markerMinSize, max: markerMaxSize, step: "2", value: activeMarkerSize, className: "photo-editor-marker-slider", onPointerDown: () => setMarkerSliderActive(true), onPointerUp: () => setMarkerSliderActive(false), onPointerCancel: () => setMarkerSliderActive(false), onTouchStart: () => setMarkerSliderActive(true), onTouchEnd: () => setMarkerSliderActive(false), onMouseDown: () => setMarkerSliderActive(true), onMouseUp: () => setMarkerSliderActive(false), onBlur: () => setMarkerSliderActive(false), onChange: (event) => { setMarkerSliderActive(true); setMarkerSize(Math.max(markerMinSize, Math.min(markerMaxSize, Number(event.target.value) || 48))); }, "aria-label": "Ukuran marker" }),
-                            React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(activeMarkerSize))))) : null),
-            React.createElement("div", { className: cx('photo-editor-canvas-shell photo-editor-v10-stage', mode === 'marker' && 'marker-preview-active') },
+            React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan marker" },
+                React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Crop otomatis mengikuti frame foto PDF."),
+                React.createElement("div", { className: "photo-editor-option-row" },
+                    React.createElement("span", null, "Marker"),
+                    React.createElement("div", { className: "photo-editor-chip-group" }, MARKER_SIZE_OPTIONS.map((option) => React.createElement("button", { key: option.key, type: "button", className: cx('photo-editor-chip', markerSize === option.key && 'active'), onClick: () => setMarkerSize(option.key) }, option.label))))),
+            React.createElement("div", { className: "photo-editor-canvas-shell photo-editor-v10-stage" },
                 !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
-                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel }),
-                mode === 'marker' && markerSliderActive && imageReady ? React.createElement("div", { className: "photo-editor-marker-center-preview", style: { '--marker-preview-size': markerPreviewDiameterPct + '%' }, "aria-hidden": "true" },
-                    React.createElement("span", null)) : null),
+                React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel })),
             React.createElement("div", { className: "photo-editor-v10-footer" },
                 React.createElement("div", { className: "photo-editor-hint" },
-                    React.createElement("span", null, mode === 'marker' ? 'Tap 1 jari untuk marker. Cubit 2 jari tidak akan membuat marker.' : 'Cubit untuk zoom, geser foto.')),
+                    React.createElement("span", null, mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.')),
                 React.createElement("button", { type: "button", className: "photo-editor-save", onClick: saveEditedImage, disabled: !imageReady },
                     React.createElement(Icon, { name: "check", className: "h-5 w-5" }),
                     React.createElement("span", null, "Simpan"))))));
     return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false, hideActions = false }) {
+function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
     async function handleFiles(event) {
-        const input = event.target;
-        const file = input.files && input.files[0];
-        if (!file) {
-            rbvFinishCameraCapture();
+        const file = event.target.files && event.target.files[0];
+        if (!file)
             return;
-        }
         try {
-            rbvPrepareCameraCapture();
-            const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 900, quality: 0.58 } : {});
-            onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '', uploadedAt: nowIso() });
+            const dataUrl = await fileToDataUrl(file);
+            onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
+            setEditorOpen(true);
         }
         catch (error) {
-            alert(rbvPhotoReadErrorMessage(error));
+            alert('Foto gagal dibaca. Coba pilih ulang foto.');
         }
         finally {
-            try { input.value = ''; } catch (error) {}
-            rbvFinishCameraCapture();
+            event.target.value = '';
         }
     }
     function clearPhoto() {
@@ -2542,27 +1497,25 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
                 value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
-        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label, loading: "lazy", decoding: "async" }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
+        React.createElement("div", { className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]') }, value?.image ? React.createElement("img", { src: value.image, alt: label }) : React.createElement("div", { className: "flex flex-col items-center px-5 text-center text-slate-500" },
             React.createElement("div", { className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm" },
                 React.createElement(Icon, { name: "image", className: "h-7 w-7" })),
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
-        React.createElement("div", { className: cx('photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3', hideActions && 'hidden') },
-            !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Ambil foto dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-                React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
-                React.createElement(Icon, { name: "camera", className: "h-4 w-4" })) : null,
-            !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Pilih foto dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-                React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
-                React.createElement(Icon, { name: "gallery", className: "h-4 w-4" })) : null),
+        React.createElement("div", { className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3" },
+            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "hidden", onChange: handleFiles }),
+            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "hidden", onChange: handleFiles }),
+            React.createElement(Button, { variant: "icon", icon: "camera", onClick: () => cameraRef.current?.click(), "aria-label": "Ambil foto dari kamera" }),
+            React.createElement(Button, { variant: "icon", icon: "gallery", onClick: () => galleryRef.current?.click(), "aria-label": "Pilih foto dari galeri" })),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
         React.createElement("div", { className: "section-heading mb-5 flex flex-col gap-3" },
-            React.createElement("div", { className: "section-title-row flex min-w-0 items-center justify-between gap-3" },
-                React.createElement("h2", { className: "min-w-0 flex-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, title),
-                actions ? React.createElement("div", { className: "section-actions flex shrink-0 items-center justify-end gap-2" }, actions) : null),
-            preTitle ? React.createElement("div", { className: "section-pretitle" }, preTitle) : null),
+            preTitle ? React.createElement("div", { className: "section-pretitle" }, preTitle) : null,
+            React.createElement("div", { className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
+                React.createElement("h2", { className: "text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, title),
+                actions ? React.createElement("div", { className: "section-actions flex flex-wrap gap-2 md:justify-end" }, actions) : null)),
         children));
 }
 function CrewEditor({ visit, update }) {
@@ -2708,71 +1661,29 @@ function ObservationCards({ title, rows, onChange }) {
             React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addRow }, "Tambah Row"))));
 }
 function PhotoGrid({ photos, onChange, prefix }) {
-    const cameraRef = useRef(null);
-    const galleryRef = useRef(null);
+    const minSlots = 8;
     const sourcePhotos = Array.isArray(photos) ? photos : [];
-    const meaningfulPhotos = sourcePhotos.filter((photo) => photo && (photo.image || cleanText(photo.description)));
-    const safePhotos = meaningfulPhotos;
-    const normalizeNextPhotos = (next) => (Array.isArray(next) ? next : []).filter((photo) => photo && (photo.image || cleanText(photo.description)));
-    const updatePhoto = (index, value) => {
-        const next = safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo);
-        onChange(normalizeNextPhotos(next));
-    };
-    async function handleFloatingFiles(event) {
-        const input = event.target;
-        const files = Array.from(input.files || []);
-        if (!files.length) {
-            rbvFinishCameraCapture();
+    const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
+    const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
+    const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
+    const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
+    const removeEmpty = () => {
+        if (!confirmAction('Rapihkan dan hapus slot foto kosong?'))
             return;
-        }
-        try {
-            rbvPrepareCameraCapture();
-            const { result: uploaded, errors } = await rbvReadEvidenceFiles(files, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 900, quality: 0.58 } : {});
-            if (uploaded.length) {
-                const existing = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
-                try {
-                    onChange(normalizeNextPhotos([...uploaded.reverse(), ...existing]));
-                } catch (saveError) {
-                    console.warn('Foto terbaca tapi gagal disimpan ke state/localStorage:', saveError);
-                    alert(rbvPhotoReadErrorMessage(saveError));
-                    return;
-                }
-            }
-            if (!uploaded.length && errors.length) {
-                alert(rbvPhotoReadErrorMessage(errors[0]));
-            }
-            else if (errors.length) {
-                alert(`${uploaded.length} foto berhasil ditambahkan. ${errors.length} foto gagal dibaca.`);
-            }
-        }
-        catch (error) {
-            alert(rbvPhotoReadErrorMessage(error));
-        }
-        finally {
-            try { input.value = ''; } catch (error) {}
-            rbvFinishCameraCapture();
-        }
-    }
-    const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
-        React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-camera evidence-floating-icon-button", "aria-label": "Ambil foto evidence dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
-            React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
-            React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
-        React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", "aria-label": "Pilih foto evidence dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
-            React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
-            React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
-    const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
-        ? ReactDOM.createPortal(floatingCapture, document.body)
-        : floatingCapture;
-    return (React.createElement("div", { className: "photo-grid-system evidence-photo-grid-system grid gap-4" },
-        floatingPortal,
-        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: false, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
-            React.createElement(Icon, { name: "image", className: "h-7 w-7" }),
-            React.createElement("strong", null, "Belum ada foto"),
-            React.createElement("span", null, "Pilih Kamera atau Galeri untuk menambah foto."))));
+        const meaningful = safePhotos.filter((photo) => photo.image || cleanText(photo.description));
+        const next = meaningful.length ? meaningful : blankSet();
+        onChange(Array.from({ length: Math.max(minSlots, next.length) }, (_, index) => next[index] || blankPhoto()));
+    };
+    const renderActions = (position = 'top') => (React.createElement("div", { className: cx('photo-grid-actions flex flex-wrap gap-2', position === 'top'
+            ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2'
+            : 'justify-end pb-20 md:pb-0') },
+        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "eraser", onClick: removeEmpty }, "Rapihkan Slot Foto"),
+        React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "plus", onClick: addFour }, "Tambah Slot Foto")));
+    return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
+        renderActions('top'),
+        React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO })))),
+        renderActions('bottom')));
 }
-
 const SECTION_DEFS = [
     { id: 'setup', label: 'Visit', title: 'Visit Setup', icon: 'store', hint: 'Bestie & store' },
     { id: 'crew', label: 'Crew', title: 'General Information', icon: 'calendar', hint: 'Tanggal & PIC' },
@@ -2786,12 +1697,10 @@ function ProgressBar({ value }) {
         React.createElement("span", { style: { width: safeValue + '%' } })));
 }
 function VisitSetupSection({ visit, update }) {
-    // Revamp 229: master store can update from Convex while app is open.
-    // Avoid memoizing against only visit fields so latest remote master data is visible immediately.
-    const storeOptions = getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label }));
-    const baseDetail = getStoreWebDetail(visit.store);
+    const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label })), [visit.nama]);
+    const baseDetail = useMemo(() => getStoreWebDetail(visit.store), [visit.store]);
     const manualDetail = visit.manualStoreDetail || {};
-    const detail = { ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr };
+    const detail = useMemo(() => ({ ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr }), [baseDetail, manualDetail, visit.store]);
     const progress = visitProgress(visit);
     const detailValue = (key, fallback = '') => manualDetail[key] ?? fallback ?? '';
     function handleBestieChange(value) {
@@ -2861,14 +1770,16 @@ function ObservationSection({ visit, update }) {
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
-    const preTitle = React.createElement("div", { className: "section-switcher flex min-w-0 gap-2 overflow-x-auto pb-1" },
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
-            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-            " OPI Project"),
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'qsc' && 'active'), onClick: () => setTab('qsc') },
-            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-            " QSC Observation"));
-    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle, actions: React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }) }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
+    const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
+        React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
+            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
+                React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
+                " OPI Project"),
+            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'qsc' && 'active'), onClick: () => setTab('qsc') },
+                React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
+                " QSC Observation")),
+        React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
+    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
 }
 function EvidenceSection({ visit, update }) {
     const tab = visit.activeEvidenceTab === 'corrective' ? 'corrective' : 'finding';
@@ -2877,14 +1788,16 @@ function EvidenceSection({ visit, update }) {
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
     const evidenceTabStyle = { minWidth: 0, width: '100%', justifyContent: 'center', paddingLeft: '8px', paddingRight: '8px', whiteSpace: 'nowrap' };
-    const preTitle = React.createElement("div", { className: "section-switcher grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]" },
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), style: evidenceTabStyle, onClick: () => setTab('finding') },
-            React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
-            React.createElement("span", { className: "min-w-0 truncate" }, "Finding Evidence")),
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), style: evidenceTabStyle, onClick: () => setTab('corrective') },
-            React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
-            React.createElement("span", { className: "min-w-0 truncate" }, "Corrective Action")));
-    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle, actions: React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }) }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
+    const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
+        React.createElement("div", { className: "grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]" },
+            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), style: evidenceTabStyle, onClick: () => setTab('finding') },
+                React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
+                React.createElement("span", { className: "min-w-0 truncate" }, "Finding Evidence")),
+            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), style: evidenceTabStyle, onClick: () => setTab('corrective') },
+                React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
+                React.createElement("span", { className: "min-w-0 truncate" }, "Corrective Action"))),
+        React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
@@ -3025,7 +1938,6 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         rafRef.current = 0;
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
-            try { window.RBV_ACTIVE_MEDIA_STREAMS?.delete(streamRef.current); } catch (error) {}
             streamRef.current = null;
         }
         if (videoRef.current)
@@ -3039,14 +1951,12 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
         const payload = buildLinkedDevicePayload();
         setQrText(payload);
         setQrDataUrl(linkedDeviceQrFallbackUrl(payload));
-        ensureQrGeneratorReady().then(() => {
-            if (window.QRCode?.toDataURL) {
-                window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
-                    if (!error && url)
-                        setQrDataUrl(url);
-                });
-            }
-        }).catch(() => {});
+        if (window.QRCode?.toDataURL) {
+            window.QRCode.toDataURL(payload, { width: 260, margin: 2, errorCorrectionLevel: 'M' }, (error, url) => {
+                if (!error && url)
+                    setQrDataUrl(url);
+            });
+        }
         return () => stopScanner();
     }, [open]);
     function saveLinkedDevice(payload) {
@@ -3073,15 +1983,11 @@ function LinkedDeviceModal({ open, onClose, historyCount = 0 }) {
                 setScanStatus('Kamera tidak tersedia di browser ini.');
                 return;
             }
-            try { await ensureQrScannerReady(); } catch (error) {}
             if (!window.jsQR) {
                 setScanStatus('Scanner QR belum siap. Coba refresh setelah deploy selesai.');
                 return;
             }
-            const videoConstraints = RBV_ULTRA_LITE_CAMERA_MODE
-                ? { facingMode: 'environment', width: { ideal: 640, max: 960 }, height: { ideal: 480, max: 720 }, frameRate: { ideal: 10, max: 15 } }
-                : { facingMode: 'environment' };
-            const stream = rbvRememberMediaStream(await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false }));
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
             streamRef.current = stream;
             const video = videoRef.current;
             if (!video)
@@ -3126,45 +2032,7 @@ function HomeUpdateNotice({ config }) {
     const notice = normalizeUpdateNoticeConfig(config || readUpdateNoticeConfig());
     const messages = notice.messages || [];
     const [index, setIndex] = useState(0);
-    const dragRef = useRef(null);
     const messageSignature = messages.join('|');
-    const activeIndex = messages.length ? ((index % messages.length) + messages.length) % messages.length : 0;
-    function goToNotice(nextIndex) {
-        if (!messages.length)
-            return;
-        setIndex(((nextIndex % messages.length) + messages.length) % messages.length);
-    }
-    function nextNotice() {
-        goToNotice(activeIndex + 1);
-    }
-    function prevNotice() {
-        goToNotice(activeIndex - 1);
-    }
-    function readClientX(event) {
-        if (event?.touches?.[0])
-            return event.touches[0].clientX;
-        if (event?.changedTouches?.[0])
-            return event.changedTouches[0].clientX;
-        return event?.clientX || 0;
-    }
-    function startManualSlide(event) {
-        if (messages.length <= 1)
-            return;
-        dragRef.current = { x: readClientX(event), t: Date.now() };
-    }
-    function finishManualSlide(event) {
-        const start = dragRef.current;
-        dragRef.current = null;
-        if (!start || messages.length <= 1)
-            return;
-        const delta = readClientX(event) - start.x;
-        if (Math.abs(delta) < 34)
-            return;
-        if (delta < 0)
-            nextNotice();
-        else
-            prevNotice();
-    }
     useEffect(() => { setIndex(0); }, [messageSignature, notice.enabled]);
     useEffect(() => {
         if (!notice.enabled || messages.length <= 1)
@@ -3174,16 +2042,15 @@ function HomeUpdateNotice({ config }) {
     }, [notice.enabled, messages.length, notice.intervalSeconds, messageSignature]);
     if (!notice.enabled || !messages.length)
         return null;
-    const activeMessage = messages[activeIndex] || messages[0];
+    const activeMessage = messages[index % messages.length] || messages[0];
     return (React.createElement("section", { className: "home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm", style: { overflow: 'hidden' } },
-        React.createElement("style", null, `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}} .home-info-slide-zone{touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}.home-info-slide-zone:active{cursor:grabbing}.home-info-dot{width:6px;height:6px;border-radius:999px;border:0;background:rgba(148,163,184,.55);padding:0;transition:width .22s ease,background .22s ease,transform .22s ease}.home-info-dot.active{width:18px;background:#0f766e;animation:rbvNoticeDot 1.7s ease-in-out infinite}.home-info-dot:focus-visible{outline:2px solid rgba(15,118,110,.35);outline-offset:3px}`),
+        React.createElement("style", null, `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
         React.createElement("div", { className: "mx-auto flex min-h-[112px] max-w-2xl flex-col items-center justify-center text-center" },
             React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary" }, "Informasi Update"),
             React.createElement("h2", { className: "mt-1 max-w-full truncate text-base font-black text-slate-950" }, notice.title),
-            React.createElement("div", { className: "home-info-slide-zone mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2", onPointerDown: startManualSlide, onPointerUp: finishManualSlide, onPointerCancel: () => { dragRef.current = null; }, onTouchStart: startManualSlide, onTouchEnd: finishManualSlide, role: "group", "aria-roledescription": "carousel", "aria-label": "Slide informasi update" },
-                React.createElement("p", { key: `${activeIndex}-${activeMessage}`, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both', willChange: 'opacity, transform' } }, activeMessage)),
-            messages.length > 1 ? React.createElement("div", { className: "mt-2 flex items-center justify-center gap-1.5", "aria-label": `${activeIndex + 1} dari ${messages.length} info` }, messages.map((_, dotIndex) => React.createElement("button", { key: dotIndex, type: "button", className: cx('home-info-dot', dotIndex === activeIndex && 'active'), onClick: () => goToNotice(dotIndex), "aria-label": `Buka info ${dotIndex + 1}`, "aria-current": dotIndex === activeIndex ? 'true' : 'false' }))) : null,
-            messages.length > 1 ? React.createElement("p", { className: "mt-1 text-[10px] font-bold text-slate-400 md:hidden" }, "Geser kiri/kanan untuk info lainnya") : null)));
+            React.createElement("div", { className: "mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2" },
+                React.createElement("p", { key: `${index}-${activeMessage}`, className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700", style: { animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both', willChange: 'opacity, transform' } }, activeMessage)),
+            messages.length > 1 ? React.createElement("div", { className: "mt-2 flex items-center justify-center gap-1.5", "aria-label": `${index + 1} dari ${messages.length} info` }, messages.map((_, dotIndex) => React.createElement("span", { key: dotIndex, className: "h-1.5 w-1.5 rounded-full", style: { background: dotIndex === index ? '#0f766e' : 'rgba(148,163,184,.5)', animation: dotIndex === index ? 'rbvNoticeDot 1.6s ease-in-out infinite' : 'none' } }))) : null)));
 }
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
@@ -3193,18 +2060,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     const [syncBusy, setSyncBusy] = useState(false);
     const [syncMessage, setSyncMessage] = useState('');
     const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
-    const [historyRenderLimit, setHistoryRenderLimit] = useState(() => RBV_ULTRA_LITE_CAMERA_MODE ? 12 : 9999);
     const restoreInputRef = useRef(null);
-    const visibleHistory = RBV_ULTRA_LITE_CAMERA_MODE ? history.slice(0, historyRenderLimit) : history;
-    const hiddenHistoryCount = Math.max(0, history.length - visibleHistory.length);
-    useEffect(() => {
-        document.documentElement.classList.add('rbv-home-lock');
-        document.body?.classList.add('rbv-home-lock');
-        return () => {
-            document.documentElement.classList.remove('rbv-home-lock');
-            document.body?.classList.remove('rbv-home-lock');
-        };
-    }, []);
     useEffect(() => {
         function handleBeforeInstallPrompt(event) {
             event.preventDefault();
@@ -3277,40 +2133,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         }
         catch (error) {
             console.warn('Restore data gagal:', error);
-            alert(error?.message || 'Restore data gagal. Pastikan file backup benar dan NIK login sesuai.');
-        }
-        finally {
-            setRestoreBusy(false);
-        }
-    }
-    async function handlePushHomeBackup() {
-        if (backupBusy)
-            return;
-        try {
-            setBackupBusy(true);
-            const payload = await pushDeviceBackupToConvex();
-            alert(`Backup cepat terkirim untuk ${payload.ownerName || 'Bestie'} (${payload.ownerNik || '-'}). History: ${(payload.visits || []).length}.`);
-        }
-        catch (error) {
-            console.warn('Upload backup cepat gagal:', error);
-            alert(error?.message || 'Upload backup cepat gagal.');
-        }
-        finally {
-            setBackupBusy(false);
-        }
-    }
-    async function handlePullHomeBackup() {
-        if (restoreBusy)
-            return;
-        try {
-            setRestoreBusy(true);
-            const result = await pullDeviceBackupFromConvex();
-            alert(`Tarik backup selesai. History valid: ${result?.visits || 0}.`);
-            window.location.reload();
-        }
-        catch (error) {
-            console.warn('Tarik backup cepat gagal:', error);
-            alert(error?.message || 'Tarik backup cepat gagal. Pastikan sudah login NIK yang sama.');
+            alert(error?.message || 'Restore data gagal. Pastikan file backup benar.');
         }
         finally {
             setRestoreBusy(false);
@@ -3323,68 +2146,58 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
                     React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, "Home")),
-                React.createElement("div", { className: "history-sync-wrap flex shrink-0 items-center gap-2", "aria-hidden": "true" })),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp237-redmi-restore-native-picker" },
-                React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "restore-file-input-fallback", onChange: handleRestoreFile, tabIndex: -1, "aria-hidden": "true" }),
-                React.createElement("details", { className: "home-utility-details home-utility-main" },
-                    React.createElement("summary", { className: "home-utility-main-trigger", "aria-label": "Utilitas" },
-                        React.createElement(Icon, { name: "settings", className: "h-5 w-5" }),
-                        React.createElement("span", null, "Utilitas")),
-                    React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact home-utility-panel", style: {
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: '10px'
-                    } },
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleManualWebsiteSync, disabled: syncBusy, "aria-label": "Sync update website", title: "Sync update website" },
-                        syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, syncBusy ? 'Sync...' : 'Sync'),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "Update")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
+                React.createElement("div", { className: "history-sync-wrap flex shrink-0 items-center gap-2" },
+                    React.createElement("button", { type: "button", className: "dashboard-stat dark history-number-card min-w-[84px] px-3 py-2", onClick: onTitleTap, "aria-label": "History" },
+                        React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
+                        React.createElement("p", null, "History"),
+                        React.createElement("strong", null, history.length)),
+                    React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
+                        syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
+                        React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
+            React.createElement("div", { className: "mt-3", "data-build": "revamp92-hide-clear-topnav-redownload" },
+                React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile }),
+                React.createElement("div", { className: "grid grid-cols-2 gap-2 sm:grid-cols-4" },
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, role: "button", tabIndex: restoreBusy ? -1 : 0, "aria-label": "Restore data", title: "Restore data" },
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Backup")),
+                    React.createElement("button", { type: "button", className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'), onClick: () => restoreInputRef.current?.click(), "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "History"),
-                        React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native", onChange: handleRestoreFile, disabled: restoreBusy, "aria-label": "Pilih file restore history" })),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '42px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Restore")),
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]", style: { animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
                         React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Install"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "App")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '42px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
+                        React.createElement("span", { className: "block max-w-full truncate" }, "Install")),
+                    React.createElement("button", { type: "button", className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-extrabold leading-none shadow-sm transition hover:-translate-y-0.5 active:scale-[0.98]", style: {
+                            background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(255,255,255,0.28)',
+                            boxShadow: '0 10px 22px rgba(185,28,28,0.24)'
+                        }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
-                        React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History")))),
+                        React.createElement("span", { className: "block max-w-full truncate", style: { color: '#ffffff' } }, "Hapus History"))),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
-            React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
-                React.createElement("h2", { className: "history-title-with-count text-lg font-black tracking-tight text-slate-950 md:text-2xl" },
-                    React.createElement("span", null, "History Kunjungan"),
-                    React.createElement("strong", { className: "history-count-inline" }, history.length))),
-            history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-3 md:grid-cols-2 xl:grid-cols-3" },
-                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
-                    React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
-                            React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
-                        React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' },
-                            item.progress || 0,
-                            "%")),
-                    React.createElement("div", { className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500" },
-                        React.createElement("span", null, item.storeCode || '-'),
-                        React.createElement("span", null, "•"),
-                        React.createElement("span", null, formatDate(item.visitDate))),
-                    React.createElement(ProgressBar, { value: item.progress || 0 }),
-                    React.createElement("div", { className: "mt-4 flex gap-2" },
-                        React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
-                        React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
-                            React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
-                hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
-                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
+            React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
+            history.length ? (React.createElement("div", { className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3" }, history.map((item) => (React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
+                React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
+                        React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
+                    React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' },
+                        item.progress || 0,
+                        "%")),
+                React.createElement("div", { className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500" },
+                    React.createElement("span", null, item.storeCode || '-'),
+                    React.createElement("span", null, "\u2022"),
+                    React.createElement("span", null, formatDate(item.visitDate))),
+                React.createElement(ProgressBar, { value: item.progress || 0 }),
+                React.createElement("div", { className: "mt-4 flex gap-2" },
+                    React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
+                    React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))))) : (React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
@@ -3408,24 +2221,19 @@ function NewVisitModal({ open, onClose, onCreate }) {
     const [manualOpen, setManualOpen] = useState(false);
     const [manualStoreName, setManualStoreName] = useState('');
     const [manualStoreCode, setManualStoreCode] = useState('');
-    const [manualAreaManager, setManualAreaManager] = useState('');
-    const [manualRegionalManager, setManualRegionalManager] = useState('');
     const [manualAddress, setManualAddress] = useState('');
     const [manualNote, setManualNote] = useState('');
     const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
     useEffect(() => {
         if (!open)
             return;
-        const login = readBestieLogin();
-        const initialBestie = login.name || BESTIE_NAMES[0] || '';
+        const initialBestie = BESTIE_NAMES[0] || '';
         const initialStore = getStoresForBestie(initialBestie)[0]?.label || '';
         setBestieName(initialBestie);
         setStoreName(initialStore);
         setManualOpen(false);
         setManualStoreName('');
         setManualStoreCode('');
-        setManualAreaManager('');
-        setManualRegionalManager('');
         setManualAddress('');
         setManualNote('');
     }, [open]);
@@ -3436,40 +2244,17 @@ function NewVisitModal({ open, onClose, onCreate }) {
         }
     }, [bestieName]);
     function submitManualRequest() {
-        const storeNameCaps = cleanText(manualStoreName).toUpperCase();
-        const storeCode = normalizeNik(manualStoreCode).slice(0, 4);
-        if (!storeNameCaps) {
+        if (!cleanText(manualStoreName)) {
             alert('Nama toko manual wajib diisi.');
             return;
         }
-        if (!/^\d{4}$/.test(storeCode)) {
-            alert('Kode toko wajib 4 digit angka.');
-            return;
-        }
-        const manualStore = {
-            id: `manual-local-${storeCode}-${Date.now()}`,
-            siteDescr: storeNameCaps,
-            storeName: storeNameCaps,
-            siteCode: storeCode,
-            siteCode4: storeCode,
-            areaManager: cleanText(manualAreaManager),
-            regionalManager: cleanText(manualRegionalManager),
-            address: cleanText(manualAddress),
-            source: 'manual-local',
-            operationalStatus: 'active',
-            updatedAt: new Date().toISOString()
-        };
-        saveApprovedManualStores([manualStore, ...readApprovedManualStores()]);
-        saveLocalMasterStores([manualStore, ...readLocalMasterStores()]);
-        setStoreName(storeNameCaps);
+        createManualStoreRequest({ bestieName, storeName: manualStoreName, storeCode: manualStoreCode, address: manualAddress, note: manualNote });
         setManualOpen(false);
         setManualStoreName('');
         setManualStoreCode('');
-        setManualAreaManager('');
-        setManualRegionalManager('');
         setManualAddress('');
         setManualNote('');
-        alert('Toko manual dibuat lokal di perangkat ini. Data tidak dikirim ke database.');
+        alert('Request toko manual sudah dikirim ke panel admin.');
     }
     if (!open)
         return null;
@@ -3478,14 +2263,26 @@ function NewVisitModal({ open, onClose, onCreate }) {
             React.createElement("div", { className: "mb-5 flex items-start justify-between gap-3" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Kunjungan Baru"),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store"),
-                    readBestieLogin().name ? React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-700" }, "Login NIK: ", readBestieLogin().name) : null),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store")),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "grid gap-4" },
                 React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true }),
                 React.createElement(SelectField, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", icon: "store", required: true }),
-                null),
+                React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
+                    React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900", onClick: () => setManualOpen((state) => !state) },
+                        React.createElement("span", null, "Request toko manual"),
+                        React.createElement(Icon, { name: "right", className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '') })),
+                    manualOpen ? React.createElement("div", { className: "mt-3 grid gap-3" },
+                        React.createElement(Field, { label: "Nama Toko" },
+                            React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value), placeholder: "Nama toko" })),
+                        React.createElement(Field, { label: "Kode Toko" },
+                            React.createElement(TextInput, { value: manualStoreCode, onChange: (e) => setManualStoreCode(e.target.value), placeholder: "Kode toko" })),
+                        React.createElement(Field, { label: "Alamat" },
+                            React.createElement(TextArea, { value: manualAddress, onChange: (e) => setManualAddress(e.target.value), placeholder: "Alamat toko", minRows: 2 })),
+                        React.createElement(Field, { label: "Catatan" },
+                            React.createElement(TextArea, { value: manualNote, onChange: (e) => setManualNote(e.target.value), placeholder: "Catatan", minRows: 2 })),
+                        React.createElement(Button, { variant: "secondary", icon: "spark", onClick: submitManualRequest }, "Kirim Request Admin")) : null)),
             React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
                 React.createElement(Button, { variant: "secondary", onClick: onClose }, "Tutup"),
                 React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, storeName), disabled: !bestieName || !storeName }, "Mulai Kunjungan")))));
@@ -3582,54 +2379,12 @@ ${bestieName}`;
     }
     return text;
 }
-function getVisitStoreLookupKeys(visit) {
-    return uniqueBy([
-        visit?.storeCode,
-        visit?.siteCode,
-        visit?.siteCode4,
-        visit?.detail?.siteCode4,
-        visit?.detail?.siteCode,
-        visit?.storeDetail?.siteCode4,
-        visit?.storeDetail?.siteCode,
-        visit?.manualStoreDetail?.siteCode4,
-        visit?.manualStoreDetail?.siteCode,
-        visit?.store,
-        visit?.storeName,
-        visit?.detail?.siteDescr,
-        visit?.detail?.storeName,
-        visit?.storeDetail?.siteDescr,
-        visit?.storeDetail?.storeName,
-        visit?.manualStoreDetail?.siteDescr,
-        visit?.manualStoreDetail?.storeName
-    ].map((item) => cleanText(item)).filter(Boolean), (item) => normalize(item));
-}
 function getVisitStoreEmail(visit) {
-    const direct = cleanText(
-        visit?.emailStore ||
-        visit?.storeEmail ||
-        visit?.detail?.emailStore ||
-        visit?.storeDetail?.emailStore ||
-        visit?.manualStoreDetail?.emailStore
-    );
-    if (isEmailSyntax(direct))
-        return direct.toLowerCase();
-    for (const key of getVisitStoreLookupKeys(visit)) {
-        const detail = getStoreWebDetail(key) || {};
-        const master = findMasterStore(key) || {};
-        const email = cleanText(detail.emailStore || master.emailStore).toLowerCase();
-        if (isEmailSyntax(email))
-            return email;
-    }
-    return '';
+    return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore || visit?.manualStoreDetail?.emailStore);
 }
 
 const CUSTOM_EMAIL_DIRECTORY_KEY = 'visitreport_custom_email_directory_v1';
 const SCHEDULED_REPORT_EMAIL_QUEUE_KEY = 'visitreport_scheduled_email_queue_v1';
-const DEVICE_BACKUP_KEY = 'regional-bestie-visit-report-v1';
-const DEVICE_BACKUP_LAST_PULL_KEY = 'rbv_device_backup_last_pull_v207';
-let RBV_EMAIL_SCHEDULER_STARTED = false;
-let RBV_EMAIL_SCHEDULER_TIMER = null;
-let RBV_EMAIL_SCHEDULER_TIMEOUTS = {};
 const LOCKED_CC_EMAILS = [
     'muhammad.aufar@familymartindonesia.com',
     'mekarsari.pramawati@familymartindonesia.com',
@@ -3644,9 +2399,9 @@ const MASTER_EMAIL_CONTACTS = [
         role: 'Master Email'
     }
 ];
-const EMAIL_SAFE_REQUEST_BYTES = 4 * 1024 * 1024;
-const EMAIL_PDF_SAFE_BYTES = 3.1 * 1024 * 1024;
-const EMAIL_EXCEL_SAFE_BYTES = 520 * 1024;
+const EMAIL_SAFE_REQUEST_BYTES = 3.25 * 1024 * 1024;
+const EMAIL_PDF_SAFE_BYTES = 2.65 * 1024 * 1024;
+const EMAIL_EXCEL_SAFE_BYTES = 850 * 1024;
 function isEmailSyntax(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanText(value).toLowerCase());
 }
@@ -3689,156 +2444,43 @@ function readScheduledReportEmailQueue() {
     }
 }
 function saveScheduledReportEmailQueue(items) {
-    const safeItems = Array.isArray(items) ? items : [];
     try {
-        localStorage.setItem(SCHEDULED_REPORT_EMAIL_QUEUE_KEY, JSON.stringify(safeItems));
-        return true;
+        localStorage.setItem(SCHEDULED_REPORT_EMAIL_QUEUE_KEY, JSON.stringify(Array.isArray(items) ? items : []));
     }
-    catch (error) {
-        console.warn('Queue schedule email gagal disimpan penuh:', error);
-        try {
-            const compactItems = safeItems.map((item) => ({
-                ...item,
-                payload: {
-                    ...(item.payload || {}),
-                    attachments: [],
-                    body: addEmailNote(item.payload?.body || '', ['Attachment tidak disimpan di timer karena storage device tidak cukup. Jika email terkirim dari timer, attachment perlu dikirim manual dari Gmail.'])
-                },
-                storageWarning: 'Attachment dilepas karena storage device tidak cukup.'
-            }));
-            localStorage.setItem(SCHEDULED_REPORT_EMAIL_QUEUE_KEY, JSON.stringify(compactItems));
-            window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'history', title: 'Timer disimpan mode ringan', message: 'Storage device tidak cukup untuk menyimpan attachment. Timer tetap tersimpan, tapi attachment dilepas dari email schedule.' } }));
-            return true;
-        }
-        catch (secondError) {
-            console.warn('Queue schedule email gagal disimpan:', secondError);
-            window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'close', title: 'Timer gagal disimpan', message: 'Storage device penuh. Kurangi attachment atau kirim email tanpa timer.' } }));
-            return false;
-        }
+    catch (_) {
+        // Attachment bisa besar; timer aktif tetap menjalankan schedule selama app tidak ditutup.
     }
 }
 async function postReportEmailPayload(endpoint, payload) {
-    let response;
-    try {
-        response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    }
-    catch (networkError) {
-        const err = new Error(`Koneksi endpoint email gagal: ${networkError?.message || 'network error'}. Cek internet, endpoint email, dan deploy API.`);
-        err.code = 'EMAIL_NETWORK_ERROR';
-        throw err;
-    }
-    let rawText = '';
-    let result = {};
-    try {
-        rawText = await response.text();
-        result = rawText ? JSON.parse(rawText) : {};
-    }
-    catch (_) {
-        result = { raw: rawText };
-    }
-    if (!response.ok || result.ok === false) {
-        const detail = cleanText(result.error || result.message || result.details || result.raw || rawText);
-        const statusInfo = `HTTP ${response.status}${response.statusText ? ' ' + response.statusText : ''}`;
-        const suffix = detail ? `: ${detail.slice(0, 360)}` : '';
-        const err = new Error(`Gagal mengirim email (${statusInfo})${suffix}`);
-        err.code = 'EMAIL_ENDPOINT_ERROR';
-        err.status = response.status;
-        err.result = result;
-        err.raw = rawText;
-        throw err;
-    }
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false)
+        throw new Error(result.error || result.message || 'Gagal mengirim email.');
     return result;
 }
-function isRetryableEmailAttachmentError(error) {
-    const status = Number(error?.status || 0);
-    const text = String(error?.message || error?.raw || '').toLowerCase();
-    if ([413, 414, 415, 422, 429, 500, 502, 503, 504].includes(status)) return true;
-    return /payload|body|limit|size|large|besar|attachment|lampiran|base64|timeout|fetch|network|json|too\s*large/.test(text);
-}
-function keepOnlyPdfAttachments(payload) {
-    const next = { ...(payload || {}) };
-    next.attachments = (payload?.attachments || []).filter((item) => String(item?.mimeType || '').toLowerCase().includes('pdf'));
-    return next;
-}
-async function processScheduledReportEmailQueue(endpoint, options = {}) {
+async function processScheduledReportEmailQueue(endpoint) {
     const queue = readScheduledReportEmailQueue();
+    if (!queue.length)
+        return;
     const now = Date.now();
     const remaining = [];
-    let sent = 0;
-    let failed = 0;
-    let skipped = 0;
     for (const job of queue) {
-        if (!job) {
-            skipped += 1;
-            continue;
-        }
-        const sendAt = Number(job.sendAt || 0);
-        const retryAfter = Number(job.retryAfter || 0);
-        if (sendAt > now || retryAfter > now) {
+        if (!job || Number(job.sendAt || 0) > now) {
             remaining.push(job);
             continue;
         }
         try {
             await postReportEmailPayload(job.endpoint || endpoint, { ...(job.payload || {}), mode: 'send' });
-            sent += 1;
         }
         catch (error) {
-            failed += 1;
             remaining.push({ ...job, lastError: error?.message || 'Gagal mengirim schedule email.', retryAfter: Date.now() + 5 * 60 * 1000 });
         }
     }
     saveScheduledReportEmailQueue(remaining);
-    window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: remaining }));
-    if ((sent || failed) && !options.quiet) {
-        window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: {
-            icon: sent ? 'send' : 'close',
-            title: sent ? 'Schedule email diproses' : 'Schedule email belum terkirim',
-            message: sent ? `${sent} email schedule berhasil dikirim${failed ? `, ${failed} gagal dan akan dicoba ulang.` : '.'}` : `${failed} email schedule gagal dan akan dicoba ulang saat app aktif/online.`
-        } }));
-    }
-    return { sent, failed, skipped, remaining: remaining.length };
-}
-function armScheduledReportEmailJob(job, endpoint) {
-    if (!job || !job.id)
-        return;
-    if (RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id]) {
-        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id]);
-        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id];
-    }
-    const delay = Math.max(0, Math.min(Number(job.sendAt || 0) - Date.now(), 2147483647));
-    RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id] = window.setTimeout(() => {
-        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[job.id];
-        processScheduledReportEmailQueue(endpoint || job.endpoint || getEmailReportConfig().endpoint);
-    }, delay);
-}
-function armAllScheduledReportEmailJobs(endpoint) {
-    const queue = readScheduledReportEmailQueue();
-    Object.keys(RBV_EMAIL_SCHEDULER_TIMEOUTS).forEach((key) => {
-        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[key]);
-        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[key];
-    });
-    queue.forEach((job) => armScheduledReportEmailJob(job, endpoint));
-}
-function startPersistentEmailScheduler(endpoint) {
-    if (RBV_EMAIL_SCHEDULER_STARTED)
-        return;
-    RBV_EMAIL_SCHEDULER_STARTED = true;
-    const run = (quiet = false) => {
-        const config = getEmailReportConfig();
-        const effectiveEndpoint = endpoint || config.endpoint;
-        processScheduledReportEmailQueue(effectiveEndpoint, { quiet });
-        armAllScheduledReportEmailJobs(effectiveEndpoint);
-    };
-    run(true);
-    RBV_EMAIL_SCHEDULER_TIMER = window.setInterval(() => run(true), 30000);
-    window.addEventListener('online', () => run(false));
-    window.addEventListener('focus', () => run(false));
-    window.addEventListener('pageshow', () => run(false));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) run(false); });
 }
 function scheduleReportEmailJob(endpoint, payload, delayMs) {
     const job = {
@@ -3846,33 +2488,33 @@ function scheduleReportEmailJob(endpoint, payload, delayMs) {
         sendAt: Date.now() + delayMs,
         endpoint,
         payload: { ...payload, mode: 'send' },
-        createdAt: new Date().toISOString(),
-        persistent: true
+        createdAt: new Date().toISOString()
     };
-    const saved = saveScheduledReportEmailQueue([...readScheduledReportEmailQueue(), job]);
-    if (!saved)
-        throw new Error('Timer email gagal disimpan. Storage device penuh.');
-    const queue = readScheduledReportEmailQueue();
-    window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: queue }));
-    armScheduledReportEmailJob(job, endpoint);
-    startPersistentEmailScheduler(endpoint);
+    saveScheduledReportEmailQueue([...readScheduledReportEmailQueue(), job]);
+    window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: readScheduledReportEmailQueue() }));
+    window.setTimeout(() => {
+        const stillScheduled = readScheduledReportEmailQueue().some((item) => item.id === job.id);
+        if (!stillScheduled)
+            return;
+        postReportEmailPayload(endpoint, job.payload).then(() => {
+            const next = readScheduledReportEmailQueue().filter((item) => item.id !== job.id);
+            saveScheduledReportEmailQueue(next);
+            window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: next }));
+        }).catch((error) => {
+            const next = readScheduledReportEmailQueue().map((item) => item.id === job.id ? { ...item, lastError: error?.message || 'Gagal mengirim schedule email.' } : item);
+            saveScheduledReportEmailQueue(next);
+            window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: next }));
+        });
+    }, delayMs);
     return job;
 }
 function cancelScheduledReportEmailJob(jobId) {
-    if (RBV_EMAIL_SCHEDULER_TIMEOUTS[jobId]) {
-        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[jobId]);
-        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[jobId];
-    }
     const next = readScheduledReportEmailQueue().filter((item) => item.id !== jobId);
     saveScheduledReportEmailQueue(next);
     window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: next }));
     return next;
 }
 function cancelAllScheduledReportEmailJobs() {
-    Object.keys(RBV_EMAIL_SCHEDULER_TIMEOUTS).forEach((key) => {
-        window.clearTimeout(RBV_EMAIL_SCHEDULER_TIMEOUTS[key]);
-        delete RBV_EMAIL_SCHEDULER_TIMEOUTS[key];
-    });
     saveScheduledReportEmailQueue([]);
     window.dispatchEvent(new CustomEvent('rbv-email-schedule-change', { detail: [] }));
     return [];
@@ -3883,41 +2525,21 @@ function buildEmailContact(kind, email, helper, extra = {}) {
     const cleanEmail = cleanText(email).toLowerCase();
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail))
         return null;
-    const role = cleanText(extra.role || kind, cleanText(kind, 'Email'));
-    const store = cleanText(extra.store);
-    const helperText = cleanText(helper || [store, role].filter(Boolean).join(' • '), role);
     return {
-        ...extra,
-        kind: cleanText(kind, 'email'),
+        kind,
         email: cleanEmail,
         label: cleanEmail,
-        helper: helperText,
-        store,
-        role
+        helper: cleanText(helper),
+        ...extra
     };
 }
 function getVisitStoreDetailForEmail(visit) {
-    let webDetail = {};
-    let masterDetail = {};
-    for (const key of getVisitStoreLookupKeys(visit)) {
-        if (!webDetail.emailStore)
-            webDetail = getStoreWebDetail(key) || webDetail || {};
-        if (!masterDetail.emailStore)
-            masterDetail = findMasterStore(key) || masterDetail || {};
-        if (webDetail.emailStore || masterDetail.emailStore)
-            break;
-    }
-    const merged = {
-        ...webDetail,
-        ...masterDetail,
+    return {
+        ...(findMasterStore(visit?.storeCode || visit?.siteCode || visit?.detail?.siteCode4 || visit?.detail?.siteCode || visit?.store) || {}),
         ...(visit?.detail || {}),
         ...(visit?.storeDetail || {}),
         ...(visit?.manualStoreDetail || {})
     };
-    const storeEmail = cleanText(getVisitStoreEmail(visit));
-    if (storeEmail)
-        merged.emailStore = storeEmail;
-    return merged;
 }
 function getVisitToEmailContactOptions(visit) {
     const detail = getVisitStoreDetailForEmail(visit);
@@ -3936,13 +2558,13 @@ function getAllMasterEmailContactOptions(visit) {
     const visitDetail = getVisitStoreDetailForEmail(visit);
     const visitStore = cleanText(visit?.store || visitDetail.siteDescr || visitDetail.storeName, 'Store Aktif');
     push('store', visitDetail.emailStore || getVisitStoreEmail(visit), `${visitStore} • Email Store`, { store: visitStore, role: 'Email Store' });
-    push('area', visitDetail.areaManagerEmail, 'Area Manager', { store: '', role: 'Area Manager' });
-    push('regional', visitDetail.regionalManagerEmail, 'Regional Manager', { store: '', role: 'Regional Manager' });
-    (getEffectiveMasterStores() || []).forEach((store) => {
+    push('area', visitDetail.areaManagerEmail, `${visitStore} • Area Manager`, { store: visitStore, role: 'Area Manager' });
+    push('regional', visitDetail.regionalManagerEmail, `${visitStore} • Regional Manager`, { store: visitStore, role: 'Regional Manager' });
+    (MASTER_STORES || []).forEach((store) => {
         const storeName = cleanText(store.siteDescr || store.storeName || store.siteCode || 'Master Store');
         push('store', store.emailStore, `${storeName} • Email Store`, { store: storeName, role: 'Email Store' });
-        push('area', store.areaManagerEmail, 'Area Manager', { store: '', role: 'Area Manager' });
-        push('regional', store.regionalManagerEmail, 'Regional Manager', { store: '', role: 'Regional Manager' });
+        push('area', store.areaManagerEmail, `${storeName} • Area Manager`, { store: storeName, role: 'Area Manager' });
+        push('regional', store.regionalManagerEmail, `${storeName} • Regional Manager`, { store: storeName, role: 'Regional Manager' });
     });
     (MASTER_EMAIL_CONTACTS || []).forEach((item) => {
         push(cleanText(item.kind, 'master-email').toLowerCase(), item.email, cleanText(item.helper, 'Master Email'), {
@@ -3971,12 +2593,12 @@ function ensureLockedEmailList(value, lockedEmails = LOCKED_CC_EMAILS) {
     return joinEmailList([...(lockedEmails || []), ...parseEmailList(value)]);
 }
 function getLockedCcContacts() {
-    return LOCKED_CC_EMAILS.map((email) => buildEmailContact('locked-cc', email, 'Auto CC default', { role: 'Auto CC' })).filter(Boolean);
+    return LOCKED_CC_EMAILS.map((email) => buildEmailContact('locked-cc', email, 'Auto locked CC', { role: 'Locked CC' })).filter(Boolean);
 }
 function buildInitialEmailForm(visit) {
     const config = getEmailReportConfig();
     const toOptions = getVisitToEmailContactOptions(visit);
-    const defaultTo = toOptions[0]?.email || getVisitStoreEmail(visit) || config.defaultTo || '';
+    const defaultTo = getVisitStoreEmail(visit) || toOptions[0]?.email || config.defaultTo || '';
     return {
         from: config.sender,
         to: defaultTo,
@@ -4041,150 +2663,26 @@ function stripPhotoImages(value) {
     return next;
 }
 function buildEmailOptimizedVisit(visit) {
-    // Legacy helper kept for older scheduled payloads. Do not use it for the main email PDF,
-    // because stripping photos is the root cause of random photo-less PDF attachments.
-    return { ...(visit || {}) };
-}
-function rbvCollectPdfPhotoCandidates(visit) {
-    const items = [];
-    function pushPhoto(photo) {
-        if (!photo || typeof photo !== 'object') return;
-        const src = cleanText(photo.image || photo.dataUrl || photo.src || photo.objectUrl);
-        if (src) items.push(src);
-    }
-    pushPhoto(visit?.qscResultPhoto);
-    (visit?.qscResultPhotos || []).forEach(pushPhoto);
-    (visit?.findingEvidencePhotos || []).forEach(pushPhoto);
-    (visit?.correctiveActionPhotos || []).forEach(pushPhoto);
-    return items;
-}
-function rbvCanBrowserLoadImageSource(src) {
-    const value = cleanText(src);
-    if (!value) return false;
-    if (/^data:image\/(jpeg|jpg|png|webp|gif|bmp|svg\+xml|svg)/i.test(value)) return true;
-    if (/^blob:/i.test(value)) return true;
-    if (/^https?:/i.test(value)) return true;
-    return false;
-}
-function rbvLoadImageForPdfEmail(src, timeoutMs = 9000) {
-    return new Promise((resolve, reject) => {
-        const value = cleanText(src);
-        if (!value) return reject(new Error('Sumber foto kosong.'));
-        const image = new Image();
-        let done = false;
-        const finish = (fn, payload) => {
-            if (done) return;
-            done = true;
-            window.clearTimeout(timer);
-            fn(payload);
-        };
-        const timer = window.setTimeout(() => finish(reject, new Error('Timeout memuat foto PDF.')), Math.max(2500, timeoutMs));
-        image.onload = () => finish(resolve, image);
-        image.onerror = () => finish(reject, new Error('Foto tidak bisa dimuat browser.'));
-        try { if (/^https?:/i.test(value)) image.crossOrigin = 'anonymous'; } catch (_) {}
-        image.decoding = 'async';
-        image.src = value;
-        try {
-            if (image.complete && (image.naturalWidth || image.width)) finish(resolve, image);
-        } catch (_) {}
-    });
-}
-async function rbvCompressImageSourceForPdfEmail(src, options = {}) {
-    const value = cleanText(src);
-    if (!value) return '';
-    if (!rbvCanBrowserLoadImageSource(value)) return '';
-    const maxSide = Math.max(420, Number(options.maxSide || 1180));
-    const quality = Math.max(0.45, Math.min(0.82, Number(options.quality || 0.68)));
-    const image = await rbvLoadImageForPdfEmail(value, options.timeoutMs || 9000);
-    const naturalWidth = image.naturalWidth || image.width || 1;
-    const naturalHeight = image.naturalHeight || image.height || 1;
-    const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
-    const width = Math.max(1, Math.round(naturalWidth * scale));
-    const height = Math.max(1, Math.round(naturalHeight * scale));
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: false });
-    if (!ctx) throw new Error('Canvas PDF email tidak siap.');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = RBV_ULTRA_LITE_CAMERA_MODE ? 'low' : 'medium';
-    ctx.drawImage(image, 0, 0, width, height);
-    const dataUrl = canvas.toDataURL('image/jpeg', quality);
-    try { canvas.width = 1; canvas.height = 1; } catch (_) {}
-    return dataUrl;
-}
-async function rbvNormalizePhotoForPdfEmail(photo, options = {}) {
-    if (!photo || typeof photo !== 'object') return photo;
-    const src = cleanText(photo.image || photo.dataUrl || photo.src || photo.objectUrl);
-    const next = { ...photo, image: src };
-    if (!src) return next;
-    try {
-        const compressed = await rbvCompressImageSourceForPdfEmail(src, options);
-        if (compressed) next.image = compressed;
-    } catch (error) {
-        console.warn('Foto PDF email gagal dikompres, mencoba sumber asli:', error);
-        if (/^data:image\/(jpeg|jpg|png|webp)/i.test(src)) next.image = src;
-        else next.image = '';
-        next.pdfEmailImageError = error?.message || 'Foto tidak bisa dimuat untuk PDF email.';
-    }
-    delete next.objectUrl;
-    delete next.dataUrl;
-    delete next.src;
-    return next;
-}
-async function rbvNormalizePhotoArrayForPdfEmail(items, options = {}) {
-    const source = Array.isArray(items) ? items : [];
-    const output = [];
-    for (const item of source) {
-        const photo = await rbvNormalizePhotoForPdfEmail(item, options);
-        if (photo && (cleanText(photo.image) || cleanText(photo.description))) output.push(photo);
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
-    }
-    return output;
-}
-async function buildPdfVisitForEmail(visit, options = {}) {
-    const prepared = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
-    const next = { ...(prepared || {}), showQSCResult: true };
-    next.qscResultPhoto = await rbvNormalizePhotoForPdfEmail(next.qscResultPhoto || blankPhoto(), options);
-    next.qscResultPhotos = await rbvNormalizePhotoArrayForPdfEmail(next.qscResultPhotos || [], options);
-    next.findingEvidencePhotos = await rbvNormalizePhotoArrayForPdfEmail(next.findingEvidencePhotos || [], options);
-    next.correctiveActionPhotos = await rbvNormalizePhotoArrayForPdfEmail(next.correctiveActionPhotos || [], options);
-    if ((next.findingEvidencePhotos || []).some((photo) => cleanText(photo.image) || cleanText(photo.description))) next.showFindingEvidence = true;
-    if ((next.correctiveActionPhotos || []).some((photo) => cleanText(photo.image) || cleanText(photo.description))) next.showCorrectiveAction = true;
-    return next;
-}
-function assertValidPdfBlob(blob, context = 'PDF') {
-    if (!blob || typeof blob.size !== 'number' || blob.size < 1200) {
-        throw new Error(`${context} gagal dibuat. Attachment dibatalkan agar email tidak terkirim tanpa PDF.`);
-    }
-    if (!/pdf/i.test(String(blob.type || 'application/pdf'))) {
-        console.warn('Blob PDF tanpa MIME application/pdf:', blob.type);
-    }
+    const optimized = stripPhotoImages(visit || {});
+    return {
+        ...optimized,
+        qscResultPhoto: optimized.qscResultPhoto ? { ...optimized.qscResultPhoto, image: '' } : optimized.qscResultPhoto,
+        qscResultPhotos: (optimized.qscResultPhotos || []).map((item) => ({ ...(item || {}), image: '' })),
+        findingEvidencePhotos: (optimized.findingEvidencePhotos || []).map((item) => ({ ...(item || {}), image: '' })),
+        correctiveActionPhotos: (optimized.correctiveActionPhotos || []).map((item) => ({ ...(item || {}), image: '' }))
+    };
 }
 async function buildPdfAttachmentForEmail(visit, currentPdfBlob) {
-    await ensurePdfEngineReady();
     if (!window.ReportVisitPDF?.createBlob)
         throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
     const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+    let blob = currentPdfBlob || await window.ReportVisitPDF.createBlob(visit);
     let optimized = false;
-    let emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 1180, quality: 0.68 });
-    let blob = await window.ReportVisitPDF.createBlob(emailVisit);
-    assertValidPdfBlob(blob, 'PDF email');
     if (blob.size > EMAIL_PDF_SAFE_BYTES) {
+        blob = await window.ReportVisitPDF.createBlob(buildEmailOptimizedVisit(visit));
         optimized = true;
-        emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 860, quality: 0.56, timeoutMs: 7000 });
-        blob = await window.ReportVisitPDF.createBlob(emailVisit);
-        assertValidPdfBlob(blob, 'PDF email ringan');
     }
-    if (blob.size > EMAIL_PDF_SAFE_BYTES) {
-        optimized = true;
-        emailVisit = await buildPdfVisitForEmail(visit, { maxSide: 640, quality: 0.46, timeoutMs: 6500 });
-        blob = await window.ReportVisitPDF.createBlob(emailVisit);
-        assertValidPdfBlob(blob, 'PDF email ultra ringan');
-    }
-    return { blob, fileName, optimized, visit: emailVisit };
+    return { blob, fileName, optimized };
 }
 function addEmailNote(body, notes) {
     return cleanText(body);
@@ -4205,7 +2703,7 @@ function fitEmailPayloadToClientLimit(payload, notes) {
     }
     return { payload: draft, notes: [...(notes || []), ...skipped], skipped };
 }
-function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
+function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, ...props }) {
     const ref = useRef(null);
     useEffect(() => {
         if (!ref.current)
@@ -4214,7 +2712,7 @@ function AutoResizeTextarea({ value, onChange, className = '', minRows = 1, onPo
         const minHeight = Math.max(28, Number(minRows || 1) * 24);
         ref.current.style.height = `${Math.max(ref.current.scrollHeight, minHeight)}px`;
     }, [value, minRows]);
-    return React.createElement("textarea", { ...props, ref: ref, value: value, onChange: onChange, rows: minRows, className: cx('rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
+    return React.createElement("textarea", { ref: ref, value: value, onChange: onChange, rows: minRows, className: className, ...props });
 }
 function EmailRecipientPicker({ label, value, onChange, options, placeholder, multiple = false, required = false, lockedEmails = [] }) {
     const [query, setQuery] = useState('');
@@ -4240,7 +2738,7 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
             document.removeEventListener('touchstart', handlePointer);
         };
     }, []);
-    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: 'Manual' });
+    const selectedItems = selectedEmails.map((email) => optionMap.get(normalize(email)) || { email, label: email, helper: isLockedEmail(email) ? 'Auto locked CC' : 'Manual' });
     const recipientChipStyle = {
         width: '100%',
         maxWidth: '100%',
@@ -4317,9 +2815,9 @@ function EmailRecipientPicker({ label, value, onChange, options, placeholder, mu
     }
     const chipEls = selectedItems.map((item) => {
         const locked = isLockedEmail(item.email);
-        return React.createElement("span", { key: item.email, className: cx("rbv-email-recipient-chip-v99 inline-flex max-w-full items-center rounded-2xl ring-1", "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
+        return React.createElement("span", { key: item.email, className: cx("rbv-email-recipient-chip-v99 inline-flex max-w-full items-center rounded-2xl ring-1", locked ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-slate-100 text-slate-700 ring-slate-200"), style: recipientChipStyle },
             React.createElement("span", { className: "truncate", style: recipientChipEmailStyle }, item.email),
-            React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" })));
+            locked ? React.createElement("span", { className: "rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-emerald-700" }, "Lock") : React.createElement("button", { type: "button", className: "grid shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600", style: recipientRemoveButtonStyle, onClick: () => removeEmail(item.email), "aria-label": `Hapus ${item.email}` }, React.createElement(Icon, { name: "trash", className: "h-3 w-3" })));
     });
     const customButton = customAllowed ? React.createElement("button", { type: "button", className: "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-slate-50", onMouseDown: (event) => {
             event.preventDefault();
@@ -4357,7 +2855,6 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
     const [scheduledJobs, setScheduledJobs] = useState(() => readScheduledReportEmailQueue());
     const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
     const [feedbackPopup, setFeedbackPopup] = useState(null);
-    const autoCcSeededRef = useRef(false);
     useEffect(() => {
         if (!open)
             return undefined;
@@ -4388,23 +2885,18 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
         }
     }, [open]);
     useEffect(() => {
-        if (!open) {
-            autoCcSeededRef.current = false;
+        if (!open)
             return;
-        }
-        if (autoCcSeededRef.current)
-            return;
-        autoCcSeededRef.current = true;
-        const initialCcValue = ensureLockedEmailList(form.cc);
-        if (normalize(initialCcValue) !== normalize(form.cc))
-            onChange({ cc: initialCcValue });
-    }, [open]);
+        const lockedCcValue = ensureLockedEmailList(form.cc);
+        if (normalize(lockedCcValue) !== normalize(form.cc))
+            onChange({ cc: lockedCcValue });
+    }, [open, form.cc]);
     if (!open)
         return null;
     const config = getEmailReportConfig();
     const toOptions = getVisitToEmailContactOptions(visit);
-    const lockedCcEmails = [];
-    const ccOptions = uniqueBy([...getLockedCcContacts().map((item) => ({ ...item, helper: 'Auto CC default', role: 'Auto CC' })), ...getAllMasterEmailContactOptions(visit)], (item) => normalize(item.email));
+    const lockedCcEmails = LOCKED_CC_EMAILS;
+    const ccOptions = uniqueBy([...getLockedCcContacts(), ...getAllMasterEmailContactOptions(visit)], (item) => normalize(item.email));
     const ccCount = parseEmailList(form.cc).length;
     const statusText = cleanText(status);
     const statusKind = /gagal/i.test(statusText) ? 'error' : /dijadwalkan|jadwal/i.test(statusText) ? 'schedule' : /draft/i.test(statusText) ? 'draft' : /berhasil dikirim|terkirim/i.test(statusText) ? 'sent' : statusText ? 'progress' : '';
@@ -4417,11 +2909,9 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement("span", { className: "mt-0.5 block text-sm font-bold leading-5" }, statusText)))) : null;
     function handleCancelSchedule(jobId) {
         setScheduledJobs(cancelScheduledReportEmailJob(jobId));
-        setFeedbackPopup({ icon: 'trash', title: 'Timer email dibatalkan', message: 'Email terjadwal tidak akan dikirim.' });
     }
     function handleCancelAllSchedules() {
         setScheduledJobs(cancelAllScheduledReportEmailJobs());
-        setFeedbackPopup({ icon: 'trash', title: 'Semua timer dibatalkan', message: 'Semua email terjadwal sudah dihapus.' });
     }
     function openSendConfirmation() {
         if (busy || !form.to || !form.subject)
@@ -4453,7 +2943,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
                 React.createElement("span", { className: "break-all text-center font-extrabold text-slate-900", style: { fontSize: '12px', lineHeight: '16px', letterSpacing: '-0.01em' } }, config.sender),
                 React.createElement("span", { className: "rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "Locked"))),
         React.createElement(EmailRecipientPicker, { label: "To", required: true, value: form.to, onChange: (value) => onChange({ to: value }), options: toOptions, placeholder: "Auto email store" }),
-        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: value }), options: ccOptions, multiple: true, lockedEmails: lockedCcEmails, placeholder: "Cari semua email master data" }),
+        React.createElement(EmailRecipientPicker, { label: "Cc", value: form.cc, onChange: (value) => onChange({ cc: ensureLockedEmailList(value) }), options: ccOptions, multiple: true, lockedEmails: lockedCcEmails, placeholder: "Cari semua email master data" }),
         React.createElement("div", { className: "border-b border-slate-100 px-4 py-3 text-center" },
             React.createElement("label", { className: "mb-2 block text-center text-[11px] font-black uppercase tracking-[0.22em] text-slate-500" }, "Subject"),
             React.createElement(AutoResizeTextarea, { value: form.subject, onChange: (e) => onChange({ subject: e.target.value }), minRows: 1, className: "mx-auto w-full overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center font-semibold leading-6 text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100", style: { fontSize: '16px' }, placeholder: "Subject email" })),
@@ -4473,9 +2963,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "mt-3 flex flex-wrap items-center justify-center gap-2" },
                 React.createElement("span", { className: "rounded-2xl bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500" }, `CC ${ccCount}`),
                 React.createElement("span", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 ring-1 ring-emerald-100" }, "TO auto store")),
-            scheduleEls,
-            statusDisplay,
-            null));
+            statusDisplay));
     const footerButtonClass = "rbv-email-action-btn-v98 rbv-email-draft-btn-v98";
     const primaryFooterClass = "rbv-email-action-btn-v98 rbv-email-send-btn-v98";
     const scheduleFooterButtonClass = "rbv-email-schedule-chip-v98";
@@ -4492,7 +2980,7 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
             React.createElement("div", { className: "rbv-email-cancel-wrap-v98" }, footerCancelSchedule),
             scheduledJobs.length ? React.createElement("div", { className: "rbv-email-scheduled-row-v98" }, scheduledJobs.slice(0, 3).map((job) => React.createElement("button", { key: job.id, type: "button", onClick: () => handleCancelSchedule(job.id), disabled: busy, className: "rbv-email-scheduled-chip-v98" },
                 React.createElement(Icon, { name: "trash", className: "rbv-email-footer-icon-v98" }),
-                React.createElement("span", null, `Batal ${new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`)))) : null,
+                React.createElement("span", null, new Date(Number(job.sendAt || Date.now())).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))))) : null,
             React.createElement("div", { className: "rbv-email-timer-grid-v98" },
                 React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:10'), disabled: busy || !form.to || !form.subject }, "10M"),
                 React.createElement("button", { type: "button", className: scheduleFooterButtonClass, onClick: () => onSubmit('schedule:20'), disabled: busy || !form.to || !form.subject }, "20M"),
@@ -4531,298 +3019,177 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
+
+
     const pagesRef = useRef(null);
-    const taskRef = useRef(null);
-    const [viewerStatus, setViewerStatus] = useState(status || 'Menyiapkan preview PDF...');
+    const scrollRef = useRef(null);
     const [fallback, setFallback] = useState(false);
+    const [renderStatus, setRenderStatus] = useState('');
     const [zoom, setZoom] = useState(1);
-    const [pageCount, setPageCount] = useState(0);
-    const pinchRef = useRef({ active: false, distance: 0, zoom: 1 });
-    function clampZoom(value) {
-        const next = Number(value || 1);
-        return Math.max(0.65, Math.min(2.75, next));
-    }
-    function zoomIn() { setZoom((value) => clampZoom(value + 0.15)); }
-    function zoomOut() { setZoom((value) => clampZoom(value - 0.15)); }
-    function zoomFit() { setZoom(1); }
-    useEffect(() => {
-        let cancelled = false;
-        let pdfDocument = null;
-        async function renderPdfDirectly() {
-            const host = pagesRef.current;
-            if (!host)
-                return;
-            host.innerHTML = '';
-            setFallback(false);
-            setPageCount(0);
-            if (!blob) {
-                setViewerStatus(status || 'Menyiapkan preview PDF...');
-                return;
-            }
-            try {
-                setViewerStatus('Memuat preview PDF final...');
-                const pdfjs = await ensurePdfPreviewReady();
-                if (pdfjs?.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) {
-                    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                }
-                const data = await blob.arrayBuffer();
-                if (cancelled)
-                    return;
-                const loadingTask = pdfjs.getDocument({
-                    data,
-                    disableFontFace: false,
-                    isEvalSupported: false,
-                    useSystemFonts: true,
-                    standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/'
-                });
-                taskRef.current = loadingTask;
-                pdfDocument = await loadingTask.promise;
-                if (cancelled)
-                    return;
-                const total = Math.max(1, Number(pdfDocument.numPages || 1));
-                setPageCount(total);
-                const isSmallScreen = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-                const deviceRatio = Math.min(window.devicePixelRatio || 1, isSmallScreen ? 1.35 : 1.75);
-                setViewerStatus(`Preview PDF final siap. Menampilkan ${total} halaman...`);
-                for (let pageNumber = 1; pageNumber <= total; pageNumber += 1) {
-                    if (cancelled)
-                        break;
-                    setViewerStatus(`Merender halaman ${pageNumber}/${total}...`);
-                    const page = await pdfDocument.getPage(pageNumber);
-                    if (cancelled)
-                        break;
-                    const baseViewport = page.getViewport({ scale: 1 });
-                    const hostWidth = Math.max(280, Math.floor((host.clientWidth || 360) - 18));
-                    const fitCssScale = Math.max(0.2, hostWidth / baseViewport.width);
-                    const cssScale = Math.max(0.2, fitCssScale * clampZoom(zoom));
-                    const renderScale = Math.max(0.65, Math.min(4.25, cssScale * deviceRatio));
-                    const viewport = page.getViewport({ scale: renderScale });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d', { alpha: false });
-                    if (!context)
-                        throw new Error('Browser tidak mendukung canvas preview PDF.');
-                    canvas.className = 'pdf-canvas-page';
-                    canvas.width = Math.ceil(viewport.width);
-                    canvas.height = Math.ceil(viewport.height);
-                    canvas.style.width = `${Math.ceil(baseViewport.width * cssScale)}px`;
-                    canvas.style.height = `${Math.ceil(baseViewport.height * cssScale)}px`;
-                    const pageWrap = document.createElement('section');
-                    pageWrap.className = 'pdf-canvas-page-wrap';
-                    pageWrap.style.width = canvas.style.width;
-                    const label = document.createElement('div');
-                    label.className = 'pdf-canvas-page-label';
-                    label.textContent = `Halaman ${pageNumber} / ${total}`;
-                    pageWrap.appendChild(label);
-                    pageWrap.appendChild(canvas);
-                    host.appendChild(pageWrap);
-                    await page.render({ canvasContext: context, viewport }).promise;
-                    try { page.cleanup(); } catch (_) { }
-                }
-                if (!cancelled)
-                    setViewerStatus(`Preview PDF final siap${pageCount ? '' : ''}. Zoom ${Math.round(clampZoom(zoom) * 100)}%.`);
-            }
-            catch (error) {
-                console.warn('Preview PDF canvas gagal:', error);
-                if (!cancelled) {
-                    setFallback(true);
-                    setViewerStatus(error?.message || 'Preview PDF gagal ditampilkan.');
-                }
-            }
-        }
-        renderPdfDirectly();
-        return () => {
-            cancelled = true;
-            try { taskRef.current?.destroy?.(); } catch (_) { }
-            try { pdfDocument?.destroy?.(); } catch (_) { }
-        };
-    }, [blob, status, zoom]);
+    const [renderZoom, setRenderZoom] = useState(1);
+    const zoomRef = useRef(1);
+    const pinchRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
+    const zoomFrameRef = useRef(0);
+    const renderZoomTimerRef = useRef(null);
+    const renderSeqRef = useRef(0);
+    const lastWidthRef = useRef(0);
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
     function touchDistance(touches) {
-        if (!touches || touches.length < 2) return 0;
+        if (!touches || touches.length < 2)
+            return 0;
         const dx = touches[0].clientX - touches[1].clientX;
         const dy = touches[0].clientY - touches[1].clientY;
         return Math.sqrt(dx * dx + dy * dy);
     }
     function handlePreviewTouchStart(event) {
-        if (!event.touches || event.touches.length < 2) return;
+        if (!event.touches || event.touches.length < 2)
+            return;
         const distance = touchDistance(event.touches);
-        if (!distance) return;
-        pinchRef.current = { active: true, distance, zoom: clampZoom(zoom) };
+        if (!distance)
+            return;
+        pinchRef.current = { active: true, startDistance: distance, startZoom: zoomRef.current || 1 };
+    }
+    function applyLivePreviewZoom(nextZoom) {
+        zoomRef.current = nextZoom;
+        if (zoomFrameRef.current)
+            return;
+        zoomFrameRef.current = window.requestAnimationFrame(() => {
+            zoomFrameRef.current = 0;
+            setZoom(zoomRef.current || 1);
+        });
+    }
+    function schedulePreviewRenderZoom() {
+        window.clearTimeout(renderZoomTimerRef.current);
+        renderZoomTimerRef.current = window.setTimeout(() => {
+            const nextRenderZoom = zoomRef.current || 1;
+            setRenderZoom((current) => Math.abs(current - nextRenderZoom) < 0.04 ? current : nextRenderZoom);
+        }, 180);
     }
     function handlePreviewTouchMove(event) {
-        const pinch = pinchRef.current;
-        if (!pinch.active || !event.touches || event.touches.length < 2) return;
+        if (!pinchRef.current.active || !event.touches || event.touches.length < 2)
+            return;
+        event.preventDefault();
+        event.stopPropagation();
         const distance = touchDistance(event.touches);
-        if (!distance || !pinch.distance) return;
-        try { event.preventDefault(); } catch (_) {}
-        const ratio = distance / pinch.distance;
-        setZoom(clampZoom(pinch.zoom * ratio));
+        const ratio = distance / Math.max(1, pinchRef.current.startDistance);
+        const nextZoom = clampNumber(pinchRef.current.startZoom * ratio, 0.75, 2.6, 1);
+        applyLivePreviewZoom(nextZoom);
     }
-    function handlePreviewTouchEnd(event) {
-        if (!event.touches || event.touches.length < 2) {
-            pinchRef.current = { active: false, distance: 0, zoom: clampZoom(zoom) };
+    function finishPreviewPinch() {
+        if (!pinchRef.current.active)
+            return;
+        pinchRef.current.active = false;
+        schedulePreviewRenderZoom();
+    }
+    useEffect(() => {
+        let cancelled = false;
+        let resizeTimer = null;
+        let observer = null;
+        async function renderPdf(force = false) {
+            const target = pagesRef.current;
+            const scroller = scrollRef.current;
+            if (!target || !blob)
+                return;
+            const measuredWidth = Math.max(280, Math.floor((scroller?.clientWidth || target.clientWidth || 360) - 16));
+            if (!force && Math.abs(measuredWidth - lastWidthRef.current) < 18 && target.childElementCount)
+                return;
+            lastWidthRef.current = measuredWidth;
+            const seq = renderSeqRef.current + 1;
+            renderSeqRef.current = seq;
+            const pdfjsLib = window.pdfjsLib;
+            if (!pdfjsLib?.getDocument) {
+                setFallback(true);
+                return;
+            }
+            try {
+                setFallback(false);
+                setRenderStatus('Memuat preview...');
+                if (pdfjsLib.GlobalWorkerOptions) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+                const scrollTop = scroller?.scrollTop || 0;
+                const data = await blob.arrayBuffer();
+                if (cancelled || renderSeqRef.current !== seq)
+                    return;
+                const pdf = await pdfjsLib.getDocument({ data, disableAutoFetch: true, disableStream: true }).promise;
+                if (cancelled || renderSeqRef.current !== seq)
+                    return;
+                const maxWidth = Math.max(260, Math.min(measuredWidth * renderZoom, 1680));
+                const fragment = document.createDocumentFragment();
+                for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+                    if (cancelled || renderSeqRef.current !== seq)
+                        return;
+                    setRenderStatus(`Memuat preview halaman ${pageNumber}/${pdf.numPages}...`);
+                    const page = await pdf.getPage(pageNumber);
+                    const baseViewport = page.getViewport({ scale: 1 });
+                    const scale = maxWidth / baseViewport.width;
+                    const viewport = page.getViewport({ scale });
+                    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+                    const pageWrap = document.createElement('div');
+                    pageWrap.className = 'pdf-preview-page-wrap';
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'pdf-preview-page-canvas';
+                    canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
+                    canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
+                    canvas.style.width = Math.floor(viewport.width) + 'px';
+                    canvas.style.height = Math.floor(viewport.height) + 'px';
+                    pageWrap.appendChild(canvas);
+                    fragment.appendChild(pageWrap);
+                    const context = canvas.getContext('2d', { alpha: false });
+                    await page.render({ canvasContext: context, viewport, transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null }).promise;
+                }
+                if (cancelled || renderSeqRef.current !== seq)
+                    return;
+                target.replaceChildren(fragment);
+                if (scroller)
+                    scroller.scrollTop = Math.min(scrollTop, Math.max(0, scroller.scrollHeight - scroller.clientHeight));
+                setRenderStatus('');
+            }
+            catch (error) {
+                console.warn('PDF canvas preview gagal:', error);
+                if (!cancelled) {
+                    setRenderStatus('');
+                    setFallback(true);
+                }
+            }
         }
-    }
-    if (!blob || !pdfUrl) {
-        return React.createElement("div", { className: "pdf-lite-empty pdf-direct-empty", role: "status", "aria-live": "polite" }, status || 'Menyiapkan preview PDF final...');
-    }
-    return (React.createElement("div", { className: "pdf-canvas-direct-preview pdf-canvas-zoom-preview" },
-        React.createElement("div", { className: "pdf-canvas-direct-toolbar pdf-canvas-zoom-toolbar", role: "status", "aria-live": "polite" },
-            React.createElement("div", { className: "pdf-canvas-statusline" },
-                React.createElement("span", { className: "pdf-canvas-direct-dot", "aria-hidden": "true" }),
-                React.createElement("strong", null, viewerStatus || status || 'Preview PDF final siap.')),
-            React.createElement("div", { className: "pdf-canvas-zoom-controls", "aria-label": "Kontrol zoom preview PDF" },
-                React.createElement("button", { type: "button", onClick: zoomOut, disabled: zoom <= 0.66, "aria-label": "Perkecil preview PDF" }, "−"),
-                React.createElement("span", null, Math.round(clampZoom(zoom) * 100), "%"),
-                React.createElement("button", { type: "button", onClick: zoomIn, disabled: zoom >= 2.74, "aria-label": "Perbesar preview PDF" }, "+"),
-                React.createElement("button", { type: "button", onClick: zoomFit, disabled: Math.abs(zoom - 1) < 0.01 }, "Fit"))),
-        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: handlePreviewTouchEnd, onTouchCancel: handlePreviewTouchEnd }),
-        fallback ? React.createElement("div", { className: "pdf-canvas-fallback" },
-            React.createElement("p", null, "Browser ini tidak bisa menampilkan preview PDF canvas. Coba reload halaman."),
-            React.createElement("iframe", { className: "pdf-direct-frame", src: pdfUrl + "#toolbar=0&navpanes=0&scrollbar=1&view=FitH", title: "Preview Regional Bestie PDF fallback" })) : null));
-}
-
-function rbvPreviewPlainText(value, fallback = '-') {
-    const raw = value === undefined || value === null ? '' : String(value);
-    if (!raw.trim()) return fallback;
-    if (typeof document !== 'undefined' && /<[a-z][\s\S]*>/i.test(raw)) {
-        const root = document.createElement('div');
-        root.innerHTML = raw
-            .replace(/<br\s*\/?\s*>/gi, '\n')
-            .replace(/<\/p\s*>/gi, '\n')
-            .replace(/<\/div\s*>/gi, '\n')
-            .replace(/<\/li\s*>/gi, '\n');
-        return (root.textContent || '').replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trim() || fallback;
-    }
-    return raw.replace(/<[^>]+>/g, ' ').replace(/\u00a0/g, ' ').replace(/\s+\n/g, '\n').replace(/\n\s+/g, '\n').trim() || fallback;
-}
-function rbvPreviewHasRichValue(value) {
-    return rbvPreviewPlainText(value, '').trim().length > 0;
-}
-function rbvPreviewObservationRows(rows) {
-    return (Array.isArray(rows) ? rows : []).filter((row) => row && ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => rbvPreviewHasRichValue(row[key])));
-}
-function rbvPreviewPhotoItems(photos) {
-    return (Array.isArray(photos) ? photos : []).filter((photo) => photo && (cleanText(photo.image) || rbvPreviewHasRichValue(photo.description)));
-}
-function rbvPreviewChunks(items, size) {
-    const source = Array.isArray(items) ? items : [];
-    const result = [];
-    for (let index = 0; index < source.length; index += size) result.push(source.slice(index, index + size));
-    return result;
-}
-function RbvHtmlPreviewHeader({ title, subtitle, visit, page }) {
-    return React.createElement("div", { className: "rbv-html-pdf-header" },
-        React.createElement("div", { className: "rbv-html-pdf-brand" },
-            React.createElement("div", { className: "rbv-html-pdf-logo" }, "RBV"),
-            React.createElement("div", null,
-                React.createElement("strong", null, title),
-                subtitle ? React.createElement("span", null, subtitle) : null)),
-        React.createElement("div", { className: "rbv-html-pdf-meta" },
-            React.createElement("span", null, cleanText(visit?.store, 'Store belum dipilih')),
-            React.createElement("span", null, formatDate(visit?.tanggal)),
-            page ? React.createElement("span", null, page) : null));
-}
-function RbvHtmlPreviewField({ label, value }) {
-    return React.createElement("div", { className: "rbv-html-pdf-field" },
-        React.createElement("span", null, label),
-        React.createElement("strong", null, rbvPreviewPlainText(value)));
-}
-function RbvHtmlPreviewRichBlock({ label, value }) {
-    return React.createElement("div", { className: "rbv-html-pdf-rich" },
-        React.createElement("span", null, label),
-        React.createElement("p", null, rbvPreviewPlainText(value)));
-}
-function RbvHtmlPreviewPhotoCard({ photo, index }) {
-    const description = rbvPreviewPlainText(photo?.description, '');
-    return React.createElement("article", { className: "rbv-html-pdf-photo-card" },
-        React.createElement("div", { className: "rbv-html-pdf-photo-frame" },
-            cleanText(photo?.image) ? React.createElement("img", { src: photo.image, alt: 'Foto ' + (index + 1), loading: "lazy", decoding: "async" }) : React.createElement("span", null, "Foto")),
-        description ? React.createElement("p", null, description) : null);
-}
-function RbvHtmlPreviewObservationPage({ title, rows, visit, pageLabel }) {
-    const cleanRows = rbvPreviewObservationRows(rows);
-    if (!cleanRows.length) return null;
-    return React.createElement(React.Fragment, null, cleanRows.map((row, index) => React.createElement("section", { key: title + '-' + index, className: "rbv-html-pdf-page rbv-html-observation-page" },
-        React.createElement(RbvHtmlPreviewHeader, { title: title, subtitle: "Findings & Root Cause Analysis", visit: visit, page: `${pageLabel} ${index + 1}/${cleanRows.length}` }),
-        React.createElement("div", { className: "rbv-html-observation-title" },
-            React.createElement("span", null, "Temuan ", index + 1),
-            row.deadline ? React.createElement("em", null, "Deadline: ", formatDate(row.deadline)) : null),
-        React.createElement("div", { className: "rbv-html-observation-grid" },
-            React.createElement(RbvHtmlPreviewRichBlock, { label: "Temuan", value: row.temuan }),
-            React.createElement(RbvHtmlPreviewRichBlock, { label: "Kondisi Ideal", value: row.kondisiIdeal }),
-            React.createElement(RbvHtmlPreviewRichBlock, { label: "Dampak", value: row.dampak }),
-            React.createElement(RbvHtmlPreviewRichBlock, { label: "Penyebab", value: row.penyebab }),
-            React.createElement(RbvHtmlPreviewRichBlock, { label: "Tindakan Aksi", value: row.tindakan }),
-            React.createElement(RbvHtmlPreviewRichBlock, { label: "Hasil", value: row.hasil })))));
-}
-function RbvHtmlPreviewPhotoPages({ title, subtitle, photos, visit }) {
-    const cleanPhotos = rbvPreviewPhotoItems(photos);
-    if (!cleanPhotos.length) return null;
-    const pages = rbvPreviewChunks(cleanPhotos, 4);
-    return React.createElement(React.Fragment, null, pages.map((items, pageIndex) => React.createElement("section", { key: title + '-' + pageIndex, className: "rbv-html-pdf-page rbv-html-photo-page" },
-        React.createElement(RbvHtmlPreviewHeader, { title: title, subtitle: subtitle, visit: visit, page: `Foto ${pageIndex + 1}/${pages.length}` }),
-        React.createElement("div", { className: "rbv-html-photo-grid" }, items.map((photo, index) => React.createElement(RbvHtmlPreviewPhotoCard, { key: (photo.uploadedAt || '') + '-' + pageIndex + '-' + index, photo: photo, index: pageIndex * 4 + index })) )
-    )));
-}
-function RbvHtmlReportPreview({ visit }) {
-    const detail = getStoreWebDetail(visit?.store);
-    const qscPhotos = rbvPreviewPhotoItems(normalizeQscPhotos(visit));
-    const opiRows = rbvPreviewObservationRows(visit?.opiData);
-    const qscRows = rbvPreviewObservationRows(visit?.qscData);
-    const findingPhotos = rbvPreviewPhotoItems(visit?.findingEvidencePhotos);
-    const correctivePhotos = rbvPreviewPhotoItems(visit?.correctiveActionPhotos);
-    const pages = [];
-    pages.push(React.createElement("section", { key: "cover", className: "rbv-html-pdf-page rbv-html-cover-page" },
-        React.createElement("div", { className: "rbv-html-cover-accent" }),
-        React.createElement("div", { className: "rbv-html-cover-content" },
-            React.createElement("p", null, "REGIONAL BESTIE"),
-            React.createElement("h2", null, "Visit Report"),
-            React.createElement("h1", null, cleanText(visit?.store, 'Store belum dipilih')),
-            React.createElement("div", { className: "rbv-html-cover-fields" },
-                React.createElement(RbvHtmlPreviewField, { label: "Bestie", value: visit?.nama }),
-                React.createElement(RbvHtmlPreviewField, { label: "Tanggal", value: formatDate(visit?.tanggal) }),
-                React.createElement(RbvHtmlPreviewField, { label: "Store Type", value: detail.typeStore || detail.storeType || visit?.typeStore }),
-                React.createElement(RbvHtmlPreviewField, { label: "Store Head", value: detail.storeHead || detail.storeLeader || visit?.storeLeader })
-            )
-        )
-    ));
-    pages.push(React.createElement("section", { key: "team", className: "rbv-html-pdf-page rbv-html-team-page" },
-        React.createElement(RbvHtmlPreviewHeader, { title: "Store Team", subtitle: "PIC saat kunjungan", visit: visit, page: "Team" }),
-        React.createElement("div", { className: "rbv-html-team-grid" },
-            React.createElement(RbvHtmlPreviewField, { label: "Store Leader", value: [visit?.storeLeader, visit?.storeLeaderLevel].filter(Boolean).join(' / ') }),
-            React.createElement(RbvHtmlPreviewField, { label: "Shift Leader", value: [visit?.shiftLeader, visit?.shiftLeaderLevel].filter(Boolean).join(' / ') })
-        ),
-        React.createElement("table", { className: "rbv-html-preview-table" },
-            React.createElement("thead", null, React.createElement("tr", null,
-                React.createElement("th", null, "No"),
-                React.createElement("th", null, "Nama Crew"),
-                React.createElement("th", null, "Level")
-            )),
-            React.createElement("tbody", null, (Array.isArray(visit?.crewList) && visit.crewList.length ? visit.crewList : [{ name: '', level: '' }]).map((crew, index) => React.createElement("tr", { key: index },
-                React.createElement("td", null, index + 1),
-                React.createElement("td", null, cleanText(crew.name, '-')),
-                React.createElement("td", null, cleanText(crew.level, '-'))
-            )))
-        )
-    ));
-    if (qscPhotos.length) {
-        pages.push(React.createElement("section", { key: "qsc-result", className: "rbv-html-pdf-page rbv-html-photo-page" },
-            React.createElement(RbvHtmlPreviewHeader, { title: "QSC / Famitrack Result", subtitle: "Foto hasil QSC", visit: visit, page: "QSC" }),
-            React.createElement("div", { className: "rbv-html-photo-grid two" }, qscPhotos.map((photo, index) => React.createElement(RbvHtmlPreviewPhotoCard, { key: index, photo: photo, index: index })))
-        ));
-    }
-    const opiPages = React.createElement(RbvHtmlPreviewObservationPage, { title: "OPI Project Observation", rows: opiRows, visit: visit, pageLabel: "OPI" });
-    const qscPages = React.createElement(RbvHtmlPreviewObservationPage, { title: "QSC Observation", rows: qscRows, visit: visit, pageLabel: "QSC" });
-    const findingPages = React.createElement(RbvHtmlPreviewPhotoPages, { title: "Finding Evidence", subtitle: "of OPI & QSC Observation", photos: findingPhotos, visit: visit });
-    const correctivePages = React.createElement(RbvHtmlPreviewPhotoPages, { title: "Corrective Action Evidence & Result", subtitle: "by Regional Bestie", photos: correctivePhotos, visit: visit });
-    pages.push(opiPages, qscPages, findingPages, correctivePages);
-    if (!opiRows.length && !qscRows.length && !qscPhotos.length && !findingPhotos.length && !correctivePhotos.length) {
-        pages.push(React.createElement("section", { key: "empty", className: "rbv-html-pdf-page rbv-html-empty-page" },
-            React.createElement(RbvHtmlPreviewHeader, { title: "Report Content", subtitle: "Belum ada detail tambahan", visit: visit, page: "Draft" }),
-            React.createElement("div", { className: "rbv-html-empty-message" }, "Isi data observasi dan evidence untuk melihat preview report.")
-        ));
-    }
-    return React.createElement("div", { className: "rbv-html-preview-stage", "aria-label": "Preview report" }, pages);
+        renderPdf(true);
+        function scheduleRender() {
+            if (!blob)
+                return;
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => renderPdf(false), 420);
+        }
+        // Hindari ResizeObserver pada container preview karena perubahan canvas dapat memicu render ulang berulang (blinking/stuck scroll).
+        window.addEventListener('resize', scheduleRender, { passive: true });
+        window.addEventListener('orientationchange', scheduleRender);
+        return () => {
+            cancelled = true;
+            clearTimeout(resizeTimer);
+            window.clearTimeout(renderZoomTimerRef.current);
+            if (zoomFrameRef.current)
+                window.cancelAnimationFrame(zoomFrameRef.current);
+            if (observer)
+                observer.disconnect();
+            window.removeEventListener('resize', scheduleRender);
+            window.removeEventListener('orientationchange', scheduleRender);
+            renderSeqRef.current += 1;
+        };
+    }, [blob, renderZoom]);
+    const liveScale = renderZoom ? zoom / renderZoom : 1;
+    const zoomLabel = Math.round((zoom || 1) * 100);
+    if (!blob)
+        return React.createElement("div", { className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600" }, status);
+    if (fallback && pdfUrl)
+        return React.createElement("iframe", { className: "preview-frame", src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH', title: "Preview Regional Bestie PDF" });
+    return (React.createElement("div", { ref: scrollRef, className: "pdf-canvas-scroll", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: finishPreviewPinch, onTouchCancel: finishPreviewPinch, style: { touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } },
+        React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", style: { transform: `translateZ(0) scale(${liveScale})`, transformOrigin: 'top center', transition: pinchRef.current.active ? 'none' : 'transform 180ms cubic-bezier(.22,1,.36,1)', willChange: 'transform' } }),
+        React.createElement("div", { "aria-hidden": "true", style: { position: 'sticky', bottom: 10, left: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' } },
+            React.createElement("span", { style: { borderRadius: 999, background: 'rgba(15,23,42,.72)', color: '#fff', padding: '5px 10px', fontSize: 11, fontWeight: 900, boxShadow: '0 10px 24px rgba(15,23,42,.18)' } },
+                "Zoom ",
+                zoomLabel,
+                "%")),
+        renderStatus ? React.createElement("div", { className: "pdf-render-status" }, renderStatus) : null));
 }
 function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
@@ -4841,37 +3208,26 @@ function PreviewPage({ visit, onBack }) {
         async function render() {
             if (!visit)
                 return;
-            setPdfBlob(null);
-            setPdfUrl('');
-            setStatus('Menyiapkan preview PDF final...');
+            setStatus('Merender PDF...');
             try {
-                await ensurePdfEngineReady();
                 if (!window.ReportVisitPDF?.createBlob)
                     throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-                const snapshot = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
-                if (cancelled)
-                    return;
-                setStatus('Membuat preview identik dengan PDF...');
-                const blob = await window.ReportVisitPDF.createBlob(snapshot);
+                const blob = await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
                 if (cancelled)
                     return;
                 objectUrl = URL.createObjectURL(blob);
                 setPdfBlob(blob);
                 setPdfUrl(objectUrl);
-                setStatus('Preview PDF final siap.');
+                setStatus('Preview siap.');
             }
             catch (error) {
                 setPdfBlob(null);
-                setPdfUrl('');
                 setStatus(error?.message || 'Preview PDF gagal dibuat.');
             }
         }
         render();
-        return () => {
-            cancelled = true;
-            if (objectUrl)
-                URL.revokeObjectURL(objectUrl);
-        };
+        return () => { cancelled = true; if (objectUrl)
+            URL.revokeObjectURL(objectUrl); };
     }, [visit]);
     useEffect(() => {
         if (!emailOpen)
@@ -4879,8 +3235,9 @@ function PreviewPage({ visit, onBack }) {
     }, [visit, emailOpen]);
     useEffect(() => {
         const config = getEmailReportConfig();
-        startPersistentEmailScheduler(config.endpoint);
-        processScheduledReportEmailQueue(config.endpoint, { quiet: true });
+        const timer = window.setInterval(() => processScheduledReportEmailQueue(config.endpoint), 60000);
+        processScheduledReportEmailQueue(config.endpoint);
+        return () => window.clearInterval(timer);
     }, []);
     async function handleDownloadPdf() {
         if (!visit || busy || downloadBusy)
@@ -4890,12 +3247,10 @@ function PreviewPage({ visit, onBack }) {
         setDownloadMessage('Menyiapkan PDF...');
         try {
             await new Promise((resolve) => window.setTimeout(resolve, 80));
-            await ensurePdfEngineReady();
             if (!window.ReportVisitPDF?.createBlob)
                 throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
-            const pdfVisit = await rbvPrepareVisitForPdf(visit, { forceAllSections: true });
-            const blob = await window.ReportVisitPDF.createBlob(pdfVisit);
-            const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(pdfVisit) : 'Regional_Bestie_Visit_Report.pdf';
+            const blob = pdfBlob || await window.ReportVisitPDF.createBlob({ ...visit, showQSCResult: true });
+            const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
             setDownloadMessage('Pilih lokasi simpan...');
             const didSave = await downloadBlobManaged(blob, fileName);
             setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
@@ -4911,7 +3266,7 @@ function PreviewPage({ visit, onBack }) {
         }
     }
     async function handleExportExcel() { if (!visit)
-        return; try { await ensureCaExportReady(); } catch (error) { console.warn('Export Excel lazy-load gagal:', error); } if (!window.__caAssignmentExport?.buildWorkbook) {
+        return; if (!window.__caAssignmentExport?.buildWorkbook) {
         alert('Mesin export Excel belum siap.');
         return;
     } setBusy(true); try {
@@ -4951,20 +3306,19 @@ function PreviewPage({ visit, onBack }) {
             const attachments = [];
             const attachmentNotes = [];
             if (emailForm.attachPdf) {
-                setEmailStatus('Menyiapkan foto untuk PDF...');
-                const { blob, fileName, optimized } = await buildPdfAttachmentForEmail(visit, null);
+                setEmailStatus('Menyiapkan PDF email...');
+                const { blob, fileName, optimized } = await buildPdfAttachmentForEmail(visit, pdfBlob);
                 if (optimized)
-                    attachmentNotes.push('PDF dikompres agar attachment stabil dan foto tetap ikut terkirim.');
+                    attachmentNotes.push('PDF dibuat versi ringan tanpa foto agar bisa masuk batas request Vercel/Gmail. Gunakan tombol Download PDF untuk file lengkap dengan foto.');
                 if (blob.size <= EMAIL_PDF_SAFE_BYTES) {
                     attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
                 }
                 else {
-                    throw new Error(`PDF Report terlalu besar (${formatFileSize(blob.size)}) sehingga email dibatalkan. Coba kurangi jumlah foto atau download PDF manual.`);
+                    attachmentNotes.push(`PDF Report tidak dilampirkan karena masih terlalu besar (${formatFileSize(blob.size)}). Download PDF manual lalu attach dari Gmail jika perlu.`);
                 }
             }
             if (emailForm.attachExcel) {
                 setEmailStatus('Menyiapkan Excel CA Assignment...');
-                await ensureCaExportReady();
                 if (!window.__caAssignmentExport?.buildWorkbook)
                     throw new Error('Mesin export Excel belum siap.');
                 const blob = await window.__caAssignmentExport.buildWorkbook(visit);
@@ -4982,9 +3336,6 @@ function PreviewPage({ visit, onBack }) {
             const basePayload = { mode: payloadMode, to: emailForm.to, cc: emailForm.cc, subject: emailForm.subject, body: addEmailNote(emailForm.body, attachmentNotes), passcode: emailForm.passcode, attachments, visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal } };
             const fitted = fitEmailPayloadToClientLimit(basePayload, attachmentNotes);
             const payload = fitted.payload;
-            if (emailForm.attachPdf && !payload.attachments.some((item) => String(item.mimeType || '').toLowerCase().includes('pdf'))) {
-                throw new Error('PDF attachment wajib ada. Email dibatalkan supaya tidak terkirim tanpa PDF.');
-            }
             if (scheduleMinutes) {
                 setEmailStatus(`Email dijadwalkan ${scheduleMinutes} menit ke depan...`);
                 scheduleReportEmailJob(config.endpoint, payload, scheduleMinutes * 60 * 1000);
@@ -4993,26 +3344,8 @@ function PreviewPage({ visit, onBack }) {
                 return;
             }
             setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
-            let sendSkipped = [...fitted.skipped];
-            try {
-                await postReportEmailPayload(config.endpoint, payload);
-            }
-            catch (sendError) {
-                const hasPdf = payload.attachments.some((item) => String(item.mimeType || '').toLowerCase().includes('pdf'));
-                const hasExcel = payload.attachments.some((item) => String(item.mimeType || '').toLowerCase().includes('sheet'));
-                if (hasPdf && hasExcel && isRetryableEmailAttachmentError(sendError)) {
-                    setEmailStatus('Server email menolak lampiran penuh. Mencoba kirim ulang PDF saja...');
-                    const pdfOnlyPayload = keepOnlyPdfAttachments(payload);
-                    if (!pdfOnlyPayload.attachments.length)
-                        throw sendError;
-                    sendSkipped.push('Excel dilepas otomatis karena server email menolak ukuran/lampiran penuh. PDF tetap dikirim.');
-                    await postReportEmailPayload(config.endpoint, pdfOnlyPayload);
-                }
-                else {
-                    throw sendError;
-                }
-            }
-            const successMessage = mode === 'send' ? (sendSkipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (sendSkipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
+            await postReportEmailPayload(config.endpoint, payload);
+            const successMessage = mode === 'send' ? (fitted.skipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (fitted.skipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
             setEmailStatus(successMessage);
             if (mode === 'draft')
                 window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'pdf', title: 'Draft tersimpan', message: 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.' } }));
@@ -5442,7 +3775,7 @@ async function fetchAppConfigsFromCloudflare() {
     if (!cloudflareEnabled())
         return null;
     try {
-        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -5459,74 +3792,22 @@ function clearRemoteSyncError() {
     LAST_REMOTE_SYNC_ERROR = '';
 }
 function remoteSyncLabel() {
-    if (convexEnabled())
-        return 'Convex';
+    if (cloudflareEnabled())
+        return 'Cloudflare D1';
     if (netlifyEnabled())
         return 'Netlify';
     if (supabaseEnabled())
         return 'Supabase';
-    if (cloudflareEnabled())
-        return 'Cloudflare D1 legacy';
+    if (convexEnabled())
+        return 'Convex';
     return 'remote database';
-}
-async function fetchMasterStoresFromConvex() {
-    clearRemoteSyncError();
-    if (!convexEnabled())
-        return null;
-    try {
-        const config = getConvexConfig();
-        const queryName = config.masterStoreListQuery || 'masterStores:listStores';
-        const rows = await runConvexQuery(queryName, { limit: 5000 });
-        if (rows !== null)
-            return normalizeMasterStoreRows(rows?.rows || rows?.data || rows);
-    }
-    catch (error) {
-        setRemoteSyncError(error?.message || 'Convex master store query gagal.');
-        console.warn('Convex master store query gagal:', error);
-    }
-    return null;
-}
-async function syncMasterStoresToConvex(rows, options = {}) {
-    clearRemoteSyncError();
-    const normalized = normalizeMasterStoreRows(rows);
-    if (!normalized.length)
-        return false;
-    if (!convexEnabled()) {
-        setRemoteSyncError('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
-        return false;
-    }
-    const config = getConvexConfig();
-    try {
-        if (options.replace !== false) {
-            const mutationName = config.masterStoreReplaceMutation || 'masterStores:replaceStores';
-            const result = await runConvexMutation(mutationName, { stores: normalized, updatedBy: SESSION_ID });
-            if (result !== null)
-                return true;
-        }
-    }
-    catch (error) {
-        console.warn('Convex replace master store gagal, coba upsertMany:', error);
-    }
-    try {
-        const mutationName = config.masterStoreUpsertManyMutation || 'masterStores:upsertMany';
-        for (let index = 0; index < normalized.length; index += 200) {
-            const chunk = normalized.slice(index, index + 200);
-            await runConvexMutation(mutationName, { stores: chunk, updatedBy: SESSION_ID });
-        }
-        return true;
-    }
-    catch (error) {
-        setRemoteSyncError(error?.message || 'Convex master store sync gagal.');
-        console.warn('Convex master store sync gagal:', error);
-        return false;
-    }
 }
 function remoteSaveSuccessText(label) {
     return `${label} berhasil disimpan dan disinkronkan ke ${remoteSyncLabel()}.`;
 }
 function remoteSaveFailText(label) {
     const detail = LAST_REMOTE_SYNC_ERROR ? ` Detail: ${LAST_REMOTE_SYNC_ERROR}` : '';
-    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Cek convex-config.js lalu buka ulang dengan ?v=206.`;
+    return `${label} tersimpan lokal, tapi belum berhasil sync ke ${remoteSyncLabel()}.${detail} Jika Test D1 sudah aktif, tutup web lalu buka ulang dengan ?v=103.`;
 }
 async function syncAppConfigToCloudflare(key, payload) {
     if (!cloudflareEnabled() || !key)
@@ -5683,7 +3964,7 @@ async function fetchAppConfigsFromNetlify() {
     if (!netlifyEnabled())
         return null;
     try {
-        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -5933,7 +4214,7 @@ async function fetchAppConfigsFromSupabase() {
         const { data, error } = await client
             .from(table)
             .select('config_key,payload,updated_at')
-            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync]);
+            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate]);
         if (error)
             throw error;
         return normalizeRemoteAppConfigRows((data || []).map((item) => ({
@@ -5988,175 +4269,161 @@ function monitorPayloadFromVisit(visit) {
     };
 }
 async function upsertMonitorVisit(visit) {
-    const config = getConvexConfig();
-    if (convexEnabled() && visit && cleanText(visit.nama) && cleanText(visit.store)) {
-        const payload = monitorPayloadFromVisit(visit);
-        try {
-            const mutationName = config.upsertMutation || 'monitor:upsertVisit';
-            const result = await runConvexMutation(mutationName, { payload });
-            if (result !== null)
-                return;
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex monitor mutation');
-            console.warn('Convex realtime mutation gagal, fallback HTTP:', error);
-        }
-        const endpoint = convexUrl(config.upsertPath || 'monitor/upsertVisit');
-        if (endpoint) {
-            try {
-                await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
-                    body: JSON.stringify(payload)
-                });
-                return;
-            }
-            catch (error) {
-                rememberRemoteSyncError(error, 'Convex monitor HTTP');
-                console.warn('Convex upsert gagal:', error);
-            }
-        }
-    }
+    if (await upsertMonitorVisitToCloudflare(visit))
+        return;
     if (await upsertMonitorVisitToNetlify(visit))
         return;
     if (await upsertMonitorVisitToSupabase(visit))
         return;
-    await upsertMonitorVisitToCloudflare(visit);
+    const config = getConvexConfig();
+    if (!convexEnabled() || !visit || !cleanText(visit.nama) || !cleanText(visit.store))
+        return;
+    const payload = monitorPayloadFromVisit(visit);
+    try {
+        const mutationName = config.upsertMutation || 'monitor:upsertVisit';
+        const result = await runConvexMutation(mutationName, { payload });
+        if (result !== null)
+            return;
+    }
+    catch (error) {
+        console.warn('Convex realtime mutation gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.upsertPath || 'monitor/upsertVisit');
+    if (!endpoint)
+        return;
+    try {
+        await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
+            body: JSON.stringify(payload)
+        });
+    }
+    catch (error) {
+        console.warn('Convex upsert gagal:', error);
+    }
 }
 async function upsertPresence(payload) {
     if (!payload)
         return;
     persistPresenceLocal(payload);
-    const config = getConvexConfig();
-    if (convexEnabled()) {
-        try {
-            await runConvexMutation(config.presenceUpsertMutation || 'monitor:upsertPresence', { payload });
-            return;
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex presence sync');
-            console.warn('Convex presence sync gagal:', error);
-        }
-    }
+    if (await upsertPresenceToCloudflare(payload))
+        return;
     if (await upsertPresenceToNetlify(payload))
         return;
     if (await upsertPresenceToSupabase(payload))
         return;
-    await upsertPresenceToCloudflare(payload);
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return;
+    try {
+        await runConvexMutation(config.presenceUpsertMutation || 'monitor:upsertPresence', { payload });
+    }
+    catch (error) {
+        console.warn('Convex presence sync gagal:', error);
+    }
 }
 async function fetchPresenceRowsFromConvex() {
-    const config = getConvexConfig();
-    if (convexEnabled()) {
-        try {
-            const queryName = config.presenceQuery || 'monitor:listPresence';
-            const rows = await runConvexQuery(queryName, {});
-            if (rows !== null)
-                return normalizePresenceRows(rows);
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex presence query');
-            console.warn('Convex presence query gagal:', error);
-        }
-    }
+    const cloudflareRows = await fetchPresenceRowsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchPresenceRowsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchPresenceRowsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const cloudflareRows = await fetchPresenceRowsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return readLocalPresenceRows();
+    try {
+        const queryName = config.presenceQuery || 'monitor:listPresence';
+        const rows = await runConvexQuery(queryName, {});
+        if (rows !== null)
+            return normalizePresenceRows(rows);
+    }
+    catch (error) {
+        console.warn('Convex presence query gagal:', error);
+    }
     return readLocalPresenceRows();
 }
 async function fetchMonitorRowsFromConvex() {
-    const config = getConvexConfig();
-    if (convexEnabled()) {
-        try {
-            const queryName = config.monitorQuery || 'monitor:listVisits';
-            const rows = await runConvexQuery(queryName, {});
-            if (rows !== null)
-                return normalizeMonitorRows(rows);
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex monitor query');
-            console.warn('Convex realtime query gagal, fallback HTTP:', error);
-        }
-        const endpoint = convexUrl(config.listPath || 'monitor/listVisits');
-        if (endpoint) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'GET',
-                    headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
-                });
-                if (response.ok) {
-                    const payload = await response.json();
-                    return normalizeMonitorRows(payload);
-                }
-            }
-            catch (error) {
-                rememberRemoteSyncError(error, 'Convex monitor HTTP');
-                console.warn('Convex monitor HTTP fallback gagal:', error);
-            }
-        }
-    }
+    const cloudflareRows = await fetchMonitorRowsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchMonitorRowsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchMonitorRowsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const cloudflareRows = await fetchMonitorRowsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
-    return null;
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return null;
+    try {
+        const queryName = config.monitorQuery || 'monitor:listVisits';
+        const rows = await runConvexQuery(queryName, {});
+        if (rows !== null)
+            return normalizeMonitorRows(rows);
+    }
+    catch (error) {
+        console.warn('Convex realtime query gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.listPath || 'monitor/listVisits');
+    if (!endpoint)
+        return null;
+    const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
+    });
+    if (!response.ok)
+        throw new Error('Convex monitor gagal dibaca.');
+    const payload = await response.json();
+    return normalizeMonitorRows(payload);
 }
 async function fetchManualRequestsFromConvex() {
-    const config = getConvexConfig();
-    if (convexEnabled()) {
-        try {
-            const queryName = config.manualRequestsQuery || 'monitor:listManualStoreRequests';
-            const rows = await runConvexQuery(queryName, {});
-            if (rows !== null)
-                return persistManualRequestsFromRemote(rows);
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex manual request query');
-            console.warn('Convex manual request query gagal, fallback HTTP:', error);
-        }
-        const endpoint = convexUrl(config.listManualRequestsPath || 'monitor/listManualStoreRequests');
-        if (endpoint) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'GET',
-                    headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
-                });
-                if (response.ok) {
-                    const payload = await response.json();
-                    return persistManualRequestsFromRemote(payload);
-                }
-            }
-            catch (error) {
-                rememberRemoteSyncError(error, 'Convex manual request HTTP');
-                console.warn('HTTP request toko gagal:', error);
-            }
-        }
-    }
+    const cloudflareRows = await fetchManualRequestsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchManualRequestsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchManualRequestsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const cloudflareRows = await fetchManualRequestsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
-    return null;
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return null;
+    try {
+        const queryName = config.manualRequestsQuery || 'monitor:listManualStoreRequests';
+        const rows = await runConvexQuery(queryName, {});
+        if (rows !== null)
+            return persistManualRequestsFromRemote(rows);
+    }
+    catch (error) {
+        console.warn('Convex manual request query gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.listManualRequestsPath || 'monitor/listManualStoreRequests');
+    if (!endpoint)
+        return null;
+    const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: { ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) }
+    });
+    if (!response.ok)
+        throw new Error('Convex request toko gagal dibaca.');
+    const payload = await response.json();
+    return persistManualRequestsFromRemote(payload);
 }
 async function syncManualRequestToConvex(request) {
-    if (!request)
+    if (await syncManualRequestToCloudflare(request))
+        return;
+    if (await syncManualRequestToNetlify(request))
+        return;
+    if (await syncManualRequestToSupabase(request))
         return;
     const config = getConvexConfig();
+    if (!convexEnabled() || !request)
+        return;
     const payload = {
         request_id: request.id,
         status: request.status || 'pending',
@@ -6171,37 +4438,27 @@ async function syncManualRequestToConvex(request) {
         page_url: location.href,
         user_agent: navigator.userAgent
     };
-    if (convexEnabled()) {
-        try {
-            const result = await runConvexMutation(config.upsertManualRequestMutation || 'monitor:upsertManualStoreRequest', { payload });
-            if (result !== null)
-                return;
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex request toko mutation');
-            console.warn('Convex request toko gagal, fallback HTTP:', error);
-        }
-        const endpoint = convexUrl(config.upsertManualRequestPath || 'monitor/upsertManualStoreRequest');
-        if (endpoint) {
-            try {
-                await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
-                    body: JSON.stringify(payload)
-                });
-                return;
-            }
-            catch (error) {
-                rememberRemoteSyncError(error, 'Convex request toko HTTP');
-                console.warn('HTTP request toko gagal:', error);
-            }
-        }
+    try {
+        const result = await runConvexMutation(config.upsertManualRequestMutation || 'monitor:upsertManualStoreRequest', { payload });
+        if (result !== null)
+            return;
     }
-    if (await syncManualRequestToNetlify(request))
+    catch (error) {
+        console.warn('Convex request toko gagal, fallback HTTP:', error);
+    }
+    const endpoint = convexUrl(config.upsertManualRequestPath || 'monitor/upsertManualStoreRequest');
+    if (!endpoint)
         return;
-    if (await syncManualRequestToSupabase(request))
-        return;
-    await syncManualRequestToCloudflare(request);
+    try {
+        await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}) },
+            body: JSON.stringify(payload)
+        });
+    }
+    catch (error) {
+        console.warn('HTTP request toko gagal:', error);
+    }
 }
 async function syncManualRequestStatusToConvex(request) {
     if (!request)
@@ -6216,33 +4473,6 @@ function normalizeRemoteAppConfigRows(rows) {
         updatedAt: row.updatedAt || row.updated_at || 0
     })).filter((row) => row.key);
 }
-async function applySilentWebSyncSignal(payload) {
-    const signal = payload && typeof payload === 'object' ? payload : {};
-    const key = cleanText(signal.signalId || signal.sentAt || signal.version);
-    if (!key)
-        return;
-    if (localStorage.getItem(RBV_WEB_SYNC_SIGNAL_KEY) === key)
-        return;
-    localStorage.setItem(RBV_WEB_SYNC_SIGNAL_KEY, key);
-    try {
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.filter((cacheKey) => cacheKey.startsWith('bestie-visit-')).map((cacheKey) => caches.delete(cacheKey)));
-        }
-        if (navigator.serviceWorker?.getRegistrations) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            registrations.forEach((registration) => {
-                registration.update?.().catch(() => { });
-                if (registration.waiting)
-                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-            });
-        }
-    }
-    catch (error) {
-        console.warn('Silent web sync gagal:', error);
-    }
-    window.dispatchEvent(new CustomEvent('rbv-silent-web-sync', { detail: signal }));
-}
 function applyRemoteAppConfigRows(rows) {
     const normalized = normalizeRemoteAppConfigRows(rows);
     normalized.forEach((row) => {
@@ -6252,60 +4482,56 @@ function applyRemoteAppConfigRows(rows) {
             saveUpdateNoticeConfig(row.payload);
         if (row.key === APP_CONFIG_KEYS.emailTemplate)
             saveEmailTemplateConfig(row.payload);
-        if (row.key === APP_CONFIG_KEYS.webSync)
-            applySilentWebSyncSignal(row.payload);
     });
     return normalized;
 }
 async function fetchAppConfigsFromConvex() {
-    const config = getConvexConfig();
-    if (convexEnabled()) {
-        try {
-            const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] });
-            if (rows !== null)
-                return normalizeRemoteAppConfigRows(rows);
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex app config query');
-            console.warn('Convex app config query gagal:', error);
-        }
-    }
+    const cloudflareRows = await fetchAppConfigsFromCloudflare();
+    if (cloudflareRows !== null)
+        return cloudflareRows;
     const netlifyRows = await fetchAppConfigsFromNetlify();
     if (netlifyRows !== null)
         return netlifyRows;
     const supabaseRows = await fetchAppConfigsFromSupabase();
     if (supabaseRows !== null)
         return supabaseRows;
-    const cloudflareRows = await fetchAppConfigsFromCloudflare();
-    if (cloudflareRows !== null)
-        return cloudflareRows;
+    const config = getConvexConfig();
+    if (!convexEnabled())
+        return null;
+    try {
+        const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
+        const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] });
+        if (rows !== null)
+            return normalizeRemoteAppConfigRows(rows);
+    }
+    catch (error) {
+        console.warn('Convex app config query gagal:', error);
+    }
     return null;
 }
 async function syncAppConfigToConvex(key, payload) {
     clearRemoteSyncError();
-    const config = getConvexConfig();
-    if (convexEnabled() && key) {
-        try {
-            await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
-                key,
-                payload,
-                updatedBy: SESSION_ID
-            });
-            return true;
-        }
-        catch (error) {
-            rememberRemoteSyncError(error, 'Convex app config sync');
-            console.warn('Convex app config sync gagal:', error);
-        }
-    }
+    if (cloudflareEnabled())
+        return await syncAppConfigToCloudflare(key, payload);
     if (await syncAppConfigToNetlify(key, payload))
         return true;
     if (await syncAppConfigToSupabase(key, payload))
         return true;
-    if (await syncAppConfigToCloudflare(key, payload))
+    const config = getConvexConfig();
+    if (!convexEnabled() || !key)
+        return false;
+    try {
+        await runConvexMutation(config.appConfigSetMutation || 'appSettings:setConfig', {
+            key,
+            payload,
+            updatedBy: SESSION_ID
+        });
         return true;
-    return false;
+    }
+    catch (error) {
+        console.warn('Convex app config sync gagal:', error);
+        return false;
+    }
 }
 function syncWelcomeConfigToConvex(config) {
     return syncAppConfigToConvex(APP_CONFIG_KEYS.welcome, normalizeWelcomeConfigPayload(config));
@@ -6370,30 +4596,16 @@ function WelcomeOverlay({ config, onDone }) {
     const cardRef = useRef(null);
     const onDoneRef = useRef(onDone);
     const doneRef = useRef(false);
-    const savedLogin = readBestieLogin();
-    const [nikInput, setNikInput] = useState(savedLogin.nik || '');
-    const [loginName, setLoginName] = useState(savedLogin.name || '');
-    const [loginError, setLoginError] = useState('');
-    const [introDone, setIntroDone] = useState(false);
     const [closing, setClosing] = useState(false);
-    const nikInputRef = useRef(null);
     useEffect(() => {
         onDoneRef.current = onDone;
     }, [onDone]);
     useEffect(() => {
         doneRef.current = false;
         setClosing(false);
-        setLoginError('');
-        setIntroDone(false);
-        const timer = window.setTimeout(() => setIntroDone(true), Math.max(900, durationMs + 160));
+        const timer = window.setTimeout(finishWelcome, durationMs + 120);
         return () => window.clearTimeout(timer);
     }, [durationMs]);
-    useEffect(() => {
-        if (!introDone || closing)
-            return;
-        const focusTimer = window.setTimeout(() => nikInputRef.current?.focus?.(), 80);
-        return () => window.clearTimeout(focusTimer);
-    }, [introDone, closing]);
     function finishWelcome() {
         if (doneRef.current)
             return;
@@ -6403,24 +4615,6 @@ function WelcomeOverlay({ config, onDone }) {
             if (typeof onDoneRef.current === 'function')
                 onDoneRef.current();
         }, 340);
-    }
-    function handleNikChange(event) {
-        const nik = normalizeNik(event.target.value);
-        setNikInput(nik);
-        const found = findBestieByNik(nik);
-        setLoginName(found ? found.name : '');
-        if (loginError)
-            setLoginError('');
-    }
-    function submitBestieLogin(event) {
-        event?.preventDefault?.();
-        const saved = saveBestieLogin({ nik: nikInput });
-        if (!saved) {
-            setLoginError('NIK tidak terdaftar. Cek kembali angka NIK Regional Bestie.');
-            return;
-        }
-        setLoginName(saved.name);
-        finishWelcome();
     }
     function handlePointerMove(event) {
         const card = cardRef.current;
@@ -6458,7 +4652,7 @@ function WelcomeOverlay({ config, onDone }) {
             WebkitBackfaceVisibility: 'hidden',
             animation: closing ? 'rbvWelcomeOverlayOut .34s cubic-bezier(.22,1,.36,1) forwards' : 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
         } },
-        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(6px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.38}50%{transform:translate3d(10px,-8px,0) scale(1.05);opacity:.62}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%{transform:translate3d(0,0,0) rotate(-4deg) scale(.96)}35%{transform:translate3d(0,-10px,0) rotate(8deg) scale(1.03)}70%{transform:translate3d(0,2px,0) rotate(-2deg) scale(.99)}100%{transform:translate3d(0,0,0) rotate(-4deg) scale(.96)}} @keyframes rbvWelcomeOrbit{0%{transform:rotate(0deg) translateX(8px) rotate(0deg);opacity:.48}100%{transform:rotate(360deg) translateX(8px) rotate(-360deg);opacity:.78}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`),
+        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(6px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.38}50%{transform:translate3d(10px,-8px,0) scale(1.05);opacity:.62}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.92) rotate(0deg)}50%{transform:scale(1) rotate(10deg)}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at 18% 18%, rgba(15,118,110,.08), transparent 34%), radial-gradient(circle at 80% 20%, rgba(20,184,166,.10), transparent 30%), radial-gradient(circle at 50% 78%, rgba(148,163,184,.16), transparent 26%)', pointerEvents: 'none' } }),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(15,118,110,.10)', filter: 'blur(24px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' } }),
         React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(20,184,166,.10)', filter: 'blur(28px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' } }),
@@ -6475,33 +4669,24 @@ function WelcomeOverlay({ config, onDone }) {
                 boxShadow: '0 24px 60px rgba(15,23,42,.16)',
                 transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
                 transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
-                animation: 'none',
-                opacity: 1,
-                filter: 'none',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden'
             } },
             React.createElement("div", { style: { position: 'relative', overflow: 'hidden', borderRadius: '35px', padding: '28px 24px 24px', background: '#ededed' } },
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, backgroundColor: '#ededed', backgroundImage: 'url("icons/welcome-handshake-bg.jpg")', backgroundPosition: 'center center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', opacity: 0.44, mixBlendMode: 'multiply', pointerEvents: 'none' } }),
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(237,237,237,.54), rgba(237,237,237,.76) 34%, rgba(237,237,237,.88) 100%), radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(255,255,255,.55), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
+                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, backgroundColor: '#ededed', backgroundImage: 'url("icons/welcome-handshake-bg.jpg")', backgroundPosition: 'center center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', opacity: 0.28, mixBlendMode: 'multiply', pointerEvents: 'none' } }),
+                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(237,237,237,.72), rgba(237,237,237,.88) 32%, rgba(237,237,237,.94) 100%), radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(255,255,255,.55), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
                 React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent)', animation: 'rbvWelcomeShine 3.4s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
                 React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 250, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
-                    React.createElement("div", { "aria-hidden": "true", className: "welcome-app-logo-motion-v99", style: { display: 'grid', placeItems: 'center', width: 120, height: 120, borderRadius: '34px', overflow: 'visible', background: 'rgba(255,255,255,.74)', border: '1px solid rgba(255,255,255,.85)', boxShadow: '0 16px 34px rgba(15,23,42,.10)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', animation: 'rbvWelcomeSpark 3.8s cubic-bezier(.22,1,.36,1) infinite' } },
+                    React.createElement("div", { "aria-hidden": "true", className: "welcome-app-logo-motion-v99", style: { display: 'grid', placeItems: 'center', width: 120, height: 120, borderRadius: '34px', overflow: 'visible', background: 'rgba(255,255,255,.74)', border: '1px solid rgba(255,255,255,.85)', boxShadow: '0 16px 34px rgba(15,23,42,.10)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', animation: 'rbvWelcomeSpark 3s ease-in-out infinite' } },
                         React.createElement("span", { className: "welcome-logo-ring-v99 ring-a" }),
                         React.createElement("span", { className: "welcome-logo-ring-v99 ring-b" }),
                         React.createElement("img", { src: "icons/icon-192.png", alt: "", className: "welcome-app-icon-v99" })),
                     React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
                     React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', textShadow: '0 1px 0 rgba(255,255,255,.45)', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
-                    React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, whiteSpace: 'pre-line', color: '#334155', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
+                    React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#334155', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
                     React.createElement("div", { "aria-hidden": "true", style: { marginTop: 24, height: 7, width: 'min(260px, 78%)', overflow: 'hidden', borderRadius: '999px', background: 'rgba(15,118,110,.12)' } },
                         React.createElement("span", { onAnimationEnd: (event) => { if (event.animationName === 'rbvWelcomeProgress')
-                                setIntroDone(true); }, style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })),
-                    introDone ? React.createElement("form", { className: "welcome-nik-login", onSubmit: submitBestieLogin },
-                        React.createElement("p", { className: "welcome-nik-label" }, "Login NIK Regional Bestie"),
-                        React.createElement("input", { ref: nikInputRef, value: nikInput, onChange: handleNikChange, inputMode: "numeric", maxLength: 12, className: "welcome-nik-input", placeholder: "Masukkan NIK", autoFocus: true }),
-                        loginName ? React.createElement("p", { className: "welcome-nik-name" }, loginName) : React.createElement("p", { className: "welcome-nik-hint" }, "Nama otomatis muncul setelah NIK valid."),
-                        loginError ? React.createElement("p", { className: "welcome-nik-error" }, loginError) : null,
-                        React.createElement("button", { type: "submit", className: "welcome-nik-button", disabled: !findBestieByNik(nikInput) }, "Masuk")) : null)))));
+                                finishWelcome(); }, style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })))))));
 }
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
@@ -6529,7 +4714,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
     if (!open)
         return null;
     return (React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-sm", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "secret-pin-card w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl" },
+        React.createElement("div", { className: "w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl" },
             React.createElement("div", { className: "mb-5 flex items-center justify-between" },
                 React.createElement("div", { className: "flex items-center gap-3" },
                     React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white" },
@@ -6539,7 +4724,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
                         React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Masukkan PIN"))),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control secret-pin-input text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
+            React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
             error ? React.createElement("p", { className: "mt-3 text-center text-sm font-bold text-rose-600" }, error) : null)));
 }
 function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange }) {
@@ -6571,11 +4756,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [emailBodyTemplate, setEmailBodyTemplate] = useState(() => readEmailTemplateConfig().bodyTemplate);
     const [cloudflareDbStatus, setCloudflareDbStatus] = useState('');
     const [cloudflareDbBusy, setCloudflareDbBusy] = useState(false);
-    const masterUploadInputRef = useRef(null);
-    const [masterStoreRows, setMasterStoreRows] = useState(() => readLocalMasterStores());
-    const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Convex untuk semua device.');
-    const [masterStoreBusy, setMasterStoreBusy] = useState(false);
-    const [masterStoreQuery, setMasterStoreQuery] = useState('');
     async function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
@@ -6623,79 +4803,19 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setEmailBodyTemplate(saved.bodyTemplate);
         alert('Template email dikembalikan ke default.');
     }
-    async function cloudflarePanelFetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            method: options.method || 'GET',
-            mode: 'cors',
-            credentials: 'omit',
-            cache: 'no-store',
-            headers: { Accept: 'application/json', ...(options.headers || {}) },
-            body: options.body
-        });
-        const rawText = await response.text().catch(() => '');
-        let payload = null;
-        if (rawText) {
-            try {
-                payload = JSON.parse(rawText);
-            }
-            catch (error) {
-                throw new Error(`Endpoint tidak mengirim JSON valid: ${rawText.slice(0, 120)}`);
-            }
-        }
-        if (!response.ok || payload?.ok === false) {
-            throw new Error(payload?.error || payload?.message || `HTTP ${response.status}`);
-        }
-        return payload || { ok: true };
-    }
     async function testCloudflareD1Panel() {
         if (cloudflareDbBusy)
             return;
         setCloudflareDbBusy(true);
-        const endpoint = cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data');
-        setCloudflareDbStatus(`Mengecek endpoint aktif: ${endpoint}`);
+        setCloudflareDbStatus('Mengecek koneksi Cloudflare D1 langsung ke endpoint aktif...');
         try {
-            const healthUrl = new URL(endpoint, window.location.origin);
-            healthUrl.searchParams.set('_panelCheck', String(Date.now()));
-            const healthPayload = await cloudflarePanelFetchJson(healthUrl.toString());
-            const d1Payload = await cloudflareRequest('testD1');
-            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
-            const rows = settingsPayload?.rows || settingsPayload?.data || [];
+            const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate].join(',') } });
+            const rows = payload?.rows || payload?.data || [];
             const count = Array.isArray(rows) ? rows.length : 0;
-            setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
+            setCloudflareDbStatus(`Cloudflare D1 AKTIF & TERKONEKSI. App settings terbaca: ${count} item. Endpoint sudah valid.`);
         }
         catch (error) {
-            setCloudflareDbStatus(`GAGAL: ${error?.message || 'request gagal.'} Endpoint: ${endpoint}. Cek lagi binding DB di Worker, CORS, dan deploy file cloudflare/worker.mjs terbaru. Setelah deploy buka ?v=206.`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function pullCloudflareSettingsPanel() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Menarik setting terbaru dari Cloudflare D1 ke panel lokal...');
-        try {
-            const rows = await fetchAppConfigsFromCloudflare();
-            if (rows === null)
-                throw new Error(LAST_REMOTE_SYNC_ERROR || 'Cloudflare tidak mengirim data settings.');
-            const applied = applyRemoteAppConfigRows(rows);
-            const nextWelcome = readWelcomeConfig();
-            setWelcomeTitle(nextWelcome.title);
-            setWelcomeSubtitle(nextWelcome.subtitle);
-            setWelcomeDurationSeconds(nextWelcome.durationSeconds);
-            const nextNotice = readUpdateNoticeConfig();
-            setNoticeEnabled(nextNotice.enabled);
-            setNoticeTitle(nextNotice.title);
-            setNoticeMessagesText(nextNotice.messages.join('\n'));
-            setNoticeIntervalSeconds(nextNotice.intervalSeconds);
-            const nextEmailTemplate = readEmailTemplateConfig();
-            setEmailSubjectTemplate(nextEmailTemplate.subjectTemplate);
-            setEmailBodyTemplate(nextEmailTemplate.bodyTemplate);
-            setCloudflareDbStatus(`Tarik setting selesai. ${applied.length} item diterapkan dari Cloudflare D1 ke panel.`);
-        }
-        catch (error) {
-            setCloudflareDbStatus(`Tarik setting gagal: ${error?.message || 'request gagal.'}`);
+            setCloudflareDbStatus(`Cloudflare D1 belum terbaca di frontend: ${error?.message || 'request gagal.'}. Jika endpoint manual sudah OK, tutup web lalu buka ulang dengan ?v=102.`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -6718,153 +4838,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         }
         catch (error) {
             setCloudflareDbStatus(`Sync Cloudflare gagal: ${error?.message || 'unknown error.'}`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function testConvexPanel() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        const deployment = cleanText(getConvexDeploymentUrl() || getConvexConfig().deploymentUrl || '');
-        const siteUrl = cleanText(getConvexHttpUrl() || getConvexConfig().siteUrl || '');
-        setCloudflareDbStatus(`Mengecek Convex deployment: ${deployment || 'belum diisi'}`);
-        try {
-            if (!convexEnabled())
-                throw new Error('Convex belum aktif. Isi enabled:true dan deploymentUrl di convex-config.js.');
-            const config = getConvexConfig();
-            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] });
-            const masterRows = await runConvexQuery(config.masterStoreListQuery || 'masterStores:listStores', { limit: 10 });
-            const settingCount = normalizeRemoteAppConfigRows(settingsRows).length;
-            const masterCount = normalizeMasterStoreRows(masterRows?.rows || masterRows?.data || masterRows).length;
-            setCloudflareDbStatus(`READY: Convex aktif. Settings terbaca ${settingCount} item, sample master toko ${masterCount} baris. URL: ${deployment}${siteUrl ? ` | Site: ${siteUrl}` : ''}`);
-        }
-        catch (error) {
-            setCloudflareDbStatus(`GAGAL: ${error?.message || 'Convex gagal dites.'} Cek convex-config.js, jalankan npx convex dev, lalu buka ulang ?v=206.`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function pullConvexSettingsPanel() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Menarik setting terbaru dari Convex ke panel lokal...');
-        try {
-            const rows = await fetchAppConfigsFromConvex();
-            if (rows === null)
-                throw new Error(LAST_REMOTE_SYNC_ERROR || 'Convex tidak mengirim data settings.');
-            const applied = applyRemoteAppConfigRows(rows);
-            const nextWelcome = readWelcomeConfig();
-            setWelcomeTitle(nextWelcome.title);
-            setWelcomeSubtitle(nextWelcome.subtitle);
-            setWelcomeDurationSeconds(nextWelcome.durationSeconds);
-            const nextNotice = readUpdateNoticeConfig();
-            setNoticeEnabled(nextNotice.enabled);
-            setNoticeTitle(nextNotice.title);
-            setNoticeMessagesText(nextNotice.messages.join('\n'));
-            setNoticeIntervalSeconds(nextNotice.intervalSeconds);
-            const nextEmailTemplate = readEmailTemplateConfig();
-            setEmailSubjectTemplate(nextEmailTemplate.subjectTemplate);
-            setEmailBodyTemplate(nextEmailTemplate.bodyTemplate);
-            setCloudflareDbStatus(`Tarik setting selesai. ${applied.length} item diterapkan dari Convex ke panel.`);
-        }
-        catch (error) {
-            setCloudflareDbStatus(`Tarik setting gagal: ${error?.message || 'request gagal.'}`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function syncHistoryToConvexPanel() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Mengirim history lokal ke Convex...');
-        try {
-            if (!convexEnabled())
-                throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
-            const config = getConvexConfig();
-            const visits = await getAllVisitRecordsForBackup();
-            let success = 0;
-            for (const item of visits) {
-                if (!item || !cleanText(item.nama) || !cleanText(item.store))
-                    continue;
-                const payload = monitorPayloadFromVisit(item);
-                await runConvexMutation(config.upsertMutation || 'monitor:upsertVisit', { payload });
-                success += 1;
-            }
-            setCloudflareDbStatus(`Sync Convex selesai. ${success}/${visits.length} history terkirim.`);
-            refresh({ quiet: true });
-        }
-        catch (error) {
-            setCloudflareDbStatus(`Sync Convex gagal: ${error?.message || 'unknown error.'}`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function broadcastSilentWebSync() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Mengirim perintah Silent Web Sync ke semua device aktif...');
-        try {
-            if (!convexEnabled())
-                throw new Error('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
-            const payload = {
-                signalId: `web-sync-${Date.now()}`,
-                version: APP_BUILD_VERSION,
-                sentAt: Date.now(),
-                mode: 'silent-cache-update',
-                message: 'Device aktif akan membersihkan cache dan mengecek service worker tanpa reload paksa.'
-            };
-            const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.webSync, payload);
-            if (!synced)
-                throw new Error(LAST_REMOTE_SYNC_ERROR || 'gagal menyimpan signal ke Convex.');
-            setCloudflareDbStatus('Silent Web Sync terkirim. Device aktif akan update cache tanpa memaksa reload; versi baru penuh dipakai saat user refresh/buka ulang.');
-        }
-        catch (error) {
-            setCloudflareDbStatus(`Silent Web Sync gagal: ${error?.message || 'unknown error.'}`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function uploadDeviceBackupPanel() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Membuat backup cepat device ke Convex...');
-        try {
-            const payload = await pushDeviceBackupToConvex();
-            setCloudflareDbStatus(`Backup cepat tersimpan di Convex. Visit: ${payload.visits.length}, master toko: ${payload.masterStores.length}. Di device baru tekan Tarik Device Backup.`);
-        }
-        catch (error) {
-            setCloudflareDbStatus(`Backup cepat gagal: ${error?.message || 'unknown error.'}`);
-        }
-        finally {
-            setCloudflareDbBusy(false);
-        }
-    }
-    async function pullDeviceBackupPanel() {
-        if (cloudflareDbBusy)
-            return;
-        setCloudflareDbBusy(true);
-        setCloudflareDbStatus('Menarik backup cepat dari Convex...');
-        try {
-            const result = await pullDeviceBackupFromConvex();
-            if (!result) {
-                setCloudflareDbStatus('Tarik Device Backup dibatalkan.');
-                return;
-            }
-            setHistory(readHistoryMeta());
-            setCloudflareDbStatus(`Tarik Device Backup selesai. Visit lokal: ${result.visits}, master toko: ${result.masterStores}. Reload ringan disarankan setelah ini.`);
-        }
-        catch (error) {
-            setCloudflareDbStatus(`Tarik Device Backup gagal: ${error?.message || 'unknown error.'}`);
         }
         finally {
             setCloudflareDbBusy(false);
@@ -6984,130 +4957,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setManualRequests(readManualStoreRequests());
         refresh({ quiet: true });
     }
-    async function refreshMasterStoresFromConvex() {
-        if (masterStoreBusy)
-            return;
-        setMasterStoreBusy(true);
-        setMasterStoreStatus('Menarik master data detail toko dari Convex...');
-        try {
-            const rowsFromConvex = await fetchMasterStoresFromConvex();
-            if (rowsFromConvex === null)
-                throw new Error(LAST_REMOTE_SYNC_ERROR || 'Convex belum mengirim data master toko.');
-            const saved = saveLocalMasterStores(rowsFromConvex);
-            setMasterStoreRows(saved);
-            setMasterStoreStatus(`Master data Convex diterapkan: ${saved.length} toko.`);
-        }
-        catch (error) {
-            setMasterStoreStatus(`Tarik master gagal: ${error?.message || 'unknown error.'}`);
-        }
-        finally {
-            setMasterStoreBusy(false);
-        }
-    }
-    async function syncLocalMasterStoresToConvex() {
-        if (masterStoreBusy)
-            return;
-        const rowsToSync = normalizeMasterStoreRows(masterStoreRows);
-        if (!rowsToSync.length) {
-            setMasterStoreStatus('Belum ada master data toko untuk dikirim. Upload Excel dulu.');
-            return;
-        }
-        setMasterStoreBusy(true);
-        setMasterStoreStatus(`Mengirim ${rowsToSync.length} master toko ke Convex...`);
-        try {
-            const ok = await syncMasterStoresToConvex(rowsToSync, { replace: true });
-            if (ok) {
-                const remoteRows = await fetchMasterStoresFromConvex();
-                if (remoteRows && remoteRows.length) {
-                    const confirmed = saveLocalMasterStores(remoteRows);
-                    setMasterStoreRows(confirmed);
-                    setMasterStoreStatus(`Sync Convex berhasil: ${confirmed.length} toko tersimpan dan siap untuk semua device.`);
-                }
-                else {
-                    setMasterStoreStatus(`Sync Convex berhasil: ${rowsToSync.length} toko terkirim.`);
-                }
-            }
-            else {
-                setMasterStoreStatus(`Sync Convex gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek deploymentUrl dan function masterStores.'}`);
-            }
-        }
-        finally {
-            setMasterStoreBusy(false);
-        }
-    }
-    async function handleMasterStoreFileChange(event) {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        if (!file)
-            return;
-        setMasterStoreBusy(true);
-        setMasterStoreStatus(`Membaca file ${file.name}...`);
-        try {
-            const parsedRows = await parseMasterStoreExcelFile(file);
-            if (!parsedRows.length)
-                throw new Error('Tidak ada baris master toko valid. Pastikan header sesuai template.');
-            const saved = saveLocalMasterStores(parsedRows);
-            setMasterStoreRows(saved);
-            setMasterStoreStatus(`Upload berhasil: ${saved.length} toko terbaca lokal. Publish ke Convex untuk semua device...`);
-            const ok = await syncMasterStoresToConvex(saved, { replace: true });
-            if (ok) {
-                const remoteRows = await fetchMasterStoresFromConvex();
-                if (remoteRows && remoteRows.length) {
-                    const confirmed = saveLocalMasterStores(remoteRows);
-                    setMasterStoreRows(confirmed);
-                    setMasterStoreStatus(`Upload + publish Convex selesai: ${confirmed.length} toko aktif untuk semua device.`);
-                }
-                else {
-                    setMasterStoreStatus(`Upload + sync Convex selesai: ${saved.length} toko terkirim. Device lain akan menarik data saat reload/buka ulang.`);
-                }
-            }
-            else {
-                setMasterStoreStatus(`Upload hanya tersimpan lokal (${saved.length} toko), belum masuk Convex: ${LAST_REMOTE_SYNC_ERROR || 'cek config Convex / deploy function masterStores.'}`);
-            }
-        }
-        catch (error) {
-            setMasterStoreStatus(`Upload gagal: ${error?.message || 'file tidak valid.'}`);
-        }
-        finally {
-            setMasterStoreBusy(false);
-        }
-    }
-    function clearLocalMasterStoreUpload() {
-        if (!confirmAction('Hapus master data toko lokal hasil upload dan kembali ke data bawaan?'))
-            return;
-        localStorage.removeItem(MASTER_STORE_LOCAL_KEY);
-        const fallbackRows = normalizeMasterStoreRows(MASTER_STORES);
-        setMasterStoreRows(fallbackRows);
-        setMasterStoreStatus(`Data lokal direset. Fallback bawaan: ${fallbackRows.length} toko.`);
-    }
-    function renderMasterStorePanel() {
-        const normalizedMasterRows = normalizeMasterStoreRows(masterStoreRows);
-        const previewRows = masterStoreFiltered.slice(0, 20);
-        return React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/80 p-4" },
-            React.createElement("input", { ref: masterUploadInputRef, type: "file", accept: ".xlsx,.xls,.csv", className: "hidden", onChange: handleMasterStoreFileChange }),
-            React.createElement("div", { className: "mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between" },
-                React.createElement("div", null,
-                    React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Master Data Detail Toko"),
-                    React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Upload Excel ke Database Convex"),
-                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-600" }, "Upload file template untuk mengganti master store lookup, email toko, area manager, regional manager, alamat, dan status operasional.")),
-                React.createElement("div", { className: "flex flex-wrap gap-2" },
-                    React.createElement(Button, { variant: "secondary", icon: "excel", onClick: downloadMasterStoreTemplateExcel }, "Template Excel"),
-                    React.createElement(Button, { variant: "secondary", icon: "upload", onClick: () => masterUploadInputRef.current?.click(), disabled: masterStoreBusy }, masterStoreBusy ? 'Proses...' : 'Upload Excel'),
-                    React.createElement(Button, { variant: "secondary", icon: "download", onClick: refreshMasterStoresFromConvex, disabled: masterStoreBusy }, "Tarik Convex"),
-                    React.createElement(Button, { variant: "secondary", icon: "spark", onClick: syncLocalMasterStoresToConvex, disabled: masterStoreBusy }, "Sync Convex"),
-                    React.createElement(Button, { variant: "secondary", icon: "trash", onClick: clearLocalMasterStoreUpload, disabled: masterStoreBusy }, "Reset Lokal"))),
-            React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
-                React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
-                    React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Total Master"),
-                    React.createElement("p", { className: "mt-1 text-2xl font-black text-slate-950" }, normalizedMasterRows.length)),
-                React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
-                    React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Database"),
-                    React.createElement("p", { className: "mt-1 text-sm font-black text-cyan-800" }, convexEnabled() ? 'Convex aktif' : 'Convex belum aktif')),
-                React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-cyan-100" },
-                    React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status"),
-                    React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-700" }, masterStoreStatus))),
-            React.createElement("p", { className: "mt-4 rounded-2xl bg-white p-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-cyan-100" }, "Preview toko di panel disembunyikan agar panel mobile lebih ringan. Upload Excel tetap membaca kolom: kode store, Store Head, Area Manager, Regional Manager, Email Store, dan Alamat Store."));
-    }
     useEffect(() => {
         if (!open)
             return undefined;
@@ -7128,16 +4977,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setNoticeMessagesText(currentNotice.messages.join('\n'));
         setNoticeIntervalSeconds(currentNotice.intervalSeconds);
         setSecretTab('settings');
-        applyRows(localRows(), 'local');
-        setManualRequests(readManualStoreRequests());
-        setPresenceRows(readLocalPresenceRows());
-        setMasterStoreRows(readLocalMasterStores());
-        setConnectionState('idle');
-        setLastSync('');
-        setLoading(false);
-        // Revamp 200: ruang panel rahasia tidak lagi auto polling Cloudflare/Convex saat dibuka.
-        // Monitoring tetap bisa di-refresh manual dari tab Monitoring agar panel setting tidak memicu request berulang.
-        return undefined;
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
@@ -7254,10 +5093,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         const haystack = normalize([row.bestie_name, row.store_name, row.store_code].join(' '));
         return !query || haystack.includes(normalize(query));
     });
-    const masterStoreFiltered = normalizeMasterStoreRows(masterStoreRows).filter((store) => {
-        const haystack = normalize([store.siteCode4, store.siteCode, store.siteDescr, store.type, store.city, store.address, store.emailStore, store.areaManager].join(' '));
-        return !masterStoreQuery || haystack.includes(normalize(masterStoreQuery));
-    });
     const onlinePresence = normalizePresenceRows(presenceRows).filter((row) => row.is_online);
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
@@ -7273,12 +5108,11 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Panel Rahasia Admin"),
                         secretTab === 'monitoring' ? React.createElement(Badge, { tone: isLive ? 'success' : 'default' }, sourceBadgeLabel) : React.createElement(Badge, { tone: "default" }, "Setting Web"),
                         secretTab === 'monitoring' ? React.createElement(Badge, { tone: connectionTone }, connectionState) : null),
-                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Realtime' : 'Admin Control Center'),
+                    React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & PDF'),
                     secretTab === 'monitoring' && lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
                         "Update terakhir: ",
                         formatDateTime(lastSync)) : null),
                 React.createElement("div", { className: "flex flex-wrap gap-2" },
-                    secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "excel", onClick: downloadMasterStoreTemplateExcel }, "Template Excel") : null,
                     secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "download", onClick: () => exportJson(rows, 'regional-bestie-monitor.json') }, "Export JSON") : null,
                     secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "spark", onClick: () => refresh(), disabled: loading }, loading ? 'Sync...' : 'Refresh') : null,
                     React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
@@ -7287,37 +5121,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'settings' && 'active'), onClick: () => setSecretTab('settings') },
                     React.createElement(Icon, { name: "settings", className: "h-4 w-4" }),
                     React.createElement("span", null, "Setting Web")),
-                React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'), onClick: () => { setSecretTab('monitoring'); refresh(); } },
+                React.createElement("button", { type: "button", className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'), onClick: () => setSecretTab('monitoring') },
                     React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
                     React.createElement("span", null, "Monitoring"))),
             secretTab === 'settings' ? (React.createElement(React.Fragment, null,
-                React.createElement("div", { className: "secret-convex-command mb-5 overflow-hidden rounded-[30px] border border-emerald-900 bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-4 text-white shadow-2xl md:p-5" },
-                    React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
-                                React.createElement(Badge, { tone: "dark" }, "Revamp 217"),
-                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Primary"),
-                                React.createElement("span", { className: "rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-cyan-300/20" }, "No D1 Panel")),
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Convex Control Center"),
-                            React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Panel Rahasia")),
-                        React.createElement("div", { className: "flex flex-wrap gap-2" },
-                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testConvexPanel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test Convex'),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullConvexSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToConvexPanel, disabled: cloudflareDbBusy }, "Sync History"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: uploadDeviceBackupPanel, disabled: cloudflareDbBusy }, "Upload Device Backup"),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullDeviceBackupPanel, disabled: cloudflareDbBusy }, "Tarik Device Backup"),
-                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: broadcastSilentWebSync, disabled: cloudflareDbBusy }, "Silent Web Sync"))),
-                    React.createElement("div", { className: "mt-4 grid gap-3 md:grid-cols-3" },
-                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Convex URL"),
-                            React.createElement("p", { className: "mt-1 break-all text-xs font-bold leading-5 text-white" }, cleanText(getConvexDeploymentUrl() || getConvexConfig().deploymentUrl || 'Belum diisi di convex-config.js'))),
-                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Realtime Mode"),
-                            React.createElement("p", { className: "mt-1 text-sm font-black text-emerald-200" }, convexEnabled() ? "ON via Convex" : "OFF"),
-                            React.createElement("p", { className: "mt-1 text-[11px] font-semibold text-slate-400" }, "Monitoring fetch saat tab Monitoring / Refresh ditekan; setting tidak auto-spam request.")),
-                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status Convex"),
-                            React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-200" }, cloudflareDbStatus || 'Belum dites dari panel ini. Tekan Test Convex.')))),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,
@@ -7382,7 +5189,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Panel Database Rahasia")),
                         React.createElement("div", { className: "flex flex-wrap gap-2" },
                             React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullCloudflareSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
                             React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
                     React.createElement("div", { className: "rounded-2xl bg-white px-4 py-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-sky-100" },
                         React.createElement("p", null, "Endpoint: ", cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data')),
@@ -7443,7 +5249,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
                         React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
                         React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
-                React.createElement("div", { className: "hidden" },
+                React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
                         React.createElement(Badge, { tone: "default" },
@@ -7481,7 +5287,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("div", { className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200" },
                         React.createElement("p", { className: "text-xs font-bold uppercase text-slate-500" }, "Visit Hari Ini"),
                         React.createElement("p", { className: "mt-2 text-3xl font-black" }, todayVisits))),
-                renderMasterStorePanel(),
                 React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("div", null,
@@ -7572,7 +5377,7 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
     }, [screen, Boolean(visit), activeSection]);
     if (screen !== 'audit' || !visit)
         return null;
-    const progress = visitProgress(visit, activeSection);
+    const progress = visitProgress(visit);
     const safeProgress = Math.max(0, Math.min(100, progress || 0));
     return (React.createElement("div", { className: "visit-quick-dock-v54 md:hidden", role: "navigation", "aria-label": "Quick section", style: {
             position: 'fixed',
@@ -7701,7 +5506,6 @@ function App() {
     const [history, setHistory] = useState(() => readHistoryMeta());
     const [storageLabel, setStorageLabel] = useState('Menghitung storage...');
     const [activeSection, setActiveSection] = useState(0);
-    const [masterStoreRevision, setMasterStoreRevision] = useState(0);
     const [newVisitOpen, setNewVisitOpen] = useState(false);
     const [pinOpen, setPinOpen] = useState(false);
     const [secretOpen, setSecretOpen] = useState(false);
@@ -7726,17 +5530,11 @@ function App() {
                 if (cancelled || !data)
                     return;
                 setVisit(data);
-                const welcomePending = sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1';
-                if (welcomePending) {
-                    setScreen('dashboard');
-                    sessionStorage.setItem(SESSION_SCREEN_KEY, 'dashboard');
-                    return;
-                }
                 const savedScreen = sessionStorage.getItem(SESSION_SCREEN_KEY);
                 if (savedScreen === 'preview' || savedScreen === 'audit')
                     setScreen(savedScreen);
                 else
-                    setScreen('dashboard');
+                    setScreen('audit');
             }
             catch (error) {
                 console.warn('Restore active visit gagal:', error);
@@ -7749,71 +5547,6 @@ function App() {
         try { sessionStorage.setItem(SESSION_SCREEN_KEY, screen); }
         catch (error) { }
     }, [screen]);
-    useEffect(() => {
-        const config = getEmailReportConfig();
-        startPersistentEmailScheduler(config.endpoint);
-    }, []);
-    useEffect(() => {
-        const bump = () => setMasterStoreRevision((value) => value + 1);
-        window.addEventListener('rbv-master-store-change', bump);
-        window.addEventListener('storage', bump);
-        return () => {
-            window.removeEventListener('rbv-master-store-change', bump);
-            window.removeEventListener('storage', bump);
-        };
-    }, []);
-    useEffect(() => {
-        // Revamp 229: make uploaded master data available on every device.
-        // Each device pulls Convex masterStores automatically at startup and while open.
-        let cancelled = false;
-        let unsubscribe = null;
-        let pollId = null;
-        const applyRemoteMasterStores = (rows) => {
-            const normalized = normalizeMasterStoreRows(rows?.rows || rows?.data || rows);
-            if (cancelled || !normalized.length)
-                return;
-            const saved = saveLocalMasterStores(normalized);
-            setMasterStoreRevision((value) => value + 1);
-            console.info(`Master data toko diterapkan dari Convex: ${saved.length} baris.`);
-        };
-        async function refreshRemoteMasterStores() {
-            try {
-                const rows = await fetchMasterStoresFromConvex();
-                if (!cancelled && rows && rows.length)
-                    applyRemoteMasterStores(rows);
-            }
-            catch (error) {
-                console.warn('Auto tarik master data Convex gagal:', error);
-            }
-        }
-        async function startMasterStoreRemoteSync() {
-            if (!convexEnabled())
-                return;
-            await refreshRemoteMasterStores();
-            try {
-                const queryName = getConvexConfig().masterStoreListQuery || 'masterStores:listStores';
-                unsubscribe = await subscribeConvexQuery(queryName, { limit: 5000 }, (rows) => applyRemoteMasterStores(rows), (error) => console.warn('Realtime masterStores gagal:', error));
-            }
-            catch (error) {
-                console.warn('Subscribe master data Convex gagal:', error);
-            }
-            if (!cancelled && !unsubscribe)
-                pollId = window.setInterval(refreshRemoteMasterStores, Math.max(30000, getRemotePollMs() * 3));
-        }
-        startMasterStoreRemoteSync();
-        const onVisible = () => {
-            if (!document.hidden)
-                refreshRemoteMasterStores();
-        };
-        document.addEventListener('visibilitychange', onVisible);
-        return () => {
-            cancelled = true;
-            document.removeEventListener('visibilitychange', onVisible);
-            if (pollId)
-                window.clearInterval(pollId);
-            try { unsubscribe?.(); } catch (error) {}
-        };
-    }, []);
     useEffect(() => {
         let cancelled = false;
         let unsubscribe = null;
@@ -7832,7 +5565,7 @@ function App() {
             try {
                 await refreshRemoteConfigs();
                 if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
-                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] }, (rows) => { if (!cancelled)
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
             }
@@ -7862,11 +5595,8 @@ function App() {
     function closeWelcome() {
         try {
             sessionStorage.setItem(WELCOME_SEEN_KEY, '1');
-            sessionStorage.setItem(SESSION_SCREEN_KEY, 'dashboard');
         }
         catch (error) { }
-        setScreen('dashboard');
-        setActiveSection(0);
         setWelcomeOpen(false);
     }
     function applyWelcomeConfig(nextConfig) {
@@ -7893,14 +5623,27 @@ function App() {
         refreshHistory();
         let cancelled = false;
         let versionTimer = null;
-        async function clearAppCachesForNewBuild(latest) {
-            if (!('caches' in window) || !latest || latest === APP_BUILD_VERSION)
+        function reloadWithVersion(version) {
+            if (cancelled || !version)
                 return;
-            const lastCleared = sessionStorage.getItem(APP_RELOAD_LOCK_KEY);
-            if (lastCleared === latest)
+            const now = Date.now();
+            const lastReload = Number(sessionStorage.getItem(APP_RELOAD_LOCK_KEY) || 0);
+            if (now - lastReload < 12000)
                 return;
             try {
-                sessionStorage.setItem(APP_RELOAD_LOCK_KEY, latest);
+                sessionStorage.setItem(APP_RELOAD_LOCK_KEY, String(now));
+                localStorage.setItem(APP_VERSION_KEY, version);
+            }
+            catch (error) { }
+            const url = new URL(window.location.href);
+            url.searchParams.set('v', version);
+            url.searchParams.set('sync', String(now));
+            window.location.replace(url.toString());
+        }
+        async function clearAppCaches() {
+            if (!('caches' in window))
+                return;
+            try {
                 const keys = await caches.keys();
                 await Promise.all(keys.filter((key) => key.startsWith('bestie-visit-')).map((key) => caches.delete(key)));
             }
@@ -7912,11 +5655,18 @@ function App() {
                 if (!response.ok)
                     return;
                 const info = await response.json();
-                const latest = String(info.version || info.build || APP_BUILD_VERSION).trim();
+                const latest = String(info.version || info.build || '').trim();
                 if (!latest)
                     return;
+                const saved = localStorage.getItem(APP_VERSION_KEY);
+                if (!saved)
+                    localStorage.setItem(APP_VERSION_KEY, APP_BUILD_VERSION);
+                if (latest !== APP_BUILD_VERSION) {
+                    await clearAppCaches();
+                    reloadWithVersion(latest);
+                    return;
+                }
                 localStorage.setItem(APP_VERSION_KEY, latest);
-                await clearAppCachesForNewBuild(latest);
             }
             catch (error) { }
         }
@@ -7926,8 +5676,17 @@ function App() {
             try {
                 const registration = await navigator.serviceWorker.register(`service-worker.js?v=${APP_BUILD_VERSION}`);
                 registration.update().catch(() => { });
-                // Jangan paksa reload saat service worker baru terpasang.
-                // Versi baru akan dipakai saat user membuka ulang/refresh manual, sehingga halaman tidak loncat ke Home sendiri.
+                if (registration.waiting)
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                registration.addEventListener('updatefound', () => {
+                    const worker = registration.installing;
+                    if (!worker)
+                        return;
+                    worker.addEventListener('statechange', () => {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller)
+                            reloadWithVersion(APP_BUILD_VERSION);
+                    });
+                });
             }
             catch (error) { }
         }
@@ -7941,9 +5700,10 @@ function App() {
         };
     }, []);
     useEffect(() => {
-        const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="date"]):not([type="time"]):not([type="month"]):not([type="week"]), textarea, [contenteditable="true"], .rich-editor-input';
+        const touchState = { target: null, x: 0, y: 0, moved: false, startedAt: 0 };
+        const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]';
         const findTextTarget = (target) => target?.closest?.(textTargetSelector) || null;
-        let lastPointer = { x: 0, y: 0, target: null, moved: false };
+        const movementLimit = () => (window.matchMedia?.('(pointer: coarse)')?.matches ? 16 : 11);
         function canFocusOnTap(target) {
             if (!target || target.disabled || target.readOnly)
                 return false;
@@ -7951,101 +5711,73 @@ function App() {
             if (tag === 'select')
                 return false;
             const type = String(target.getAttribute?.('type') || '').toLowerCase();
-            return target.isContentEditable || target.classList?.contains('rich-editor-input') || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password'].includes(type);
+            return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password'].includes(type);
         }
         function focusTapTarget(target) {
-            // Native browser focusing is more stable on mobile. Programmatic focus was causing
-            // visualViewport bounce/glitch on several Android keyboards.
-            return;
-        }
-        function handlePointerDown(event) {
-            const target = findTextTarget(event.target);
-            if (!target || !canFocusOnTap(target))
+            if (!canFocusOnTap(target) || document.activeElement === target)
                 return;
-            lastPointer = { x: event.clientX || 0, y: event.clientY || 0, target, moved: false };
-            // Defer focus until pointerup/click to avoid Android visualViewport jump loops.
+            window.setTimeout(() => {
+                try {
+                    target.focus({ preventScroll: true });
+                }
+                catch (error) {
+                    try {
+                        target.focus();
+                    }
+                    catch (innerError) { }
+                }
+            }, 0);
         }
-        function handlePointerMove(event) {
-            if (!lastPointer.target)
-                return;
-            const dx = Math.abs((event.clientX || 0) - lastPointer.x);
-            const dy = Math.abs((event.clientY || 0) - lastPointer.y);
-            if (dx > 18 || dy > 18)
-                lastPointer.moved = true;
-        }
-        function handlePointerUp(event) {
-            const target = findTextTarget(event.target) || lastPointer.target;
-            if (target && !lastPointer.moved)
-                focusTapTarget(target);
-            lastPointer = { x: 0, y: 0, target: null, moved: false };
-        }
-        function handleClick(event) {
+        function handleTouchStart(event) {
             const target = findTextTarget(event.target);
-            if (target)
-                focusTapTarget(target);
+            if (!target || !event.touches?.[0])
+                return;
+            touchState.target = target;
+            touchState.x = event.touches[0].clientX;
+            touchState.y = event.touches[0].clientY;
+            touchState.moved = false;
+            touchState.startedAt = Date.now();
+        }
+        function handleTouchMove(event) {
+            if (!touchState.target || !event.touches?.[0])
+                return;
+            const dx = Math.abs(event.touches[0].clientX - touchState.x);
+            const dy = Math.abs(event.touches[0].clientY - touchState.y);
+            const limit = movementLimit();
+            if (dy > limit || dx > limit + 6)
+                touchState.moved = true;
         }
         function handleTouchEnd(event) {
-            const target = findTextTarget(event.target);
-            if (target)
-                window.requestAnimationFrame(() => focusTapTarget(target));
-        }
-        document.addEventListener('pointerdown', handlePointerDown, { capture: true, passive: true });
-        document.addEventListener('pointermove', handlePointerMove, { capture: true, passive: true });
-        document.addEventListener('pointerup', handlePointerUp, { capture: true, passive: true });
-        document.addEventListener('click', handleClick, { capture: true, passive: true });
-        document.addEventListener('touchend', handleTouchEnd, { capture: true, passive: true });
-        return () => {
-            document.removeEventListener('pointerdown', handlePointerDown, true);
-            document.removeEventListener('pointermove', handlePointerMove, true);
-            document.removeEventListener('pointerup', handlePointerUp, true);
-            document.removeEventListener('click', handleClick, true);
-            document.removeEventListener('touchend', handleTouchEnd, true);
-        };
-    }, []);
-    useEffect(() => {
-        const editableSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="date"]):not([type="time"]):not([type="month"]):not([type="week"]), textarea, [contenteditable="true"], .rich-editor-input';
-        let timer = 0;
-        function activeEditable() {
-            const active = document.activeElement;
-            if (!active) return null;
-            if (active.matches?.(editableSelector)) return active;
-            return active.closest?.(editableSelector) || null;
-        }
-        function syncKeyboardSafeView(force = false) {
-            window.clearTimeout(timer);
-            timer = window.setTimeout(() => {
-                const inset = rbvApplyKeyboardInset();
-                const target = activeEditable();
-                if (inset > 72 && target) rbvScrollEditableIntoKeyboardSafeView(target, { force: false });
-            }, 140);
-        }
-        function handleFocusIn(event) {
-            const target = event.target?.closest?.(editableSelector) || null;
-            if (target) {
-                rbvScrollEditableIntoKeyboardSafeView(target, { delay: 260, force: false });
+            const target = touchState.target;
+            const wasScroll = Boolean(target && touchState.moved);
+            if (wasScroll) {
+                if (event.cancelable)
+                    event.preventDefault();
+                event.stopPropagation();
+                if (document.activeElement === target)
+                    target.blur?.();
             }
+            else if (target) {
+                focusTapTarget(target);
+            }
+            touchState.target = null;
+            touchState.moved = false;
+            touchState.startedAt = 0;
         }
-        const viewport = window.visualViewport;
-        const handleViewportResize = () => syncKeyboardSafeView(false);
-        const handleViewportScroll = () => syncKeyboardSafeView(true);
-        const handleWindowResize = () => syncKeyboardSafeView(false);
-        rbvApplyKeyboardInset();
-        document.addEventListener('focusin', handleFocusIn, true);
-        viewport?.addEventListener('resize', handleViewportResize);
-        // visualViewport scroll fires continuously on some Android keyboards; resize is enough.
-        // viewport?.addEventListener('scroll', handleViewportScroll);
-        window.addEventListener('resize', handleWindowResize);
+        function handleTouchCancel() {
+            touchState.target = null;
+            touchState.moved = false;
+            touchState.startedAt = 0;
+        }
+        document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
+        document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: true });
+        document.addEventListener('touchend', handleTouchEnd, { capture: true, passive: false });
+        document.addEventListener('touchcancel', handleTouchCancel, { capture: true, passive: true });
         return () => {
-            window.clearTimeout(timer);
-            document.removeEventListener('focusin', handleFocusIn, true);
-            viewport?.removeEventListener('resize', handleViewportResize);
-            // viewport?.removeEventListener('scroll', handleViewportScroll);
-            window.removeEventListener('resize', handleWindowResize);
-            try {
-                document.documentElement.style.removeProperty('--rbv-keyboard-inset');
-                document.documentElement.classList.remove('rbv-keyboard-visible');
-                document.body?.classList.remove('rbv-keyboard-visible');
-            } catch (error) { }
+            document.removeEventListener('touchstart', handleTouchStart, true);
+            document.removeEventListener('touchmove', handleTouchMove, true);
+            document.removeEventListener('touchend', handleTouchEnd, true);
+            document.removeEventListener('touchcancel', handleTouchCancel, true);
         };
     }, []);
     useEffect(() => {
@@ -8096,28 +5828,7 @@ function App() {
     function updateVisit(patch) {
         setVisit((current) => current ? { ...current, ...patch, updatedAt: Date.now() } : current);
     }
-    async function openPreviewScreen() {
-        if (!visit) {
-            setScreen('dashboard');
-            return;
-        }
-        await rbvWaitForReactInputFlush();
-        await rbvWaitForPdfFrame();
-        setVisit((current) => current ? { ...current, updatedAt: Date.now() } : current);
-        await rbvWaitForPdfFrame();
-        setScreen('preview');
-    }
-    function navigateScreen(nextScreen) {
-        if (nextScreen === 'preview') {
-            openPreviewScreen();
-            return;
-        }
-        if (nextScreen !== 'preview')
-            rbvFlushActiveEditableValue({ blur: true });
-        setScreen(nextScreen);
-    }
     function goSection(index) {
-        rbvFlushActiveEditableValue({ blur: true });
         setActiveSection(Math.max(0, Math.min(SECTION_DEFS.length - 1, index)));
     }
     function handleTitleTap() {
@@ -8205,19 +5916,19 @@ function App() {
         content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap });
     }
     else if (screen === 'preview') {
-        content = React.createElement(PreviewPage, { visit: visit, onBack: () => navigateScreen('audit') });
+        content = React.createElement(PreviewPage, { visit: visit, onBack: () => setScreen('audit') });
     }
     else {
-        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, masterStoreRevision: masterStoreRevision });
+        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: () => setScreen('preview') });
     }
     return (React.createElement("div", { className: cx("audit-shell min-h-screen", screen !== 'dashboard' && "md:grid md:grid-cols-[300px_minmax(0,1fr)]") },
-        screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
+        screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-col" },
-            !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
+            !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: setScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
-            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
+            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: setScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
-        React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
+        React.createElement(NewVisitModal, { open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
         React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig })));
 }
