@@ -493,10 +493,6 @@
     doc.text('Regional Bestie Visit Report', margin + 2, 126);
 
     const storeHead = text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-');
-    const storeCode = text(detail.siteCode4 || detail.siteCode || detail.storeCode || (data && (data.siteCode4 || data.siteCode || data.storeCode)), '-');
-    const storeType = text(detail.typeStore || detail.storeType || detail.type || (data && (data.typeStore || data.storeType || data.type)), '-');
-    const areaManager = text(detail.areaManager || (data && data.areaManager), '-');
-    const regionalManager = text(detail.regionalManager || (data && data.regionalManager), '-');
 
     const leftX = margin + 2;
     let y = 144;
@@ -509,29 +505,26 @@
     const cardX = 180;
     const cardY = 134;
     const cardW = pageWidth - cardX - margin;
-    const cardH = 50;
+    const cardH = 22;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'FD');
 
     const items = [
       ['Tanggal Visit', formatDate(data && data.tanggal)],
-      ['Kode Toko', storeCode],
-      ['Tipe Toko', storeType],
-      ['Area Manager', areaManager],
-      ['Regional Manager', regionalManager]
+      ['Tipe Store', detail.typeStore || detail.storeType || detail.type || data.typeStore || '-']
     ];
     items.forEach(function (item, index) {
       const col = index % 2;
       const row = Math.floor(index / 2);
       const x = cardX + 8 + col * (cardW / 2);
-      const yy = cardY + 8 + row * 13;
+      const yy = cardY + 9 + row * 12;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.2);
+      doc.setFontSize(7.7);
       doc.setTextColor(100, 116, 139);
       doc.text(item[0].toUpperCase(), x, yy);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.7, 8.2, 10.6, 8.7));
+      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.2, 8.8, 11.6, 9.2));
       doc.setTextColor.apply(doc, palette.ink);
       doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
     });

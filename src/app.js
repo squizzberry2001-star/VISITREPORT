@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp259-pdf-slide1-store-fields';
+const APP_BUILD_VERSION = 'revamp258-final-focused-fixes';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4781,11 +4781,8 @@ function RbvHtmlReportPreview({ visit }) {
             React.createElement("div", { className: "rbv-html-cover-fields" },
                 React.createElement(RbvHtmlPreviewField, { label: "Bestie", value: visit?.nama }),
                 React.createElement(RbvHtmlPreviewField, { label: "Tanggal", value: formatDate(visit?.tanggal) }),
-                React.createElement(RbvHtmlPreviewField, { label: "Kode Toko", value: detail.siteCode4 || detail.siteCode || detail.storeCode || visit?.storeCode || visit?.siteCode }),
-                React.createElement(RbvHtmlPreviewField, { label: "Tipe Toko", value: detail.typeStore || detail.storeType || detail.type || visit?.typeStore }),
-                React.createElement(RbvHtmlPreviewField, { label: "Store Head", value: detail.storeHead || detail.storeLeader || visit?.storeLeader }),
-                React.createElement(RbvHtmlPreviewField, { label: "Area Manager", value: detail.areaManager || visit?.areaManager }),
-                React.createElement(RbvHtmlPreviewField, { label: "Regional Manager", value: detail.regionalManager || visit?.regionalManager })
+                React.createElement(RbvHtmlPreviewField, { label: "Store Type", value: detail.typeStore || detail.storeType || visit?.typeStore }),
+                React.createElement(RbvHtmlPreviewField, { label: "Store Head", value: detail.storeHead || detail.storeLeader || visit?.storeLeader })
             )
         )
     ));
