@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp252-pdf-pinch-scroll-fix';
+const APP_BUILD_VERSION = 'revamp259-pdf-slide1-store-fields';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1086,22 +1086,34 @@ function isEditableTarget(target) {
         return false;
     return Boolean(node.closest('input, textarea, select, [contenteditable="true"], .rich-editor-input, .form-control'));
 }
-function visitProgress(visit) {
-    if (!visit)
-        return 0;
-    const checks = [
-        cleanText(visit.nama),
-        cleanText(visit.store),
-        cleanText(visit.tanggal),
-        cleanText(visit.storeLeader),
-        cleanText(visit.shiftLeader),
-        normalizeQscPhotos(visit).every((photo) => photo.image),
-        (visit.opiData || []).some(isMeaningfulObservation),
-        (visit.qscData || []).some(isMeaningfulObservation),
-        (visit.findingEvidencePhotos || []).some((photo) => photo.image || cleanText(photo.description)),
-        (visit.correctiveActionPhotos || []).some((photo) => photo.image || cleanText(photo.description))
-    ];
-    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+function rbvProgressValue(value) {
+    if (typeof value === 'boolean') return value;
+    if (Array.isArray(value)) return value.some(Boolean);
+    return Boolean(cleanText(value));
+}
+function rbvProgressFromChecks(checks) {
+    const flat = (checks || []).flat().map(rbvProgressValue);
+    if (!flat.length) return 0;
+    return Math.round((flat.filter(Boolean).length / flat.length) * 100);
+}
+function visitProgress(visit, activeSection = null) {
+    if (!visit) return 0;
+    const qscPhotos = normalizeQscPhotos(visit);
+    const findingRows = visit.findingEvidencePhotos || [];
+    const correctiveRows = visit.correctiveActionPhotos || [];
+    const crewRows = Array.isArray(visit.crewList) ? visit.crewList : [];
+    const sectionChecks = {
+        setup: [visit.nama, visit.store],
+        crew: [visit.tanggal, visit.storeLeader, visit.storeLeaderLevel, visit.shiftLeader, visit.shiftLeaderLevel, crewRows.some((crew) => cleanText(crew.name) || cleanText(crew.level))],
+        qsc: [qscPhotos[0]?.image, qscPhotos[1]?.image],
+        observation: [visit.showOPITable !== false ? (visit.opiData || []).some(isMeaningfulObservation) : true, visit.showQSCTable !== false ? (visit.qscData || []).some(isMeaningfulObservation) : true],
+        evidence: [visit.showFindingEvidence !== false ? findingRows.some((photo) => photo.image || cleanText(photo.description)) : true, visit.showCorrectiveAction !== false ? correctiveRows.some((photo) => photo.image || cleanText(photo.description)) : true]
+    };
+    if (Number.isInteger(activeSection) && SECTION_DEFS && SECTION_DEFS[activeSection]) {
+        const sectionId = SECTION_DEFS[activeSection].id;
+        return rbvProgressFromChecks(sectionChecks[sectionId] || []);
+    }
+    return rbvProgressFromChecks(Object.values(sectionChecks));
 }
 function historyMetaFromVisit(visit) {
     const detail = getStoreWebDetail(visit?.store);
@@ -1547,33 +1559,98 @@ function Field({ label, helper, children, required }) {
 }
 function rbvFocusEditableOnTap(event) {
     const target = event.currentTarget || event.target;
-    if (!target || target === document.activeElement)
-        return;
-    if (target.disabled || target.readOnly)
+    if (!target || target.disabled || target.readOnly)
         return;
     if (event.pointerType && event.pointerType !== 'touch' && event.pointerType !== 'pen')
         return;
-    // Android browsers can ignore delayed focus from synthetic wrappers. Focus immediately
-    // inside the user gesture, then repeat once on the next frame as a fallback.
-    try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
-    window.requestAnimationFrame(() => {
-        if (document.activeElement !== target) {
-            try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+    if (document.activeElement !== target) {
+        try { target.focus({ preventScroll: true }); } catch (error) { try { target.focus(); } catch (_) {} }
+    }
+    // Scroll is handled once by focusin/visualViewport to avoid Android jump loops.
+}
+
+function rbvKeyboardInsetPx() {
+    try {
+        const viewport = window.visualViewport;
+        if (!viewport) return 0;
+        return Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+    }
+    catch (error) { return 0; }
+}
+function rbvApplyKeyboardInset() {
+    const inset = rbvKeyboardInsetPx();
+    try {
+        document.documentElement.style.setProperty('--rbv-keyboard-inset', `${inset}px`);
+        document.documentElement.classList.toggle('rbv-keyboard-visible', inset > 72);
+        document.body?.classList.toggle('rbv-keyboard-visible', inset > 72);
+    }
+    catch (error) { }
+    return inset;
+}
+let rbvLastKeyboardScrollAt = 0;
+function rbvScrollEditableIntoKeyboardSafeView(target, options = {}) {
+    if (!target || !target.getBoundingClientRect) return;
+    const run = () => {
+        try {
+            const inset = rbvApplyKeyboardInset();
+            if (inset < 72 && !options.force) return;
+            const now = Date.now();
+            if (!options.force && now - rbvLastKeyboardScrollAt < 700) return;
+            const viewport = window.visualViewport;
+            const viewportTop = viewport ? viewport.offsetTop : 0;
+            const viewportHeight = viewport ? viewport.height : window.innerHeight;
+            const rect = target.getBoundingClientRect();
+            const topLimit = viewportTop + 78;
+            const bottomLimit = viewportTop + viewportHeight - 92;
+            const tooLow = rect.bottom > bottomLimit;
+            const tooHigh = rect.top < topLimit;
+            if (tooLow || tooHigh || options.force) {
+                rbvLastKeyboardScrollAt = now;
+                const scrollRoot = document.scrollingElement || document.documentElement;
+                const currentY = scrollRoot.scrollTop || window.scrollY || 0;
+                const desiredDelta = tooLow ? (rect.bottom - bottomLimit + 18) : (rect.top - topLimit - 18);
+                const nextY = Math.max(0, Math.round(currentY + desiredDelta));
+                if (Math.abs(nextY - currentY) > 24) window.scrollTo({ top: nextY, behavior: 'auto' });
+            }
         }
-    });
+        catch (error) { }
+    };
+    const delay = Number(options.delay || 0);
+    if (delay > 0) window.setTimeout(run, delay);
+    else window.requestAnimationFrame(run);
 }
 function rbvComposeEditableTapHandler(userHandler) {
     return function handleEditableTap(event) {
         try { userHandler?.(event); } catch (error) { }
-        if (!event.defaultPrevented)
-            rbvFocusEditableOnTap(event);
+        if (event.defaultPrevented)
+            return;
+        const eventType = String(event.type || '').toLowerCase();
+        if (eventType === 'pointerdown' || eventType === 'touchstart')
+            return;
+        rbvFocusEditableOnTap(event);
     };
 }
 function TextInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
     return React.createElement("input", { ...props, className: cx('form-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
 }
+function rbvCallInputHandler(handler, event) {
+    try { handler?.(event); } catch (error) { }
+}
+function rbvOpenNativeDatePicker(event) {
+    const input = event.currentTarget;
+    if (!input || event.defaultPrevented || input.disabled || input.readOnly)
+        return;
+    try { input.focus({ preventScroll: true }); } catch (error) { try { input.focus(); } catch (_) { } }
+    if (typeof input.showPicker === 'function') {
+        window.setTimeout(() => {
+            try {
+                if (document.activeElement === input) input.showPicker();
+            } catch (error) { }
+        }, 0);
+    }
+}
 function DateInput({ className = '', onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
-    return React.createElement("input", { ...props, type: "date", className: cx('form-control date-control rbv-mobile-editable', className), onPointerDown: rbvComposeEditableTapHandler(onPointerDown), onPointerUp: rbvComposeEditableTapHandler(onPointerUp), onTouchStart: rbvComposeEditableTapHandler(onTouchStart), onTouchEnd: rbvComposeEditableTapHandler(onTouchEnd), onClick: rbvComposeEditableTapHandler(onClick) });
+    return React.createElement("input", { ...props, type: "date", className: cx('form-control date-control', className), onPointerDown: (event) => rbvCallInputHandler(onPointerDown, event), onPointerUp: (event) => rbvCallInputHandler(onPointerUp, event), onTouchStart: (event) => rbvCallInputHandler(onTouchStart, event), onTouchEnd: (event) => rbvCallInputHandler(onTouchEnd, event), onClick: (event) => { rbvCallInputHandler(onClick, event); rbvOpenNativeDatePicker(event); } });
 }
 function TextArea({ value, onChange, className = '', minRows = 3, onPointerDown, onPointerUp, onTouchStart, onTouchEnd, onClick, ...props }) {
     const ref = useRef(null);
@@ -1603,7 +1680,7 @@ function rbvDispatchInputAndChange(target) {
 function rbvFlushActiveEditableValue(options = {}) {
     const active = document.activeElement;
     const shouldBlur = options.blur !== false;
-    const editableSelector = 'input:not([type="file"]):not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea, [contenteditable="true"]';
+    const editableSelector = 'input:not([type="file"]):not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="date"]):not([type="time"]):not([type="month"]):not([type="week"]), textarea, [contenteditable="true"]';
     let target = null;
     if (active && active.matches && active.matches(editableSelector))
         target = active;
@@ -1737,6 +1814,7 @@ async function rbvPrepareVisitForPdf(visit, options = {}) {
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
     const [activeTools, setActiveTools] = useState({});
+    const [toolbarVisible, setToolbarVisible] = useState(false);
     function plainContent(html) {
         const temp = document.createElement('div');
         temp.innerHTML = html || '';
@@ -1830,6 +1908,26 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
             }
         });
     }
+    function handlePaste(event) {
+        event.preventDefault();
+        const text = event.clipboardData?.getData('text/plain') || '';
+        const safeText = text.replace(/\r\n/g, '\n');
+        try {
+            document.execCommand('insertText', false, safeText);
+        }
+        catch (error) {
+            const selection = window.getSelection?.();
+            if (selection && selection.rangeCount) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(safeText));
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+        window.requestAnimationFrame(emit);
+    }
     const tools = [
         { command: 'bold', label: 'B', title: 'Bold', className: 'rich-tool-bold' },
         { command: 'italic', label: 'I', title: 'Italic', className: 'rich-tool-italic' },
@@ -1844,8 +1942,8 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
         editor.focus({ preventScroll: true });
     }
     return (React.createElement("div", { className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className) },
-        React.createElement("div", { ref: editorRef, className: "rich-editor-input rbv-mobile-editable px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onClick: focusEditor, onInput: emit, onBlur: emit, onKeyUp: emit, onCompositionEnd: emit, onPaste: () => window.requestAnimationFrame(emit), onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
-        React.createElement("div", { className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
+        React.createElement("div", { ref: editorRef, className: "rich-editor-input rbv-mobile-editable px-3 py-3 text-sm leading-6 text-slate-900 outline-none", style: { minHeight }, contentEditable: true, role: "textbox", "aria-multiline": "true", "data-placeholder": placeholder, tabIndex: 0, onFocus: () => setToolbarVisible(true), onPointerUp: rbvFocusEditableOnTap, onTouchEnd: rbvFocusEditableOnTap, onClick: focusEditor, onInput: emit, onBlur: () => { emit(); window.setTimeout(() => { if (!editorRef.current?.matches(':focus')) setToolbarVisible(false); }, 120); }, onKeyUp: emit, onCompositionEnd: emit, onPaste: handlePaste, onKeyDown: handleKeyDown, suppressContentEditableWarning: true }),
+        React.createElement("div", { className: cx("rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2", toolbarVisible && "is-visible"), "aria-label": "Rich text toolbar" }, tools.map((tool) => (React.createElement("button", { key: tool.command, type: "button", "data-command": tool.command, className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'), onPointerDown: (event) => { event.preventDefault(); setToolbarVisible(true); command(tool.command); }, "aria-label": tool.title, title: tool.title }, tool.label))))));
 }
 function SelectInput({ children, className = '', ...props }) {
     return React.createElement("select", { className: cx('form-control appearance-none', className), ...props }, children);
@@ -1861,8 +1959,7 @@ function SelectField({ label, value, options, onChange, placeholder = 'Pilih', r
                 normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label }, item.label))))));
 }
 function Toggle({ checked, onChange, label, className = '' }) {
-    return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, onClick: () => onChange(!checked), className: cx('slide-toggle', checked && 'active', className) },
-        label ? React.createElement("span", { className: "slide-toggle-label" }, label) : null,
+    return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, "aria-label": label || (checked ? 'Hide section' : 'Unhide section'), onClick: () => onChange(!checked), className: cx('slide-toggle compact-toggle', checked && 'active', className) },
         React.createElement("span", { className: "slide-toggle-track", "aria-hidden": "true" },
             React.createElement("span", null))));
 }
@@ -1930,7 +2027,6 @@ function StoreDetailCard({ detail }) {
         ['Store Head', detail.storeHead || '-'],
         ['Area Manager', detail.areaManager || '-'],
         ['Regional Manager', detail.regionalManager || '-'],
-        ['Email Store', detail.emailStore || '-'],
         ['Alamat', detail.address || detail.storeAddress || '-']
     ];
     return (React.createElement("div", { className: "store-detail-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
@@ -1962,10 +2058,19 @@ function distanceBetweenTouches(touches) {
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
+const ORIGINAL_PHOTO_CROP_RATIO = { key: 'original', label: 'Default', original: true };
 const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
-const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
+const PHOTO_EDITOR_RATIOS = [
+    ORIGINAL_PHOTO_CROP_RATIO,
+    PDF_PHOTO_CROP_RATIO,
+    QSC_PHOTO_CROP_RATIO,
+    { key: 'square', label: '1:1', w: 1, h: 1 },
+    { key: 'portrait', label: '3:4', w: 3, h: 4 },
+    { key: 'landscape', label: '16:9', w: 16, h: 9 }
+];
 function ratioToAspectString(ratio) {
+    if (ratio && ratio.original) return '';
     return ratio && ratio.w && ratio.h ? `${ratio.w} / ${ratio.h}` : '';
 }
 const MARKER_SIZE_OPTIONS = [
@@ -1977,6 +2082,13 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
     const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
     const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
     const maxSide = 1400;
+    if (ratio?.original) {
+        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+        return {
+            width: Math.max(360, Math.round(sourceWidth * scale)),
+            height: Math.max(360, Math.round(sourceHeight * scale))
+        };
+    }
     if (ratio?.w && ratio?.h) {
         const targetRatio = ratio.w / ratio.h;
         let width = maxSide;
@@ -2011,9 +2123,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [markers, setMarkers] = useState([]);
     const [mode, setMode] = useState('move');
-    const activeCropRatio = cropRatio && cropRatio.w && cropRatio.h ? cropRatio : PDF_PHOTO_CROP_RATIO;
+    const activeCropRatio = cropRatio && (cropRatio.original || (cropRatio.w && cropRatio.h)) ? cropRatio : PDF_PHOTO_CROP_RATIO;
     const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
     const [markerSize, setMarkerSize] = useState(48);
+    const [markerSliderActive, setMarkerSliderActive] = useState(false);
     const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
     const [imageReady, setImageReady] = useState(false);
     const markerMinSize = 16;
@@ -2072,6 +2185,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         setMode('move');
         setSelectedRatio(activeCropRatio);
         setMarkerSize(48);
+        setMarkerSliderActive(false);
         pinchRef.current = null;
         markerTapRef.current = null;
         dragRef.current = null;
@@ -2151,13 +2265,27 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, metrics.x, metrics.y, metrics.iw, metrics.ih);
         ctx.save();
-        ctx.lineWidth = Math.max(5, Math.round(Math.min(metrics.cw, metrics.ch) * 0.006));
-        ctx.strokeStyle = '#ef4444';
-        ctx.shadowColor = 'rgba(0,0,0,0.22)';
-        ctx.shadowBlur = 5;
         markers.forEach((marker) => {
+            const radius = marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045);
             ctx.beginPath();
-            ctx.arc(marker.x, marker.y, marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045), 0, Math.PI * 2);
+            ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
+            ctx.lineWidth = Math.max(10, Math.round(Math.min(metrics.cw, metrics.ch) * 0.010));
+            ctx.strokeStyle = 'rgba(255,255,255,0.96)';
+            ctx.shadowColor = 'rgba(15,23,42,0.24)';
+            ctx.shadowBlur = 9;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
+            ctx.lineWidth = Math.max(7, Math.round(Math.min(metrics.cw, metrics.ch) * 0.0075));
+            ctx.strokeStyle = '#f43f5e';
+            ctx.shadowColor = 'rgba(244,63,94,0.32)';
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(marker.x, marker.y, Math.max(2, radius - ctx.lineWidth * 0.7), 0, Math.PI * 2);
+            ctx.lineWidth = Math.max(3, Math.round(Math.min(metrics.cw, metrics.ch) * 0.003));
+            ctx.strokeStyle = 'rgba(250,204,21,0.95)';
+            ctx.shadowBlur = 0;
             ctx.stroke();
         });
         ctx.restore();
@@ -2335,10 +2463,10 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                 React.createElement("button", { type: "button", className: "photo-editor-close", onClick: onClose, "aria-label": "Tutup editor" },
                     React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
             React.createElement("div", { className: "photo-editor-v10-toolbar", role: "toolbar", "aria-label": "Toolbar edit foto" },
-                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => setMode('move'), "aria-pressed": mode === 'move' },
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => { setMode('move'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'move' },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" }),
                     React.createElement("span", null, "Geser")),
-                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'marker' && 'active'), onClick: () => setMode('marker'), "aria-pressed": mode === 'marker' },
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'marker' && 'active'), onClick: () => { setMode('marker'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'marker' },
                     React.createElement(Icon, { name: "marker", className: "h-4 w-4" }),
                     React.createElement("span", null, "Marker")),
                 React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: () => setMarkers((current) => current.slice(0, -1)), disabled: !hasMarkers },
@@ -2347,17 +2475,21 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                 React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: resetEditor },
                     React.createElement(Icon, { name: "eraser", className: "h-4 w-4" }),
                     React.createElement("span", null, "Reset"))),
-            React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan marker" },
-                React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Crop otomatis mengikuti frame foto PDF. Marker hanya muncul saat tap 1 jari; cubit 2 jari khusus zoom."),
-                React.createElement("div", { className: "photo-editor-option-row marker-slider-row" },
-                    React.createElement("span", null, "Marker"),
-                    React.createElement("div", { className: "photo-editor-marker-slider-wrap" },
-                        React.createElement("input", { type: "range", min: markerMinSize, max: markerMaxSize, step: "2", value: activeMarkerSize, className: "photo-editor-marker-slider", onChange: (event) => setMarkerSize(Math.max(markerMinSize, Math.min(markerMaxSize, Number(event.target.value) || 48))), "aria-label": "Ukuran marker" }),
-                        React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(activeMarkerSize))))),
+            React.createElement("div", { className: "photo-editor-options", "aria-label": "Pengaturan editor" },
+                mode === 'move' ? React.createElement(React.Fragment, null,
+                    React.createElement("div", { className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100" }, "Pilih ratio ketika mode Geser aktif, lalu geser/cubit foto agar pas frame."),
+                    React.createElement("div", { className: "photo-editor-ratio-grid" }, PHOTO_EDITOR_RATIOS.map((ratio) => React.createElement("button", { key: ratio.key, type: "button", className: cx('photo-editor-chip', selectedRatio?.key === ratio.key && 'active'), onClick: () => changeRatio(ratio), "aria-pressed": selectedRatio?.key === ratio.key }, ratio.label)))) : null,
+                mode === 'marker' ? React.createElement(React.Fragment, null,
+                    React.createElement("div", { className: "rounded-2xl bg-rose-50 px-3 py-2 text-[11px] font-bold leading-4 text-rose-900 ring-1 ring-rose-100" }, "Atur ukuran marker dengan slider, lalu tap area foto untuk memasang circle."),
+                    React.createElement("div", { className: "photo-editor-option-row marker-slider-row" },
+                        React.createElement("span", null, "Marker"),
+                        React.createElement("div", { className: "photo-editor-marker-slider-wrap" },
+                            React.createElement("input", { type: "range", min: markerMinSize, max: markerMaxSize, step: "2", value: activeMarkerSize, className: "photo-editor-marker-slider", onPointerDown: () => setMarkerSliderActive(true), onPointerUp: () => setMarkerSliderActive(false), onPointerCancel: () => setMarkerSliderActive(false), onTouchStart: () => setMarkerSliderActive(true), onTouchEnd: () => setMarkerSliderActive(false), onMouseDown: () => setMarkerSliderActive(true), onMouseUp: () => setMarkerSliderActive(false), onBlur: () => setMarkerSliderActive(false), onChange: (event) => { setMarkerSliderActive(true); setMarkerSize(Math.max(markerMinSize, Math.min(markerMaxSize, Number(event.target.value) || 48))); }, "aria-label": "Ukuran marker" }),
+                            React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(activeMarkerSize))))) : null),
             React.createElement("div", { className: cx('photo-editor-canvas-shell photo-editor-v10-stage', mode === 'marker' && 'marker-preview-active') },
                 !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
                 React.createElement("canvas", { ref: canvasRef, width: canvasSize.width, height: canvasSize.height, style: { aspectRatio: canvasSize.width + ' / ' + canvasSize.height, touchAction: 'none' }, className: "photo-editor-canvas", onPointerDown: handlePointerDown, onPointerMove: handlePointerMove, onPointerUp: handlePointerUp, onPointerCancel: handlePointerUp, onTouchStart: handleTouchStart, onTouchMove: handleTouchMove, onTouchEnd: handleTouchEnd, onWheel: handleWheel }),
-                mode === 'marker' && imageReady ? React.createElement("div", { className: "photo-editor-marker-center-preview", style: { '--marker-preview-size': markerPreviewDiameterPct + '%' }, "aria-hidden": "true" },
+                mode === 'marker' && markerSliderActive && imageReady ? React.createElement("div", { className: "photo-editor-marker-center-preview", style: { '--marker-preview-size': markerPreviewDiameterPct + '%' }, "aria-hidden": "true" },
                     React.createElement("span", null)) : null),
             React.createElement("div", { className: "photo-editor-v10-footer" },
                 React.createElement("div", { className: "photo-editor-hint" },
@@ -2427,10 +2559,10 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
         React.createElement("div", { className: "section-heading mb-5 flex flex-col gap-3" },
-            preTitle ? React.createElement("div", { className: "section-pretitle" }, preTitle) : null,
-            React.createElement("div", { className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
-                React.createElement("h2", { className: "text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, title),
-                actions ? React.createElement("div", { className: "section-actions flex flex-wrap gap-2 md:justify-end" }, actions) : null)),
+            React.createElement("div", { className: "section-title-row flex min-w-0 items-center justify-between gap-3" },
+                React.createElement("h2", { className: "min-w-0 flex-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, title),
+                actions ? React.createElement("div", { className: "section-actions flex shrink-0 items-center justify-end gap-2" }, actions) : null),
+            preTitle ? React.createElement("div", { className: "section-pretitle" }, preTitle) : null),
         children));
 }
 function CrewEditor({ visit, update }) {
@@ -2635,7 +2767,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
         : floatingCapture;
     return (React.createElement("div", { className: "photo-grid-system evidence-photo-grid-system grid gap-4" },
         floatingPortal,
-        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
+        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: false, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
             React.createElement(Icon, { name: "image", className: "h-7 w-7" }),
             React.createElement("strong", null, "Belum ada foto"),
             React.createElement("span", null, "Pilih Kamera atau Galeri untuk menambah foto."))));
@@ -2729,16 +2861,14 @@ function ObservationSection({ visit, update }) {
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
-    const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
-        React.createElement("div", { className: "flex gap-2 overflow-x-auto pb-1" },
-            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
-                React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-                " OPI Project"),
-            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'qsc' && 'active'), onClick: () => setTab('qsc') },
-                React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-                " QSC Observation")),
-        React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
+    const preTitle = React.createElement("div", { className: "section-switcher flex min-w-0 gap-2 overflow-x-auto pb-1" },
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
+            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
+            " OPI Project"),
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'qsc' && 'active'), onClick: () => setTab('qsc') },
+            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
+            " QSC Observation"));
+    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle, actions: React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }) }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
 }
 function EvidenceSection({ visit, update }) {
     const tab = visit.activeEvidenceTab === 'corrective' ? 'corrective' : 'finding';
@@ -2747,16 +2877,14 @@ function EvidenceSection({ visit, update }) {
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
     const evidenceTabStyle = { minWidth: 0, width: '100%', justifyContent: 'center', paddingLeft: '8px', paddingRight: '8px', whiteSpace: 'nowrap' };
-    const preTitle = React.createElement("div", { className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between" },
-        React.createElement("div", { className: "grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]" },
-            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), style: evidenceTabStyle, onClick: () => setTab('finding') },
-                React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
-                React.createElement("span", { className: "min-w-0 truncate" }, "Finding Evidence")),
-            React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), style: evidenceTabStyle, onClick: () => setTab('corrective') },
-                React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
-                React.createElement("span", { className: "min-w-0 truncate" }, "Corrective Action"))),
-        React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }));
-    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
+    const preTitle = React.createElement("div", { className: "section-switcher grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]" },
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), style: evidenceTabStyle, onClick: () => setTab('finding') },
+            React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
+            React.createElement("span", { className: "min-w-0 truncate" }, "Finding Evidence")),
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), style: evidenceTabStyle, onClick: () => setTab('corrective') },
+            React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
+            React.createElement("span", { className: "min-w-0 truncate" }, "Corrective Action")));
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle, actions: React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }) }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
@@ -3195,21 +3323,22 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
                     React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, "Home")),
-                React.createElement("div", { className: "history-sync-wrap flex shrink-0 items-center gap-2" },
-                    React.createElement("button", { type: "button", className: "dashboard-stat dark history-number-card min-w-[84px] px-3 py-2", onClick: onTitleTap, "aria-label": "History" },
-                        React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
-                        React.createElement("p", null, "History"),
-                        React.createElement("strong", null, history.length)),
-                    React.createElement("button", { type: "button", className: cx('manual-sync-button', syncBusy && 'is-loading'), onClick: handleManualWebsiteSync, "aria-label": "Manual sync perubahan website", title: "Sync update website", disabled: syncBusy },
-                        syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4" }),
-                        React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))),
+                React.createElement("div", { className: "history-sync-wrap flex shrink-0 items-center gap-2", "aria-hidden": "true" })),
             React.createElement("div", { className: "mt-3", "data-build": "revamp237-redmi-restore-native-picker" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "restore-file-input-fallback", onChange: handleRestoreFile, tabIndex: -1, "aria-hidden": "true" }),
-                React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact", style: {
+                React.createElement("details", { className: "home-utility-details home-utility-main" },
+                    React.createElement("summary", { className: "home-utility-main-trigger", "aria-label": "Utilitas" },
+                        React.createElement(Icon, { name: "settings", className: "h-5 w-5" }),
+                        React.createElement("span", null, "Utilitas")),
+                    React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact home-utility-panel", style: {
                         display: 'grid',
                         gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                         gap: '10px'
                     } },
+                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleManualWebsiteSync, disabled: syncBusy, "aria-label": "Sync update website", title: "Sync update website" },
+                        syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, syncBusy ? 'Sync...' : 'Sync'),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "Update")),
                     React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
@@ -3226,14 +3355,16 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '42px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
-                        React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History"))),
+                        React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History")))),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
             React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
-                React.createElement("h2", { className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl" }, "History Kunjungan")),
+                React.createElement("h2", { className: "history-title-with-count text-lg font-black tracking-tight text-slate-950 md:text-2xl" },
+                    React.createElement("span", null, "History Kunjungan"),
+                    React.createElement("strong", { className: "history-count-inline" }, history.length))),
             history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-3 md:grid-cols-2 xl:grid-cols-3" },
                 visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
                     React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
@@ -4650,12 +4781,11 @@ function RbvHtmlReportPreview({ visit }) {
             React.createElement("div", { className: "rbv-html-cover-fields" },
                 React.createElement(RbvHtmlPreviewField, { label: "Bestie", value: visit?.nama }),
                 React.createElement(RbvHtmlPreviewField, { label: "Tanggal", value: formatDate(visit?.tanggal) }),
-                React.createElement(RbvHtmlPreviewField, { label: "Kode Store", value: detail.siteCode4 || detail.siteCode || detail.storeCode || visit?.storeCode }),
-                React.createElement(RbvHtmlPreviewField, { label: "Store Type", value: detail.typeStore || detail.storeType || visit?.typeStore }),
+                React.createElement(RbvHtmlPreviewField, { label: "Kode Toko", value: detail.siteCode4 || detail.siteCode || detail.storeCode || visit?.storeCode || visit?.siteCode }),
+                React.createElement(RbvHtmlPreviewField, { label: "Tipe Toko", value: detail.typeStore || detail.storeType || detail.type || visit?.typeStore }),
                 React.createElement(RbvHtmlPreviewField, { label: "Store Head", value: detail.storeHead || detail.storeLeader || visit?.storeLeader }),
                 React.createElement(RbvHtmlPreviewField, { label: "Area Manager", value: detail.areaManager || visit?.areaManager }),
-                React.createElement(RbvHtmlPreviewField, { label: "Regional Manager", value: detail.regionalManager || visit?.regionalManager }),
-                React.createElement(RbvHtmlPreviewField, { label: "Email Store", value: detail.emailStore || detail.storeEmail || visit?.emailStore })
+                React.createElement(RbvHtmlPreviewField, { label: "Regional Manager", value: detail.regionalManager || visit?.regionalManager })
             )
         )
     ));
@@ -6402,7 +6532,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
     if (!open)
         return null;
     return (React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-sm", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl" },
+        React.createElement("div", { className: "secret-pin-card w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl" },
             React.createElement("div", { className: "mb-5 flex items-center justify-between" },
                 React.createElement("div", { className: "flex items-center gap-3" },
                     React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white" },
@@ -6412,7 +6542,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
                         React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Masukkan PIN"))),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
+            React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control secret-pin-input text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
             error ? React.createElement("p", { className: "mt-3 text-center text-sm font-bold text-rose-600" }, error) : null)));
 }
 function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange }) {
@@ -7445,7 +7575,7 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
     }, [screen, Boolean(visit), activeSection]);
     if (screen !== 'audit' || !visit)
         return null;
-    const progress = visitProgress(visit);
+    const progress = visitProgress(visit, activeSection);
     const safeProgress = Math.max(0, Math.min(100, progress || 0));
     return (React.createElement("div", { className: "visit-quick-dock-v54 md:hidden", role: "navigation", "aria-label": "Quick section", style: {
             position: 'fixed',
@@ -7814,7 +7944,7 @@ function App() {
         };
     }, []);
     useEffect(() => {
-        const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"], .rich-editor-input';
+        const textTargetSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="date"]):not([type="time"]):not([type="month"]):not([type="week"]), textarea, [contenteditable="true"], .rich-editor-input';
         const findTextTarget = (target) => target?.closest?.(textTargetSelector) || null;
         let lastPointer = { x: 0, y: 0, target: null, moved: false };
         function canFocusOnTap(target) {
@@ -7824,23 +7954,19 @@ function App() {
             if (tag === 'select')
                 return false;
             const type = String(target.getAttribute?.('type') || '').toLowerCase();
-            return target.isContentEditable || target.classList?.contains('rich-editor-input') || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
+            return target.isContentEditable || target.classList?.contains('rich-editor-input') || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password'].includes(type);
         }
         function focusTapTarget(target) {
-            if (!canFocusOnTap(target))
-                return;
-            // Never preventDefault here. Some Android keyboards only open when the native
-            // tap/click default action is preserved.
-            try { target.focus({ preventScroll: true }); }
-            catch (error) { try { target.focus(); } catch (innerError) { } }
+            // Native browser focusing is more stable on mobile. Programmatic focus was causing
+            // visualViewport bounce/glitch on several Android keyboards.
+            return;
         }
         function handlePointerDown(event) {
             const target = findTextTarget(event.target);
             if (!target || !canFocusOnTap(target))
                 return;
             lastPointer = { x: event.clientX || 0, y: event.clientY || 0, target, moved: false };
-            if (event.pointerType === 'touch' || event.pointerType === 'pen')
-                focusTapTarget(target);
+            // Defer focus until pointerup/click to avoid Android visualViewport jump loops.
         }
         function handlePointerMove(event) {
             if (!lastPointer.target)
@@ -7877,6 +8003,52 @@ function App() {
             document.removeEventListener('pointerup', handlePointerUp, true);
             document.removeEventListener('click', handleClick, true);
             document.removeEventListener('touchend', handleTouchEnd, true);
+        };
+    }, []);
+    useEffect(() => {
+        const editableSelector = 'input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="date"]):not([type="time"]):not([type="month"]):not([type="week"]), textarea, [contenteditable="true"], .rich-editor-input';
+        let timer = 0;
+        function activeEditable() {
+            const active = document.activeElement;
+            if (!active) return null;
+            if (active.matches?.(editableSelector)) return active;
+            return active.closest?.(editableSelector) || null;
+        }
+        function syncKeyboardSafeView(force = false) {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(() => {
+                const inset = rbvApplyKeyboardInset();
+                const target = activeEditable();
+                if (inset > 72 && target) rbvScrollEditableIntoKeyboardSafeView(target, { force: false });
+            }, 140);
+        }
+        function handleFocusIn(event) {
+            const target = event.target?.closest?.(editableSelector) || null;
+            if (target) {
+                rbvScrollEditableIntoKeyboardSafeView(target, { delay: 260, force: false });
+            }
+        }
+        const viewport = window.visualViewport;
+        const handleViewportResize = () => syncKeyboardSafeView(false);
+        const handleViewportScroll = () => syncKeyboardSafeView(true);
+        const handleWindowResize = () => syncKeyboardSafeView(false);
+        rbvApplyKeyboardInset();
+        document.addEventListener('focusin', handleFocusIn, true);
+        viewport?.addEventListener('resize', handleViewportResize);
+        // visualViewport scroll fires continuously on some Android keyboards; resize is enough.
+        // viewport?.addEventListener('scroll', handleViewportScroll);
+        window.addEventListener('resize', handleWindowResize);
+        return () => {
+            window.clearTimeout(timer);
+            document.removeEventListener('focusin', handleFocusIn, true);
+            viewport?.removeEventListener('resize', handleViewportResize);
+            // viewport?.removeEventListener('scroll', handleViewportScroll);
+            window.removeEventListener('resize', handleWindowResize);
+            try {
+                document.documentElement.style.removeProperty('--rbv-keyboard-inset');
+                document.documentElement.classList.remove('rbv-keyboard-visible');
+                document.body?.classList.remove('rbv-keyboard-visible');
+            } catch (error) { }
         };
     }, []);
     useEffect(() => {

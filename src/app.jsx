@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp82-preview-send-email-gmail-api';
+const APP_BUILD_VERSION = 'revamp258-final-focused-fixes';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1059,7 +1059,6 @@ function StoreDetailCard({ detail }) {
     ['Store Head', detail.storeHead || '-'],
     ['Area Manager', detail.areaManager || '-'],
     ['Regional Manager', detail.regionalManager || '-'],
-    ['Email Store', detail.emailStore || '-'],
     ['Alamat', detail.address || detail.storeAddress || '-']
   ];
   return (
@@ -1106,7 +1105,7 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF', w: 16, h: 9 };
+const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
 const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
 function ratioToAspectString(ratio) {

@@ -128,46 +128,12 @@
   }
 
   function getStoreDetail(storeName, data) {
-    data = data || {};
     let detail = {};
-    const lookupKeys = [
-      storeName,
-      data.store,
-      data.storeCode,
-      data.siteCode,
-      data.siteCode4,
-      data.detail && (data.detail.siteCode4 || data.detail.siteCode || data.detail.storeCode || data.detail.siteDescr || data.detail.storeName),
-      data.storeDetail && (data.storeDetail.siteCode4 || data.storeDetail.siteCode || data.storeDetail.storeCode || data.storeDetail.siteDescr || data.storeDetail.storeName),
-      data.manualStoreDetail && (data.manualStoreDetail.siteCode4 || data.manualStoreDetail.siteCode || data.manualStoreDetail.storeCode || data.manualStoreDetail.siteDescr || data.manualStoreDetail.storeName)
-    ].filter(function (value, index, array) {
-      const key = text(value, '');
-      return key && array.findIndex(function (item) { return text(item, '') === key; }) === index;
-    });
     if (typeof window.getStoreWebDetail === 'function') {
-      for (let i = 0; i < lookupKeys.length; i += 1) {
-        try {
-          detail = window.getStoreWebDetail(lookupKeys[i]) || {};
-          if (detail && Object.keys(detail).length) break;
-        } catch (error) { detail = {}; }
-      }
+      try { detail = window.getStoreWebDetail(storeName) || {}; } catch (error) { detail = {}; }
     }
-    const visitDetail = data && data.detail && typeof data.detail === 'object' ? data.detail : {};
-    const storeDetail = data && data.storeDetail && typeof data.storeDetail === 'object' ? data.storeDetail : {};
     const manual = data && data.manualStoreDetail && typeof data.manualStoreDetail === 'object' ? data.manualStoreDetail : {};
-    const direct = {
-      siteCode4: data.siteCode4 || data.siteCode || data.storeCode,
-      siteCode: data.siteCode || data.storeCode || data.siteCode4,
-      storeCode: data.storeCode || data.siteCode4 || data.siteCode,
-      typeStore: data.typeStore || data.storeType || data.type,
-      storeType: data.storeType || data.typeStore || data.type,
-      emailStore: data.emailStore || data.storeEmail || data.email,
-      storeEmail: data.storeEmail || data.emailStore || data.email,
-      areaManager: data.areaManager,
-      regionalManager: data.regionalManager,
-      storeHead: data.storeHead || data.storeLeader,
-      storeLeader: data.storeLeader || data.storeHead
-    };
-    return Object.assign({}, detail, visitDetail, storeDetail, direct, manual);
+    return Object.assign({}, detail, manual);
   }
 
   function addWrapped(doc, value, x, y, width, lineHeight, options) {
@@ -420,30 +386,22 @@
     }
   }
 
-  function pickRowValue(row, keys) {
-    for (var i = 0; i < keys.length; i += 1) {
-      var key = keys[i];
-      if (row && row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== '') return String(row[key]);
-    }
-    return '';
-  }
-
   function normalizeRows(rows) {
     return (Array.isArray(rows) ? rows : [])
       .map(function (row) {
         return {
-          temuan: pickRowValue(row, ['temuan', 'finding', 'observation', 'observasi', 'issue', 'desc', 'description']),
-          kondisiIdeal: pickRowValue(row, ['kondisiIdeal', 'kondisi_ideal', 'idealCondition', 'standard', 'targetCondition']),
-          dampak: pickRowValue(row, ['dampak', 'impact', 'risk', 'risiko']),
-          penyebab: pickRowValue(row, ['penyebab', 'rootCause', 'root_cause', 'cause']),
-          tindakan: pickRowValue(row, ['tindakan', 'action', 'correctiveAction', 'corrective_action', 'aksi']),
-          deadline: text(pickRowValue(row, ['deadline', 'dueDate', 'due_date', 'targetDate']), ''),
-          hasil: pickRowValue(row, ['hasil', 'result', 'status', 'followUp', 'follow_up'])
+          temuan: row && row.temuan !== undefined && row.temuan !== null ? String(row.temuan) : '',
+          kondisiIdeal: row && row.kondisiIdeal !== undefined && row.kondisiIdeal !== null ? String(row.kondisiIdeal) : '',
+          dampak: row && row.dampak !== undefined && row.dampak !== null ? String(row.dampak) : '',
+          penyebab: row && row.penyebab !== undefined && row.penyebab !== null ? String(row.penyebab) : '',
+          tindakan: row && row.tindakan !== undefined && row.tindakan !== null ? String(row.tindakan) : '',
+          deadline: text(row && row.deadline, ''),
+          hasil: row && row.hasil !== undefined && row.hasil !== null ? String(row.hasil) : ''
         };
       })
       .filter(function (row) {
         return Object.keys(row).some(function (key) {
-          var value = plainText(row[key], '');
+          const value = text(row[key], '');
           return value && value !== '-';
         });
       });
@@ -452,18 +410,9 @@
   function normalizePhotos(photos) {
     return (Array.isArray(photos) ? photos : [])
       .map(function (photo) {
-        photo = photo || {};
-        const image = photo.image || photo.dataUrl || photo.dataURL || photo.url || photo.src || photo.previewUrl || photo.previewURL || photo.blobUrl || photo.blobURL || '';
-        const description = photo.description !== undefined && photo.description !== null ? photo.description
-          : (photo.desc !== undefined && photo.desc !== null ? photo.desc
-          : (photo.caption !== undefined && photo.caption !== null ? photo.caption
-          : (photo.note !== undefined && photo.note !== null ? photo.note
-          : (photo.notes !== undefined && photo.notes !== null ? photo.notes
-          : (photo.text !== undefined && photo.text !== null ? photo.text
-          : (photo.keterangan !== undefined && photo.keterangan !== null ? photo.keterangan : ''))))));
-        return { image: image ? String(image) : '', description: description !== undefined && description !== null ? String(description) : '' };
+        return { image: photo && photo.image ? photo.image : '', description: photo && photo.description !== undefined && photo.description !== null ? String(photo.description) : '' };
       })
-      .filter(function (photo) { return photo.image || plainText(photo.description, ''); });
+      .filter(function (photo) { return photo.image || photo.description; });
   }
 
   function normalizeQscPhotos(data) {
@@ -472,8 +421,7 @@
     const source = modern.length ? modern : legacy;
     return [0, 1].map(function (index) {
       const item = source[index] || {};
-      const normalized = normalizePhotos([item])[0] || { image: '', description: '' };
-      return normalized;
+      return { image: item.image || '', description: item.description !== undefined && item.description !== null ? String(item.description) : '' };
     });
   }
 
@@ -503,24 +451,10 @@
   }
 
   function addFooter(doc, pageWidth, pageHeight) {
-    const text = 'GENERATED BY BESTIE VISIT WEB REPORT';
-    let appliedOpacity = false;
-    try {
-      if (doc.GState && typeof doc.setGState === 'function') {
-        doc.setGState(new doc.GState({ opacity: 0.40 }));
-        appliedOpacity = true;
-      }
-    } catch (error) {}
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.4);
-    doc.setTextColor(100, 116, 139);
-    doc.text(text, pageWidth / 2, pageHeight - 4.8, {
-      align: 'center',
-      charSpace: 0.12
-    });
-    if (appliedOpacity) {
-      try { doc.setGState(new doc.GState({ opacity: 1 })); } catch (error) {}
-    }
+    doc.setFontSize(11.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text('GENERATE BY BESTIE VISIT WEB REPORT', pageWidth / 2, pageHeight - 4.8, { align: 'center' });
   }
 
   function applyFooterAllPages(doc, pageWidth, pageHeight) {
@@ -558,8 +492,11 @@
     doc.setFontSize(26);
     doc.text('Regional Bestie Visit Report', margin + 2, 126);
 
-    const storeCode = detail.siteCode4 || detail.siteCode || detail.storeCode || data.storeCode || '-';
     const storeHead = text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-');
+    const storeCode = text(detail.siteCode4 || detail.siteCode || detail.storeCode || (data && (data.siteCode4 || data.siteCode || data.storeCode)), '-');
+    const storeType = text(detail.typeStore || detail.storeType || detail.type || (data && (data.typeStore || data.storeType || data.type)), '-');
+    const areaManager = text(detail.areaManager || (data && data.areaManager), '-');
+    const regionalManager = text(detail.regionalManager || (data && data.regionalManager), '-');
 
     const leftX = margin + 2;
     let y = 144;
@@ -572,30 +509,29 @@
     const cardX = 180;
     const cardY = 134;
     const cardW = pageWidth - cardX - margin;
-    const cardH = 46;
+    const cardH = 50;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'FD');
 
     const items = [
       ['Tanggal Visit', formatDate(data && data.tanggal)],
-      ['Kode Store', storeCode],
-      ['Area Manager', detail.areaManager || data.areaManager || '-'],
-      ['Regional Manager', detail.regionalManager || data.regionalManager || '-'],
-      ['Tipe Store', detail.typeStore || detail.storeType || detail.type || data.typeStore || '-'],
-      ['Email Store', detail.emailStore || detail.storeEmail || data.emailStore || '-']
+      ['Kode Toko', storeCode],
+      ['Tipe Toko', storeType],
+      ['Area Manager', areaManager],
+      ['Regional Manager', regionalManager]
     ];
     items.forEach(function (item, index) {
       const col = index % 2;
       const row = Math.floor(index / 2);
       const x = cardX + 8 + col * (cardW / 2);
-      const yy = cardY + 8 + row * 12;
+      const yy = cardY + 8 + row * 13;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.7);
+      doc.setFontSize(7.2);
       doc.setTextColor(100, 116, 139);
       doc.text(item[0].toUpperCase(), x, yy);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.2, 8.8, 11.6, 9.2));
+      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.7, 8.2, 10.6, 8.7));
       doc.setTextColor.apply(doc, palette.ink);
       doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
     });
@@ -640,79 +576,6 @@
     }
   }
 
-  function drawCrewTable(doc, rows, palette, pageWidth, pageHeight, margin) {
-    const headers = ['Role', 'Nama', 'Job Level'];
-    const colWidths = [58, pageWidth - margin * 2 - 108, 50];
-    const tableWidth = colWidths.reduce(function (total, width) { return total + width; }, 0);
-    const left = margin;
-    const bottomLimit = pageHeight - 16;
-    const lineHeight = 5.2;
-    let y = 52;
-
-    function fillColor(rgb) {
-      doc.setFillColor(rgb[0], rgb[1], rgb[2]);
-    }
-    function textColor(rgb) {
-      doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-    }
-    function drawHeader() {
-      fillColor(palette.primary);
-      doc.rect(left, y, tableWidth, 12, 'F');
-      doc.setDrawColor(203, 213, 225);
-      doc.setLineWidth(0.25);
-      textColor([255, 255, 255]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12.5);
-      let x = left;
-      headers.forEach(function (header, index) {
-        doc.rect(x, y, colWidths[index], 12, 'S');
-        doc.text(header, x + colWidths[index] / 2, y + 7.8, { align: 'center' });
-        x += colWidths[index];
-      });
-      y += 12;
-    }
-    function newTablePage() {
-      doc.addPage();
-      doc.setFillColor(255, 255, 255);
-      doc.rect(0, 0, pageWidth, pageHeight, 'F');
-      textColor(palette.ink);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(17);
-      doc.text('General Information (lanjutan)', margin, 25);
-      y = 34;
-      drawHeader();
-    }
-
-    drawHeader();
-    rows.forEach(function (row, rowIndex) {
-      const cellLines = row.map(function (value, index) {
-        const maxWidth = Math.max(12, colWidths[index] - 8);
-        return doc.splitTextToSize(text(value, '-'), maxWidth).slice(0, 4);
-      });
-      const rowHeight = Math.max(11, Math.max.apply(null, cellLines.map(function (lines) { return lines.length; })) * lineHeight + 5.5);
-      if (y + rowHeight > bottomLimit) newTablePage();
-      fillColor(rowIndex % 2 ? [255, 255, 255] : [248, 250, 252]);
-      doc.rect(left, y, tableWidth, rowHeight, 'F');
-      doc.setDrawColor(203, 213, 225);
-      doc.setLineWidth(0.25);
-      textColor(palette.ink);
-      let x = left;
-      cellLines.forEach(function (lines, index) {
-        doc.rect(x, y, colWidths[index], rowHeight, 'S');
-        doc.setFont('helvetica', index === 0 ? 'bold' : 'normal');
-        doc.setFontSize(12.5);
-        const textY = y + rowHeight / 2 - ((lines.length - 1) * lineHeight) / 2 + 1.8;
-        if (index === 2) {
-          doc.text(lines, x + colWidths[index] / 2, textY, { align: 'center' });
-        } else {
-          doc.text(lines, x + 4, textY);
-        }
-        x += colWidths[index];
-      });
-      y += rowHeight;
-    });
-  }
-
   function drawCrewSlide(doc, data, palette, pageWidth, pageHeight, margin) {
     doc.addPage();
     doc.setFillColor(255, 255, 255);
@@ -729,16 +592,43 @@
     const crew = Array.isArray(data && data.crewList) ? data.crewList.filter(function (item) {
       return text(item && item.name, '') || text(item && item.level, '');
     }) : [];
-    const detail = getStoreDetail(data && data.store, data || {});
     const rows = [
-      ['Store Head', text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-'), text(data && data.storeLeaderLevel, '-')],
+      ['Store Leader', text(data && data.storeLeader, '-'), text(data && data.storeLeaderLevel, '-')],
       ['Shift Leader', text(data && data.shiftLeader, '-'), text(data && data.shiftLeaderLevel, '-')]
     ];
     (crew.length ? crew : [{ name: '-', level: '-' }]).forEach(function (item, index) {
       rows.push(['Crew Store ' + String(index + 1), text(item.name, '-'), text(item.level, '-')]);
     });
 
-    drawCrewTable(doc, rows, palette, pageWidth, pageHeight, margin);
+    doc.autoTable({
+      startY: 52,
+      head: [['Role', 'Nama', 'Job Level']],
+      body: rows,
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: 12.5,
+        cellPadding: 3.1,
+        overflow: 'linebreak',
+        valign: 'middle',
+        textColor: palette.ink,
+        lineColor: [203, 213, 225],
+        lineWidth: 0.25,
+        minCellHeight: 11
+      },
+      headStyles: { fillColor: palette.primary, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12.5, halign: 'center' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 58, fontStyle: 'bold' },
+        1: { cellWidth: pageWidth - margin * 2 - 108 },
+        2: { cellWidth: 50, halign: 'center' }
+      },
+      margin: { left: margin, right: margin, top: 32, bottom: 15 },
+      tableWidth: pageWidth - margin * 2,
+      showHead: 'everyPage',
+      pageBreak: 'auto',
+      rowPageBreak: 'auto'
+    });
   }
 
   function drawStaticTitleSlide(doc, key, fallbackTitle, fallbackSubtitle, palette, pageWidth, pageHeight, margin) {
@@ -1223,23 +1113,18 @@
   function getPortraitEvidenceCardMetrics(width, height) {
     const padding = 3;
     const gap = 3;
+    const innerW = Math.max(32, width - padding * 2 - gap);
+    const panelW = innerW / 2;
     const innerH = Math.max(24, height - padding * 2);
-    const imageW = Math.max(20, Math.min(width * 0.38, innerH * 9 / 16, width - 34));
-    const imageH = Math.max(30, Math.min(innerH, imageW * 16 / 9));
-    const finalImageW = imageH * 9 / 16;
-    const imgX = padding;
-    const imgY = (height - imageH) / 2;
-    const descX = imgX + finalImageW + gap;
-    const descW = Math.max(18, width - descX - padding);
     return {
-      imgX: imgX,
-      imgY: imgY,
-      imgW: finalImageW,
-      imgH: imageH,
-      descX: descX,
+      imgX: padding,
+      imgY: padding,
+      imgW: panelW,
+      imgH: innerH,
+      descX: padding + panelW + gap,
       descY: padding,
-      descW: descW,
-      descH: Math.max(12, height - padding * 2)
+      descW: panelW,
+      descH: innerH
     };
   }
 
@@ -1293,7 +1178,7 @@
       const imgH = metrics.imgH;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
-      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'coverCrop');
+      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'contain');
       if (!added) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.8);
@@ -1404,15 +1289,13 @@
     await drawQscResultSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
     drawCrewSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
 
-    const opiRows = normalizeRows(data && data.opiData);
-    const qscRows = normalizeRows(data && data.qscData);
-    if (data && opiRows.length) {
+    if (data && data.showOPITable === true && normalizeRows(data.opiData).length) {
       drawStaticTitleSlide(doc, 'opiTitle', 'OPI Project Observation', 'Findings & Root Cause Analysis', palette, pageWidth, pageHeight, margin);
-      drawObservationTable(doc, 'OPI Project Observation', opiRows, palette, pageWidth, pageHeight, margin);
+      drawObservationTable(doc, 'OPI Project Observation', data.opiData, palette, pageWidth, pageHeight, margin);
     }
-    if (data && qscRows.length) {
+    if (data && data.showQSCTable === true && normalizeRows(data.qscData).length) {
       drawStaticTitleSlide(doc, 'qscTitle', 'QSC Observation', 'Findings & Root Cause Analysis', palette, pageWidth, pageHeight, margin);
-      drawObservationTable(doc, 'QSC Observation', qscRows, palette, pageWidth, pageHeight, margin);
+      drawObservationTable(doc, 'QSC Observation', data.qscData, palette, pageWidth, pageHeight, margin);
     }
     if (data && data.showFindingEvidence === true) await drawPhotoSlides(doc, 'Finding Evidence', 'of OPI & QSC Observation', 'findingTitle', data.findingEvidencePhotos, palette, pageWidth, pageHeight, margin);
     if (data && data.showCorrectiveAction === true) await drawPhotoSlides(doc, 'Corrective Action Evidence & Result', 'by Regional Bestie', 'correctiveTitle', data.correctiveActionPhotos, palette, pageWidth, pageHeight, margin);
