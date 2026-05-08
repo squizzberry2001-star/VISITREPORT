@@ -559,7 +559,7 @@
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(x, cardY, cardW, cardH, 4, 4, 'FD');
-      const added = await addImageInBox(doc, photo.image, x + 3, cardY + 3, cardW - 6, imageH, 'contain');
+      const added = await addImageInBox(doc, photo.image, x + 3, cardY + 3, cardW - 6, imageH, 'coverCrop');
       if (!added) {
         doc.setFillColor(248, 250, 252);
         doc.roundedRect(x + 3, cardY + 3, cardW - 6, imageH, 3, 3, 'F');
@@ -1178,7 +1178,7 @@
       const imgH = metrics.imgH;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
-      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'contain');
+      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'coverCrop');
       if (!added) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.8);
