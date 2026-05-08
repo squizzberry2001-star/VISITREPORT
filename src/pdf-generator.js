@@ -1106,23 +1106,50 @@
     });
   }
 
+  function getPortraitEvidenceCardMetrics(width, height) {
+    const padding = 3;
+    const gap = 3;
+    const innerH = Math.max(24, height - padding * 2);
+    const imageW = Math.max(20, Math.min(width * 0.38, innerH * 9 / 16, width - 34));
+    const imageH = Math.max(30, Math.min(innerH, imageW * 16 / 9));
+    const finalImageW = imageH * 9 / 16;
+    const imgX = padding;
+    const imgY = (height - imageH) / 2;
+    const descX = imgX + finalImageW + gap;
+    const descW = Math.max(18, width - descX - padding);
+    return {
+      imgX: imgX,
+      imgY: imgY,
+      imgW: finalImageW,
+      imgH: imageH,
+      descX: descX,
+      descY: padding,
+      descW: descW,
+      descH: Math.max(12, height - padding * 2)
+    };
+  }
+
   function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
     const evidenceFontSize = pdfEvidenceFontSize();
     const lineHeight = Math.max(3.6, evidenceFontSize * 0.45);
-    const imageHeight = Math.max(34, Math.min(cardHeight * 0.72, cardHeight - 18));
-    const maxLinesWithImage = Math.max(1, Math.floor((cardHeight - imageHeight - 10) / lineHeight));
+    const portraitMetrics = getPortraitEvidenceCardMetrics(cardWidth, cardHeight);
+    const maxLinesWithImage = Math.max(1, Math.floor((portraitMetrics.descH - 5) / lineHeight));
     const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
+    const textWidthWithImage = Math.max(12, portraitMetrics.descW - 4);
+    const textWidthOnly = Math.max(12, cardWidth - 12);
     const items = [];
     photos.forEach(function (photo, index) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(evidenceFontSize);
-      const richLines = splitRichTextToLines(doc, photo.description, Math.max(12, cardWidth - 12), false);
+      const richLines = splitRichTextToLines(doc, photo.description, textWidthWithImage, false);
       const first = richLines.slice(0, maxLinesWithImage);
-      items.push({ image: photo.image, rawDescription: photo.description, richLines: first, lines: first.map(richLineToText), lineHeight: lineHeight, imageHeight: imageHeight, title: 'Foto ' + String(index + 1), continuation: false });
+      items.push({ image: photo.image, rawDescription: photo.description, richLines: first, lines: first.map(richLineToText), lineHeight: lineHeight, imageHeight: portraitMetrics.imgH, imageWidth: portraitMetrics.imgW, title: 'Foto ' + String(index + 1), continuation: false });
       let rest = richLines.slice(maxLinesWithImage);
       let continuationIndex = 1;
       while (rest.length) {
-        const chunk = rest.slice(0, maxLinesTextOnly);
+        const chunk = rest.slice(0, maxLinesTextOnly).map(function (line) {
+          return splitRichTextToLines(doc, richLineToText(line), textWidthOnly, false)[0] || line;
+        });
         items.push({ image: '', rawDescription: chunk.map(richLineToText).join('\n'), richLines: chunk, lines: chunk.map(richLineToText), lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
         rest = rest.slice(maxLinesTextOnly);
         continuationIndex += 1;
@@ -1137,42 +1164,49 @@
     doc.setLineWidth(0.24);
     doc.roundedRect(x, y, width, height, 3, 3, 'FD');
 
-    let descY = y + 5;
+    const evidenceFontSize = pdfEvidenceFontSize();
+    const evidenceLineHeight = item.lineHeight || Math.max(3.6, evidenceFontSize * 0.45);
+    let descX = x + 3;
+    let descY = y + 4.2;
+    let descW = width - 6;
     let descHeight = height - 8;
+
     if (item.image) {
-      const imgX = x + 3;
-      const imgY = y + 3;
-      const imgW = Math.max(18, width - 5);
-      const imgH = Math.max(30, Math.min(item.imageHeight || 46, height - 15));
+      const metrics = getPortraitEvidenceCardMetrics(width, height);
+      const imgX = x + metrics.imgX;
+      const imgY = y + metrics.imgY;
+      const imgW = metrics.imgW;
+      const imgH = metrics.imgH;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
-      const added = await addImageInBox(doc, item.image, imgX + 0.6, imgY + 0.6, imgW - 1.2, imgH - 1.2, 'contain');
+      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'coverCrop');
       if (!added) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.8);
         doc.setTextColor(100, 116, 139);
-        doc.text('No photo', x + width / 2, imgY + imgH / 2, { align: 'center' });
+        doc.text('No photo', imgX + imgW / 2, imgY + imgH / 2, { align: 'center' });
       }
-      descY = imgY + imgH + 3.2;
-      descHeight = height - (descY - y) - 3;
+      descX = x + metrics.descX;
+      descY = y + metrics.descY;
+      descW = metrics.descW;
+      descHeight = metrics.descH;
     }
 
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(x + 3, descY - 1.4, width - 6, Math.max(8, descHeight), 2.5, 2.5, 'F');
-    const evidenceFontSize = pdfEvidenceFontSize();
-    const evidenceLineHeight = item.lineHeight || Math.max(3.6, evidenceFontSize * 0.45);
+    doc.roundedRect(descX, descY, descW, Math.max(8, descHeight), 2.5, 2.5, 'F');
+    let textY = descY + 3.1;
     if (item.continuation) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(clampNumber(evidenceFontSize - 1.1, 7.2, 9.2, 7.6));
       const continuationTitleColor = palette && palette.primary ? palette.primary : [30, 64, 175];
       doc.setTextColor.apply(doc, continuationTitleColor);
-      doc.text(item.title, x + 5, descY + 1.8, { baseline: 'top' });
-      descY += Math.max(4.2, evidenceLineHeight);
+      doc.text(item.title, descX + 2, textY, { baseline: 'top' });
+      textY += Math.max(4.2, evidenceLineHeight);
     }
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(evidenceFontSize);
     doc.setTextColor(15, 23, 42);
-    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 5, descY + 2.1, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), descX + 2, textY, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
   }
 
   async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {

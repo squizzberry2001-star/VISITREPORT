@@ -2235,12 +2235,12 @@ select,
 
 /* 6-7. Evidence and QSC thumbnails follow PDF crop frames */
 .photo-input-card.match-crop-frame .photo-frame {
-  aspect-ratio: var(--photo-aspect, 16 / 9) !important;
+  aspect-ratio: var(--photo-aspect, 9 / 16) !important;
   min-height: 0 !important;
   height: auto !important;
 }
 .evidence-photo-grid .photo-input-card.match-crop-frame .photo-frame {
-  aspect-ratio: 16 / 9 !important;
+  aspect-ratio: 9 / 16 !important;
 }
 .qsc-result-photo-grid .photo-input-card.match-crop-frame .photo-frame {
   aspect-ratio: 4 / 3 !important;
@@ -5383,7 +5383,7 @@ label.block {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 9 / 16;
   background: #e2e8f0;
   color: #64748b;
   font-size: 12px;
