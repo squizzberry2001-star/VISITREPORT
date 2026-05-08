@@ -128,46 +128,12 @@
   }
 
   function getStoreDetail(storeName, data) {
-    data = data || {};
     let detail = {};
-    const lookupKeys = [
-      storeName,
-      data.store,
-      data.storeCode,
-      data.siteCode,
-      data.siteCode4,
-      data.detail && (data.detail.siteCode4 || data.detail.siteCode || data.detail.storeCode || data.detail.siteDescr || data.detail.storeName),
-      data.storeDetail && (data.storeDetail.siteCode4 || data.storeDetail.siteCode || data.storeDetail.storeCode || data.storeDetail.siteDescr || data.storeDetail.storeName),
-      data.manualStoreDetail && (data.manualStoreDetail.siteCode4 || data.manualStoreDetail.siteCode || data.manualStoreDetail.storeCode || data.manualStoreDetail.siteDescr || data.manualStoreDetail.storeName)
-    ].filter(function (value, index, array) {
-      const key = text(value, '');
-      return key && array.findIndex(function (item) { return text(item, '') === key; }) === index;
-    });
     if (typeof window.getStoreWebDetail === 'function') {
-      for (let i = 0; i < lookupKeys.length; i += 1) {
-        try {
-          detail = window.getStoreWebDetail(lookupKeys[i]) || {};
-          if (detail && Object.keys(detail).length) break;
-        } catch (error) { detail = {}; }
-      }
+      try { detail = window.getStoreWebDetail(storeName) || {}; } catch (error) { detail = {}; }
     }
-    const visitDetail = data && data.detail && typeof data.detail === 'object' ? data.detail : {};
-    const storeDetail = data && data.storeDetail && typeof data.storeDetail === 'object' ? data.storeDetail : {};
     const manual = data && data.manualStoreDetail && typeof data.manualStoreDetail === 'object' ? data.manualStoreDetail : {};
-    const direct = {
-      siteCode4: data.siteCode4 || data.siteCode || data.storeCode,
-      siteCode: data.siteCode || data.storeCode || data.siteCode4,
-      storeCode: data.storeCode || data.siteCode4 || data.siteCode,
-      typeStore: data.typeStore || data.storeType || data.type,
-      storeType: data.storeType || data.typeStore || data.type,
-      emailStore: data.emailStore || data.storeEmail || data.email,
-      storeEmail: data.storeEmail || data.emailStore || data.email,
-      areaManager: data.areaManager,
-      regionalManager: data.regionalManager,
-      storeHead: data.storeHead || data.storeLeader,
-      storeLeader: data.storeLeader || data.storeHead
-    };
-    return Object.assign({}, detail, visitDetail, storeDetail, direct, manual);
+    return Object.assign({}, detail, manual);
   }
 
   function addWrapped(doc, value, x, y, width, lineHeight, options) {
@@ -558,8 +524,11 @@
     doc.setFontSize(26);
     doc.text('Regional Bestie Visit Report', margin + 2, 126);
 
-    const storeCode = detail.siteCode4 || detail.siteCode || detail.storeCode || data.storeCode || '-';
     const storeHead = text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-');
+    const storeCode = text(detail.siteCode4 || detail.siteCode || detail.storeCode || (data && (data.siteCode4 || data.siteCode || data.storeCode)), '-');
+    const storeType = text(detail.typeStore || detail.storeType || detail.type || (data && (data.typeStore || data.storeType || data.type)), '-');
+    const areaManager = text(detail.areaManager || (data && data.areaManager), '-');
+    const regionalManager = text(detail.regionalManager || (data && data.regionalManager), '-');
 
     const leftX = margin + 2;
     let y = 144;
@@ -572,30 +541,29 @@
     const cardX = 180;
     const cardY = 134;
     const cardW = pageWidth - cardX - margin;
-    const cardH = 46;
+    const cardH = 50;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'FD');
 
     const items = [
       ['Tanggal Visit', formatDate(data && data.tanggal)],
-      ['Kode Store', storeCode],
-      ['Area Manager', detail.areaManager || data.areaManager || '-'],
-      ['Regional Manager', detail.regionalManager || data.regionalManager || '-'],
-      ['Tipe Store', detail.typeStore || detail.storeType || detail.type || data.typeStore || '-'],
-      ['Email Store', detail.emailStore || detail.storeEmail || data.emailStore || '-']
+      ['Kode Toko', storeCode],
+      ['Tipe Toko', storeType],
+      ['Area Manager', areaManager],
+      ['Regional Manager', regionalManager]
     ];
     items.forEach(function (item, index) {
       const col = index % 2;
       const row = Math.floor(index / 2);
       const x = cardX + 8 + col * (cardW / 2);
-      const yy = cardY + 8 + row * 12;
+      const yy = cardY + 8 + row * 13;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.7);
+      doc.setFontSize(7.2);
       doc.setTextColor(100, 116, 139);
       doc.text(item[0].toUpperCase(), x, yy);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.2, 8.8, 11.6, 9.2));
+      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.7, 8.2, 10.6, 8.7));
       doc.setTextColor.apply(doc, palette.ink);
       doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
     });
@@ -1223,23 +1191,18 @@
   function getPortraitEvidenceCardMetrics(width, height) {
     const padding = 3;
     const gap = 3;
+    const innerW = Math.max(32, width - padding * 2 - gap);
+    const panelW = innerW / 2;
     const innerH = Math.max(24, height - padding * 2);
-    const imageW = Math.max(20, Math.min(width * 0.38, innerH * 9 / 16, width - 34));
-    const imageH = Math.max(30, Math.min(innerH, imageW * 16 / 9));
-    const finalImageW = imageH * 9 / 16;
-    const imgX = padding;
-    const imgY = (height - imageH) / 2;
-    const descX = imgX + finalImageW + gap;
-    const descW = Math.max(18, width - descX - padding);
     return {
-      imgX: imgX,
-      imgY: imgY,
-      imgW: finalImageW,
-      imgH: imageH,
-      descX: descX,
+      imgX: padding,
+      imgY: padding,
+      imgW: panelW,
+      imgH: innerH,
+      descX: padding + panelW + gap,
       descY: padding,
-      descW: descW,
-      descH: Math.max(12, height - padding * 2)
+      descW: panelW,
+      descH: innerH
     };
   }
 
@@ -1293,7 +1256,7 @@
       const imgH = metrics.imgH;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
-      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'coverCrop');
+      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'contain');
       if (!added) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.8);

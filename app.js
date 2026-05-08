@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp102-cloudflare-frontend-status-fix';
+const APP_BUILD_VERSION = 'revamp259-pdf-slide1-store-fields';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -853,6 +853,7 @@ function TextArea({ value, onChange, className = '', minRows = 3, ...props }) {
 function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', className = '', minHeight = 112 }) {
     const editorRef = useRef(null);
     const [activeTools, setActiveTools] = useState({});
+    const [toolbarVisible, setToolbarVisible] = useState(false);
     function plainContent(html) {
         const temp = document.createElement('div');
         temp.innerHTML = html || '';
@@ -945,6 +946,26 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
                 onChange('');
             }
         });
+    }
+    function handlePaste(event) {
+        event.preventDefault();
+        const text = event.clipboardData?.getData('text/plain') || '';
+        const safeText = text.replace(/\r\n/g, '\n');
+        try {
+            document.execCommand('insertText', false, safeText);
+        }
+        catch (error) {
+            const selection = window.getSelection?.();
+            if (selection && selection.rangeCount) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(safeText));
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+        window.requestAnimationFrame(emit);
     }
     const tools = [
         { command: 'bold', label: 'B', title: 'Bold', className: 'rich-tool-bold' },
@@ -1046,7 +1067,6 @@ function StoreDetailCard({ detail }) {
         ['Store Head', detail.storeHead || '-'],
         ['Area Manager', detail.areaManager || '-'],
         ['Regional Manager', detail.regionalManager || '-'],
-        ['Email Store', detail.emailStore || '-'],
         ['Alamat', detail.address || detail.storeAddress || '-']
     ];
     return (React.createElement("div", { className: "store-detail-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
@@ -1078,7 +1098,7 @@ function distanceBetweenTouches(touches) {
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
-const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF', w: 16, h: 9 };
+const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
 const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
 function ratioToAspectString(ratio) {
@@ -5691,7 +5711,7 @@ function App() {
             if (tag === 'select')
                 return false;
             const type = String(target.getAttribute?.('type') || '').toLowerCase();
-            return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password', 'date', 'time', 'month'].includes(type);
+            return target.isContentEditable || tag === 'textarea' || !type || ['text', 'search', 'email', 'tel', 'url', 'number', 'password'].includes(type);
         }
         function focusTapTarget(target) {
             if (!canFocusOnTap(target) || document.activeElement === target)
