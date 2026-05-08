@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp253-evidence-portrait';
+const APP_VERSION = 'revamp255-general-info-hide-fields';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
