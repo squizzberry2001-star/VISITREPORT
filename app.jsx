@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp66-home-nav-loading-secret-spark-pdf-spacing';
+const APP_BUILD_VERSION = 'revamp263-pdf-preview-evidence-fit';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1106,7 +1106,7 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF', w: 16, h: 9 };
+const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
 const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
 function ratioToAspectString(ratio) {
@@ -1489,7 +1489,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
 
 }
 
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO }) {
+function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO }) {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1509,7 +1509,11 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
   }
 
   function clearPhoto() {
-    if (!confirmAction('Hapus foto ini?')) return;
+    if (!confirmAction(onRemove ? 'Hapus card evidence ini?' : 'Hapus foto ini?')) return;
+    if (typeof onRemove === 'function') {
+      onRemove();
+      return;
+    }
     onChange({ ...(value || blankPhoto()), image: '' });
   }
 
@@ -1730,6 +1734,10 @@ function PhotoGrid({ photos, onChange, prefix }) {
   const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
   const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
   const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
+  const removePhotoCard = (index) => {
+    const next = safePhotos.filter((_, photoIndex) => photoIndex !== index);
+    onChange(Array.from({ length: Math.max(minSlots, next.length || minSlots) }, (_, photoIndex) => next[photoIndex] || blankPhoto()));
+  };
   const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
   const removeEmpty = () => {
     if (!confirmAction('Rapihkan dan hapus slot foto kosong?')) return;
@@ -1753,7 +1761,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
       {renderActions('top')}
       <div className="evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {safePhotos.map((photo, index) => (
-          <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} compact rich matchCropFrame cropRatio={PDF_PHOTO_CROP_RATIO} />
+          <PhotoInput key={index} label={prefix + ' ' + (index + 1)} value={photo} onChange={(value) => updatePhoto(index, value)} onRemove={() => removePhotoCard(index)} compact rich matchCropFrame cropRatio={PDF_PHOTO_CROP_RATIO} />
         ))}
       </div>
       {renderActions('bottom')}
@@ -2637,14 +2645,22 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
           const scale = maxWidth / baseViewport.width;
           const viewport = page.getViewport({ scale });
           const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+          const pageRatio = `${baseViewport.width} / ${baseViewport.height}`;
+          const displayWidth = Math.floor(viewport.width);
+          const displayHeight = Math.floor(viewport.height);
           const pageWrap = document.createElement('div');
           pageWrap.className = 'pdf-preview-page-wrap';
+          pageWrap.style.width = displayWidth + 'px';
+          pageWrap.style.setProperty('--pdf-page-ratio', pageRatio);
+          pageWrap.style.setProperty('--pdf-page-css-width', displayWidth + 'px');
+          pageWrap.style.setProperty('--pdf-page-css-height', displayHeight + 'px');
           const canvas = document.createElement('canvas');
           canvas.className = 'pdf-preview-page-canvas';
           canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
           canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
-          canvas.style.width = Math.floor(viewport.width) + 'px';
-          canvas.style.height = Math.floor(viewport.height) + 'px';
+          canvas.style.width = displayWidth + 'px';
+          canvas.style.height = displayHeight + 'px';
+          canvas.style.aspectRatio = pageRatio;
           pageWrap.appendChild(canvas);
           fragment.appendChild(pageWrap);
           const context = canvas.getContext('2d', { alpha: false });

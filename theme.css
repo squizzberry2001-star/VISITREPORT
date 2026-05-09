@@ -2235,12 +2235,12 @@ select,
 
 /* 6-7. Evidence and QSC thumbnails follow PDF crop frames */
 .photo-input-card.match-crop-frame .photo-frame {
-  aspect-ratio: var(--photo-aspect, 16 / 9) !important;
+  aspect-ratio: var(--photo-aspect, 9 / 16) !important;
   min-height: 0 !important;
   height: auto !important;
 }
 .evidence-photo-grid .photo-input-card.match-crop-frame .photo-frame {
-  aspect-ratio: 16 / 9 !important;
+  aspect-ratio: 9 / 16 !important;
 }
 .qsc-result-photo-grid .photo-input-card.match-crop-frame .photo-frame {
   aspect-ratio: 4 / 3 !important;
@@ -3620,4 +3620,2002 @@ button[title*="Hapus"] svg,
   0% { opacity: .35; transform: scale(.88) rotate(0); }
   50% { opacity: 1; transform: scale(1.04) rotate(4deg); }
   100% { opacity: .35; transform: scale(.88) rotate(0); }
+}
+
+/* Revamp 108: secret panel D1 safe mode */
+.secret-admin-backdrop {
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+}
+.secret-admin-panel {
+  position: relative !important;
+  isolation: isolate !important;
+  border: 1px solid rgba(226,232,240,.9) !important;
+  box-shadow: 0 30px 90px rgba(15,23,42,.26) !important;
+}
+.secret-admin-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 132px;
+  border-radius: 32px 32px 0 0;
+  background: linear-gradient(135deg, rgba(15,118,110,.12), rgba(14,165,233,.10), transparent 72%);
+  pointer-events: none;
+  z-index: -1;
+}
+.secret-d1-command {
+  position: relative;
+  isolation: isolate;
+}
+.secret-d1-command::before,
+.secret-d1-command::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(28px);
+  opacity: .55;
+  z-index: -1;
+}
+.secret-d1-command::before {
+  width: 240px;
+  height: 240px;
+  right: -90px;
+  top: -120px;
+  background: rgba(20,184,166,.46);
+}
+.secret-d1-command::after {
+  width: 180px;
+  height: 180px;
+  left: -60px;
+  bottom: -96px;
+  background: rgba(56,189,248,.28);
+}
+.secret-panel-tabs {
+  position: sticky;
+  top: 10px;
+  z-index: 2;
+  box-shadow: 0 10px 26px rgba(15,23,42,.07);
+}
+.secret-panel-tab {
+  min-height: 52px !important;
+  border-radius: 22px !important;
+}
+.secret-panel-tab.active {
+  background: linear-gradient(135deg, #0f766e, #0891b2) !important;
+  box-shadow: 0 14px 28px rgba(15,118,110,.25) !important;
+}
+@media (max-width: 640px) {
+  .secret-admin-backdrop {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .secret-admin-panel {
+    width: 100vw !important;
+    min-height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: calc(16px + var(--safe-top)) 14px calc(24px + var(--safe-bottom)) !important;
+    box-shadow: none !important;
+  }
+  .secret-admin-panel::before { border-radius: 0 !important; }
+  .secret-panel-tabs { top: calc(8px + var(--safe-top)); }
+  .secret-d1-command { border-radius: 24px !important; }
+}
+
+
+/* Revamp 202: mobile-first secret panel + NIK welcome login */
+.secret-admin-backdrop {
+  overscroll-behavior: contain;
+}
+.secret-admin-panel {
+  color: #0f172a;
+}
+.secret-admin-panel * {
+  min-width: 0;
+}
+.secret-admin-panel .btn-secondary,
+.secret-admin-panel .btn-primary,
+.secret-admin-panel .btn-danger {
+  white-space: normal;
+  line-height: 1.1;
+}
+.secret-convex-command {
+  color: #f8fafc;
+}
+.secret-convex-command p,
+.secret-convex-command h3 {
+  overflow-wrap: anywhere;
+}
+.welcome-nik-login {
+  margin-top: 18px;
+  width: min(320px, 92%);
+  display: grid;
+  gap: 9px;
+  animation: rbvWelcomeTextIn .54s cubic-bezier(.22,1,.36,1) both;
+}
+.welcome-nik-label {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 950;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+.welcome-nik-input {
+  width: 100%;
+  height: 48px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 118, 110, .22);
+  background: rgba(255, 255, 255, .82);
+  color: #020617;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  outline: none;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+}
+.welcome-nik-input:focus {
+  border-color: rgba(15, 118, 110, .75);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, .18), 0 12px 30px rgba(15, 23, 42, .10);
+}
+.welcome-nik-name {
+  margin: 0;
+  border-radius: 16px;
+  padding: 9px 10px;
+  background: rgba(209, 250, 229, .78);
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.welcome-nik-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+.welcome-nik-error {
+  margin: 0;
+  color: #be123c;
+  font-size: 11px;
+  font-weight: 850;
+}
+.welcome-nik-button {
+  height: 48px;
+  border-radius: 18px;
+  border: 0;
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: white;
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  box-shadow: 0 16px 32px rgba(15, 118, 110, .22);
+}
+.welcome-nik-button:disabled {
+  opacity: .46;
+  box-shadow: none;
+}
+@media (max-width: 640px) {
+  .secret-admin-backdrop {
+    padding: 0 !important;
+    background: rgba(15, 23, 42, .84) !important;
+  }
+  .secret-admin-panel {
+    width: 100%;
+    min-height: 100dvh;
+    max-width: none !important;
+    border-radius: 0 !important;
+    padding: 16px !important;
+    box-shadow: none !important;
+  }
+  .secret-admin-panel .rounded-\[32px\],
+  .secret-admin-panel .rounded-\[30px\],
+  .secret-admin-panel .rounded-3xl {
+    border-radius: 20px !important;
+  }
+  .secret-panel-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-radius: 18px !important;
+  }
+  .secret-panel-tab {
+    min-height: 46px;
+    font-size: 13px;
+  }
+  .secret-convex-command {
+    border-radius: 22px !important;
+    padding: 16px !important;
+  }
+  .secret-convex-command .flex,
+  .secret-admin-panel .flex {
+    gap: 8px;
+  }
+  .secret-admin-panel button {
+    min-height: 44px;
+  }
+  .secret-admin-panel .grid {
+    grid-template-columns: 1fr !important;
+  }
+  .secret-admin-panel input,
+  .secret-admin-panel textarea,
+  .secret-admin-panel select {
+    font-size: 16px;
+  }
+  .welcome-dream-card {
+    width: min(94vw, 430px) !important;
+  }
+  .welcome-dream-content {
+    min-height: 360px !important;
+  }
+}
+
+
+/* Revamp 203: Welcome NIK unfreeze fix.
+   Legacy welcome CSS used welcomeCardIn with animation-fill-mode: both,
+   so the card became opacity:0 after the intro duration and the NIK form existed
+   but was invisible. Keep the card visible until login is submitted. */
+.welcome-dream-overlay:not(.is-closing) {
+  opacity: 1 !important;
+}
+.welcome-dream-overlay:not(.is-closing) .welcome-dream-card {
+  animation: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+.welcome-dream-overlay:not(.is-closing) .welcome-nik-login {
+  display: grid !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+@media (max-width: 640px) {
+  .welcome-nik-login {
+    width: min(330px, 100%) !important;
+    margin-top: 16px !important;
+  }
+  .welcome-nik-input,
+  .welcome-nik-button {
+    height: 50px !important;
+    font-size: 18px !important;
+  }
+}
+
+
+/* Revamp 204 - Lite Mobile Performance Mode */
+html.rbv-lite-mode *,
+html.rbv-lite-mode *::before,
+html.rbv-lite-mode *::after {
+  scroll-behavior: auto !important;
+}
+html.rbv-lite-mode .welcome-dream-card,
+html.rbv-lite-mode .secret-panel-shell,
+html.rbv-lite-mode .surface-card,
+html.rbv-lite-mode .photo-input-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.10) !important;
+}
+html.rbv-lite-mode .welcome-dream-icon,
+html.rbv-lite-mode .welcome-orbit,
+html.rbv-lite-mode .welcome-glow,
+html.rbv-lite-mode .welcome-particle,
+html.rbv-lite-mode .secret-panel-gradient,
+html.rbv-lite-mode .animated-gradient {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  filter: none !important;
+}
+html.rbv-lite-mode .welcome-dream-bg::before,
+html.rbv-lite-mode .welcome-dream-bg::after {
+  filter: none !important;
+  opacity: .28 !important;
+}
+html.rbv-lite-mode .photo-editor-v10-stage,
+html.rbv-lite-mode .pdf-canvas-pages {
+  will-change: auto !important;
+}
+@media (max-width: 640px) {
+  html.rbv-lite-mode .secret-panel-shell,
+  html.rbv-lite-mode .secret-panel-card,
+  html.rbv-lite-mode .secret-panel-control-card {
+    border-radius: 22px !important;
+    padding: 14px !important;
+  }
+  html.rbv-lite-mode .secret-panel-title,
+  html.rbv-lite-mode .panel-secret-title {
+    font-size: 1.45rem !important;
+    line-height: 1.12 !important;
+  }
+  html.rbv-lite-mode .secret-panel-actions,
+  html.rbv-lite-mode .section-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  html.rbv-lite-mode .secret-panel-actions button,
+  html.rbv-lite-mode .section-actions button {
+    width: 100% !important;
+    min-height: 46px !important;
+  }
+}
+
+
+/* Revamp207: lightweight PDF preview for low-end phones */
+.pdf-lite-empty,
+.pdf-lite-preview {
+  min-height: 38vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(248,250,252,.92), rgba(255,255,255,.98));
+}
+.pdf-lite-preview-card {
+  width: min(520px, 100%);
+  text-align: center;
+  border: 1px solid rgba(203,213,225,.9);
+  border-radius: 28px;
+  padding: 26px 18px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 14px 36px rgba(15,23,42,.08);
+}
+.pdf-lite-icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  color: #0f766e;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+.pdf-lite-preview-card h3 {
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 900;
+  color: #020617;
+}
+.pdf-lite-preview-card p {
+  max-width: 420px;
+  margin: 8px auto 0;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 650;
+  color: #64748b;
+}
+.pdf-lite-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.pdf-lite-actions .btn-secondary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.pdf-lite-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: stretch;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(2,6,23,.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.pdf-lite-modal-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(2,6,23,.28);
+}
+.pdf-lite-modal-header {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(226,232,240,.96);
+}
+.pdf-lite-modal-header strong {
+  font-size: 15px;
+  font-weight: 900;
+  color: #020617;
+}
+.pdf-lite-modal-header button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  color: #334155;
+  background: #f1f5f9;
+}
+.pdf-lite-frame {
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  border: 0;
+  background: #f8fafc;
+}
+@media (max-width: 640px) {
+  .pdf-lite-preview {
+    padding: 16px;
+  }
+  .pdf-lite-preview-card {
+    border-radius: 24px;
+    padding: 22px 14px;
+  }
+  .pdf-lite-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .pdf-lite-actions .btn-secondary {
+    width: 100%;
+  }
+}
+
+
+/* Revamp 208 - Home quick action grid */
+.home-quick-actions-grid {
+  width: 100%;
+}
+.home-quick-action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  border-radius: 20px;
+  padding: 10px 8px;
+  text-align: center;
+  line-height: 1;
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+.home-quick-action-button:active {
+  transform: scale(.98);
+}
+.home-quick-action-button--neutral {
+  background: rgba(255,255,255,.92);
+  color: #334155;
+  border: 1px solid rgba(203,213,225,.9);
+  box-shadow: 0 6px 18px rgba(15,23,42,.06);
+}
+.home-quick-action-button--install {
+  background: rgba(236,253,245,.96);
+  color: #0f766e;
+  border: 1px solid rgba(167,243,208,.95);
+  box-shadow: 0 6px 18px rgba(15,118,110,.12);
+}
+.home-quick-action-button--danger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 10px 22px rgba(185,28,28,.22);
+}
+.home-quick-action-label {
+  display: block;
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-quick-action-sub {
+  display: block;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dashboard-history-section {
+  position: relative;
+  z-index: 1;
+  margin-top: 6px;
+}
+@media (max-width: 420px) {
+  .home-quick-actions-grid {
+    gap: 8px !important;
+  }
+  .home-quick-action-button {
+    min-height: 82px !important;
+    border-radius: 18px;
+    padding: 8px 6px;
+  }
+  .home-quick-action-label {
+    font-size: 11px;
+  }
+  .home-quick-action-sub {
+    font-size: 9px;
+  }
+}
+
+
+/* Revamp 211 - fixed Home with only history list scrolling */
+html:has(.dashboard-page),
+body:has(.dashboard-page),
+#root:has(.dashboard-page) {
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+.dashboard-page {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding-top: calc(10px + var(--safe-top)) !important;
+  padding-bottom: calc(82px + var(--safe-bottom)) !important;
+}
+.dashboard-page > .dashboard-compact,
+.dashboard-page > .home-update-notice {
+  flex: 0 0 auto !important;
+}
+.dashboard-history-section {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin-top: 0 !important;
+  padding: 0 2px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+.dashboard-history-title {
+  flex: 0 0 auto !important;
+  position: relative !important;
+  z-index: 2 !important;
+  margin: 0 0 8px !important;
+  background: transparent !important;
+}
+.dashboard-history-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  padding: 2px 2px calc(6.6rem + var(--safe-bottom)) !important;
+  scroll-padding-bottom: calc(6.6rem + var(--safe-bottom)) !important;
+}
+.dashboard-history-empty {
+  display: grid !important;
+  place-items: center !important;
+}
+.home-quick-actions-grid {
+  gap: 7px !important;
+}
+.home-quick-action-button {
+  min-height: 58px !important;
+  border-radius: 16px !important;
+  padding: 6px 5px !important;
+  gap: 2px !important;
+  box-shadow: 0 4px 12px rgba(15,23,42,.05) !important;
+}
+.home-quick-action-label {
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+.home-quick-action-sub {
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+.dashboard-compact {
+  padding: 12px !important;
+}
+.dashboard-compact .mt-3 {
+  margin-top: 9px !important;
+}
+.home-update-notice {
+  padding-top: 11px !important;
+  padding-bottom: 11px !important;
+}
+.home-update-notice .min-h-\[112px\] {
+  min-height: 72px !important;
+}
+@media (max-width: 420px) {
+  .dashboard-page {
+    gap: 8px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .home-quick-action-button {
+    min-height: 54px !important;
+    border-radius: 14px !important;
+    padding: 5px 4px !important;
+  }
+  .home-quick-action-label { font-size: 9.5px !important; }
+  .home-quick-action-sub { font-size: 7.5px !important; }
+  .dashboard-history-title h2 { font-size: 17px !important; }
+}
+
+
+/* Revamp 212 - reliable home history scrolling */
+html.rbv-home-lock,
+body.rbv-home-lock {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+html.rbv-home-lock #root,
+body.rbv-home-lock #root {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+body.rbv-home-lock .dashboard-page,
+.dashboard-page {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: calc(10px + var(--safe-top)) !important;
+  padding-bottom: calc(72px + var(--safe-bottom)) !important;
+}
+.dashboard-history-section {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  display: block !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding: 0 2px calc(7rem + var(--safe-bottom)) !important;
+}
+.dashboard-history-title {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  margin: 0 0 8px !important;
+  padding: 2px 0 8px !important;
+  background: rgba(248, 250, 252, .96) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+.dashboard-history-list {
+  display: grid !important;
+  flex: none !important;
+  min-height: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 2px 2px 14px !important;
+  touch-action: pan-y !important;
+}
+.dashboard-history-empty {
+  min-height: 120px !important;
+}
+.home-quick-action-button {
+  min-height: 52px !important;
+  border-radius: 14px !important;
+  padding: 5px 4px !important;
+  gap: 1px !important;
+}
+.home-quick-action-button .h-4.w-4,
+.home-quick-action-button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+.home-quick-action-label {
+  font-size: 9.5px !important;
+}
+.home-quick-action-sub {
+  font-size: 7.5px !important;
+}
+@media (max-width: 420px) {
+  body.rbv-home-lock .dashboard-page,
+  .dashboard-page {
+    gap: 7px !important;
+    padding-bottom: calc(70px + var(--safe-bottom)) !important;
+  }
+  .home-quick-actions-grid {
+    gap: 6px !important;
+  }
+  .home-quick-action-button {
+    min-height: 48px !important;
+    border-radius: 13px !important;
+  }
+}
+
+
+/* Revamp 217 - Email auto TO, compact Home, simplified Admin Panel */
+.home-quick-actions-grid { gap: 5px !important; }
+.home-quick-action-button {
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  padding: 4px 3px !important;
+  gap: 0 !important;
+}
+.home-quick-action-button .h-4.w-4,
+.home-quick-action-button svg {
+  width: 12px !important;
+  height: 12px !important;
+  margin-bottom: 1px !important;
+}
+.home-quick-action-label { font-size: 8.8px !important; line-height: 1 !important; }
+.home-quick-action-sub { font-size: 6.8px !important; line-height: 1 !important; }
+.dashboard-history-section {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding-bottom: calc(7rem + var(--safe-bottom)) !important;
+}
+.dashboard-history-title {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  padding: 3px 0 7px !important;
+  margin-bottom: 6px !important;
+  background: rgba(248,250,252,.98) !important;
+}
+.dashboard-history-list {
+  overflow: visible !important;
+  padding-bottom: 18px !important;
+}
+.rbv-email-scheduled-row-v98 {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+.rbv-email-scheduled-chip-v98 {
+  min-height: 34px !important;
+  border-radius: 14px !important;
+  font-size: 10px !important;
+}
+.secret-admin-panel {
+  max-width: 980px !important;
+  border-radius: 24px !important;
+  padding: 16px !important;
+}
+.secret-admin-panel .secret-convex-command {
+  border-radius: 24px !important;
+  padding: 14px !important;
+}
+.secret-admin-panel .btn-secondary,
+.secret-admin-panel .btn-primary,
+.secret-admin-panel .btn-danger {
+  min-height: 38px !important;
+  padding: 8px 11px !important;
+  border-radius: 14px !important;
+  font-size: 11px !important;
+}
+.secret-panel-tabs { margin-bottom: 12px !important; border-radius: 18px !important; }
+.secret-panel-tab { min-height: 40px !important; border-radius: 14px !important; font-size: 11px !important; }
+@media (max-width: 420px) {
+  .home-quick-action-button { min-height: 40px !important; border-radius: 11px !important; }
+  .home-quick-action-label { font-size: 8px !important; }
+  .home-quick-action-sub { display: none !important; }
+  .secret-admin-panel { padding: 12px !important; border-radius: 20px !important; }
+}
+
+
+/* Revamp 219 - softer footer watermark typography */
+.footer-watermark,
+.app-footer-watermark,
+.rbv-footer-watermark,
+.pdf-footer-watermark,
+[data-footer-watermark="true"] {
+  opacity: 0.16 !important;
+  color: rgba(100, 116, 139, 0.42) !important;
+  font-family: "Times New Roman", ui-serif, Georgia, Cambria, serif !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+  pointer-events: none !important;
+}
+
+
+/* Revamp 220 - Ultra Lite Camera Mode */
+.rbv-ultra-lite-camera .photo-input-card {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06) !important;
+}
+.rbv-ultra-lite-camera .photo-frame {
+  min-height: 132px !important;
+  background: #f8fafc !important;
+}
+.rbv-ultra-lite-camera .photo-frame img {
+  max-height: 190px;
+  width: 100%;
+  object-fit: cover;
+  transform: translateZ(0);
+}
+.rbv-ultra-lite-camera .photo-editor-overlay,
+.rbv-ultra-lite-camera .photo-editor-panel {
+  display: none !important;
+}
+.rbv-ultra-lite-camera .history-card {
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06) !important;
+  transform: none !important;
+}
+.rbv-ultra-lite-camera .dashboard-history-list {
+  contain: content;
+}
+.rbv-camera-capture-active .dashboard-history-list,
+.rbv-camera-capture-active .pdf-lite-preview,
+.rbv-camera-capture-active .glass-panel:not(.dashboard-compact) {
+  visibility: hidden !important;
+}
+.history-load-more-button {
+  grid-column: 1 / -1;
+  width: 100%;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  background: rgba(240, 253, 250, 0.94);
+  color: #0f766e;
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 900;
+}
+@media (max-width: 480px) {
+  .rbv-ultra-lite-camera .history-card {
+    padding: 12px !important;
+    border-radius: 18px !important;
+  }
+  .rbv-ultra-lite-camera .photo-actions {
+    padding: 8px !important;
+  }
+}
+
+/* Revamp 221/222 - Evidence floating upload + observation motion */
+.evidence-photo-grid-system {
+  padding-bottom: calc(6.9rem + var(--safe-bottom));
+}
+.evidence-floating-capture {
+  position: fixed;
+  left: 50%;
+  bottom: calc(5.15rem + var(--safe-bottom));
+  z-index: 92;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(92vw, 420px);
+  padding: 8px;
+  border: 1px solid rgba(203, 213, 225, .86);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.evidence-floating-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 0;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  box-shadow: 0 10px 22px rgba(13, 148, 136, .22);
+  transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+}
+.evidence-floating-button:active {
+  transform: scale(.985);
+}
+.evidence-floating-gallery {
+  color: #0f172a;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(203, 213, 225, .95);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+}
+.evidence-photo-grid .photo-actions {
+  display: none !important;
+}
+@keyframes rbvObservationSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(18px) scale(.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@media (max-width: 767px) {
+  .observation-item-card.mobile-active {
+    animation: rbvObservationSlideIn .26s ease both;
+    will-change: transform, opacity;
+  }
+  .evidence-floating-capture {
+    bottom: calc(5.35rem + var(--safe-bottom));
+    width: min(94vw, 390px);
+  }
+  .evidence-floating-button {
+    height: 46px;
+    font-size: 12px;
+  }
+}
+@media (min-width: 768px) {
+  .evidence-floating-capture {
+    bottom: 24px;
+    width: 360px;
+  }
+}
+body.rbv-ultra-lite-camera .evidence-floating-capture,
+body.rbv-lite-mode .evidence-floating-capture {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .10);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
+/* Revamp 222 - Evidence compact icon-only buttons + auto slots */
+.evidence-floating-capture-compact {
+  width: auto !important;
+  min-width: 148px;
+  max-width: calc(100vw - 28px);
+  gap: 8px !important;
+  padding: 7px 8px !important;
+  border-radius: 26px !important;
+}
+.evidence-floating-icon-button {
+  flex: 0 0 auto !important;
+  width: 62px !important;
+  height: 54px !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 7px 6px !important;
+  border-radius: 20px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+.evidence-floating-label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .01em;
+}
+.evidence-empty-state {
+  display: flex;
+  min-height: 164px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed rgba(148, 163, 184, .82);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .72);
+  color: #64748b;
+  text-align: center;
+  padding: 20px 16px;
+}
+.evidence-empty-state strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+.evidence-empty-state span {
+  max-width: 240px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+@media (max-width: 767px) {
+  .evidence-floating-capture-compact {
+    bottom: calc(5.45rem + var(--safe-bottom)) !important;
+  }
+  .evidence-floating-icon-button {
+    width: 60px !important;
+    height: 52px !important;
+  }
+}
+body.rbv-ultra-lite-camera .evidence-empty-state,
+body.rbv-lite-mode .evidence-empty-state {
+  min-height: 138px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.82);
+}
+
+
+/* Revamp 230 - restore crop/marker modal in Ultra Lite mode.
+   Revamp 220 hid old photo-editor overlays to save RAM; the new manual crop modal
+   also uses .photo-editor-overlay/.photo-editor-panel, so it was opened but invisible. */
+.rbv-ultra-lite-camera .photo-editor-v10.photo-editor-overlay {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 999999 !important;
+}
+.rbv-ultra-lite-camera .photo-editor-v10-panel.photo-editor-panel {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.rbv-ultra-lite-camera .photo-editor-v10-stage,
+.rbv-ultra-lite-camera .photo-editor-canvas {
+  touch-action: none !important;
+  -ms-touch-action: none !important;
+}
+.photo-editor-v10 {
+  z-index: 999999 !important;
+}
+.photo-editor-v10-stage,
+.photo-editor-canvas {
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+.photo-editor-tool[disabled] {
+  opacity: .45 !important;
+  pointer-events: none !important;
+}
+
+
+/* Revamp 231 - crop marker slider + tap-only marker guard */
+.photo-editor-marker-slider-wrap {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 38px 28px !important;
+  align-items: center !important;
+  gap: .55rem !important;
+  border: 1px solid #dbe7e5 !important;
+  background: #f8fafc !important;
+  border-radius: 999px !important;
+  padding: .38rem .55rem !important;
+}
+.photo-editor-marker-slider {
+  width: 100% !important;
+  accent-color: #0f766e !important;
+}
+.photo-editor-marker-preview-wrap {
+  width: 38px !important;
+  height: 30px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.photo-editor-marker-preview {
+  display: block !important;
+  border-radius: 999px !important;
+  border: 2px solid #ef4444 !important;
+  background: rgba(239,68,68,.10) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.08) !important;
+  transition: width .12s ease, height .12s ease !important;
+}
+.photo-editor-marker-size-label {
+  display: grid !important;
+  place-items: center !important;
+  min-width: 24px !important;
+  color: #0f766e !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+}
+@media (max-width: 767px) {
+  .marker-slider-row { align-items: center !important; }
+  .photo-editor-marker-slider-wrap { grid-template-columns: minmax(0, 1fr) 34px 24px !important; gap: .4rem !important; }
+}
+
+/* Revamp 232 - native mobile camera/gallery picker fix.
+   Some mobile browsers block programmatic clicks on display:none file inputs.
+   Keep the real file input inside the visible trigger so the OS picker opens from
+   a direct user tap. */
+.rbv-native-file-trigger {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+.rbv-native-file-input {
+  position: absolute;
+  inset: 0;
+  display: block !important;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+  font-size: 120px;
+}
+.rbv-native-file-trigger > svg,
+.rbv-native-file-trigger > span:not(.rbv-native-file-input) {
+  pointer-events: none;
+}
+.rbv-native-photo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(203, 213, 225, .9);
+  background: #ffffff;
+  color: #0f766e;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+}
+.rbv-native-photo-button:active {
+  transform: scale(.97);
+}
+.evidence-floating-button.rbv-native-file-trigger {
+  text-decoration: none;
+}
+
+/* Revamp 234 - crop marker center preview. The marker size visual now sits
+   at the center of the crop/photo area and scales up to fill the frame. */
+.photo-editor-v10-stage {
+  position: relative !important;
+  isolation: isolate !important;
+}
+.photo-editor-marker-center-preview {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: min(var(--marker-preview-size, 18%), calc(100% - 1.1rem)) !important;
+  aspect-ratio: 1 / 1 !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 9999px !important;
+  border: 3px solid rgba(239, 68, 68, .96) !important;
+  background: rgba(239, 68, 68, .10) !important;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, .08), 0 0 0 5px rgba(255, 255, 255, .24), 0 14px 34px rgba(0, 0, 0, .18) !important;
+  pointer-events: none !important;
+  z-index: 6 !important;
+  transition: width .12s ease, opacity .12s ease, transform .12s ease !important;
+}
+.photo-editor-marker-center-preview span {
+  position: absolute !important;
+  inset: 50% auto auto 50% !important;
+  width: 8px !important;
+  height: 8px !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 999px !important;
+  background: rgba(239, 68, 68, .96) !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, .42) !important;
+}
+.photo-editor-v10-stage:not(.marker-preview-active) .photo-editor-marker-center-preview {
+  display: none !important;
+}
+@media (max-width: 767px) {
+  .photo-editor-marker-center-preview {
+    border-width: 2px !important;
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, .06), 0 0 0 4px rgba(255, 255, 255, .22) !important;
+  }
+}
+
+/* Revamp 235: remove side marker preview and keep center preview as the only visual guide. */
+.photo-editor-marker-preview-wrap,
+.photo-editor-marker-preview {
+  display: none !important;
+}
+.photo-editor-marker-center-preview {
+  pointer-events: none !important;
+}
+
+
+/* Revamp 236: PWA install visibility + phone landscape support */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 560px) {
+  html, body, #root {
+    min-height: 100dvh !important;
+    overflow-x: hidden !important;
+  }
+  .audit-shell {
+    display: block !important;
+    grid-template-columns: none !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .desktop-sidebar,
+  .desktop-section-card {
+    display: none !important;
+  }
+  .mobile-system-nav,
+  .mobile-quick-section {
+    display: block !important;
+  }
+  .mobile-system-nav {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: auto !important;
+    z-index: 90 !important;
+    padding: calc(.34rem + var(--safe-top)) .72rem .4rem !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid rgba(226, 232, 240, .92) !important;
+    background: rgba(255,255,255,.96) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .10) !important;
+  }
+  .mobile-system-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: .44rem !important;
+  }
+  .mobile-system-button {
+    min-height: 40px !important;
+    border-radius: 14px !important;
+    font-size: 10px !important;
+    gap: .08rem !important;
+  }
+  .mobile-system-button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .dashboard-page,
+  .workspace-page,
+  .preview-page {
+    padding-top: calc(4.35rem + var(--safe-top)) !important;
+    padding-bottom: calc(4.7rem + var(--safe-bottom)) !important;
+    padding-left: max(.75rem, env(safe-area-inset-left)) !important;
+    padding-right: max(.75rem, env(safe-area-inset-right)) !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .visit-quick-dock-v54 {
+    bottom: calc(8px + var(--safe-bottom)) !important;
+    width: min(560px, calc(100vw - 24px)) !important;
+    z-index: 82 !important;
+  }
+  .visit-quick-dock-inner-v54 {
+    gap: .45rem !important;
+    padding: .45rem !important;
+  }
+  .visit-quick-dock-button-v54 {
+    min-width: 94px !important;
+    min-height: 46px !important;
+    padding: .44rem .7rem !important;
+    border-radius: 18px !important;
+    font-size: 12px !important;
+  }
+  .section-heading {
+    margin-bottom: .7rem !important;
+  }
+  .surface-card,
+  .panel-card,
+  .rounded-\[28px\],
+  .rounded-\[30px\] {
+    border-radius: 20px !important;
+  }
+  .evidence-photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: .65rem !important;
+  }
+  .photo-editor-panel,
+  .crop-editor-panel {
+    max-height: calc(100dvh - 20px) !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .install-guide-card {
+    padding: .78rem !important;
+  }
+}
+
+/* Revamp 237 - Redmi/native browser restore picker fix */
+.restore-file-input-fallback {
+  position: fixed !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  left: -9999px !important;
+  top: auto !important;
+}
+.home-restore-native-picker {
+  position: relative !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.home-restore-native-picker .restore-file-input-native {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0.001 !important;
+  cursor: pointer !important;
+  z-index: 8 !important;
+  font-size: 120px !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.home-restore-native-picker > svg,
+.home-restore-native-picker > span,
+.home-restore-native-picker > small {
+  pointer-events: none !important;
+}
+
+
+/* Revamp 240 - Android textbox, direct PDF preview, and native picker stability */
+.rbv-mobile-editable,
+input.form-control,
+textarea.form-control,
+.rich-editor-input {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto !important;
+  touch-action: auto !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: text;
+}
+.form-control,
+.rich-editor-input {
+  min-height: 52px;
+}
+.rich-editor-input {
+  -webkit-touch-callout: default;
+}
+.field,
+label.block {
+  pointer-events: auto !important;
+}
+.pdf-direct-preview {
+  position: relative;
+  width: 100%;
+  min-height: min(76vh, 860px);
+  background: #f8fafc;
+}
+.pdf-direct-frame {
+  display: block;
+  width: 100%;
+  min-height: min(76vh, 860px);
+  height: min(76vh, 860px);
+  border: 0;
+  background: #f8fafc;
+}
+.pdf-direct-empty {
+  min-height: 48vh;
+}
+.pdf-direct-open-link {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(203,213,225,.9);
+  box-shadow: 0 10px 24px rgba(15,23,42,.12);
+}
+.rbv-native-file-trigger {
+  isolation: isolate;
+  pointer-events: auto !important;
+}
+.rbv-native-file-input {
+  pointer-events: auto !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.evidence-floating-capture {
+  z-index: 80 !important;
+}
+@media (max-width: 640px) {
+  .pdf-direct-preview,
+  .pdf-direct-frame {
+    min-height: 62svh;
+    height: 62svh;
+  }
+  .pdf-direct-open-link {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+
+/* Revamp 241 - Direct PDF canvas preview for Android/iOS/browser compatibility */
+.pdf-canvas-direct-preview {
+  width: 100%;
+  min-height: 62svh;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  overflow: hidden;
+}
+.pdf-canvas-direct-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(203,213,225,.92);
+  background: rgba(255,255,255,.96);
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+.pdf-canvas-direct-toolbar strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pdf-canvas-direct-toolbar a {
+  flex: 0 0 auto;
+  color: #0f766e;
+  text-decoration: none;
+  font-weight: 1000;
+}
+.pdf-canvas-direct-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #10b981;
+  box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+}
+.pdf-canvas-pages {
+  width: 100%;
+  max-height: min(76svh, 980px);
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 12px 8px 20px;
+}
+.pdf-canvas-page-wrap {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .14);
+  overflow: hidden;
+}
+.pdf-canvas-page-label {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .72);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  pointer-events: none;
+}
+.pdf-canvas-page {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+.pdf-canvas-fallback {
+  position: relative;
+  padding: 12px;
+  background: #fff7ed;
+  border-top: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 800;
+}
+.pdf-canvas-fallback .pdf-direct-frame {
+  margin-top: 8px;
+  min-height: 54svh;
+  height: 54svh;
+}
+@media (max-width: 640px) {
+  .pdf-canvas-pages {
+    max-height: 68svh;
+    padding: 10px 6px 18px;
+  }
+  .pdf-canvas-page-wrap {
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .pdf-canvas-direct-toolbar {
+    min-height: 40px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .pdf-canvas-pages {
+    max-height: 56svh;
+  }
+}
+
+
+/* Revamp 244 - HTML report preview inspired by Grand Opening preview */
+.rbv-html-preview-wrap {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef7f4 100%);
+  max-height: none;
+  overflow: visible;
+  padding: 14px 0 24px;
+}
+.rbv-html-preview-stage {
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 10px 32px;
+}
+.rbv-html-pdf-page {
+  width: min(960px, calc(100vw - 34px));
+  aspect-ratio: 16 / 9;
+  min-height: 300px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  padding: clamp(16px, 3vw, 30px);
+}
+.rbv-html-pdf-page * { box-sizing: border-box; }
+.rbv-html-pdf-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 118, 110, 0.16);
+}
+.rbv-html-pdf-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rbv-html-pdf-logo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #059669, #0f766e);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  flex: 0 0 auto;
+}
+.rbv-html-pdf-brand strong {
+  display: block;
+  font-size: clamp(17px, 2.2vw, 26px);
+  line-height: 1.05;
+  font-weight: 1000;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+.rbv-html-pdf-brand span {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(10px, 1.1vw, 13px);
+  font-weight: 800;
+  color: #047857;
+}
+.rbv-html-pdf-meta {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+  font-size: clamp(9px, 1.05vw, 12px);
+  font-weight: 800;
+  color: #64748b;
+  max-width: 42%;
+}
+.rbv-html-cover-page { padding: 0; display: grid; grid-template-columns: 1.05fr .95fr; }
+.rbv-html-cover-accent {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 20%, rgba(16, 185, 129, .18), transparent 34%),
+    linear-gradient(135deg, rgba(240, 253, 250, .92), rgba(255, 255, 255, .95));
+}
+.rbv-html-cover-content {
+  position: relative;
+  z-index: 1;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: clamp(24px, 5vw, 54px);
+  max-width: 70%;
+}
+.rbv-html-cover-content > p {
+  margin: 0 0 8px;
+  color: #047857;
+  font-size: clamp(10px, 1.2vw, 13px);
+  font-weight: 1000;
+  letter-spacing: .28em;
+}
+.rbv-html-cover-content h2 {
+  margin: 0;
+  font-size: clamp(35px, 6vw, 70px);
+  line-height: .92;
+  letter-spacing: -0.08em;
+  color: #0f172a;
+  font-weight: 1000;
+}
+.rbv-html-cover-content h1 {
+  margin: 14px 0 24px;
+  font-size: clamp(20px, 3vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  color: #065f46;
+  font-weight: 1000;
+  max-width: 860px;
+}
+.rbv-html-cover-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  max-width: 720px;
+}
+.rbv-html-pdf-field {
+  min-width: 0;
+  border: 1px solid rgba(226, 232, 240, .95);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, .88);
+  padding: 9px 11px;
+}
+.rbv-html-pdf-field span,
+.rbv-html-pdf-rich span {
+  display: block;
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: clamp(8px, 1vw, 11px);
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.rbv-html-pdf-field strong {
+  display: block;
+  color: #0f172a;
+  font-size: clamp(10px, 1.2vw, 14px);
+  line-height: 1.2;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.rbv-html-team-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.rbv-html-preview-table {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.rbv-html-preview-table th,
+.rbv-html-preview-table td {
+  border: 1px solid #cbd5e1;
+  padding: clamp(6px, 1vw, 10px);
+  font-size: clamp(10px, 1.1vw, 13px);
+  line-height: 1.2;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.rbv-html-preview-table th { background: #ecfdf5; color: #065f46; font-weight: 1000; }
+.rbv-html-observation-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 12px; }
+.rbv-html-observation-title span { font-size: clamp(16px, 2vw, 24px); font-weight: 1000; letter-spacing: -0.04em; }
+.rbv-html-observation-title em { font-size: clamp(10px, 1.1vw, 12px); font-style: normal; font-weight: 900; color: #047857; }
+.rbv-html-observation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rbv-html-pdf-rich {
+  min-height: 78px;
+  padding: 10px 12px;
+  border: 1px solid rgba(226, 232, 240, .95);
+  border-radius: 14px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+.rbv-html-pdf-rich p {
+  margin: 0;
+  max-height: 76px;
+  overflow: hidden;
+  color: #0f172a;
+  white-space: pre-line;
+  font-size: clamp(10px, 1.05vw, 12.5px);
+  line-height: 1.35;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.rbv-html-photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.rbv-html-photo-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rbv-html-pdf-photo-card {
+  border: 1px solid rgba(226, 232, 240, .95);
+  border-radius: 18px;
+  background: #f8fafc;
+  overflow: hidden;
+  min-width: 0;
+}
+.rbv-html-pdf-photo-frame {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  overflow: hidden;
+}
+.rbv-html-pdf-photo-frame img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.rbv-html-pdf-photo-card p {
+  margin: 0;
+  padding: 8px 10px 10px;
+  min-height: 42px;
+  max-height: 70px;
+  overflow: hidden;
+  white-space: pre-line;
+  color: #334155;
+  font-size: clamp(9px, 1vw, 12px);
+  line-height: 1.28;
+  font-weight: 700;
+}
+.rbv-html-empty-page { display: grid; align-content: center; justify-items: center; text-align: center; }
+.rbv-html-empty-message { margin-top: 18px; max-width: 520px; color: #64748b; font-size: 16px; font-weight: 800; line-height: 1.5; }
+@media (max-width: 700px) {
+  .rbv-html-preview-wrap { padding-top: 8px; }
+  .rbv-html-preview-stage { gap: 14px; padding-inline: 6px; }
+  .rbv-html-pdf-page { border-radius: 14px; box-shadow: 0 10px 28px rgba(15, 23, 42, .14); }
+  .rbv-html-cover-content { max-width: 100%; padding: 20px; }
+  .rbv-html-cover-fields { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .rbv-html-pdf-field { padding: 7px 8px; border-radius: 11px; }
+  .rbv-html-pdf-header { padding-bottom: 8px; }
+  .rbv-html-pdf-logo { width: 34px; height: 34px; border-radius: 12px; font-size: 9px; }
+  .rbv-html-observation-grid { gap: 7px; }
+  .rbv-html-pdf-rich { min-height: 56px; padding: 7px 8px; border-radius: 11px; }
+  .rbv-html-pdf-rich p { max-height: 50px; line-height: 1.25; }
+  .rbv-html-photo-grid { gap: 8px; margin-top: 10px; }
+  .rbv-html-pdf-photo-card { border-radius: 12px; }
+  .rbv-html-pdf-photo-card p { padding: 6px 7px; min-height: 32px; max-height: 45px; }
+}
+
+
+/* Revamp 245 - identical PDF preview with zoom controls */
+.pdf-canvas-zoom-preview .pdf-canvas-pages {
+  touch-action: pan-x pan-y pinch-zoom;
+  scroll-behavior: smooth;
+}
+.pdf-canvas-zoom-toolbar {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pdf-canvas-statusline {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 220px;
+}
+.pdf-canvas-statusline strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pdf-canvas-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 4px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .45);
+}
+.pdf-canvas-zoom-controls button {
+  width: 34px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 1000;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, .10);
+}
+.pdf-canvas-zoom-controls button:disabled {
+  opacity: .42;
+  box-shadow: none;
+}
+.pdf-canvas-zoom-controls span {
+  min-width: 48px;
+  text-align: center;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 1000;
+}
+.pdf-canvas-zoom-preview .pdf-canvas-page-wrap {
+  max-width: none;
+}
+.pdf-canvas-zoom-preview .pdf-canvas-page {
+  max-width: none;
+}
+@media (max-width: 640px) {
+  .pdf-canvas-zoom-toolbar {
+    gap: 7px;
+  }
+  .pdf-canvas-statusline {
+    flex-basis: 100%;
+  }
+  .pdf-canvas-zoom-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .pdf-canvas-zoom-controls button {
+    width: 42px;
+    height: 32px;
+  }
+}
+
+
+/* Revamp 246 - universal Android textbox focus/input stability */
+html, body {
+  -webkit-text-size-adjust: 100%;
+}
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+textarea,
+[contenteditable="true"],
+.rich-editor-input,
+.rbv-mobile-editable {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  cursor: text !important;
+  position: relative !important;
+  z-index: 6 !important;
+  min-height: 44px;
+  font-size: max(16px, 1em) !important;
+}
+textarea,
+.rich-editor-input,
+[contenteditable="true"] {
+  touch-action: pan-y !important;
+  overscroll-behavior: contain;
+}
+label:has(input:not([type="file"]):not([type="checkbox"]):not([type="radio"])),
+label:has(textarea),
+.field,
+.form-field,
+.input-shell,
+.rich-editor,
+.rbv-email-recipient-box-v99 {
+  pointer-events: auto !important;
+}
+input:disabled,
+textarea:disabled,
+button:disabled,
+[aria-disabled="true"] {
+  touch-action: manipulation !important;
+}
+
+/* Revamp 251 - stable PDF preview text + safe pinch zoom + textbox focus */
+.rbv-field-wrap {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.rbv-field-wrap input,
+.rbv-field-wrap textarea,
+.rbv-field-wrap select,
+.rbv-field-wrap [contenteditable="true"],
+.form-control,
+.rich-editor-input {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  touch-action: manipulation;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+.pdf-canvas-zoom-preview .pdf-canvas-pages {
+  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior: contain;
+}
+@media (pointer: coarse) {
+  .pdf-canvas-zoom-preview .pdf-canvas-pages {
+    touch-action: none;
+  }
+}
+.pdf-canvas-page-wrap,
+.pdf-canvas-page {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+
+/* Revamp 252 - PDF preview pinch zoom must not block vertical scroll */
+.pdf-canvas-zoom-preview .pdf-canvas-pages,
+.pdf-canvas-direct-preview .pdf-canvas-pages {
+  touch-action: pan-x pan-y !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+@media (pointer: coarse) {
+  .pdf-canvas-zoom-preview .pdf-canvas-pages,
+  .pdf-canvas-direct-preview .pdf-canvas-pages {
+    touch-action: pan-x pan-y !important;
+  }
+}
+.pdf-canvas-pages canvas,
+.pdf-canvas-page,
+.pdf-canvas-page-wrap {
+  touch-action: pan-x pan-y !important;
+}
+
+/* Revamp 254 - keep mobile textboxes above the on-screen keyboard */
+:root {
+  --rbv-keyboard-inset: 0px;
+}
+html.rbv-keyboard-visible,
+body.rbv-keyboard-visible {
+  scroll-padding-bottom: calc(var(--rbv-keyboard-inset) + 140px);
+}
+body.rbv-keyboard-visible .workspace-page,
+body.rbv-keyboard-visible .preview-page,
+body.rbv-keyboard-visible .dashboard-page {
+  padding-bottom: calc(11rem + var(--rbv-keyboard-inset)) !important;
+}
+.rbv-mobile-editable,
+.form-control,
+.rich-editor-input,
+textarea,
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]) {
+  scroll-margin-top: 96px;
+  scroll-margin-bottom: calc(150px + var(--rbv-keyboard-inset));
 }

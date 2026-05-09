@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp262-evidence-card-delete-fix';
+const APP_BUILD_VERSION = 'revamp263-pdf-preview-evidence-fit';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3133,14 +3133,22 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     const scale = maxWidth / baseViewport.width;
                     const viewport = page.getViewport({ scale });
                     const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+                    const pageRatio = `${baseViewport.width} / ${baseViewport.height}`;
+                    const displayWidth = Math.floor(viewport.width);
+                    const displayHeight = Math.floor(viewport.height);
                     const pageWrap = document.createElement('div');
                     pageWrap.className = 'pdf-preview-page-wrap';
+                    pageWrap.style.width = displayWidth + 'px';
+                    pageWrap.style.setProperty('--pdf-page-ratio', pageRatio);
+                    pageWrap.style.setProperty('--pdf-page-css-width', displayWidth + 'px');
+                    pageWrap.style.setProperty('--pdf-page-css-height', displayHeight + 'px');
                     const canvas = document.createElement('canvas');
                     canvas.className = 'pdf-preview-page-canvas';
                     canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
                     canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
-                    canvas.style.width = Math.floor(viewport.width) + 'px';
-                    canvas.style.height = Math.floor(viewport.height) + 'px';
+                    canvas.style.width = displayWidth + 'px';
+                    canvas.style.height = displayHeight + 'px';
+                    canvas.style.aspectRatio = pageRatio;
                     pageWrap.appendChild(canvas);
                     fragment.appendChild(pageWrap);
                     const context = canvas.getContext('2d', { alpha: false });

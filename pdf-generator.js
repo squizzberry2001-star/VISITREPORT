@@ -123,6 +123,14 @@
     return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
+  function formatDayDate(value) {
+    const raw = text(value, '');
+    if (!raw || raw === '-') return '-';
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
   function buildFileName(data) {
     return sanitizeFileName('Regional_Bestie_Visit_Report_' + text(data && data.store, 'Store')) + '.pdf';
   }
@@ -499,13 +507,16 @@
 
   function drawLabelValue(doc, label, value, x, y, labelWidth, maxWidth, palette, options) {
     const opts = options || {};
+    const colonX = x + Math.max(10, labelWidth - 4);
+    const valueX = x + labelWidth + 2;
     doc.setFont('helvetica', opts.boldLabel ? 'bold' : 'normal');
     doc.setFontSize(opts.fontSize || 12.5);
     doc.setTextColor(82, 82, 91);
-    doc.text(label + ' :', x, y);
+    doc.text(String(label || ''), x, y);
+    doc.text(':', colonX, y);
     doc.setFont('helvetica', opts.boldValue ? 'bold' : 'normal');
     doc.setTextColor.apply(doc, opts.valueColor || palette.ink);
-    doc.text(doc.splitTextToSize(text(value), maxWidth), x + labelWidth, y);
+    doc.text(doc.splitTextToSize(text(value), Math.max(8, maxWidth)), valueX, y);
   }
 
   function drawCover(doc, data, detail, palette, pageWidth, pageHeight, margin) {
@@ -531,12 +542,13 @@
     const regionalManager = text(detail.regionalManager || (data && data.regionalManager), '-');
 
     const leftX = margin + 2;
+    const coverLabelW = 43;
     let y = 144;
-    drawLabelValue(doc, 'Nama', data && data.nama, leftX, y, 31, 120, palette, { fontSize: 12.5, boldValue: true });
+    drawLabelValue(doc, 'Nama', data && data.nama, leftX, y, coverLabelW, 108, palette, { fontSize: 12.5, boldValue: true });
     y += 9;
-    drawLabelValue(doc, 'Store', data && data.store, leftX, y, 31, 120, palette, { fontSize: 12.5, boldValue: true });
+    drawLabelValue(doc, 'Store', data && data.store, leftX, y, coverLabelW, 108, palette, { fontSize: 12.5, boldValue: true });
     y += 9;
-    drawLabelValue(doc, 'Store Head', storeHead, leftX, y, 31, 120, palette, { fontSize: 11.5, boldValue: true });
+    drawLabelValue(doc, 'Store Head', storeHead, leftX, y, coverLabelW, 108, palette, { fontSize: 11.5, boldValue: true });
 
     const cardX = 180;
     const cardY = 134;
@@ -692,7 +704,7 @@
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(12.5);
-    drawLabelValue(doc, 'Hari, Tanggal', formatDate(data && data.tanggal), margin, 42, 40, 150, palette, { fontSize: 12.5, boldValue: true });
+    drawLabelValue(doc, 'Hari, Tanggal', formatDayDate(data && data.tanggal), margin, 42, 40, 150, palette, { fontSize: 12.5, boldValue: true });
 
     const crew = Array.isArray(data && data.crewList) ? data.crewList.filter(function (item) {
       return text(item && item.name, '') || text(item && item.level, '');
@@ -1256,7 +1268,7 @@
       const imgH = metrics.imgH;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
-      const added = await addImageInBox(doc, item.image, imgX + 0.55, imgY + 0.55, imgW - 1.1, imgH - 1.1, 'coverCrop');
+      const added = await addImageInBox(doc, item.image, imgX, imgY, imgW, imgH, 'coverCrop');
       if (!added) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.8);
