@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp260-pdf-photo-full-cover';
+const APP_BUILD_VERSION = 'revamp261-master-store-utility';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3185,11 +3185,102 @@ function HomeUpdateNotice({ config }) {
             messages.length > 1 ? React.createElement("div", { className: "mt-2 flex items-center justify-center gap-1.5", "aria-label": `${activeIndex + 1} dari ${messages.length} info` }, messages.map((_, dotIndex) => React.createElement("button", { key: dotIndex, type: "button", className: cx('home-info-dot', dotIndex === activeIndex && 'active'), onClick: () => goToNotice(dotIndex), "aria-label": `Buka info ${dotIndex + 1}`, "aria-current": dotIndex === activeIndex ? 'true' : 'false' }))) : null,
             messages.length > 1 ? React.createElement("p", { className: "mt-1 text-[10px] font-bold text-slate-400 md:hidden" }, "Geser kiri/kanan untuk info lainnya") : null)));
 }
+
+function MasterStoreDetailModal({ open, onClose }) {
+    const [query, setQuery] = useState('');
+    const [stores, setStores] = useState(() => getEffectiveMasterStores());
+    useEffect(() => {
+        if (!open)
+            return;
+        setStores(getEffectiveMasterStores());
+        const refresh = () => setStores(getEffectiveMasterStores());
+        window.addEventListener('rbv-master-store-change', refresh);
+        window.addEventListener('storage', refresh);
+        return () => {
+            window.removeEventListener('rbv-master-store-change', refresh);
+            window.removeEventListener('storage', refresh);
+        };
+    }, [open]);
+    useEffect(() => {
+        if (!open)
+            return;
+        const previousOverflow = document.body?.style.overflow || '';
+        if (document.body)
+            document.body.style.overflow = 'hidden';
+        return () => {
+            if (document.body)
+                document.body.style.overflow = previousOverflow;
+        };
+    }, [open]);
+    if (!open)
+        return null;
+    const keyword = normalize(query);
+    const filteredStores = stores.filter((store) => {
+        if (!keyword)
+            return true;
+        const haystack = [
+            store.siteCode, store.siteCode4, store.siteDescr, store.type, store.typeStore,
+            store.city, store.address, store.emailStore, store.storeHead,
+            store.areaManager, store.areaManagerEmail, store.regionalManager,
+            store.regionalManagerEmail, store.operationalStatus, store.notes
+        ].map((value) => normalize(value)).join(' ');
+        return haystack.includes(keyword);
+    });
+    const meta = window.DEFAULT_STORE_MASTER_META || {};
+    const fieldRows = (store) => [
+        ['Kode Toko', store.siteCode4 || store.siteCode || '-'],
+        ['Kode Site', store.siteCode || '-'],
+        ['Tipe Toko', store.type || store.typeStore || '-'],
+        ['Kota', store.city || '-'],
+        ['Store Head', store.storeHead || '-'],
+        ['Area Manager', store.areaManager || '-'],
+        ['Email Area Manager', store.areaManagerEmail || '-'],
+        ['Regional Manager', store.regionalManager || '-'],
+        ['Email Regional Manager', store.regionalManagerEmail || '-'],
+        ['Email Store', store.emailStore || '-'],
+        ['Status', store.operationalStatus || 'active'],
+        ['Alamat', store.address || '-'],
+        ['Catatan', store.notes || '-']
+    ];
+    return (React.createElement("div", { className: "master-store-modal-overlay", role: "dialog", "aria-modal": "true", "aria-label": "Data master detail store", onMouseDown: (event) => { if (event.target === event.currentTarget)
+            onClose(); } },
+        React.createElement("section", { className: "master-store-modal-panel" },
+            React.createElement("header", { className: "master-store-modal-header" },
+                React.createElement("div", { className: "master-store-modal-title-wrap" },
+                    React.createElement("span", { className: "master-store-modal-icon" },
+                        React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("p", { className: "master-store-modal-eyebrow" }, "Master Data"),
+                        React.createElement("h2", { className: "master-store-modal-title" }, "Detail Store"),
+                        React.createElement("p", { className: "master-store-modal-subtitle" }, meta.label || 'Data master store aktif'))),
+                React.createElement("button", { type: "button", className: "master-store-modal-close", onClick: onClose, "aria-label": "Tutup data master store" },
+                    React.createElement(Icon, { name: "close", className: "h-5 w-5" }))),
+            React.createElement("div", { className: "master-store-modal-toolbar" },
+                React.createElement("label", { className: "master-store-search-wrap" },
+                    React.createElement(Icon, { name: "search", className: "h-4 w-4" }),
+                    React.createElement("input", { value: query, onChange: (event) => setQuery(event.target.value), placeholder: "Cari kode toko, nama store, AM, RM, kota...", autoComplete: "off" })),
+                React.createElement("div", { className: "master-store-count-pill" }, filteredStores.length, " / ", stores.length, " store")),
+            React.createElement("div", { className: "master-store-list" },
+                filteredStores.length ? filteredStores.map((store, index) => React.createElement("article", { key: `${store.siteCode4 || store.siteCode || store.siteDescr}-${index}`, className: "master-store-card" },
+                    React.createElement("div", { className: "master-store-card-head" },
+                        React.createElement("div", { className: "min-w-0" },
+                            React.createElement("h3", { className: "master-store-name" }, store.siteDescr || 'Store tanpa nama'),
+                            React.createElement("p", { className: "master-store-meta" }, store.siteCode4 || store.siteCode || '-', " • ", store.type || store.typeStore || '-', store.city ? ` • ${store.city}` : '')),
+                        React.createElement("span", { className: "master-store-code-pill" }, store.siteCode4 || store.siteCode || '-')),
+                    React.createElement("div", { className: "master-store-detail-grid" }, fieldRows(store).map(([label, value]) => React.createElement("div", { key: label, className: "master-store-detail-cell" },
+                        React.createElement("span", null, label),
+                        React.createElement("strong", null, value || '-')))))) : React.createElement("div", { className: "master-store-empty" },
+                    React.createElement(Icon, { name: "search", className: "h-8 w-8" }),
+                    React.createElement("strong", null, "Data tidak ditemukan"),
+                    React.createElement("span", null, "Coba cari dengan kode toko, nama store, Area Manager, atau Regional Manager."))))));
+}
+
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
     const [restoreBusy, setRestoreBusy] = useState(false);
+    const [masterStoreModalOpen, setMasterStoreModalOpen] = useState(false);
     const [syncBusy, setSyncBusy] = useState(false);
     const [syncMessage, setSyncMessage] = useState('');
     const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
@@ -3343,6 +3434,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
                         React.createElement("small", { className: "home-quick-action-sub" }, "History")),
+                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral", style: { minHeight: '42px' }, onClick: () => setMasterStoreModalOpen(true), "aria-label": "Tampilkan semua data master detail store", title: "Data Master Detail Store" },
+                        React.createElement(Icon, { name: "store", className: "h-4 w-4 shrink-0 text-audit-primary" }),
+                        React.createElement("span", { className: "home-quick-action-label" }, "Master"),
+                        React.createElement("small", { className: "home-quick-action-sub" }, "Store")),
                     React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, role: "button", tabIndex: restoreBusy ? -1 : 0, "aria-label": "Restore data", title: "Restore data" },
                         React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
                         React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
@@ -3400,6 +3495,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
             React.createElement(Icon, { name: "plus", className: "h-5 w-5" }),
             React.createElement("span", null, "Kunjungan Baru")),
+        React.createElement(MasterStoreDetailModal, { open: masterStoreModalOpen, onClose: () => setMasterStoreModalOpen(false) }),
         React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })));
 }
 function NewVisitModal({ open, onClose, onCreate }) {
