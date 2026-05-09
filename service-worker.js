@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp260-pdf-photo-full-cover';
+const APP_VERSION = 'revamp261-master-store-utility';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
