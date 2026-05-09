@@ -6421,3 +6421,35 @@ body.rbv-keyboard-visible .evidence-floating-capture {
   .master-store-detail-grid { grid-template-columns: 1fr; }
   .master-store-detail-cell:nth-last-child(-n+2) { grid-column: auto; }
 }
+
+
+/* Revamp 263 - PDF preview canvas ratio follows actual PDF page content */
+.pdf-canvas-direct-preview .pdf-canvas-page-wrap,
+.pdf-canvas-zoom-preview .pdf-canvas-page-wrap,
+.pdf-preview-page-wrap {
+  width: var(--pdf-page-css-width, fit-content) !important;
+  max-width: none !important;
+  padding-top: 0 !important;
+  box-sizing: content-box !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+}
+.pdf-canvas-page,
+.pdf-preview-page-canvas {
+  display: block !important;
+  width: var(--pdf-page-css-width, auto) !important;
+  height: var(--pdf-page-css-height, auto) !important;
+  aspect-ratio: var(--pdf-page-ratio, 297 / 210) !important;
+  max-width: none !important;
+  object-fit: contain !important;
+}
+.pdf-canvas-page-label {
+  position: absolute !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 40 !important;
+  margin: 0 !important;
+  line-height: 1.1 !important;
+  pointer-events: none !important;
+}

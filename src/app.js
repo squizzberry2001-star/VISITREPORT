@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp262-evidence-card-delete-fix';
+const APP_BUILD_VERSION = 'revamp263-pdf-preview-evidence-fit';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4708,11 +4708,19 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     canvas.className = 'pdf-canvas-page';
                     canvas.width = Math.ceil(viewport.width);
                     canvas.height = Math.ceil(viewport.height);
-                    canvas.style.width = `${Math.ceil(baseViewport.width * cssScale)}px`;
-                    canvas.style.height = `${Math.ceil(baseViewport.height * cssScale)}px`;
+                    const displayWidth = Math.ceil(baseViewport.width * cssScale);
+                    const displayHeight = Math.ceil(baseViewport.height * cssScale);
+                    const pageRatio = `${baseViewport.width} / ${baseViewport.height}`;
+                    canvas.style.width = `${displayWidth}px`;
+                    canvas.style.height = `${displayHeight}px`;
+                    canvas.style.aspectRatio = pageRatio;
+                    canvas.style.maxWidth = 'none';
                     const pageWrap = document.createElement('section');
                     pageWrap.className = 'pdf-canvas-page-wrap';
                     pageWrap.style.width = canvas.style.width;
+                    pageWrap.style.setProperty('--pdf-page-ratio', pageRatio);
+                    pageWrap.style.setProperty('--pdf-page-css-width', canvas.style.width);
+                    pageWrap.style.setProperty('--pdf-page-css-height', canvas.style.height);
                     const label = document.createElement('div');
                     label.className = 'pdf-canvas-page-label';
                     label.textContent = `Halaman ${pageNumber} / ${total}`;
