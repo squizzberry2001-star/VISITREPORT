@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp261-master-store-utility';
+const APP_BUILD_VERSION = 'revamp262-evidence-card-delete-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1458,7 +1458,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement("span", null, "Simpan"))))));
     return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false }) {
+function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -1479,8 +1479,12 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
         }
     }
     function clearPhoto() {
-        if (!confirmAction('Hapus foto ini?'))
+        if (!confirmAction(onRemove ? 'Hapus card evidence ini?' : 'Hapus foto ini?'))
             return;
+        if (typeof onRemove === 'function') {
+            onRemove();
+            return;
+        }
         onChange({ ...(value || blankPhoto()), image: '' });
     }
     const description = value?.description || '';
@@ -1666,6 +1670,10 @@ function PhotoGrid({ photos, onChange, prefix }) {
     const safePhotos = Array.from({ length: Math.max(minSlots, sourcePhotos.length || minSlots) }, (_, index) => sourcePhotos[index] || blankPhoto());
     const blankSet = () => Array.from({ length: minSlots }, () => blankPhoto());
     const updatePhoto = (index, value) => onChange(safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo));
+    const removePhotoCard = (index) => {
+        const next = safePhotos.filter((_, photoIndex) => photoIndex !== index);
+        onChange(Array.from({ length: Math.max(minSlots, next.length || minSlots) }, (_, photoIndex) => next[photoIndex] || blankPhoto()));
+    };
     const addFour = () => onChange([...safePhotos, blankPhoto(), blankPhoto(), blankPhoto(), blankPhoto()]);
     const removeEmpty = () => {
         if (!confirmAction('Rapihkan dan hapus slot foto kosong?'))
@@ -1681,7 +1689,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
         React.createElement(Button, { variant: "secondary", className: "min-w-[150px] flex-1 justify-center sm:flex-none", icon: "plus", onClick: addFour }, "Tambah Slot Foto")));
     return (React.createElement("div", { className: "photo-grid-system grid gap-4" },
         renderActions('top'),
-        React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO })))),
+        React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), onRemove: () => removePhotoCard(index), compact: true, rich: true, matchCropFrame: true, cropRatio: PDF_PHOTO_CROP_RATIO })))),
         renderActions('bottom')));
 }
 const SECTION_DEFS = [

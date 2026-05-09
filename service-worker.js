@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp261-master-store-utility';
+const APP_VERSION = 'revamp262-evidence-card-delete-fix';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
