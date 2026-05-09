@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp261-master-store-utility';
+const APP_BUILD_VERSION = 'revamp262-evidence-card-delete-fix';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2499,7 +2499,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement("span", null, "Simpan"))))));
     return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
-function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false, hideActions = false }) {
+function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false, rich = false, required = false, matchCropFrame = false, cropRatio = PDF_PHOTO_CROP_RATIO, hideDescription = false, hideActions = false }) {
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -2524,8 +2524,12 @@ function PhotoInput({ value, onChange, label = 'Foto', compact = false, rich = f
         }
     }
     function clearPhoto() {
-        if (!confirmAction('Hapus foto ini?'))
+        if (!confirmAction(onRemove ? 'Hapus card evidence ini?' : 'Hapus foto ini?'))
             return;
+        if (typeof onRemove === 'function') {
+            onRemove();
+            return;
+        }
         onChange({ ...(value || blankPhoto()), image: '' });
     }
     const description = value?.description || '';
@@ -2718,6 +2722,10 @@ function PhotoGrid({ photos, onChange, prefix }) {
         const next = safePhotos.map((photo, photoIndex) => photoIndex === index ? value : photo);
         onChange(normalizeNextPhotos(next));
     };
+    const removePhotoCard = (index) => {
+        const next = safePhotos.filter((_, photoIndex) => photoIndex !== index);
+        onChange(normalizeNextPhotos(next));
+    };
     async function handleFloatingFiles(event) {
         const input = event.target;
         const files = Array.from(input.files || []);
@@ -2767,7 +2775,7 @@ function PhotoGrid({ photos, onChange, prefix }) {
         : floatingCapture;
     return (React.createElement("div", { className: "photo-grid-system evidence-photo-grid-system grid gap-4" },
         floatingPortal,
-        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), compact: true, rich: true, matchCropFrame: false, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
+        safePhotos.length ? React.createElement("div", { className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" }, safePhotos.map((photo, index) => (React.createElement(PhotoInput, { key: photo.uploadedAt || index, label: prefix + ' ' + (index + 1), value: photo, onChange: (value) => updatePhoto(index, value), onRemove: () => removePhotoCard(index), compact: true, rich: true, matchCropFrame: false, cropRatio: PDF_PHOTO_CROP_RATIO, hideActions: true })))) : React.createElement("div", { className: "evidence-empty-state" },
             React.createElement(Icon, { name: "image", className: "h-7 w-7" }),
             React.createElement("strong", null, "Belum ada foto"),
             React.createElement("span", null, "Pilih Kamera atau Galeri untuk menambah foto."))));
