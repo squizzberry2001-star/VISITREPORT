@@ -6453,3 +6453,92 @@ body.rbv-keyboard-visible .evidence-floating-capture {
   line-height: 1.1 !important;
   pointer-events: none !important;
 }
+
+
+/* Revamp 264 - crop modal auto-open polish: compact toolbar, original ratio, thicker marker */
+.photo-editor-v10-toolbar {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: .28rem !important;
+  overflow: visible !important;
+  padding: .32rem !important;
+  border-radius: 20px !important;
+}
+.photo-editor-tool {
+  min-width: 0 !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 .38rem !important;
+  gap: .22rem !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+.photo-editor-tool svg,
+.photo-editor-close svg,
+.photo-editor-save svg {
+  width: 14px !important;
+  height: 14px !important;
+  flex: 0 0 14px !important;
+}
+.photo-editor-close {
+  width: 36px !important;
+  height: 36px !important;
+}
+.photo-editor-save {
+  min-height: 38px !important;
+  padding: 0 .85rem !important;
+}
+.photo-editor-ratio-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: .35rem !important;
+  overflow: visible !important;
+}
+.photo-editor-ratio-grid .photo-editor-chip:first-child::after {
+  content: ' foto asli';
+  font-weight: 800;
+  opacity: .78;
+}
+.marker-slider-row {
+  padding: .38rem .55rem !important;
+  border-radius: 16px !important;
+  background: rgba(248, 250, 252, .92) !important;
+  border: 1px solid rgba(226, 232, 240, .92) !important;
+}
+.photo-editor-marker-slider-wrap {
+  min-height: 30px !important;
+}
+.photo-editor-marker-slider {
+  height: 22px !important;
+}
+.photo-editor-marker-size-label {
+  min-width: 34px !important;
+  height: 24px !important;
+  font-size: 10px !important;
+}
+.photo-editor-marker-center-preview span {
+  border-width: clamp(7px, 1.2vw, 13px) !important;
+  outline: 5px solid rgba(250, 204, 21, .84) !important;
+  box-shadow: 0 0 0 6px rgba(255,255,255,.85), 0 0 30px rgba(244,63,94,.46) !important;
+}
+@media (max-width: 520px) {
+  .photo-editor-v10-toolbar {
+    gap: .22rem !important;
+    padding: .28rem !important;
+  }
+  .photo-editor-tool {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 .22rem !important;
+    font-size: 0 !important;
+  }
+  .photo-editor-tool span {
+    display: none !important;
+  }
+  .photo-editor-tool svg {
+    width: 15px !important;
+    height: 15px !important;
+    flex-basis: 15px !important;
+  }
+}

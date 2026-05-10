@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp263-pdf-preview-evidence-fit';
+const APP_BUILD_VERSION = 'revamp264-crop-upload-compact-marker';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1105,10 +1105,12 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+const ORIGINAL_PHOTO_CROP_RATIO = { key: 'original', label: 'Default', original: true };
 const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
-const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
+const PHOTO_EDITOR_RATIOS = [ORIGINAL_PHOTO_CROP_RATIO, PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
 function ratioToAspectString(ratio) {
+  if (ratio && ratio.original) return '';
   return ratio && ratio.w && ratio.h ? `${ratio.w} / ${ratio.h}` : '';
 }
 
@@ -1122,6 +1124,10 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
   const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
   const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
   const maxSide = 1400;
+  if (ratio?.original) {
+    const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+    return { width: Math.max(360, Math.round(sourceWidth * scale)), height: Math.max(360, Math.round(sourceHeight * scale)) };
+  }
   if (ratio?.w && ratio?.h) {
     const targetRatio = ratio.w / ratio.h;
     let width = maxSide;
@@ -1155,7 +1161,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [markers, setMarkers] = useState([]);
   const [mode, setMode] = useState('move');
-  const activeCropRatio = cropRatio && cropRatio.w && cropRatio.h ? cropRatio : PDF_PHOTO_CROP_RATIO;
+  const activeCropRatio = ORIGINAL_PHOTO_CROP_RATIO;
   const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
   const [markerSize, setMarkerSize] = useState('medium');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
@@ -1492,6 +1498,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorImageOverride, setEditorImageOverride] = useState('');
 
   async function handleFiles(event) {
     const file = event.target.files && event.target.files[0];
@@ -1499,6 +1506,8 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
     try {
       const dataUrl = await fileToDataUrl(file);
       onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
+      setEditorImageOverride(dataUrl);
+      window.setTimeout(() => setEditorOpen(true), 0);
       setEditorOpen(true);
     } catch (error) {
       alert('Foto gagal dibaca. Coba pilih ulang foto.');
@@ -1524,7 +1533,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
     <div className={cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame')} style={cardStyle}>
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{label}{required ? <span className="ml-1 text-rose-600">*</span> : null}</p></div>
-        <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => setEditorOpen(true)} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
+        <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => { setEditorImageOverride(''); setEditorOpen(true); }} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
       </div>
       <div className={cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]')}>
         {value?.image ? <img src={value.image} alt={label} /> : <div className="flex flex-col items-center px-5 text-center text-slate-500"><div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm"><Icon name="image" className="h-7 w-7" /></div><p className="text-sm font-bold text-slate-700">Upload foto</p></div>}
@@ -1533,7 +1542,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
       <div className="border-t border-slate-200 p-3">
         {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
-      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} cropRatio={cropRatio} onClose={() => setEditorOpen(false)} onSave={(editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' })} />
+      <PhotoEditorModal open={editorOpen} image={editorImageOverride || value?.image || ''} title={label} cropRatio={cropRatio} onClose={() => { setEditorOpen(false); setEditorImageOverride(''); }} onSave={(editedImage, meta) => { setEditorImageOverride(''); onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }); }} />
     </div>
   );
 }

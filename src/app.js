@@ -146,7 +146,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp263-pdf-preview-evidence-fit';
+const APP_BUILD_VERSION = 'revamp264-crop-upload-compact-marker';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2123,15 +2123,15 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [markers, setMarkers] = useState([]);
     const [mode, setMode] = useState('move');
-    const activeCropRatio = cropRatio && (cropRatio.original || (cropRatio.w && cropRatio.h)) ? cropRatio : PDF_PHOTO_CROP_RATIO;
+    const activeCropRatio = ORIGINAL_PHOTO_CROP_RATIO;
     const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
-    const [markerSize, setMarkerSize] = useState(48);
+    const [markerSize, setMarkerSize] = useState(58);
     const [markerSliderActive, setMarkerSliderActive] = useState(false);
     const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
     const [imageReady, setImageReady] = useState(false);
     const markerMinSize = 16;
     const markerMaxSize = Math.max(48, Math.round(Math.min(canvasSize.width || 1080, canvasSize.height || 1080) / 2 - 12));
-    const activeMarkerSize = Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(markerSize) || 48)));
+    const activeMarkerSize = Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(markerSize) || 58)));
     const markerPreviewDiameterPct = Math.min(100, Math.max(6, Math.round((activeMarkerSize * 2 / Math.max(1, Math.min(canvasSize.width || 1080, canvasSize.height || 1080))) * 100)));
     useEffect(() => {
         if (!open)
@@ -2184,7 +2184,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
         setMarkers([]);
         setMode('move');
         setSelectedRatio(activeCropRatio);
-        setMarkerSize(48);
+        setMarkerSize(58);
         setMarkerSliderActive(false);
         pinchRef.current = null;
         markerTapRef.current = null;
@@ -2212,7 +2212,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     useEffect(() => {
         if (!open)
             return;
-        setMarkerSize((current) => Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(current) || 48))));
+        setMarkerSize((current) => Math.max(markerMinSize, Math.min(markerMaxSize, Math.round(Number(current) || 58))));
     }, [open, markerMaxSize]);
     function getDrawMetrics(nextZoom = zoom, nextOffset = offset) {
         const canvas = canvasRef.current;
@@ -2269,21 +2269,21 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
             const radius = marker.r || Math.max(34, Math.min(metrics.cw, metrics.ch) * 0.045);
             ctx.beginPath();
             ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
-            ctx.lineWidth = Math.max(10, Math.round(Math.min(metrics.cw, metrics.ch) * 0.010));
+            ctx.lineWidth = Math.max(18, Math.round(Math.min(metrics.cw, metrics.ch) * 0.016));
             ctx.strokeStyle = 'rgba(255,255,255,0.96)';
             ctx.shadowColor = 'rgba(15,23,42,0.24)';
-            ctx.shadowBlur = 9;
+            ctx.shadowBlur = 12;
             ctx.stroke();
             ctx.beginPath();
             ctx.arc(marker.x, marker.y, radius, 0, Math.PI * 2);
-            ctx.lineWidth = Math.max(7, Math.round(Math.min(metrics.cw, metrics.ch) * 0.0075));
+            ctx.lineWidth = Math.max(13, Math.round(Math.min(metrics.cw, metrics.ch) * 0.012));
             ctx.strokeStyle = '#f43f5e';
             ctx.shadowColor = 'rgba(244,63,94,0.32)';
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 10;
             ctx.stroke();
             ctx.beginPath();
             ctx.arc(marker.x, marker.y, Math.max(2, radius - ctx.lineWidth * 0.7), 0, Math.PI * 2);
-            ctx.lineWidth = Math.max(3, Math.round(Math.min(metrics.cw, metrics.ch) * 0.003));
+            ctx.lineWidth = Math.max(6, Math.round(Math.min(metrics.cw, metrics.ch) * 0.005));
             ctx.strokeStyle = 'rgba(250,204,21,0.95)';
             ctx.shadowBlur = 0;
             ctx.stroke();
@@ -2484,7 +2484,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                     React.createElement("div", { className: "photo-editor-option-row marker-slider-row" },
                         React.createElement("span", null, "Marker"),
                         React.createElement("div", { className: "photo-editor-marker-slider-wrap" },
-                            React.createElement("input", { type: "range", min: markerMinSize, max: markerMaxSize, step: "2", value: activeMarkerSize, className: "photo-editor-marker-slider", onPointerDown: () => setMarkerSliderActive(true), onPointerUp: () => setMarkerSliderActive(false), onPointerCancel: () => setMarkerSliderActive(false), onTouchStart: () => setMarkerSliderActive(true), onTouchEnd: () => setMarkerSliderActive(false), onMouseDown: () => setMarkerSliderActive(true), onMouseUp: () => setMarkerSliderActive(false), onBlur: () => setMarkerSliderActive(false), onChange: (event) => { setMarkerSliderActive(true); setMarkerSize(Math.max(markerMinSize, Math.min(markerMaxSize, Number(event.target.value) || 48))); }, "aria-label": "Ukuran marker" }),
+                            React.createElement("input", { type: "range", min: markerMinSize, max: markerMaxSize, step: "2", value: activeMarkerSize, className: "photo-editor-marker-slider", onPointerDown: () => setMarkerSliderActive(true), onPointerUp: () => setMarkerSliderActive(false), onPointerCancel: () => setMarkerSliderActive(false), onTouchStart: () => setMarkerSliderActive(true), onTouchEnd: () => setMarkerSliderActive(false), onMouseDown: () => setMarkerSliderActive(true), onMouseUp: () => setMarkerSliderActive(false), onBlur: () => setMarkerSliderActive(false), onChange: (event) => { setMarkerSliderActive(true); setMarkerSize(Math.max(markerMinSize, Math.min(markerMaxSize, Number(event.target.value) || 58))); }, "aria-label": "Ukuran marker" }),
                             React.createElement("b", { className: "photo-editor-marker-size-label" }, Math.round(activeMarkerSize))))) : null),
             React.createElement("div", { className: cx('photo-editor-canvas-shell photo-editor-v10-stage', mode === 'marker' && 'marker-preview-active') },
                 !imageReady ? React.createElement("div", { className: "photo-editor-loading" }, "Memuat foto...") : null,
@@ -2503,6 +2503,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
     const cameraRef = useRef(null);
     const galleryRef = useRef(null);
     const [editorOpen, setEditorOpen] = useState(false);
+    const [editorImageOverride, setEditorImageOverride] = useState('');
     async function handleFiles(event) {
         const input = event.target;
         const file = input.files && input.files[0];
@@ -2514,6 +2515,8 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
             rbvPrepareCameraCapture();
             const dataUrl = await compressImageFileForLite(file, RBV_ULTRA_LITE_CAMERA_MODE ? { maxSide: 900, quality: 0.58 } : {});
             onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '', uploadedAt: nowIso() });
+            setEditorImageOverride(dataUrl);
+            window.setTimeout(() => setEditorOpen(true), 0);
         }
         catch (error) {
             alert(rbvPhotoReadErrorMessage(error));
@@ -2542,7 +2545,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
                     label,
                     required ? React.createElement("span", { className: "ml-1 text-rose-600" }, "*") : null)),
             React.createElement("div", { className: "flex shrink-0 gap-2" },
-                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => setEditorOpen(true), "aria-label": "Edit crop dan marker" },
+                value?.image ? React.createElement(Button, { variant: "icon", onClick: () => { setEditorImageOverride(''); setEditorOpen(true); }, "aria-label": "Edit crop dan marker" },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" })) : null,
                 value?.image ? React.createElement(Button, { variant: "icon", onClick: clearPhoto, "aria-label": "Hapus foto" },
                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })) : null)),
@@ -2558,7 +2561,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
                 React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
                 React.createElement(Icon, { name: "gallery", className: "h-4 w-4" })) : null),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
-        React.createElement(PhotoEditorModal, { open: editorOpen, image: value?.image || '', title: label, cropRatio: cropRatio, onClose: () => setEditorOpen(false), onSave: (editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }) })));
+        React.createElement(PhotoEditorModal, { open: editorOpen, image: editorImageOverride || value?.image || '', title: label, cropRatio: cropRatio, onClose: () => { setEditorOpen(false); setEditorImageOverride(''); }, onSave: (editedImage, meta) => { setEditorImageOverride(''); onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }); } })));
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
