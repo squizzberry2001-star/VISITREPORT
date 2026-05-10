@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@netlify/blobs": "^10.7.4",
+    "@vercel/speed-insights": "^2.0.0",
     "convex": "^1.37.0"
   },
   "devDependencies": {
