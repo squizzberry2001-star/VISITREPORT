@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp263-pdf-preview-evidence-fit';
+const APP_VERSION = 'revamp264-crop-upload-compact-marker';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
