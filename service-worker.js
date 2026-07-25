@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp281-fix-chart-crash-v16';
+const APP_VERSION = 'revamp281-global-analytics-minimalist-panel-v17';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

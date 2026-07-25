@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-fix-chart-crash-v16';
+const APP_BUILD_VERSION = 'revamp281-global-analytics-minimalist-panel-v17';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3728,24 +3728,26 @@ function AnalyticsView({ history }) {
                 BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { name, totalVisits: 0, totalAssigned: 0 });
                 BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
+                rows.forEach(r => {
+                    const bk = normalize(r.bestie_name || r.bestieName || '');
+                    if (bk && bestieMap[bk]) bestieMap[bk].totalVisits++;
+                });
+
                 localVisits.forEach(v => {
                     if (v.isPdfDownloaded || v.isEmailSent) {
                         localCompleted++;
                     }
                     if (v.isEmailSent) {
                         emailSentCount++;
-                        if (v.isEmailFeedback) emailFeedbackCount++;
+                    }
+                    if (v.emailFeedbackTime) {
+                        emailFeedbackCount++;
                     }
                     
                     if (v.visitDate) {
                         const d = new Date(v.visitDate);
                         const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
                         temuanByMonth[m] = (temuanByMonth[m] || 0) + (v.temuanCount || 0);
-                    }
-                    const bk = normalize(v.bestieName);
-                    if (bk) {
-                        if (!bestieMap[bk]) bestieMap[bk] = { name: v.bestieName, totalVisits: 0, totalAssigned: 0 };
-                        bestieMap[bk].totalVisits++;
                     }
                 });
                 
@@ -8253,158 +8255,84 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
                     React.createElement("span", null, "Monitoring"))),
             secretTab === 'settings' ? (React.createElement(React.Fragment, null,
-                React.createElement("div", { className: "secret-convex-command mb-5 overflow-hidden rounded-[30px] border border-emerald-900 bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-4 text-white shadow-2xl md:p-5" },
-                    React.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("div", { className: "mb-2 flex flex-wrap items-center gap-2" },
-                                React.createElement(Badge, { tone: "dark" }, "Revamp 217"),
-                                React.createElement("span", { className: "rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-200 ring-1 ring-emerald-300/20" }, "Convex Primary"),
-                                React.createElement("span", { className: "rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-100 ring-1 ring-cyan-300/20" }, "No D1 Panel")),
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Convex Control Center"),
-                            React.createElement("h3", { className: "mt-1 text-2xl font-black tracking-tight text-white md:text-3xl" }, "Panel Rahasia")),
-                        React.createElement("div", { className: "flex flex-wrap gap-2" },
-                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testConvexPanel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test Convex'),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullConvexSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToConvexPanel, disabled: cloudflareDbBusy }, "Sync History"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: uploadDeviceBackupPanel, disabled: cloudflareDbBusy }, "Upload Device Backup"),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullDeviceBackupPanel, disabled: cloudflareDbBusy }, "Tarik Device Backup"),
-                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: broadcastSilentWebSync, disabled: cloudflareDbBusy }, "Silent Web Sync"))),
-                    React.createElement("div", { className: "mt-4 grid gap-3 md:grid-cols-3" },
-                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Convex URL"),
-                            React.createElement("p", { className: "mt-1 break-all text-xs font-bold leading-5 text-white" }, cleanText(getConvexDeploymentUrl() || getConvexConfig().deploymentUrl || 'Belum diisi di convex-config.js'))),
-                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Realtime Mode"),
-                            React.createElement("p", { className: "mt-1 text-sm font-black text-emerald-200" }, convexEnabled() ? "ON via Convex" : "OFF"),
-                            React.createElement("p", { className: "mt-1 text-[11px] font-semibold text-slate-400" }, "Monitoring fetch saat tab Monitoring / Refresh ditekan; setting tidak auto-spam request.")),
-                        React.createElement("div", { className: "rounded-2xl bg-white/10 p-3 ring-1 ring-white/10" },
-                            React.createElement("p", { className: "text-[10px] font-black uppercase tracking-[0.18em] text-slate-400" }, "Status Convex"),
-                            React.createElement("p", { className: "mt-1 text-xs font-bold leading-5 text-slate-200" }, cloudflareDbStatus || 'Belum dites dari panel ini. Tekan Test Convex.')))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4" },
-                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
+                React.createElement("div", { className: "mb-5 grid gap-4 md:grid-cols-2" },
+                    React.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-emerald-50 p-5" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-1" }, "Sync & Refresh All"),
+                        React.createElement("p", { className: "text-xs text-slate-600 mb-4" }, "Tarik setting terbaru, kirim history kunjungan, dan sinkronisasi data global dengan satu klik."),
+                        React.createElement(Button, { variant: "primary", icon: "spark", className: "w-full justify-center", onClick: async () => { await pullConvexSettingsPanel(); await syncHistoryToConvexPanel(); await refresh(); }, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Menyinkronkan...' : 'Deep Sync Sekarang')
+                    ),
+                    React.createElement("div", { className: "rounded-3xl border border-cyan-200 bg-cyan-50 p-5" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-1" }, "Device Migration"),
+                        React.createElement("p", { className: "text-xs text-slate-600 mb-4" }, "Backup seluruh data kunjungan perangkat ini atau pulihkan data dari cloud untuk pindah device."),
+                        React.createElement("div", { className: "grid grid-cols-2 gap-2" },
+                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: uploadDeviceBackupPanel, disabled: cloudflareDbBusy }, "Backup"),
+                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullDeviceBackupPanel, disabled: cloudflareDbBusy }, "Restore")
+                        )
+                    )
+                ),
+                React.createElement("div", { className: "grid gap-5 md:grid-cols-2 mb-5" },
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4" },
+                        React.createElement("div", { className: "flex justify-between items-center" },
+                            React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Welcome & Assignment"),
+                            React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => { saveWelcomeSettings(); saveAssignmentSettings(); } }, "Simpan")
+                        ),
+                        React.createElement(Field, { label: "Judul Welcome" }, React.createElement(TextInput, { value: welcomeTitle, onChange: e => setWelcomeTitle(e.target.value) })),
+                        React.createElement(Field, { label: "Sub Judul" }, React.createElement(TextArea, { value: welcomeSubtitle, onChange: e => setWelcomeSubtitle(e.target.value), minRows: 2 })),
+                        React.createElement(Field, { label: "Link Assignment" }, React.createElement(TextInput, { type: "url", value: assignmentLink, onChange: e => setAssignmentLink(e.target.value) }))
+                    ),
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4" },
+                        React.createElement("div", { className: "flex justify-between items-center" },
+                            React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Home Notice"),
+                            React.createElement("div", { className: "flex items-center gap-3" },
+                                React.createElement(Toggle, { checked: noticeEnabled, onChange: setNoticeEnabled, label: "" }),
+                                React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveNoticeSettings }, "Simpan")
+                            )
+                        ),
+                        React.createElement(Field, { label: "Judul Notice" }, React.createElement(TextInput, { value: noticeTitle, onChange: e => setNoticeTitle(e.target.value) })),
+                        React.createElement(Field, { label: "Teks Slide" }, React.createElement(TextArea, { value: noticeMessagesText, onChange: e => setNoticeMessagesText(e.target.value), minRows: 4 }))
+                    )
+                ),
+                React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 mb-5" },
+                    React.createElement("div", { className: "flex justify-between items-center mb-4" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Email Template & Directory"),
+                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveEmailTemplateSettings }, "Simpan Template")
+                    ),
+                    React.createElement("div", { className: "grid gap-5 md:grid-cols-2" },
+                        React.createElement("div", { className: "space-y-3" },
+                            React.createElement(Field, { label: "Subject" }, React.createElement(TextInput, { value: emailSubjectTemplate, onChange: e => setEmailSubjectTemplate(e.target.value) })),
+                            React.createElement(Field, { label: "Body" }, React.createElement(TextArea, { value: emailBodyTemplate, onChange: e => setEmailBodyTemplate(e.target.value), minRows: 5 }))
+                        ),
                         React.createElement("div", null,
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Welcome Animation"),
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Edit Welcome")),
-                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveWelcomeSettings }, "Simpan Welcome")),
-                    React.createElement("div", { className: "grid gap-3 md:grid-cols-3" },
-                        React.createElement(Field, { label: "Head title" },
-                            React.createElement(TextInput, { value: welcomeTitle, onChange: (event) => setWelcomeTitle(event.target.value), placeholder: DEFAULT_WELCOME_CONFIG.title })),
-                        React.createElement(Field, { label: "Sub title" },
-                            React.createElement(TextArea, { value: welcomeSubtitle, onChange: (event) => setWelcomeSubtitle(event.target.value), minRows: 2, placeholder: DEFAULT_WELCOME_CONFIG.subtitle })),
-                        React.createElement(Field, { label: "Durasi (detik)", helper: "Bisa diisi 1 sampai 15 detik." },
-                            React.createElement(TextInput, { type: "number", min: "1", max: "15", step: "0.5", value: welcomeDurationSeconds, onChange: (event) => setWelcomeDurationSeconds(event.target.value), onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds)) })))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4" },
-                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                        React.createElement("div", null,
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Hidden Control"),
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Assignment Link")),
-                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveAssignmentSettings }, "Simpan Link")),
-                    React.createElement(Field, { label: "Link corrective action assignment", helper: "Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF." },
-                        React.createElement(TextInput, { type: "url", value: assignmentLink, onChange: (event) => setAssignmentLink(event.target.value), placeholder: DEFAULT_ASSIGNMENT_LINK }))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-indigo-100 bg-indigo-50/70 p-4" },
-                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                        React.createElement("div", null,
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Email Directory"),
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Tambah Nama Email")),
-                        React.createElement(Button, { variant: "secondary", icon: "plus", onClick: saveEmailDirectoryItem }, "Add Email")),
-                    React.createElement("div", { className: "grid gap-3 md:grid-cols-4" },
-                        React.createElement(Field, { label: "Nama" },
-                            React.createElement(TextInput, { value: emailDirectoryDraft.name, onChange: (event) => setEmailDirectoryDraft((state) => ({ ...state, name: event.target.value })), placeholder: "Nama opsional" })),
-                        React.createElement(Field, { label: "Email" },
-                            React.createElement(TextInput, { type: "email", value: emailDirectoryDraft.email, onChange: (event) => setEmailDirectoryDraft((state) => ({ ...state, email: event.target.value })), placeholder: "email@domain.com" })),
-                        React.createElement(Field, { label: "Role" },
-                            React.createElement(TextInput, { value: emailDirectoryDraft.role, onChange: (event) => setEmailDirectoryDraft((state) => ({ ...state, role: event.target.value })), placeholder: "Store / AM / RM" })),
-                        React.createElement(Field, { label: "Store" },
-                            React.createElement(TextInput, { value: emailDirectoryDraft.store, onChange: (event) => setEmailDirectoryDraft((state) => ({ ...state, store: event.target.value })), placeholder: "Nama store" }))),
-                    React.createElement("div", { className: "mt-3 grid gap-2 md:grid-cols-2" },
-                        emailDirectory.length ? emailDirectory.map((item) => React.createElement("div", { key: item.id, className: "flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 ring-1 ring-indigo-100" },
-                            React.createElement("div", { className: "min-w-0" },
-                                React.createElement("p", { className: "truncate text-xs font-black text-slate-900" }, item.email),
-                                React.createElement("p", { className: "truncate text-[11px] font-semibold text-slate-500" }, cleanText([item.store, item.role].filter(Boolean).join(' • '), 'Email Directory'))),
-                            React.createElement("button", { type: "button", className: "grid h-8 w-8 place-items-center rounded-full text-rose-500 transition hover:bg-rose-50", onClick: () => deleteEmailDirectoryItem(item.id), "aria-label": "Hapus email" },
-                                React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))) : React.createElement("p", { className: "rounded-2xl bg-white px-3 py-3 text-xs font-bold text-slate-500 ring-1 ring-indigo-100" }, "Belum ada email tambahan."))),
-
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                        React.createElement("div", null,
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Email Report Template"),
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Template Email Admin")),
-                        React.createElement("div", { className: "flex flex-wrap gap-2" },
-                            React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetEmailTemplateSettings }, "Reset"),
-                            React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveEmailTemplateSettings }, "Simpan Template"))),
-                    React.createElement("div", { className: "grid gap-3 md:grid-cols-[0.9fr_1.6fr]" },
-                        React.createElement(Field, { label: "Subject Template", helper: "Placeholder: {store}, {date}, {bestie}, {storeHead}, {siteCode}" },
-                            React.createElement(TextInput, { value: emailSubjectTemplate, onChange: (event) => setEmailSubjectTemplate(event.target.value), placeholder: DEFAULT_EMAIL_SUBJECT_TEMPLATE })),
-                        React.createElement(Field, { label: "Body Template", helper: "Tanggal kunjungan dan Best Regards + nama bestie otomatis dipastikan saat email dibuat." },
-                            React.createElement(TextArea, { value: emailBodyTemplate, onChange: (event) => setEmailBodyTemplate(event.target.value), minRows: 7, placeholder: DEFAULT_EMAIL_BODY_TEMPLATE })))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-sky-100 bg-sky-50/70 p-4" },
-                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                        React.createElement("div", null,
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-sky-700" }, "Cloudflare D1 Database"),
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Panel Database Rahasia")),
-                        React.createElement("div", { className: "flex flex-wrap gap-2" },
-                            React.createElement(Button, { variant: "secondary", icon: "spark", onClick: testCloudflareD1Panel, disabled: cloudflareDbBusy }, cloudflareDbBusy ? 'Cek...' : 'Test D1'),
-                            React.createElement(Button, { variant: "secondary", icon: "download", onClick: pullCloudflareSettingsPanel, disabled: cloudflareDbBusy }, "Tarik Setting"),
-                            React.createElement(Button, { variant: "secondary", icon: "upload", onClick: syncHistoryToCloudflarePanel, disabled: cloudflareDbBusy }, "Sync History"))),
-                    React.createElement("div", { className: "rounded-2xl bg-white px-4 py-3 text-xs font-bold leading-5 text-slate-600 ring-1 ring-sky-100" },
-                        React.createElement("p", null, "Endpoint: ", cleanText(getCloudflareApiUrl() || getCloudflareConfig().endpoint || getCloudflareConfig().workerUrl || getCloudflareConfig().apiPath || '/api/rbv-data')),
-                        React.createElement("p", { className: "mt-1 text-sky-700" }, cloudflareDbStatus || 'Endpoint manual sudah aktif. Tekan Test D1 untuk refresh status dari Cloudflare, bukan dari cache lama.'))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4" },
-                    React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
-                        React.createElement("div", null,
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary" }, "Home Notification"),
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Info Update Website")),
-                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveNoticeSettings }, "Simpan Info")),
-                    React.createElement("div", { className: "grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]" },
-                        React.createElement(Field, { label: "Judul" },
-                            React.createElement(TextInput, { value: noticeTitle, onChange: (event) => setNoticeTitle(event.target.value), placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.title })),
-                        React.createElement(Field, { label: "Isi slide text", helper: "Pisahkan setiap informasi dengan baris baru." },
-                            React.createElement(TextArea, { value: noticeMessagesText, onChange: (event) => setNoticeMessagesText(event.target.value), minRows: 3, placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n') })),
-                        React.createElement("div", { className: "grid gap-3" },
-                            React.createElement(Field, { label: "Interval", helper: "2 sampai 15 detik" },
-                                React.createElement(TextInput, { type: "number", min: "2", max: "15", step: "0.5", value: noticeIntervalSeconds, onChange: (event) => setNoticeIntervalSeconds(event.target.value), onBlur: () => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds)) })),
-                            React.createElement(Toggle, { checked: noticeEnabled, onChange: setNoticeEnabled, label: noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan' })))),
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4" },
-                    React.createElement("div", { className: "mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between" },
-                        React.createElement("div", null,
-                            React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Pengaturan PDF"),
-                            React.createElement("p", { className: "text-xs font-semibold text-slate-500" }, "Atur ukuran isi table, title field seperti Temuan/Kondisi Ideal, jarak title ke isi konten, deskripsi foto, dan grid foto per halaman PDF.")),
-                        React.createElement(Badge, { tone: "success" }, "Auto Save")),
-                    React.createElement("div", { className: "grid gap-3 md:grid-cols-5" },
-                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Isi Table PDF"),
-                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', -0.5) }, "-"),
-                                React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableFontSize).toFixed(1)),
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableFontSize', 0.5) }, "+"))),
-                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Title Field PDF"),
-                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', -0.5) }, "-"),
-                                React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfTableTitleFontSize).toFixed(1)),
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableTitleFontSize', 0.5) }, "+")),
-                            React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Untuk label Temuan, Kondisi Ideal, Dampak, dll. Spacing ke isi ikut menyesuaikan.")),
-                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Font Deskripsi Foto"),
-                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('evidenceFontSize', -0.5) }, "-"),
-                                React.createElement("strong", { className: "text-lg text-slate-950" }, Number(pdfEvidenceFontSize).toFixed(1)),
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('evidenceFontSize', 0.5) }, "+"))),
-                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Add Row Table PDF"),
-                            React.createElement("div", { className: "mt-3 flex items-center justify-between gap-2" },
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', -1) }, "-"),
-                                React.createElement("strong", { className: "text-lg text-slate-950" },
-                                    "+",
-                                    pdfTableExtraRows),
-                                React.createElement(Button, { variant: "secondary", onClick: () => adjustPdfSetting('tableExtraRows', 1) }, "+"))),
-                        React.createElement("div", { className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100" },
-                            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-wide text-slate-500" }, "Grid Foto PDF"),
-                            React.createElement("div", { className: "mt-3 grid grid-cols-3 gap-1" }, [4, 6, 8].map((option) => React.createElement("button", { key: option, type: "button", className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'), onClick: () => setPdfPhotoGrid(option) }, option))),
-                            React.createElement("p", { className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700" }, "Rekomendasi: 6 foto/halaman."))),
-                    React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
-                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF Setting"),
-                        React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset Default"))),
+                            React.createElement("div", { className: "flex gap-2 mb-3" },
+                                React.createElement(TextInput, { value: emailDirectoryDraft.email, onChange: e => setEmailDirectoryDraft(s => ({ ...s, email: e.target.value })), placeholder: "email@domain.com" }),
+                                React.createElement(Button, { variant: "secondary", icon: "plus", onClick: saveEmailDirectoryItem }, "Add")
+                            ),
+                            React.createElement("div", { className: "h-32 overflow-y-auto border border-slate-100 rounded-xl p-2 space-y-1" },
+                                emailDirectory.map(item => React.createElement("div", { key: item.id, className: "flex justify-between items-center p-2 bg-slate-50 rounded-lg text-xs" },
+                                    React.createElement("span", { className: "font-bold text-slate-700" }, item.email),
+                                    React.createElement("button", { onClick: () => deleteEmailDirectoryItem(item.id), className: "text-red-500 hover:text-red-700" }, React.createElement(Icon, { name: "trash", className: "w-4 h-4" }))
+                                ))
+                            )
+                        )
+                    )
+                ),
+                React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 mb-5" },
+                    React.createElement("div", { className: "flex justify-between items-center mb-4" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "PDF Settings"),
+                        React.createElement("div", { className: "flex gap-2" },
+                            React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset"),
+                            React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF")
+                        )
+                    ),
+                    React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-5 gap-3" },
+                        React.createElement(Field, { label: "Font Isi" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfTableFontSize, onChange: e => setPdfTableFontSize(e.target.value) })),
+                        React.createElement(Field, { label: "Font Judul" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfTableTitleFontSize, onChange: e => setPdfTableTitleFontSize(e.target.value) })),
+                        React.createElement(Field, { label: "Font Foto" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfEvidenceFontSize, onChange: e => setPdfEvidenceFontSize(e.target.value) })),
+                        React.createElement(Field, { label: "Extra Baris" }, React.createElement(TextInput, { type: "number", value: pdfTableExtraRows, onChange: e => setPdfTableExtraRows(e.target.value) })),
+                        React.createElement(Field, { label: "Grid Foto" }, React.createElement(TextInput, { type: "number", value: pdfPhotoGridPerPage, onChange: e => setPdfPhotoGridPerPage(e.target.value) }))
+                    )
+                ),
+                renderMasterStorePanel(),
                 React.createElement("div", { className: "hidden" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
@@ -8417,9 +8345,9 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                                 React.createElement("p", { className: "font-extrabold text-slate-950" }, item.storeName || '-'),
                                 React.createElement("p", { className: "text-xs text-slate-500" },
                                     item.bestieName || '-',
-                                    " \u2022 ",
+                                    " • ",
                                     item.storeCode || '-',
-                                    " \u2022 ",
+                                    " • ",
                                     formatDateTime(item.createdAt)),
                                 item.address ? React.createElement("p", { className: "mt-1 text-xs text-slate-600" }, item.address) : null),
                             React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
