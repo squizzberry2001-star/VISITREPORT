@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp300-radical-redesign-v57';
+const APP_BUILD_VERSION = 'revamp325-login-icons-v58';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1896,18 +1896,18 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M10 17h10" }),
             React.createElement("circle", { cx: "8", cy: "17", r: "2" }))
     };
-    return (React.createElement("svg", { className: className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, paths[name] || paths.spark));
+    return (React.createElement("svg", { className: cx("transition-all duration-300", className), viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: strokeWidth === 2 ? 2.25 : strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, paths[name] || paths.spark));
 }
 function Button({ variant = 'primary', className = '', icon, children, ...props }) {
     const styles = {
-        primary: 'btn-primary',
+        primary: 'btn-primary shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30',
         secondary: 'btn-secondary',
         ghost: 'btn-ghost',
-        danger: 'btn-danger',
+        danger: 'btn-danger shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30',
         icon: 'btn-icon'
     };
-    return (React.createElement("button", { type: "button", className: cx(styles[variant] || styles.primary, className), ...props },
-        icon ? React.createElement(Icon, { name: icon, className: "h-5 w-5" }) : null,
+    return (React.createElement("button", { type: "button", className: cx(styles[variant] || styles.primary, 'transition-all duration-300 active:scale-95 disabled:scale-100 disabled:opacity-50 disabled:shadow-none', className), ...props },
+        icon ? React.createElement(Icon, { name: icon, className: "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110" }) : null,
         children));
 }
 function Badge({ children, tone = 'default' }) {
@@ -7720,7 +7720,6 @@ function WelcomeOverlay({ config, onDone }) {
     const subtitle = cleanText(config && config.subtitle, DEFAULT_WELCOME_CONFIG.subtitle);
     const durationSeconds = normalizeWelcomeDurationSeconds(config && config.durationSeconds);
     const durationMs = Math.round(durationSeconds * 1000);
-    const cardRef = useRef(null);
     const onDoneRef = useRef(onDone);
     const doneRef = useRef(false);
     const savedLogin = readBestieLogin();
@@ -7730,9 +7729,11 @@ function WelcomeOverlay({ config, onDone }) {
     const [introDone, setIntroDone] = useState(false);
     const [closing, setClosing] = useState(false);
     const nikInputRef = useRef(null);
+
     useEffect(() => {
         onDoneRef.current = onDone;
     }, [onDone]);
+
     useEffect(() => {
         doneRef.current = false;
         setClosing(false);
@@ -7741,30 +7742,30 @@ function WelcomeOverlay({ config, onDone }) {
         const timer = window.setTimeout(() => setIntroDone(true), Math.max(900, durationMs + 160));
         return () => window.clearTimeout(timer);
     }, [durationMs]);
+
     useEffect(() => {
-        if (!introDone || closing)
-            return;
+        if (!introDone || closing) return;
         const focusTimer = window.setTimeout(() => nikInputRef.current?.focus?.(), 80);
         return () => window.clearTimeout(focusTimer);
     }, [introDone, closing]);
+
     function finishWelcome() {
-        if (doneRef.current)
-            return;
+        if (doneRef.current) return;
         doneRef.current = true;
         setClosing(true);
         window.setTimeout(() => {
-            if (typeof onDoneRef.current === 'function')
-                onDoneRef.current();
-        }, 340);
+            if (typeof onDoneRef.current === 'function') onDoneRef.current();
+        }, 400);
     }
+
     function handleNikChange(event) {
         const nik = normalizeNik(event.target.value);
         setNikInput(nik);
         const found = findBestieByNik(nik);
         setLoginName(found ? found.name : '');
-        if (loginError)
-            setLoginError('');
+        if (loginError) setLoginError('');
     }
+
     function submitBestieLogin(event) {
         event?.preventDefault?.();
         const saved = saveBestieLogin({ nik: nikInput });
@@ -7775,111 +7776,82 @@ function WelcomeOverlay({ config, onDone }) {
         setLoginName(saved.name);
         finishWelcome();
     }
-    function handlePointerMove(event) {
-        const card = cardRef.current;
-        if (!card)
-            return;
-        const rect = card.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) - 0.5;
-        const y = ((event.clientY - rect.top) / rect.height) - 0.5;
-        card.style.setProperty('--tilt-x', `${(-y * 5).toFixed(2)}deg`);
-        card.style.setProperty('--tilt-y', `${(x * 6).toFixed(2)}deg`);
-        card.style.setProperty('--glow-x', `${(x + 0.5) * 100}%`);
-        card.style.setProperty('--glow-y', `${(y + 0.5) * 100}%`);
-    }
-    function resetPointerTilt() {
-        const card = cardRef.current;
-        if (!card)
-            return;
-        card.style.setProperty('--tilt-x', '0deg');
-        card.style.setProperty('--tilt-y', '0deg');
-        card.style.setProperty('--glow-x', '50%');
-        card.style.setProperty('--glow-y', '50%');
-    }
-    function openCoffeeSupportLink() {
-        try {
-            window.open("https://trakteer.id/HEHBESTIE/tip?quantity=1", '_blank', 'noopener,noreferrer');
-        }
-        catch (error) {
-            window.location.href = "https://trakteer.id/HEHBESTIE/tip?quantity=1";
-        }
-    }
-    return (React.createElement("div", { className: cx("welcome-dream-overlay", closing && "is-closing"), role: "dialog", "aria-modal": "true", style: {
-            '--welcome-duration': String(durationSeconds) + 's',
-            position: 'fixed',
-            inset: 0,
-            zIndex: 95,
-            display: 'grid',
-            placeItems: 'center',
-            padding: '24px',
-            overflow: 'hidden',
-            background: '#ededed',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            animation: closing ? 'rbvWelcomeOverlayOut .34s cubic-bezier(.22,1,.36,1) forwards' : 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
-        } },
-        React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(6px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.38}50%{transform:translate3d(10px,-8px,0) scale(1.05);opacity:.62}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%{transform:translate3d(0,0,0) rotate(-4deg) scale(.96)}35%{transform:translate3d(0,-10px,0) rotate(8deg) scale(1.03)}70%{transform:translate3d(0,2px,0) rotate(-2deg) scale(.99)}100%{transform:translate3d(0,0,0) rotate(-4deg) scale(.96)}} @keyframes rbvWelcomeOrbit{0%{transform:rotate(0deg) translateX(8px) rotate(0deg);opacity:.48}100%{transform:rotate(360deg) translateX(8px) rotate(-360deg);opacity:.78}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}} @keyframes rbvCoffeeWobble{0%,100%{transform:translate3d(0,0,0) rotate(-3deg) scale(1)}25%{transform:translate3d(-2px,-2px,0) rotate(2deg) scale(1.02)}50%{transform:translate3d(0,-4px,0) rotate(0deg) scale(1.03)}75%{transform:translate3d(2px,-2px,0) rotate(3deg) scale(1.02)}} @keyframes rbvCoffeeGlow{0%,100%{box-shadow:0 20px 38px rgba(120,53,15,.18),0 0 0 0 rgba(217,119,6,.12)}50%{box-shadow:0 24px 46px rgba(120,53,15,.24),0 0 0 10px rgba(251,191,36,0)}}`),
-        React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at 18% 18%, rgba(15,118,110,.08), transparent 34%), radial-gradient(circle at 80% 20%, rgba(20,184,166,.10), transparent 30%), radial-gradient(circle at 50% 78%, rgba(148,163,184,.16), transparent 26%)', pointerEvents: 'none' } }),
-        React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 220, height: 220, borderRadius: '999px', left: '-72px', top: '12%', background: 'rgba(15,118,110,.10)', filter: 'blur(24px)', animation: 'rbvWelcomeAura 5.5s ease-in-out infinite' } }),
-        React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', width: 260, height: 260, borderRadius: '999px', right: '-92px', bottom: '12%', background: 'rgba(20,184,166,.10)', filter: 'blur(28px)', animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse' } }),
-        React.createElement("div", { ref: cardRef, className: "welcome-dream-card", onPointerMove: handlePointerMove, onPointerLeave: resetPointerTilt, style: {
-                '--tilt-x': '0deg',
-                '--tilt-y': '0deg',
-                '--glow-x': '50%',
-                '--glow-y': '50%',
-                position: 'relative',
-                width: 'min(92vw, 430px)',
-                borderRadius: '36px',
-                padding: '1px',
-                background: 'linear-gradient(135deg, rgba(255,255,255,.92), rgba(203,213,225,.66), rgba(255,255,255,.72))',
-                boxShadow: '0 24px 60px rgba(15,23,42,.16)',
-                transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
-                transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
-                animation: 'none',
-                opacity: 1,
-                filter: 'none',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden'
-            } },
-            React.createElement("div", { style: { position: 'relative', overflow: 'hidden', borderRadius: '35px', padding: '28px 24px 24px', background: '#ededed' } },
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, backgroundColor: '#ededed', backgroundImage: 'url("icons/welcome-handshake-bg.jpg")', backgroundPosition: 'center center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', opacity: 0.44, mixBlendMode: 'multiply', pointerEvents: 'none' } }),
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(237,237,237,.54), rgba(237,237,237,.76) 34%, rgba(237,237,237,.88) 100%), radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(255,255,255,.55), transparent 34%)', pointerEvents: 'none', transition: 'background 160ms ease' } }),
-                React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '58%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent)', animation: 'rbvWelcomeShine 3.4s cubic-bezier(.22,1,.36,1) infinite', pointerEvents: 'none' } }),
-                React.createElement("div", { className: "welcome-dream-content", style: { position: 'relative', display: 'flex', minHeight: 250, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite' } },
-                    React.createElement("div", { "aria-hidden": "true", className: "welcome-app-logo-motion-v99", style: { display: 'grid', placeItems: 'center', width: 120, height: 120, borderRadius: '34px', overflow: 'visible', background: 'rgba(255,255,255,.74)', border: '1px solid rgba(255,255,255,.85)', boxShadow: '0 16px 34px rgba(15,23,42,.10)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', animation: 'rbvWelcomeSpark 3.8s cubic-bezier(.22,1,.36,1) infinite' } },
-                        React.createElement("span", { className: "welcome-logo-ring-v99 ring-a" }),
-                        React.createElement("span", { className: "welcome-logo-ring-v99 ring-b" }),
-                        React.createElement("img", { src: "icons/icon-192.png", alt: "", className: "welcome-app-icon-v99" })),
-                    React.createElement("p", { className: "welcome-kicker", style: { marginTop: 18, fontSize: 11, fontWeight: 900, letterSpacing: '.24em', textTransform: 'uppercase', color: '#0f766e', animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both' } }, "Bestie Visit"),
-                    React.createElement("h1", { style: { marginTop: 8, maxWidth: '100%', fontSize: 'clamp(28px, 8vw, 44px)', lineHeight: .95, fontWeight: 950, letterSpacing: '-.055em', color: '#020617', textShadow: '0 1px 0 rgba(255,255,255,.45)', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both' } }, title),
-                    React.createElement("p", { className: "welcome-subtitle", style: { marginTop: 14, maxWidth: 330, fontSize: 14, fontWeight: 700, lineHeight: 1.55, whiteSpace: 'pre-line', color: '#334155', animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both' } }, subtitle),
-                    React.createElement("div", { "aria-hidden": "true", style: { marginTop: 24, height: 7, width: 'min(260px, 78%)', overflow: 'hidden', borderRadius: '999px', background: 'rgba(15,118,110,.12)' } },
-                        React.createElement("span", { onAnimationEnd: (event) => { if (event.animationName === 'rbvWelcomeProgress')
-                                setIntroDone(true); }, style: { display: 'block', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)', animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` } })),
-                    introDone ? React.createElement("form", { className: "welcome-nik-login", onSubmit: submitBestieLogin },
-                        React.createElement("p", { className: "welcome-nik-label" }, "Login NIK Regional Bestie"),
-                        React.createElement("input", { ref: nikInputRef, value: nikInput, onChange: handleNikChange, inputMode: "numeric", maxLength: 12, className: "welcome-nik-input", placeholder: "Masukkan NIK", autoFocus: true }),
-                        loginName ? React.createElement("p", { className: "welcome-nik-name" }, loginName) : React.createElement("p", { className: "welcome-nik-hint" }, "Nama otomatis muncul setelah NIK valid."),
-                        loginError ? React.createElement("p", { className: "welcome-nik-error" }, loginError) : null,
-                        React.createElement("button", { type: "submit", className: "welcome-nik-button", disabled: !findBestieByNik(nikInput) }, "Masuk")) : null))),
-        React.createElement("button", { type: "button", onClick: openCoffeeSupportLink, className: "welcome-coffee-link-button", style: { position: 'fixed', left: '50%', bottom: 'max(18px, env(safe-area-inset-bottom, 0px) + 12px)', transform: 'translateX(-50%)', zIndex: 4, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10, minWidth: 206, minHeight: 70, padding: '15px 26px', borderRadius: '999px', border: '1px solid rgba(251,191,36,.92)', background: 'linear-gradient(135deg, rgba(255,251,235,.98), rgba(254,243,199,.98))', color: '#92400e', boxShadow: '0 20px 38px rgba(120,53,15,.18)', fontSize: 21, fontWeight: 950, letterSpacing: '.01em', animation: 'rbvCoffeeWobble 2.4s ease-in-out infinite, rbvCoffeeGlow 2.4s ease-in-out infinite', cursor: 'pointer', textDecoration: 'none' }, title: "Buka link Coffee Trakteer", "aria-label": "Buka link Coffee atau Trakteer" },
-            React.createElement("svg", { viewBox: "0 0 64 64", className: "welcome-coffee-vector", "aria-hidden": "true", style: { width: 38, height: 38, flex: '0 0 auto', filter: 'drop-shadow(0 7px 10px rgba(120,53,15,.18))' } },
-                React.createElement("defs", null,
-                    React.createElement("linearGradient", { id: "coffeeCupGrad", x1: "12", y1: "18", x2: "46", y2: "58", gradientUnits: "userSpaceOnUse" },
-                        React.createElement("stop", { offset: "0", stopColor: "#fff7ed" }),
-                        React.createElement("stop", { offset: "1", stopColor: "#f59e0b" })),
-                    React.createElement("linearGradient", { id: "coffeeFillGrad", x1: "19", y1: "24", x2: "41", y2: "32", gradientUnits: "userSpaceOnUse" },
-                        React.createElement("stop", { offset: "0", stopColor: "#92400e" }),
-                        React.createElement("stop", { offset: "1", stopColor: "#451a03" }))),
-                React.createElement("path", { d: "M18 24h26l-3 27H21L18 24Z", fill: "url(#coffeeCupGrad)", stroke: "#92400e", strokeWidth: "3", strokeLinejoin: "round" }),
-                React.createElement("path", { d: "M44 29h6c4 0 7 3 7 7s-3 7-7 7h-8", fill: "none", stroke: "#92400e", strokeWidth: "4", strokeLinecap: "round", strokeLinejoin: "round" }),
-                React.createElement("path", { d: "M20 25c4 4 17 5 24 0", fill: "none", stroke: "url(#coffeeFillGrad)", strokeWidth: "6", strokeLinecap: "round" }),
-                React.createElement("path", { d: "M25 14c-3 4 3 5 0 9", fill: "none", stroke: "#d97706", strokeWidth: "3", strokeLinecap: "round" }),
-                React.createElement("path", { d: "M34 11c-3 4 3 6 0 10", fill: "none", stroke: "#d97706", strokeWidth: "3", strokeLinecap: "round" }),
-                React.createElement("path", { d: "M42 14c-3 4 3 5 0 9", fill: "none", stroke: "#d97706", strokeWidth: "3", strokeLinecap: "round" }),
-                React.createElement("path", { d: "M15 55h34", stroke: "#92400e", strokeWidth: "4", strokeLinecap: "round" })),
-            React.createElement("span", null, "Coffee"))));
+
+    return (
+        React.createElement("div", {
+            className: cx("fixed inset-0 z-[100] grid place-items-center bg-slate-900/40 backdrop-blur-xl transition-all duration-500", closing ? "opacity-0" : "opacity-100"),
+            role: "dialog",
+            "aria-modal": "true"
+        },
+        React.createElement("div", {
+            className: cx("relative w-[92vw] max-w-sm rounded-[32px] bg-white/95 p-8 shadow-2xl backdrop-blur-2xl transition-all duration-500", closing ? "scale-95 opacity-0 translate-y-8" : "scale-100 opacity-100 translate-y-0", !introDone && "animate-pulse")
+        },
+            React.createElement("div", { className: "absolute -top-12 left-1/2 -translate-x-1/2 rounded-full bg-white p-2 shadow-xl" },
+                React.createElement("div", { className: "flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 shadow-inner" },
+                    React.createElement(Icon, { name: "spark", className: "h-8 w-8 text-white" })
+                )
+            ),
+            
+            React.createElement("div", { className: "mt-6 text-center" },
+                React.createElement("h1", { className: "text-2xl font-black text-slate-900 tracking-tight" }, title),
+                React.createElement("p", { className: "mt-2 text-sm font-medium text-slate-500 leading-relaxed" }, subtitle),
+                
+                !introDone ? (
+                    React.createElement("div", { className: "mt-8" },
+                        React.createElement("div", { className: "h-1.5 w-full overflow-hidden rounded-full bg-slate-100" },
+                            React.createElement("div", { 
+                                className: "h-full rounded-full bg-teal-500 transition-all ease-linear",
+                                style: { animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` }
+                            })
+                        ),
+                        React.createElement("p", { className: "mt-3 text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse" }, "Menyiapkan Sistem...")
+                    )
+                ) : (
+                    React.createElement("form", { onSubmit: submitBestieLogin, className: "mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500" },
+                        React.createElement("div", { className: "text-left" },
+                            React.createElement("label", { className: "ml-1 text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "NIK Regional Bestie"),
+                            React.createElement("div", { className: "relative mt-1" },
+                                React.createElement("div", { className: "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4" },
+                                    React.createElement(Icon, { name: "user", className: "h-5 w-5 text-slate-400" })
+                                ),
+                                React.createElement("input", {
+                                    ref: nikInputRef,
+                                    value: nikInput,
+                                    onChange: handleNikChange,
+                                    inputMode: "numeric",
+                                    maxLength: 12,
+                                    placeholder: "Contoh: 123456",
+                                    className: "block w-full rounded-2xl border-2 border-slate-100 bg-slate-50 py-3.5 pl-11 pr-4 text-center text-lg font-black tracking-widest text-slate-900 transition-all focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-500/10"
+                                })
+                            )
+                        ),
+                        
+                        React.createElement("div", { className: "mt-4 flex min-h-[48px] items-center justify-center rounded-xl bg-slate-50 px-4" },
+                            loginName ? (
+                                React.createElement("div", { className: "flex items-center gap-2 text-teal-600 animate-in fade-in zoom-in duration-300" },
+                                    React.createElement(Icon, { name: "check-circle", className: "h-5 w-5" }),
+                                    React.createElement("span", { className: "font-extrabold" }, loginName)
+                                )
+                            ) : loginError ? (
+                                React.createElement("span", { className: "text-xs font-semibold text-rose-500" }, loginError)
+                            ) : (
+                                React.createElement("span", { className: "text-xs font-medium text-slate-400" }, "Nama Anda akan muncul di sini")
+                            )
+                        ),
+                        
+                        React.createElement("button", {
+                            type: "submit",
+                            disabled: !findBestieByNik(nikInput),
+                            className: "mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 font-bold text-white shadow-xl shadow-slate-900/20 transition-all hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                        },
+                            "Mulai Visit",
+                            React.createElement(Icon, { name: "right", className: "h-5 w-5" })
+                        )
+                    )
+                )
+            )
+        )
+        );
 }
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
