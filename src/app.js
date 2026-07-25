@@ -4531,7 +4531,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement("div", { className: "dashboard-tab-bar w-full" },
-            React.createElement("div", { className: "dashboard-tab-bar-inner w-full px-4 md:px-8" },
+            React.createElement("div", { className: "dashboard-tab-bar-inner w-full px-0" },
                 React.createElement("div", { className: "flex items-center justify-around h-[56px]" },
                 React.createElement("button", { 
                     type: "button", 
@@ -4552,8 +4552,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             )
         ),
         activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in w-full" },
-            React.createElement("div", { className: "w-full px-4 md:px-8 py-6 pb-32 space-y-6" },
-                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti & Pengaturan"),
+            React.createElement("div", { className: "w-full px-0 py-6 pb-32 space-y-6" },
+                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight px-4 md:px-8" }, "Utiliti & Pengaturan"),
                 React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" },
                 React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
                     syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
@@ -4585,7 +4585,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-command-center w-full" },
-            React.createElement("div", { className: "w-full px-4 md:px-8 py-6" },
+            React.createElement("div", { className: "w-full px-0 py-6" },
             // Section 1: Progress Ring & Daily Target
             React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
                 React.createElement("div", { className: "text-center md:text-left text-white" },
@@ -4601,10 +4601,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             
             // Section 2: Horizontal Carousel (Quick Access / Priority)
             React.createElement("div", { className: "mb-8" },
-                React.createElement("div", { className: "mb-4 flex items-center justify-between" },
+                React.createElement("div", { className: "mb-4 flex items-center justify-between px-4 md:px-8" },
                     React.createElement("h3", { className: "text-lg font-black tracking-tight text-slate-800" }, "Akses Cepat"),
                     React.createElement("button", { type: "button", className: "text-xs font-bold text-audit-primary hover:underline", onClick: onNewVisit }, "Lihat Semua")),
-                React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar" },
+                React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar px-4 md:px-8" },
                     priorityStores.length > 0 ? priorityStores.map((store, i) => (
                         React.createElement("div", { key: store.siteCode || i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
                             React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
@@ -4622,7 +4622,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     )))),
             
             // Section 3: Activity Timeline
-            React.createElement("div", null,
+            React.createElement("div", { className: "px-4 md:px-8" },
                 React.createElement("h3", { className: "mb-6 text-lg font-black tracking-tight text-slate-800" }, "Histori Aktivitas"),
                 history.length ? React.createElement("div", { className: "relative space-y-6 before:absolute before:inset-y-0 before:left-[21px] before:w-0.5 before:bg-slate-200" },
                     visibleHistory.map((item, index) => React.createElement("article", { key: item.id, className: "relative flex items-start gap-4 pl-12 transition-all hover:translate-x-1" },

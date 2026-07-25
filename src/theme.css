@@ -2917,12 +2917,7 @@ select,
 .pdf-canvas-pages { min-height: 100% !important; }
 
 /* Home: header/tools sticky, only history list scrolls */
-.dashboard-page {
-  height: 100dvh !important;
-  min-height: 100dvh !important;
-  overflow: hidden !important;
-  max-width: none !important;
-}
+
 .dashboard-page > .dashboard-compact,
 .dashboard-page > .home-update-notice,
 .dashboard-page > section:not(.dashboard-history-section) {
@@ -3134,13 +3129,7 @@ select,
 }
 .secret-panel-tab:active { transform: scale(.98); }
 
-.dashboard-page {
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
+
 .dashboard-history-section {
   flex: 1 1 auto !important;
   min-height: 0 !important;
@@ -3664,15 +3653,7 @@ select,
 @media (max-width: 430px) {
   .rbv-email-schedule-chip-v98 { height: 38px !important; min-height: 38px !important; font-size: 12px !important; }
 }
-.dashboard-page {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  max-width: none !important;
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  overflow: hidden !important;
-}
+
 .dashboard-history-section {
   flex: 1 1 auto !important;
   min-height: 0 !important;
@@ -4287,17 +4268,7 @@ body:has(.dashboard-page),
   overflow: hidden !important;
   overscroll-behavior: none !important;
 }
-.dashboard-page {
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
-  padding-top: calc(10px + var(--safe-top)) !important;
-  padding-bottom: calc(82px + var(--safe-bottom)) !important;
-}
+
 .dashboard-page > .dashboard-compact,
 .dashboard-page > .home-update-notice {
   flex: 0 0 auto !important;
@@ -4384,33 +4355,10 @@ body:has(.dashboard-page),
 
 
 /* Revamp 212 - reliable home history scrolling */
-html.rbv-home-lock,
-body.rbv-home-lock {
-  height: 100% !important;
-  min-height: 100% !important;
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
-}
-html.rbv-home-lock #root,
-body.rbv-home-lock #root {
-  height: 100% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
+
+
 body.rbv-home-lock .dashboard-page,
-.dashboard-page {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-  padding-top: calc(10px + var(--safe-top)) !important;
-  padding-bottom: calc(72px + var(--safe-bottom)) !important;
-}
+
 .dashboard-history-section {
   flex: 1 1 0% !important;
   min-height: 0 !important;
@@ -4465,11 +4413,7 @@ body.rbv-home-lock .dashboard-page,
   font-size: 7.5px !important;
 }
 @media (max-width: 420px) {
-  body.rbv-home-lock .dashboard-page,
-  .dashboard-page {
-    gap: 7px !important;
-    padding-bottom: calc(70px + var(--safe-bottom)) !important;
-  }
+  
   .home-quick-actions-grid {
     gap: 6px !important;
   }
