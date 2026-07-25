@@ -4029,12 +4029,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 const now = new Date();
                 const currentMonth = now.getMonth();
                 const currentYear = now.getFullYear();
-                const currentMondayStr = getMonday(now);
-                const allMonths = [];
-                for (let i = 5; i >= 0; i--) {
-                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                    allMonths.push(d.toLocaleString('id-ID', { month: 'short', year: '2-digit' }));
-                }
 
                 const getMonday = (d) => {
                     const date = new Date(d);
@@ -4042,6 +4036,13 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
                     return new Date(date.setDate(diff)).toISOString().slice(0, 10);
                 };
+
+                const currentMondayStr = getMonday(now);
+                const allMonths = [];
+                for (let i = 5; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    allMonths.push(d.toLocaleString('id-ID', { month: 'short', year: '2-digit' }));
+                }
 
                 datasetToUse.forEach(r => {
                     const bk = normalize(r.bestie_name || r.bestieName || r.nama || '');
