@@ -1,5 +1,5 @@
 {
   "version": "272",
-  "build": "revamp272-analytics-dashboard-v6",
-  "label": "Revamp 272 - Analytics Dashboard UI Fixes"
+  "build": "revamp272-analytics-dashboard-v7",
+  "label": "Revamp 272 - Analytics Dashboard UI Fixes (Tailwind Override)"
 }

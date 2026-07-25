@@ -6750,3 +6750,19 @@ body.rbv-keyboard-visible .evidence-floating-capture {
 
 /* Revamp 271 - welcome coffee vector */
 @media (max-width: 420px){ .welcome-coffee-link-button{ min-width: 184px !important; min-height: 62px !important; font-size: 18px !important; } .welcome-coffee-vector{ width: 34px !important; height: 34px !important; } }
+
+/* Revamp 272 - Analytics Dashboard Missing Tailwind Classes & Layout */
+.analytics-view-container {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0 !important;
+  padding-bottom: 120px !important;
+  width: 100% !important;
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .lg\:col-span-2 { grid-column: span 2 / span 2 !important; }
+}
