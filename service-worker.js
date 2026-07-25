@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp275-store-search-modal-v10';
+const APP_VERSION = 'revamp276-analytics-grid-fix-v11';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

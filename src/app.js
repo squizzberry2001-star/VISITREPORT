@@ -3775,60 +3775,57 @@ function AnalyticsView({ history }) {
             )
         ),
         
-        React.createElement("div", { className: "analytics-grid-2" },
-            React.createElement("div", { className: "analytics-card-large" },
-                React.createElement("div", { className: "analytics-card-large-header" },
-                    React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (Observasi)"),
-                    React.createElement("div", { className: "p-2 bg-emerald-50 rounded-xl text-emerald-600" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
-                ),
-                React.createElement("div", { className: "space-y-6" },
-                    Object.keys(data?.temuanByMonth || {}).length === 0 ? 
-                        React.createElement("div", { className: "py-12 flex flex-col items-center justify-center text-audit-ink opacity-50" },
-                            React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
-                        ) :
-                        Object.entries(data?.temuanByMonth || {}).map(([month, count]) => {
-                            const maxCount = Math.max(...Object.values(data?.temuanByMonth || {}), 1);
-                            const percentage = count > 0 ? (count / maxCount) * 100 : 0;
-                            // Add a min-width of 2% for 0 count just to show a small pip if desired, but 0 is fine
-                            return React.createElement("div", { key: month, className: "group" },
-                                React.createElement("div", { className: "flex justify-between items-end mb-2.5" },
-                                    React.createElement("span", { className: "text-[13px] font-bold text-audit-ink opacity-90" }, month),
-                                    React.createElement("span", { className: "text-[13px] font-black text-emerald-600" }, count, " ", React.createElement("span", { className: "text-[10px] text-audit-ink opacity-50 font-bold uppercase tracking-widest ml-0.5" }, "temuan"))
-                                ),
-                                React.createElement("div", { className: "progress-bar-wrap" },
-                                    React.createElement("div", { className: "progress-bar-fill bg-gradient-to-r from-emerald-400 to-emerald-500", style: { width: `${mounted ? Math.max(percentage, 1) : 0}%` } })
-                                )
-                            );
-                        })
+        React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8" },
+            React.createElement("div", { className: "analytics-card-large-header" },
+                React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (Observasi)"),
+                React.createElement("div", { className: "p-2 bg-emerald-50 rounded-xl text-emerald-600" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
+            ),
+            React.createElement("div", { className: "space-y-6" },
+                Object.keys(data?.temuanByMonth || {}).length === 0 ? 
+                    React.createElement("div", { className: "py-12 flex flex-col items-center justify-center text-audit-ink opacity-50" },
+                        React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
+                    ) :
+                    Object.entries(data?.temuanByMonth || {}).map(([month, count]) => {
+                        const maxCount = Math.max(...Object.values(data?.temuanByMonth || {}), 1);
+                        const percentage = count > 0 ? (count / maxCount) * 100 : 0;
+                        return React.createElement("div", { key: month, className: "group" },
+                            React.createElement("div", { className: "flex justify-between items-end mb-2.5" },
+                                React.createElement("span", { className: "text-[13px] font-bold text-audit-ink opacity-90" }, month),
+                                React.createElement("span", { className: "text-[13px] font-black text-emerald-600" }, count, " ", React.createElement("span", { className: "text-[10px] text-audit-ink opacity-50 font-bold uppercase tracking-widest ml-0.5" }, "temuan"))
+                            ),
+                            React.createElement("div", { className: "progress-bar-wrap" },
+                                React.createElement("div", { className: "progress-bar-fill bg-gradient-to-r from-emerald-400 to-emerald-500", style: { width: `${mounted ? Math.max(percentage, 1) : 0}%` } })
+                            )
+                        );
+                    })
+            )
+        ),
+        React.createElement("div", { className: "analytics-grid-circular" },
+            React.createElement("div", { className: "analytics-card-large py-6 sm:py-8" },
+                React.createElement("div", { className: "chart-flex-row" },
+                    React.createElement("div", { className: "chart-circle-wrap text-emerald-500" },
+                        React.createElement("svg", { viewBox: "0 0 36 36" },
+                            React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? coveragePercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
+                        ),
+                        React.createElement("span", { className: "chart-circle-text" }, `${Math.round(coveragePercent)}%`)
+                    ),
+                    React.createElement("div", { className: "chart-flex-col" },
+                        React.createElement("h3", { className: "analytics-card-large-title" }, "Coverage Global (Semua Bestie)"),
+                        React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium leading-snug" }, `${data?.globalStoreCount || 0} dari ${data?.totalMasterStores || 0} toko dikunjungi`)
+                    )
                 )
             ),
-            React.createElement("div", { className: "flex flex-col gap-6" },
-                React.createElement("div", { className: "analytics-card-large py-6" },
-                    React.createElement("div", { className: "chart-flex-row" },
-                        React.createElement("div", { className: "chart-circle-wrap text-emerald-500" },
-                            React.createElement("svg", { viewBox: "0 0 36 36" },
-                                React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? coveragePercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
-                            ),
-                            React.createElement("span", { className: "chart-circle-text" }, `${Math.round(coveragePercent)}%`)
+            React.createElement("div", { className: "analytics-card-large py-6 sm:py-8" },
+                React.createElement("div", { className: "chart-flex-row" },
+                    React.createElement("div", { className: "chart-circle-wrap text-sky-500" },
+                        React.createElement("svg", { viewBox: "0 0 36 36" },
+                            React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? feedbackPercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
                         ),
-                        React.createElement("div", { className: "chart-flex-col" },
-                            React.createElement("h3", { className: "analytics-card-large-title" }, "Coverage Global (Semua Bestie)"),
-                            React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium" }, `${data?.globalStoreCount || 0} dari ${data?.totalMasterStores || 0} toko dikunjungi`)
-                        )
-                    )
-                ),
-                React.createElement("div", { className: "analytics-card-large py-6" },
-                    React.createElement("div", { className: "chart-flex-row" },
-                        React.createElement("div", { className: "chart-circle-wrap text-sky-500" },
-                            React.createElement("svg", { viewBox: "0 0 36 36" },
-                                React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? feedbackPercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
-                            ),
-                            React.createElement("span", { className: "chart-circle-text" }, `${Math.round(feedbackPercent)}%`)
-                        ),
-                        React.createElement("div", { className: "chart-flex-col" },
-                            React.createElement("h3", { className: "analytics-card-large-title" }, "Email Feedback Rate"),
-                            React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium" }, `${data?.emailFeedbackCount || 0} dari ${data?.emailSentCount || 0} email mendapat balasan`)
-                        )
+                        React.createElement("span", { className: "chart-circle-text" }, `${Math.round(feedbackPercent)}%`)
+                    ),
+                    React.createElement("div", { className: "chart-flex-col" },
+                        React.createElement("h3", { className: "analytics-card-large-title" }, "Email Feedback Rate"),
+                        React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium leading-snug" }, `${data?.emailFeedbackCount || 0} dari ${data?.emailSentCount || 0} email mendapat balasan`)
                     )
                 )
             )

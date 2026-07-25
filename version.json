@@ -1,5 +1,5 @@
 {
-  "version": "275",
-  "build": "revamp275-store-search-modal-v10",
-  "label": "Revamp 275 - Searchable Store Select Modal"
+  "version": "276",
+  "build": "revamp276-analytics-grid-fix-v11",
+  "label": "Revamp 276 - Fix Analytics Circular Grid Layout"
 }

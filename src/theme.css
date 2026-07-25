@@ -6912,3 +6912,19 @@ body.rbv-keyboard-visible .evidence-floating-capture {
  } 
   
  
+ . a n a l y t i c s - g r i d - c i r c u l a r   { 
+     d i s p l a y :   g r i d ; 
+     g r i d - t e m p l a t e - c o l u m n s :   1 f r ; 
+     g a p :   1 . 5 r e m ; 
+     m a r g i n - b o t t o m :   2 r e m ; 
+ } 
+ @ m e d i a   ( m i n - w i d t h :   7 6 8 p x )   { 
+     . a n a l y t i c s - g r i d - c i r c u l a r   { 
+         g r i d - t e m p l a t e - c o l u m n s :   r e p e a t ( 2 ,   m i n m a x ( 0 ,   1 f r ) ) ; 
+     } 
+ } 
+  
+ 
+ . c h a r t - f l e x - r o w   {   f l e x - w r a p :   w r a p ;   } 
+  
+ 
