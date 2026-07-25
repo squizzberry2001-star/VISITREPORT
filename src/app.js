@@ -4149,6 +4149,90 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         React.createElement(MasterStoreDetailModal, { open: masterStoreModalOpen, onClose: () => setMasterStoreModalOpen(false) }),
         React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })));
 }
+
+function StoreSearchSelect({ label, value, options, onChange, placeholder, disabled }) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    
+    // Filter options based on search text
+    const filteredOptions = useMemo(() => {
+        if (!search.trim()) return options;
+        const q = search.toLowerCase();
+        return options.filter(opt => opt.label.toLowerCase().includes(q));
+    }, [options, search]);
+
+    return React.createElement(React.Fragment, null,
+        React.createElement("div", { className: "grid gap-1.5" },
+            label && React.createElement("label", { className: "text-sm font-extrabold text-audit-ink opacity-90" }, label),
+            React.createElement("button", {
+                type: "button",
+                disabled: disabled,
+                onClick: () => {
+                    if(!disabled) {
+                        setSearch('');
+                        setOpen(true);
+                    }
+                },
+                className: cx("w-full min-h-[46px] rounded-2xl border bg-white px-4 py-2.5 text-left text-[15px] font-bold text-audit-ink transition-all", disabled ? "opacity-50 cursor-not-allowed border-slate-200" : "border-slate-300 hover:border-audit-primary focus:border-audit-primary focus:ring-4 focus:ring-audit-primary/10 shadow-sm")
+            },
+                React.createElement("div", { className: "flex items-center justify-between gap-3" },
+                    React.createElement("span", { className: !value ? "text-slate-400 truncate" : "truncate" }, value || placeholder || "Pilih..."),
+                    React.createElement(Icon, { name: "down", className: "w-4 h-4 text-slate-400 shrink-0" })
+                )
+            )
+        ),
+        open ? React.createElement("div", { className: "fixed inset-0 z-[100] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6 fade-in", role: "dialog" },
+            React.createElement("div", { className: "w-full rounded-t-[30px] bg-white shadow-2xl md:max-w-2xl md:rounded-[32px] flex flex-col", style: { maxHeight: 'min(90vh, 700px)', minHeight: '60vh' } },
+                React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 px-5 py-4 shrink-0" },
+                    React.createElement("h3", { className: "text-lg font-black text-audit-ink" }, "Pilih Store"),
+                    React.createElement(Button, { variant: "icon", onClick: () => setOpen(false), "aria-label": "Tutup" },
+                        React.createElement(Icon, { name: "close", className: "h-4 w-4" })
+                    )
+                ),
+                React.createElement("div", { className: "p-4 border-b border-slate-100 shrink-0" },
+                    React.createElement("div", { className: "relative" },
+                        React.createElement("div", { className: "absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400" },
+                            React.createElement(Icon, { name: "search", className: "h-5 w-5" })
+                        ),
+                        React.createElement("input", {
+                            type: "text",
+                            className: "w-full rounded-2xl border-2 border-slate-200 bg-slate-50 pl-11 pr-4 py-3.5 text-[15px] font-bold text-audit-ink placeholder:text-slate-400 focus:border-audit-primary focus:bg-white focus:outline-none transition-colors",
+                            placeholder: "Cari nama toko atau kode...",
+                            value: search,
+                            onChange: (e) => setSearch(e.target.value),
+                            autoFocus: true
+                        })
+                    )
+                ),
+                React.createElement("div", { className: "flex-1 overflow-y-auto p-2" },
+                    filteredOptions.length === 0 ? 
+                        React.createElement("div", { className: "py-12 text-center text-slate-500 font-medium" }, "Tidak ada toko yang cocok dengan pencarian.") :
+                        React.createElement("div", { className: "grid gap-1" },
+                            filteredOptions.map((opt, i) => {
+                                const isSeparator = opt.disabled && String(opt.label).includes('---');
+                                if (isSeparator) {
+                                    return React.createElement("div", { key: i, className: "px-4 py-3 mt-2 text-xs font-black uppercase tracking-widest text-slate-400 text-center" }, opt.label.replace(/-/g, ''));
+                                }
+                                return React.createElement("button", {
+                                    key: opt.value || i,
+                                    type: "button",
+                                    disabled: opt.disabled,
+                                    onClick: () => {
+                                        onChange(opt.value);
+                                        setOpen(false);
+                                    },
+                                    className: cx("w-full text-left px-4 py-3.5 rounded-xl text-[15px] transition-colors", 
+                                        opt.value === value ? "bg-audit-primary text-white font-black shadow-md" : "hover:bg-slate-50 font-bold text-audit-ink",
+                                        opt.disabled ? "opacity-50 cursor-not-allowed" : ""
+                                    )
+                                }, opt.label)
+                            })
+                        )
+                )
+            )
+        ) : null
+    );
+}
 function NewVisitModal({ open, onClose, onCreate }) {
     const [bestieName, setBestieName] = useState('');
     const [storeName, setStoreName] = useState('');
@@ -4232,7 +4316,7 @@ function NewVisitModal({ open, onClose, onCreate }) {
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "grid gap-4" },
                 React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true }),
-                React.createElement(SelectField, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", icon: "store", required: !manualOpen, disabled: manualOpen }),
+                React.createElement(StoreSearchSelect, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", disabled: manualOpen }),
                 React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
                     React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900", onClick: () => setManualOpen((state) => !state) },
                         React.createElement("span", null, "Input store manual"),
