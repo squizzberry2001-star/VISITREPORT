@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-add-off-schedule-badge-v29';
-const CACHE_NAME = `bestie-visit-revamp281-add-off-schedule-badge-v29`;
+const APP_VERSION = 'revamp281-schedule-no-location-v30';
+const CACHE_NAME = `bestie-visit-revamp281-schedule-no-location-v30`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
