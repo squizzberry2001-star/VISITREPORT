@@ -3803,21 +3803,26 @@ function LeaderboardItem({ lb, idx }) {
 
     return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
         React.createElement("div", { 
-            className: "flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer text-audit-ink select-none gap-3 sm:gap-4", 
+            className: "flex flex-col p-4 cursor-pointer text-audit-ink select-none gap-4", 
             onClick: () => setExpanded(!expanded) 
         },
-            // Left side: Avatar + Info
-            React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
-                React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
-                React.createElement("div", { className: "min-w-0 flex-1" },
-                    React.createElement("h4", { className: "font-bold text-sm text-audit-ink truncate flex items-center gap-2" }, lb.name, idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null),
-                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
+            // Top side: Avatar + Info + Toggle
+            React.createElement("div", { className: "flex items-start justify-between w-full" },
+                React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
+                    React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
+                    React.createElement("div", { className: "min-w-0 flex-1" },
+                        React.createElement("h4", { className: "font-bold text-sm text-audit-ink truncate flex items-center gap-2" }, lb.name, idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null),
+                        React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
+                    )
+                ),
+                React.createElement("button", { className: `w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 shrink-0 ml-2 mt-1 ${expanded ? 'rotate-180' : ''}` },
+                    React.createElement(Icon, { name: "chevron-down", className: "w-4 h-4" })
                 )
             ),
-            // Right side: Badges + Score + Toggle
-            React.createElement("div", { className: "flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto ml-12 sm:ml-0" },
+            // Bottom side: Badges + Score
+            React.createElement("div", { className: "flex items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100" },
                 // Badges W/M/Y
-                React.createElement("div", { className: "flex items-center gap-1.5" },
+                React.createElement("div", { className: "flex items-center gap-2" },
                     React.createElement("div", { className: "flex flex-col items-center bg-slate-50 rounded-md px-2 py-0.5 border border-slate-100", title: "Kunjungan Minggu Ini" },
                         React.createElement("span", { className: "text-[8px] font-bold text-slate-400 uppercase" }, "Week"),
                         React.createElement("span", { className: "text-[11px] font-black text-slate-700" }, lb.rawWeekly || 0)
@@ -3832,15 +3837,14 @@ function LeaderboardItem({ lb, idx }) {
                     )
                 ),
                 // Main Score
-                React.createElement("div", { className: "text-right border-l border-slate-100 pl-3 flex-1 sm:flex-none flex justify-end" },
-                    React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
-                        React.createElement("span", { className: "text-xl font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
-                        React.createElement("span", { className: "text-xs font-bold text-slate-400" }, "/", lb.totalAssigned)
-                    ),
-                    React.createElement("p", { className: "text-[9px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400" }, "Toko/Bulan")
-                ),
-                React.createElement("button", { className: `w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 shrink-0 ${expanded ? 'rotate-180' : ''}` },
-                    React.createElement(Icon, { name: "chevron-down", className: "w-4 h-4" })
+                React.createElement("div", { className: "text-right flex-1 flex justify-end items-center" },
+                    React.createElement("div", { className: "flex flex-col items-end" },
+                        React.createElement("div", { className: "flex items-baseline gap-1" },
+                            React.createElement("span", { className: "text-lg font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
+                            React.createElement("span", { className: "text-[10px] font-bold text-slate-400" }, "/", lb.totalAssigned)
+                        ),
+                        React.createElement("p", { className: "text-[8px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400" }, "Toko/Bulan")
+                    )
                 )
             )
         ),
@@ -4583,15 +4587,15 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
     return (React.createElement("main", { className: "dashboard-page w-full min-h-screen flex flex-col bg-slate-50 relative" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.2);transform:translateY(0)}50%{box-shadow:0 0 0 10px rgba(37,99,235,0);transform:translateY(-2px)}}`),
         React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-200/50" },
-            React.createElement("div", { className: "flex items-center justify-between gap-4 w-full px-4 py-3 md:px-8 md:py-4" },
-                React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
-                    React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-900 md:text-2xl" }, "Regional Bestie Visit"),
-                    React.createElement("p", { className: "mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400" }, "Dashboard")),
+            React.createElement("div", { className: "flex items-center justify-between gap-4 w-full px-3 py-2 md:px-8 md:py-3" },
+                React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left", title: "Refresh Dashboard" },
+                    React.createElement("h1", { className: "text-lg font-black tracking-tight text-slate-900 md:text-xl" }, "Regional Bestie Visit"),
+                    React.createElement("p", { className: "text-[9px] font-bold uppercase tracking-widest text-slate-400 hidden md:block" }, "Dashboard")),
                 React.createElement("div", { className: "home-header-actions history-sync-wrap flex shrink-0 items-center gap-2" },
-                    React.createElement("button", { type: "button", className: cx("home-notification-top-button", rbvProgressNotificationEnabled() && "is-active", notificationBusy && "is-busy"), onClick: handleEnableProgressNotification, disabled: notificationBusy, "aria-label": "Aktifkan pengingat otomatis progress", title: "Pengingat Otomatis 4 Jam" },
+                    React.createElement("button", { type: "button", className: cx("home-notification-top-button", rbvProgressNotificationEnabled() && "is-active", notificationBusy && "is-busy"), onClick: handleEnableProgressNotification, disabled: notificationBusy, title: "Aktifkan Pengingat Otomatis 4 Jam", "aria-label": "Aktifkan pengingat otomatis progress" },
                         notificationBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "bell", className: "h-4 w-4" }),
                         React.createElement("span", { className: "home-notification-dot", "aria-hidden": "true" }),
-                        React.createElement("small", { className: "home-notification-status" }, notificationMessage)))),
+                        React.createElement("small", { className: "home-notification-status hidden sm:block" }, notificationMessage)))),
             React.createElement("div", { className: "mt-3", "data-build": "revamp237-redmi-restore-native-picker" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "restore-file-input-fallback", onChange: handleRestoreFile, tabIndex: -1, "aria-hidden": "true" }),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
