@@ -101,22 +101,24 @@ img { max-width: 100%; display: block; }
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, .88);
-  border: 1px solid rgba(226, 232, 240, .9);
-  box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
-  backdrop-filter: blur(16px);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+  border: 1px solid rgba(255, 255, 255, 1);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
 }
 
 .surface-card {
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  background: linear-gradient(160deg, #ffffff, #fdfdfd);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1);
   border-radius: 24px;
-  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .surface-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  transform: translateY(-3px) scale(1.005);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+  border-color: rgba(203, 213, 225, 0.9);
 }
 
 .focus-ring:focus-visible,
@@ -131,18 +133,23 @@ textarea:focus-visible {
 
 .form-control {
   width: 100%;
-  min-height: 46px;
+  min-height: 48px;
   border-radius: 16px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
   color: #0f172a;
-  padding: 11px 14px;
-  transition: border-color .18s var(--ease), box-shadow .18s var(--ease), background-color .18s var(--ease);
+  padding: 12px 16px;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.02);
 }
-.form-control:hover { border-color: #94a3b8; }
+.form-control:hover { 
+  border-color: #cbd5e1; 
+  background: #ffffff;
+}
 .form-control:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+  background: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), inset 0 1px 2px rgba(15, 23, 42, 0.02);
   outline: none;
 }
 .form-control::placeholder { color: #64748b; }
@@ -236,11 +243,22 @@ textarea.form-control,
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .photo-frame {
-  border: 1px dashed #94a3b8;
-  background: linear-gradient(135deg, #f8fafc, #ecfeff);
+  border: 2px dashed #cbd5e1;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.8));
   min-height: 176px;
+  border-radius: 20px;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
-.photo-frame.has-image { border-style: solid; background: #0f172a; }
+.photo-frame:hover {
+  border-color: #94a3b8;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 1), rgba(241, 245, 249, 1));
+}
+.photo-frame.has-image { 
+  border-style: solid; 
+  border-width: 1px;
+  border-color: rgba(15, 23, 42, 0.1);
+  background: #0f172a; 
+}
 .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
 
 .mobile-bottom-bar {
@@ -6878,16 +6896,17 @@ body.rbv-keyboard-visible .evidence-floating-capture {
 .analytics-metric-card {
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 1.5rem;
-  background: #fff;
-  border-radius: 24px;
-  border: 1px solid rgba(226, 232, 240, 0.7);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  padding: 1.5rem;
+  background: linear-gradient(145deg, #ffffff, #fdfdfd);
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .analytics-metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1);
+  border-color: rgba(203, 213, 225, 0.8);
 }
 .analytics-metric-icon {
   width: 44px;

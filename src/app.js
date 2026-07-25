@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-fullcanvas-v54';
+const APP_BUILD_VERSION = 'revamp281-visual-polish-v55';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3352,8 +3352,8 @@ function InstallGuideModal({ open, onClose, deferredPrompt, onPromptUsed }) {
         return null;
     const canAutoInstall = Boolean(deferredPrompt) && !isIos;
     const guideItems = guideMode === 'mobile' ? mobileGuides : desktopGuides;
-    return (React.createElement("div", { className: "fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[30px] md:p-6" },
+    return (React.createElement("div", { className: "fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm lg:place-items-center lg:p-6", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl lg:max-w-2xl lg:rounded-[30px] lg:p-6" },
             React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
                 React.createElement("div", { className: "flex items-center gap-3" },
                     React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
@@ -8733,9 +8733,9 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime';
     const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
-    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7" },
-            React.createElement("div", { className: "mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between" },
+    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm lg:p-6", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl lg:p-7" },
+            React.createElement("div", { className: "mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                 React.createElement("div", null,
                     React.createElement("div", { className: "flex flex-wrap items-center gap-2" },
                         React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Panel Rahasia Admin"),

@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-fullcanvas-v54';
-const CACHE_NAME = `bestie-visit-revamp281-fullcanvas-v54`;
+const APP_VERSION = 'revamp281-visual-polish-v55';
+const CACHE_NAME = `bestie-visit-revamp281-visual-polish-v55`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
