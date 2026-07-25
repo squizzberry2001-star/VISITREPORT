@@ -3910,14 +3910,8 @@ function VisitMap({ rows }) {
         }
     }, [rows]);
 
-    return React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8 bg-white border border-slate-200 shadow-sm" },
-        React.createElement("div", { className: "analytics-card-large-header pb-3" },
-            React.createElement("h3", { className: "analytics-card-large-title text-slate-700" }, "Peta Kunjungan Live (GIS)"),
-            React.createElement("div", { className: "p-2 bg-slate-100 rounded-xl text-slate-500" }, React.createElement(Icon, { name: "map", className: "w-5 h-5" }))
-        ),
-        React.createElement("div", { ref: mapRef, className: "w-full rounded-xl z-0", style: { height: '350px' } },
-            (!rows || rows.filter(r => r.location).length === 0) && React.createElement("div", { className: "w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium z-10 relative rounded-xl" }, "Belum ada kunjungan dengan data koordinat lokasi.")
-        )
+    return React.createElement("div", { ref: mapRef, className: "w-full rounded-2xl z-0 border border-slate-200 overflow-hidden", style: { height: '350px' } },
+        (!rows || rows.filter(r => r.location).length === 0) && React.createElement("div", { className: "w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium z-10 relative" }, "Belum ada kunjungan dengan data koordinat lokasi.")
     );
 }
 
@@ -3982,7 +3976,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }));
                 }
                 
-                // Local history metrics
                 const localVisits = history || [];
                 const datasetToUse = rows.length > 0 ? rows : localVisits;
                 
@@ -4002,14 +3995,16 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 let emailSentCount = 0;
                 let emailFeedbackCount = 0;
                 
-                // Reset map with Sets for tracking unique weekly visits
                 const bestieMap = {};
                 BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { name, totalVisits: 0, totalAssigned: 0, uniqueWeeklyVisits: new Set(), visitHistory: [] });
                 BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
                 const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
+                const allMonths = [];
+                for (let i = 5; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    allMonths.push(d.toLocaleString('id-ID', { month: 'short', year: '2-digit' }));
+                }
 
                 const getMonday = (d) => {
                     const date = new Date(d);
@@ -4052,7 +4047,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 });
                 
                 const isRemoteDb = rows.length > 0;
-                
                 datasetToUse.forEach((v, idx) => {
                     if (v.isPdfDownloaded || v.isEmailSent || v.is_pdf_downloaded || v.is_email_sent || isRemoteDb) {
                         localCompleted++;
@@ -4127,163 +4121,176 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
             } finally {
                 if (!cancelled) {
                     setLoading(false);
-                    // Trigger animation after render
                     setTimeout(() => setMounted(true), 100);
                 }
             }
         }
         loadData();
         return () => { cancelled = true; };
-    }, [history]);
+    }, [history, scheduleCfg, syncTrigger]);
 
     if (loading) {
-        return React.createElement("div", { className: "py-24 w-full flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-3xl border border-slate-100" },
-            React.createElement("span", { className: "loading-spinner inline-block mb-4 scale-125" }),
-            React.createElement("p", { className: "font-bold tracking-wide text-lg" }, "Menganalisa Data Kunjungan...")
+        return React.createElement("div", { className: "py-32 w-full flex flex-col items-center justify-center bg-slate-50/50" },
+            React.createElement("div", { className: "w-12 h-12 border-4 border-audit-primary border-t-transparent rounded-full animate-spin mb-4 shadow-lg shadow-audit-primary/20" }),
+            React.createElement("p", { className: "font-bold tracking-widest text-slate-400 text-sm uppercase" }, "Memuat Analisis & Tren...")
         );
     }
     
-    // Coverage percentage
     const coveragePercent = data?.totalMasterStores > 0 ? ((data.globalStoreCount / data.totalMasterStores) * 100).toFixed(1) : 0;
     const feedbackPercent = data?.emailSentCount > 0 ? ((data.emailFeedbackCount / data.emailSentCount) * 100).toFixed(1) : 0;
 
-    return React.createElement("div", { className: "analytics-view-container w-full px-4 md:px-8 lg:px-12 py-6 flex-1 overflow-y-auto min-h-0 pb-32" },
-        React.createElement("div", { className: "mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" },
-            React.createElement("div", null,
-                React.createElement("h2", { className: "text-2xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik"),
-                React.createElement("p", { className: "mt-1 text-sm font-semibold text-slate-500" }, "Kinerja Visit & Kepatuhan")
-            ),
-            React.createElement(Button, { variant: "secondary", onClick: () => { setMounted(false); setSyncTrigger(t => t + 1); }, disabled: loading, icon: "refresh" }, loading ? "Menyinkronkan..." : "Tarik Data Terbaru")
-        ),
+    return React.createElement("div", { className: "analytics-view-container w-full px-4 md:px-8 lg:px-12 py-8 flex-1 overflow-y-auto pb-32 bg-slate-50/30" },
         
-        React.createElement("div", { className: "analytics-grid-4" },
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-emerald-500/10 text-emerald-600" },
-                    React.createElement(Icon, { name: "check", className: "w-5 h-5" })
+        // Brand New Header
+        React.createElement("div", { className: "mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6" },
+            React.createElement("div", { className: "flex items-center gap-4" },
+                React.createElement("div", { className: "w-12 h-12 bg-gradient-to-br from-audit-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-audit-primary/30" },
+                    React.createElement(Icon, { name: "bar-chart", className: "w-6 h-6 text-white" })
                 ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Report Selesai (PDF/Email)"),
-                React.createElement("p", { className: "analytics-metric-value" }, data?.localCompleted || 0)
+                React.createElement("div", null,
+                    React.createElement("h2", { className: "text-3xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik"),
+                    React.createElement("p", { className: "mt-1 text-sm font-semibold text-slate-500 uppercase tracking-wider" }, "Monitoring Kinerja & Kepatuhan")
+                )
             ),
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-sky-500/10 text-sky-600" },
-                    React.createElement(Icon, { name: "send", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Email Terkirim"),
-                React.createElement("p", { className: "analytics-metric-value" }, data?.emailSentCount || 0)
-            ),
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-amber-500/10 text-amber-600" },
-                    React.createElement(Icon, { name: "history", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Email Di-Feedback"),
-                React.createElement("p", { className: "analytics-metric-value" }, data?.emailFeedbackCount || 0)
-            ),
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-indigo-500/10 text-indigo-600" },
-                    React.createElement(Icon, { name: "store", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Coverage Global"),
-                React.createElement("p", { className: "analytics-metric-value" }, `${coveragePercent}%`)
+            React.createElement("button", { 
+                onClick: () => { setMounted(false); setSyncTrigger(t => t + 1); }, 
+                disabled: loading, 
+                className: "flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+            }, 
+                React.createElement(Icon, { name: "refresh", className: `w-4 h-4 ${loading ? 'animate-spin' : ''}` }), 
+                "Refresh Data"
             )
         ),
         
-        features.map && React.createElement(VisitMap, { rows: data?.rows || [] }),
-        features.ai && React.createElement(AiInsightsPanel, { data: data }),
-        features.trend && React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8 " + (features.trend ? '' : 'hidden') },
-                React.createElement("div", { className: "analytics-card-large-header" },
-                    React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (QSC vs OPI)"),
-                React.createElement("div", { className: "p-2 bg-audit-primary/10 rounded-xl text-audit-primary" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
+        // Brand New Metric Grid
+        React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" },
+            React.createElement("div", { className: "bg-white p-5 rounded-3xl border border-emerald-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group" },
+                React.createElement("div", { className: "absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform" }),
+                React.createElement("div", { className: "relative z-10" },
+                    React.createElement("div", { className: "w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4" }, React.createElement(Icon, { name: "check", className: "w-5 h-5" })),
+                    React.createElement("p", { className: "text-3xl font-black text-slate-900 mb-1" }, data?.localCompleted || 0),
+                    React.createElement("p", { className: "text-[11px] font-bold text-slate-500 uppercase tracking-wider" }, "Report Selesai")
+                )
             ),
-            React.createElement("div", { className: "w-full h-[250px]" },
-                (!data?.allMonths || data?.allMonths.length === 0) ? 
-                    React.createElement("div", { className: "h-full flex flex-col items-center justify-center text-audit-ink opacity-50" },
-                        React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
-                    ) :
-                    React.createElement(SimpleChart, { 
-                        type: 'bar',
-                        data: {
-                            labels: data.allMonths,
-                            datasets: [
-                                {
-                                    label: 'QSC',
-                                    data: data.allMonths.map(m => data.qscByMonth[m] || 0),
-                                    backgroundColor: '#10b981',
-                                    borderRadius: 4
+            React.createElement("div", { className: "bg-white p-5 rounded-3xl border border-sky-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group" },
+                React.createElement("div", { className: "absolute -right-4 -top-4 w-24 h-24 bg-sky-50 rounded-full group-hover:scale-110 transition-transform" }),
+                React.createElement("div", { className: "relative z-10" },
+                    React.createElement("div", { className: "w-10 h-10 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center mb-4" }, React.createElement(Icon, { name: "send", className: "w-5 h-5" })),
+                    React.createElement("p", { className: "text-3xl font-black text-slate-900 mb-1" }, data?.emailSentCount || 0),
+                    React.createElement("p", { className: "text-[11px] font-bold text-slate-500 uppercase tracking-wider" }, "Email Terkirim")
+                )
+            ),
+            React.createElement("div", { className: "bg-white p-5 rounded-3xl border border-amber-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group" },
+                React.createElement("div", { className: "absolute -right-4 -top-4 w-24 h-24 bg-amber-50 rounded-full group-hover:scale-110 transition-transform" }),
+                React.createElement("div", { className: "relative z-10" },
+                    React.createElement("div", { className: "w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4" }, React.createElement(Icon, { name: "history", className: "w-5 h-5" })),
+                    React.createElement("p", { className: "text-3xl font-black text-slate-900 mb-1" }, data?.emailFeedbackCount || 0),
+                    React.createElement("p", { className: "text-[11px] font-bold text-slate-500 uppercase tracking-wider" }, "Di-Feedback")
+                )
+            ),
+            React.createElement("div", { className: "bg-gradient-to-br from-slate-900 to-audit-ink p-5 rounded-3xl shadow-lg relative overflow-hidden group" },
+                React.createElement("div", { className: "absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full group-hover:scale-110 transition-transform" }),
+                React.createElement("div", { className: "relative z-10 flex flex-col h-full justify-between" },
+                    React.createElement("div", { className: "w-10 h-10 bg-white/10 text-emerald-400 rounded-xl flex items-center justify-center mb-4 backdrop-blur-sm" }, React.createElement(Icon, { name: "store", className: "w-5 h-5" })),
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-3xl font-black text-white mb-1" }, `${coveragePercent}%`),
+                        React.createElement("p", { className: "text-[11px] font-bold text-slate-400 uppercase tracking-wider" }, "Coverage Global")
+                    )
+                )
+            )
+        ),
+        
+        // Main Content Grid
+        React.createElement("div", { className: "grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8" },
+            
+            // Left Column: Trends & Map
+            React.createElement("div", { className: "xl:col-span-2 space-y-6" },
+                features.trend && React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+                        React.createElement("h3", { className: "text-xl font-black text-slate-800" }, "Tren Temuan Historis"),
+                        React.createElement("div", { className: "px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500" }, "6 Bulan Terakhir")
+                    ),
+                    React.createElement("div", { className: "w-full h-[280px]" },
+                        (!data?.allMonths || data?.allMonths.length === 0) ? 
+                            React.createElement("div", { className: "h-full flex items-center justify-center text-slate-400 font-medium" }, "Tidak ada data tren") :
+                            React.createElement(SimpleChart, { 
+                                type: 'bar',
+                                data: {
+                                    labels: data.allMonths,
+                                    datasets: [
+                                        {
+                                            label: 'QSC Findings',
+                                            data: data.allMonths.map(m => data.qscByMonth[m] || 0),
+                                            backgroundColor: '#10b981',
+                                            borderRadius: 6
+                                        },
+                                        {
+                                            label: 'OPI Findings',
+                                            data: data.allMonths.map(m => data.opiByMonth[m] || 0),
+                                            backgroundColor: '#0ea5e9',
+                                            borderRadius: 6
+                                        }
+                                    ]
                                 },
-                                {
-                                    label: 'OPI Project',
-                                    data: data.allMonths.map(m => data.opiByMonth[m] || 0),
-                                    backgroundColor: '#0ea5e9',
-                                    borderRadius: 4
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { position: 'top' } },
+                                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
                                 }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'top' }
-                            },
-                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                        }
-                    })
-            ),
-            (data?.topQSC?.length > 0 || data?.topOPI?.length > 0) && React.createElement("div", { className: "mt-6 border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-4" },
-                React.createElement("div", null, 
-                    React.createElement("h4", { className: "text-xs font-black uppercase text-emerald-600 mb-2 flex items-center gap-1.5" }, React.createElement(Icon, { name: "spark", className: "w-3.5 h-3.5" }), "Top QSC Findings"),
-                    React.createElement("ul", { className: "space-y-1.5" },
-                        (data?.topQSC || []).map((item, i) => React.createElement("li", { key: i, className: "text-sm text-slate-700 flex justify-between bg-emerald-50/50 px-2.5 py-1.5 rounded-lg" }, 
-                            React.createElement("span", { className: "capitalize truncate pr-2 font-medium" }, item.keyword), 
-                            React.createElement("strong", { className: "text-emerald-700" }, item.count)
-                        ))
+                            })
                     )
                 ),
-                React.createElement("div", null, 
-                    React.createElement("h4", { className: "text-xs font-black uppercase text-sky-600 mb-2 flex items-center gap-1.5" }, React.createElement(Icon, { name: "spark", className: "w-3.5 h-3.5" }), "Top OPI Project Findings"),
-                    React.createElement("ul", { className: "space-y-1.5" },
-                        (data?.topOPI || []).map((item, i) => React.createElement("li", { key: i, className: "text-sm text-slate-700 flex justify-between bg-sky-50/50 px-2.5 py-1.5 rounded-lg" }, 
-                            React.createElement("span", { className: "capitalize truncate pr-2 font-medium" }, item.keyword), 
-                            React.createElement("strong", { className: "text-sky-700" }, item.count)
-                        ))
-                    )
-                )
-            )
-        ),
-        React.createElement("div", { className: "analytics-grid-circular" },
-            React.createElement("div", { className: "analytics-card-large py-6 sm:py-8" },
-                React.createElement("div", { className: "chart-flex-row" },
-                    React.createElement("div", { className: "chart-circle-wrap text-emerald-500" },
-                        React.createElement("svg", { viewBox: "0 0 36 36" },
-                            React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? coveragePercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
-                        ),
-                        React.createElement("span", { className: "chart-circle-text" }, `${Math.round(coveragePercent)}%`)
+                
+                features.map && React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+                        React.createElement("h3", { className: "text-xl font-black text-slate-800" }, "Distribusi Lokasi (GIS)"),
+                        React.createElement("div", { className: "w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center" }, React.createElement(Icon, { name: "map", className: "w-5 h-5" }))
                     ),
-                    React.createElement("div", { className: "chart-flex-col" },
-                        React.createElement("h3", { className: "analytics-card-large-title" }, "Coverage Global (Semua Bestie)"),
-                        React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium leading-snug" }, `${data?.globalStoreCount || 0} dari ${data?.totalMasterStores || 0} toko dikunjungi`)
-                    )
+                    React.createElement(VisitMap, { rows: data?.rows || [] })
                 )
             ),
-            React.createElement("div", { className: "analytics-card-large py-6 sm:py-8" },
-                React.createElement("div", { className: "chart-flex-row" },
-                    React.createElement("div", { className: "chart-circle-wrap text-sky-500" },
-                        React.createElement("svg", { viewBox: "0 0 36 36" },
-                            React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? feedbackPercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
+            
+            // Right Column: Top Findings & AI
+            React.createElement("div", { className: "space-y-6" },
+                features.ai && React.createElement(AiInsightsPanel, { data: data }),
+                
+                React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("h3", { className: "text-xl font-black text-slate-800 mb-6" }, "Isu Terbanyak"),
+                    
+                    React.createElement("div", { className: "mb-6" },
+                        React.createElement("h4", { className: "text-xs font-black uppercase text-emerald-600 mb-3 tracking-widest flex items-center gap-2" }, 
+                            React.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-500" }), "QSC Issues"
                         ),
-                        React.createElement("span", { className: "chart-circle-text" }, `${Math.round(feedbackPercent)}%`)
+                        React.createElement("ul", { className: "space-y-2" },
+                            (!data?.topQSC || data.topQSC.length === 0) ? React.createElement("li", { className: "text-sm text-slate-400 italic" }, "Belum ada temuan.") :
+                            data.topQSC.map((item, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100" },
+                                React.createElement("span", { className: "text-sm font-semibold text-slate-700 capitalize truncate pr-4" }, item.keyword),
+                                React.createElement("span", { className: "w-7 h-7 bg-emerald-200 text-emerald-800 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm" }, item.count)
+                            ))
+                        )
                     ),
-                    React.createElement("div", { className: "chart-flex-col" },
-                        React.createElement("h3", { className: "analytics-card-large-title" }, "Email Feedback Rate"),
-                        React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium leading-snug" }, `${data?.emailFeedbackCount || 0} dari ${data?.emailSentCount || 0} email mendapat balasan`)
+                    
+                    React.createElement("div", null,
+                        React.createElement("h4", { className: "text-xs font-black uppercase text-sky-600 mb-3 tracking-widest flex items-center gap-2" }, 
+                            React.createElement("span", { className: "w-2 h-2 rounded-full bg-sky-500" }), "OPI Issues"
+                        ),
+                        React.createElement("ul", { className: "space-y-2" },
+                            (!data?.topOPI || data.topOPI.length === 0) ? React.createElement("li", { className: "text-sm text-slate-400 italic" }, "Belum ada temuan.") :
+                            data.topOPI.map((item, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-sky-50/50 p-3 rounded-2xl border border-sky-100" },
+                                React.createElement("span", { className: "text-sm font-semibold text-slate-700 capitalize truncate pr-4" }, item.keyword),
+                                React.createElement("span", { className: "w-7 h-7 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm" }, item.count)
+                            ))
+                        )
                     )
                 )
             )
         ),
         
-        // Leaderboard Bestie
-        features?.leaderboard !== false ? React.createElement("div", { className: "mt-6 sm:mt-8" },
-            React.createElement("h3", { className: "text-xl font-black text-audit-ink mb-4 px-1" }, "Leaderboard Kunjungan Bestie"),
-            React.createElement("div", { className: "grid gap-3" },
+        // Leaderboard
+        features?.leaderboard !== false ? React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
+            React.createElement("h3", { className: "text-2xl font-black text-slate-800 mb-6" }, "Leaderboard Kinerja Bestie"),
+            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" },
                 data?.leaderboard?.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx }))
             )
         ) : null
