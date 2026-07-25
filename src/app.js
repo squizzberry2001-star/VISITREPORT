@@ -1,4 +1,3 @@
-import { jsxDEV as _jsxDEV, Fragment as _Fragment } from "react/jsx-dev-runtime";
 const {
   useEffect,
   useMemo,
@@ -750,303 +749,251 @@ function Icon({
   strokeWidth = 2
 }) {
   const paths = {
-    home: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M3 10.5 12 3l9 7.5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M5 9.5V21h14V9.5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M9 21v-6h6v6"
-      }, void 0, false)]
-    }, void 0, true),
-    clipboard: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M9 3h6l1 2h3v16H5V5h3l1-2Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M9 8h6"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 13h8"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 17h5"
-      }, void 0, false)]
-    }, void 0, true),
-    camera: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M4 8h3l2-3h6l2 3h3v11H4V8Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("circle", {
-        cx: "12",
-        cy: "13.5",
-        r: "3.5"
-      }, void 0, false)]
-    }, void 0, true),
-    gallery: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("rect", {
-        x: "4",
-        y: "5",
-        width: "16",
-        height: "14",
-        rx: "2"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m7 16 3.5-3.5 2.5 2.5 2-2 2 3"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("circle", {
-        cx: "9",
-        cy: "9",
-        r: "1.2"
-      }, void 0, false)]
-    }, void 0, true),
-    marker: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("circle", {
-        cx: "12",
-        cy: "12",
-        r: "7"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M12 8v8"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 12h8"
-      }, void 0, false)]
-    }, void 0, true),
-    crop: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M6 3v12h12"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M3 6h12v12"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M18 15v6"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M15 18h6"
-      }, void 0, false)]
-    }, void 0, true),
-    trash: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M4 7h16"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M9 7V4h6v3"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M7 7l1 14h8l1-14"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M10 11v6"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M14 11v6"
-      }, void 0, false)]
-    }, void 0, true),
-    pdf: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M6 3h8l4 4v14H6V3Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M14 3v5h5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 15h8"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 18h5"
-      }, void 0, false)]
-    }, void 0, true),
-    excel: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M4 5h16v14H4V5Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 5v14"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 10h16"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 14h16"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m11 12 4 4"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m15 12-4 4"
-      }, void 0, false)]
-    }, void 0, true),
-    plus: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M12 5v14"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M5 12h14"
-      }, void 0, false)]
-    }, void 0, true),
-    left: /*#__PURE__*/_jsxDEV("path", {
+    home: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M3 10.5 12 3l9 7.5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5 9.5V21h14V9.5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 21v-6h6v6"
+    })),
+    clipboard: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M9 3h6l1 2h3v16H5V5h3l1-2Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 8h6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 13h8"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 17h5"
+    })),
+    camera: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 8h3l2-3h6l2 3h3v11H4V8Z"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "13.5",
+      r: "3.5"
+    })),
+    gallery: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "4",
+      y: "5",
+      width: "16",
+      height: "14",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m7 16 3.5-3.5 2.5 2.5 2-2 2 3"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "9",
+      cy: "9",
+      r: "1.2"
+    })),
+    marker: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 8v8"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 12h8"
+    })),
+    crop: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M6 3v12h12"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M3 6h12v12"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18 15v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M15 18h6"
+    })),
+    trash: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 7h16"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 7V4h6v3"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M7 7l1 14h8l1-14"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M10 11v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M14 11v6"
+    })),
+    pdf: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M6 3h8l4 4v14H6V3Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M14 3v5h5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 15h8"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 18h5"
+    })),
+    excel: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 5h16v14H4V5Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 5v14"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 10h16"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 14h16"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m11 12 4 4"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m15 12-4 4"
+    })),
+    plus: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M12 5v14"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5 12h14"
+    })),
+    left: /*#__PURE__*/React.createElement("path", {
       d: "m15 18-6-6 6-6"
-    }, void 0, false),
-    right: /*#__PURE__*/_jsxDEV("path", {
+    }),
+    right: /*#__PURE__*/React.createElement("path", {
       d: "m9 18 6-6-6-6"
-    }, void 0, false),
-    user: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("circle", {
-        cx: "12",
-        cy: "8",
-        r: "4"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"
-      }, void 0, false)]
-    }, void 0, true),
-    store: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M4 9h16l-1.5-5h-13L4 9Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M5 9v12h14V9"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M9 21v-6h6v6"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 9c.8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0"
-      }, void 0, false)]
-    }, void 0, true),
-    calendar: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("rect", {
-        x: "4",
-        y: "5",
-        width: "16",
-        height: "16",
-        rx: "2"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M8 3v4"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M16 3v4"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 10h16"
-      }, void 0, false)]
-    }, void 0, true),
-    spark: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"
-      }, void 0, false)]
-    }, void 0, true),
-    image: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("rect", {
-        x: "3",
-        y: "5",
-        width: "18",
-        height: "14",
-        rx: "2"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m4 16 5-5 4 4 2-2 5 5"
-      }, void 0, false)]
-    }, void 0, true),
-    shield: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m9 12 2 2 4-5"
-      }, void 0, false)]
-    }, void 0, true),
-    download: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M12 3v12"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m7 10 5 5 5-5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M5 21h14"
-      }, void 0, false)]
-    }, void 0, true),
-    history: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M3 12a9 9 0 1 0 3-6.7"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M3 4v5h5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M12 7v5l3 2"
-      }, void 0, false)]
-    }, void 0, true),
-    upload: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M12 21V9"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m7 14 5-5 5 5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M5 3h14"
-      }, void 0, false)]
-    }, void 0, true),
-    eye: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("circle", {
-        cx: "12",
-        cy: "12",
-        r: "3"
-      }, void 0, false)]
-    }, void 0, true),
-    eraser: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "m3 17 9-9 6 6-6 6H7l-4-3Z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m14 6 4-4 4 4-4 4"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M12 20h9"
-      }, void 0, false)]
-    }, void 0, true),
-    close: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M6 6l12 12"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M18 6 6 18"
-      }, void 0, false)]
-    }, void 0, true),
-    search: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("circle", {
-        cx: "11",
-        cy: "11",
-        r: "7"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "m20 20-3.5-3.5"
-      }, void 0, false)]
-    }, void 0, true),
-    menu: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M4 6h16"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 12h16"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 18h16"
-      }, void 0, false)]
-    }, void 0, true),
-    qr: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("rect", {
-        x: "4",
-        y: "4",
-        width: "6",
-        height: "6",
-        rx: "1"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("rect", {
-        x: "14",
-        y: "4",
-        width: "6",
-        height: "6",
-        rx: "1"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("rect", {
-        x: "4",
-        y: "14",
-        width: "6",
-        height: "6",
-        rx: "1"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M14 14h2v2h-2z"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M18 14h2v6h-6v-2h4z"
-      }, void 0, false)]
-    }, void 0, true),
-    check: /*#__PURE__*/_jsxDEV("path", {
+    }),
+    user: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "8",
+      r: "4"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"
+    })),
+    store: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 9h16l-1.5-5h-13L4 9Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5 9v12h14V9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 21v-6h6v6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 9c.8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0 .8 2 3.2 2 4 0"
+    })),
+    calendar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "4",
+      y: "5",
+      width: "16",
+      height: "16",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 3v4"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M16 3v4"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 10h16"
+    })),
+    spark: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"
+    })),
+    image: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "3",
+      y: "5",
+      width: "18",
+      height: "14",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m4 16 5-5 4 4 2-2 5 5"
+    })),
+    shield: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m9 12 2 2 4-5"
+    })),
+    download: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M12 3v12"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m7 10 5 5 5-5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5 21h14"
+    })),
+    history: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M3 12a9 9 0 1 0 3-6.7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M3 4v5h5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 7v5l3 2"
+    })),
+    upload: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M12 21V9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m7 14 5-5 5 5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5 3h14"
+    })),
+    eye: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "3"
+    })),
+    eraser: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "m3 17 9-9 6 6-6 6H7l-4-3Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m14 6 4-4 4 4-4 4"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 20h9"
+    })),
+    close: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M6 6l12 12"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18 6 6 18"
+    })),
+    search: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "11",
+      cy: "11",
+      r: "7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m20 20-3.5-3.5"
+    })),
+    menu: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 6h16"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 12h16"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 18h16"
+    })),
+    qr: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "4",
+      y: "4",
+      width: "6",
+      height: "6",
+      rx: "1"
+    }), /*#__PURE__*/React.createElement("rect", {
+      x: "14",
+      y: "4",
+      width: "6",
+      height: "6",
+      rx: "1"
+    }), /*#__PURE__*/React.createElement("rect", {
+      x: "4",
+      y: "14",
+      width: "6",
+      height: "6",
+      rx: "1"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M14 14h2v2h-2z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18 14h2v6h-6v-2h4z"
+    })),
+    check: /*#__PURE__*/React.createElement("path", {
       d: "m5 13 4 4L19 7"
-    }, void 0, false),
-    settings: /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV("path", {
-        d: "M4 7h10"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M18 7h2"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("circle", {
-        cx: "16",
-        cy: "7",
-        r: "2"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M4 17h2"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("path", {
-        d: "M10 17h10"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("circle", {
-        cx: "8",
-        cy: "17",
-        r: "2"
-      }, void 0, false)]
-    }, void 0, true)
+    }),
+    settings: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 7h10"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18 7h2"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "16",
+      cy: "7",
+      r: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 17h2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M10 17h10"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "8",
+      cy: "17",
+      r: "2"
+    }))
   };
-  return /*#__PURE__*/_jsxDEV("svg", {
+  return /*#__PURE__*/React.createElement("svg", {
     className: className,
     viewBox: "0 0 24 24",
     fill: "none",
@@ -1054,9 +1001,8 @@ function Icon({
     strokeWidth: strokeWidth,
     strokeLinecap: "round",
     strokeLinejoin: "round",
-    "aria-hidden": "true",
-    children: paths[name] || paths.spark
-  }, void 0, false);
+    "aria-hidden": "true"
+  }, paths[name] || paths.spark);
 }
 function Button({
   variant = 'primary',
@@ -1072,14 +1018,13 @@ function Button({
     danger: 'btn-danger',
     icon: 'btn-icon'
   };
-  return /*#__PURE__*/_jsxDEV("button", {
+  return /*#__PURE__*/React.createElement("button", {
     className: cx(styles[variant] || styles.primary, className),
-    ...props,
-    children: [icon ? /*#__PURE__*/_jsxDEV(Icon, {
-      name: icon,
-      className: "h-5 w-5"
-    }, void 0, false) : null, children]
-  }, void 0, true);
+    ...props
+  }, icon ? /*#__PURE__*/React.createElement(Icon, {
+    name: icon,
+    className: "h-5 w-5"
+  }) : null, children);
 }
 function Badge({
   children,
@@ -1091,10 +1036,9 @@ function Badge({
     warning: 'bg-orange-50 text-orange-800 ring-orange-200',
     dark: 'bg-slate-900 text-white ring-slate-900'
   };
-  return /*#__PURE__*/_jsxDEV("span", {
-    className: cx('inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1', tones[tone]),
-    children: children
-  }, void 0, false);
+  return /*#__PURE__*/React.createElement("span", {
+    className: cx('inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1', tones[tone])
+  }, children);
 }
 function Field({
   label,
@@ -1102,35 +1046,31 @@ function Field({
   children,
   required
 }) {
-  return /*#__PURE__*/_jsxDEV("label", {
-    className: "block",
-    children: [/*#__PURE__*/_jsxDEV("span", {
-      className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800",
-      children: [label, required ? /*#__PURE__*/_jsxDEV("span", {
-        className: "text-rose-600",
-        children: "*"
-      }, void 0, false) : null]
-    }, void 0, true), children, helper ? /*#__PURE__*/_jsxDEV("span", {
-      className: "mt-2 block text-xs leading-5 text-slate-500",
-      children: helper
-    }, void 0, false) : null]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("label", {
+    className: "block"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mb-2 flex items-center gap-1 text-sm font-bold text-slate-800"
+  }, label, required ? /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-600"
+  }, "*") : null), children, helper ? /*#__PURE__*/React.createElement("span", {
+    className: "mt-2 block text-xs leading-5 text-slate-500"
+  }, helper) : null);
 }
 function TextInput(props) {
-  return /*#__PURE__*/_jsxDEV("input", {
+  return /*#__PURE__*/React.createElement("input", {
     className: cx('form-control', props.className),
     ...props
-  }, void 0, false);
+  });
 }
 function DateInput({
   className = '',
   ...props
 }) {
-  return /*#__PURE__*/_jsxDEV("input", {
+  return /*#__PURE__*/React.createElement("input", {
     type: "date",
     className: cx('form-control date-control', className),
     ...props
-  }, void 0, false);
+  });
 }
 function TextArea({
   value,
@@ -1149,7 +1089,7 @@ function TextArea({
   useEffect(() => {
     resize();
   }, [value]);
-  return /*#__PURE__*/_jsxDEV("textarea", {
+  return /*#__PURE__*/React.createElement("textarea", {
     ref: ref,
     className: cx('form-control auto-grow-textarea', className),
     value: value || '',
@@ -1160,7 +1100,7 @@ function TextArea({
     },
     onInput: resize,
     ...props
-  }, void 0, false);
+  });
 }
 function RichTextInput({
   value,
@@ -1293,52 +1233,49 @@ function RichTextInput({
       preventScroll: true
     });
   }
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className),
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      ref: editorRef,
-      className: "rich-editor-input px-3 py-3 text-sm leading-6 text-slate-900 outline-none",
-      style: {
-        minHeight
-      },
-      contentEditable: true,
-      role: "textbox",
-      "aria-multiline": "true",
-      "data-placeholder": placeholder,
-      tabIndex: 0,
-      onClick: focusEditor,
-      onInput: emit,
-      onBlur: emit,
-      onKeyDown: handleKeyDown,
-      suppressContentEditableWarning: true
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2",
-      "aria-label": "Rich text toolbar",
-      children: tools.map(tool => /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        "data-command": tool.command,
-        className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'),
-        onPointerDown: event => {
-          event.preventDefault();
-          command(tool.command);
-        },
-        "aria-label": tool.title,
-        title: tool.title,
-        children: tool.label
-      }, tool.command, false))
-    }, void 0, false)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: cx('rich-editor rounded-2xl border border-slate-200 bg-white', className)
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: editorRef,
+    className: "rich-editor-input px-3 py-3 text-sm leading-6 text-slate-900 outline-none",
+    style: {
+      minHeight
+    },
+    contentEditable: true,
+    role: "textbox",
+    "aria-multiline": "true",
+    "data-placeholder": placeholder,
+    tabIndex: 0,
+    onClick: focusEditor,
+    onInput: emit,
+    onBlur: emit,
+    onKeyDown: handleKeyDown,
+    suppressContentEditableWarning: true
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "rich-toolbar flex flex-wrap gap-1 border-t border-slate-200 p-2",
+    "aria-label": "Rich text toolbar"
+  }, tools.map(tool => /*#__PURE__*/React.createElement("button", {
+    key: tool.command,
+    type: "button",
+    "data-command": tool.command,
+    className: cx('rich-tool-button', tool.className, activeTools[tool.command] && 'active'),
+    onPointerDown: event => {
+      event.preventDefault();
+      command(tool.command);
+    },
+    "aria-label": tool.title,
+    title: tool.title
+  }, tool.label))));
 }
 function SelectInput({
   children,
   className = '',
   ...props
 }) {
-  return /*#__PURE__*/_jsxDEV("select", {
+  return /*#__PURE__*/React.createElement("select", {
     className: cx('form-control appearance-none', className),
-    ...props,
-    children: children
-  }, void 0, false);
+    ...props
+  }, children);
 }
 function SelectField({
   label,
@@ -1353,32 +1290,27 @@ function SelectField({
     label: item,
     value: item
   } : item);
-  return /*#__PURE__*/_jsxDEV(Field, {
+  return /*#__PURE__*/React.createElement(Field, {
     label: label,
-    required: required,
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "select-field-wrap relative",
-      children: [icon ? /*#__PURE__*/_jsxDEV("span", {
-        className: "select-field-icon pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 text-slate-400",
-        children: /*#__PURE__*/_jsxDEV(Icon, {
-          name: icon,
-          className: "h-5 w-5"
-        }, void 0, false)
-      }, void 0, false) : null, /*#__PURE__*/_jsxDEV(SelectInput, {
-        value: value || '',
-        onChange: event => onChange(event.target.value),
-        className: cx('select-control', icon ? 'has-leading-icon' : ''),
-        required: required,
-        children: [/*#__PURE__*/_jsxDEV("option", {
-          value: "",
-          children: placeholder
-        }, void 0, false), normalizedOptions.map(item => /*#__PURE__*/_jsxDEV("option", {
-          value: item.value || item.label,
-          children: item.label
-        }, (item.value || '') + '-' + item.label, false))]
-      }, void 0, true)]
-    }, void 0, true)
-  }, void 0, false);
+    required: required
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "select-field-wrap relative"
+  }, icon ? /*#__PURE__*/React.createElement("span", {
+    className: "select-field-icon pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 text-slate-400"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: icon,
+    className: "h-5 w-5"
+  })) : null, /*#__PURE__*/React.createElement(SelectInput, {
+    value: value || '',
+    onChange: event => onChange(event.target.value),
+    className: cx('select-control', icon ? 'has-leading-icon' : ''),
+    required: required
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, placeholder), normalizedOptions.map(item => /*#__PURE__*/React.createElement("option", {
+    key: (item.value || '') + '-' + item.label,
+    value: item.value || item.label
+  }, item.label)))));
 }
 function Toggle({
   checked,
@@ -1386,21 +1318,18 @@ function Toggle({
   label,
   className = ''
 }) {
-  return /*#__PURE__*/_jsxDEV("button", {
+  return /*#__PURE__*/React.createElement("button", {
     type: "button",
     role: "switch",
     "aria-checked": checked,
     onClick: () => onChange(!checked),
-    className: cx('slide-toggle', checked && 'active', className),
-    children: [label ? /*#__PURE__*/_jsxDEV("span", {
-      className: "slide-toggle-label",
-      children: label
-    }, void 0, false) : null, /*#__PURE__*/_jsxDEV("span", {
-      className: "slide-toggle-track",
-      "aria-hidden": "true",
-      children: /*#__PURE__*/_jsxDEV("span", {}, void 0, false)
-    }, void 0, false)]
-  }, void 0, true);
+    className: cx('slide-toggle', checked && 'active', className)
+  }, label ? /*#__PURE__*/React.createElement("span", {
+    className: "slide-toggle-label"
+  }, label) : null, /*#__PURE__*/React.createElement("span", {
+    className: "slide-toggle-track",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("span", null)));
 }
 function EmptyState({
   icon = 'spark',
@@ -1408,42 +1337,34 @@ function EmptyState({
   children,
   action
 }) {
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "surface-card flex flex-col items-center justify-center rounded-[28px] px-6 py-10 text-center",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-audit-primary",
-      children: /*#__PURE__*/_jsxDEV(Icon, {
-        name: icon,
-        className: "h-6 w-6"
-      }, void 0, false)
-    }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-      className: "text-lg font-extrabold text-slate-950",
-      children: title
-    }, void 0, false), children ? /*#__PURE__*/_jsxDEV("p", {
-      className: "mt-2 max-w-md text-sm leading-6 text-slate-600",
-      children: children
-    }, void 0, false) : null, action ? /*#__PURE__*/_jsxDEV("div", {
-      className: "mt-5",
-      children: action
-    }, void 0, false) : null]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "surface-card flex flex-col items-center justify-center rounded-[28px] px-6 py-10 text-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-audit-primary"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: icon,
+    className: "h-6 w-6"
+  })), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-extrabold text-slate-950"
+  }, title), children ? /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 max-w-md text-sm leading-6 text-slate-600"
+  }, children) : null, action ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-5"
+  }, action) : null);
 }
 function InactiveSection({
   title
 }) {
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "inactive-section surface-card rounded-[28px] p-6 text-center md:p-8",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-500",
-      children: /*#__PURE__*/_jsxDEV(Icon, {
-        name: "eye",
-        className: "h-6 w-6"
-      }, void 0, false)
-    }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-      className: "text-lg font-extrabold text-slate-950",
-      children: title
-    }, void 0, false)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "inactive-section surface-card rounded-[28px] p-6 text-center md:p-8"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-500"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "eye",
+    className: "h-6 w-6"
+  })), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-extrabold text-slate-950"
+  }, title));
 }
 
 // =============================================================
@@ -1484,107 +1405,87 @@ function SearchableCombobox({
       input?.blur();
     });
   }
-  return /*#__PURE__*/_jsxDEV(Field, {
+  return /*#__PURE__*/React.createElement(Field, {
     label: label,
     required: required,
-    helper: helper,
-    children: /*#__PURE__*/_jsxDEV("div", {
-      ref: wrapRef,
-      className: "combo-wrap relative",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400",
-        children: /*#__PURE__*/_jsxDEV(Icon, {
-          name: icon,
-          className: "h-5 w-5"
-        }, void 0, false)
-      }, void 0, false), /*#__PURE__*/_jsxDEV(TextInput, {
-        value: value || '',
-        onChange: event => {
-          onChange(event.target.value);
-          setOpen(true);
-        },
-        onFocus: () => setOpen(true),
-        placeholder: placeholder,
-        className: "pl-12 pr-12",
-        "aria-autocomplete": "list",
-        "aria-expanded": open,
-        required: required
-      }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: "absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100",
-        onClick: () => setOpen(state => !state),
-        "aria-label": "Buka pilihan",
-        children: /*#__PURE__*/_jsxDEV(Icon, {
-          name: "right",
-          className: cx('h-4 w-4 transition', open ? 'rotate-90' : '')
-        }, void 0, false)
-      }, void 0, false), open ? /*#__PURE__*/_jsxDEV("div", {
-        className: "combo-panel absolute z-50 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-soft",
-        children: visible.length ? visible.map(item => /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: "combo-option flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-emerald-50",
-          onClick: () => choose(item),
-          children: [/*#__PURE__*/_jsxDEV("span", {
-            className: "mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-emerald-50 text-audit-primary",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: icon === 'store' ? 'store' : 'user',
-              className: "h-4 w-4"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: [/*#__PURE__*/_jsxDEV("span", {
-              className: "block text-sm font-bold text-slate-900",
-              children: item.label
-            }, void 0, false), item.meta ? /*#__PURE__*/_jsxDEV("span", {
-              className: "mt-0.5 block text-xs text-slate-500",
-              children: item.meta
-            }, void 0, false) : null]
-          }, void 0, true)]
-        }, (item.value || '') + '-' + item.label, true)) : /*#__PURE__*/_jsxDEV("div", {
-          className: "px-4 py-5 text-sm text-slate-500",
-          children: "Tidak ada hasil. Nilai yang diketik tetap bisa digunakan sebagai data manual."
-        }, void 0, false)
-      }, void 0, false) : null]
-    }, void 0, true)
-  }, void 0, false);
+    helper: helper
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: wrapRef,
+    className: "combo-wrap relative"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: icon,
+    className: "h-5 w-5"
+  })), /*#__PURE__*/React.createElement(TextInput, {
+    value: value || '',
+    onChange: event => {
+      onChange(event.target.value);
+      setOpen(true);
+    },
+    onFocus: () => setOpen(true),
+    placeholder: placeholder,
+    className: "pl-12 pr-12",
+    "aria-autocomplete": "list",
+    "aria-expanded": open,
+    required: required
+  }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100",
+    onClick: () => setOpen(state => !state),
+    "aria-label": "Buka pilihan"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "right",
+    className: cx('h-4 w-4 transition', open ? 'rotate-90' : '')
+  })), open ? /*#__PURE__*/React.createElement("div", {
+    className: "combo-panel absolute z-50 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-soft"
+  }, visible.length ? visible.map(item => /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    key: (item.value || '') + '-' + item.label,
+    className: "combo-option flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-emerald-50",
+    onClick: () => choose(item)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-emerald-50 text-audit-primary"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: icon === 'store' ? 'store' : 'user',
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
+    className: "block text-sm font-bold text-slate-900"
+  }, item.label), item.meta ? /*#__PURE__*/React.createElement("span", {
+    className: "mt-0.5 block text-xs text-slate-500"
+  }, item.meta) : null))) : /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-5 text-sm text-slate-500"
+  }, "Tidak ada hasil. Nilai yang diketik tetap bisa digunakan sebagai data manual.")) : null));
 }
 function StoreDetailCard({
   detail
 }) {
   const items = [['Kode', detail.siteCode4 || detail.siteCode || detail.storeCode || '-'], ['Tipe', detail.type || '-'], ['Kota', detail.city || '-'], ['Store Head', detail.storeHead || '-'], ['Area Manager', detail.areaManager || '-'], ['Regional Manager', detail.regionalManager || '-'], ['Alamat', detail.address || detail.storeAddress || '-']];
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "store-detail-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "mb-4 flex min-w-0 items-center justify-between gap-3",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "min-w-0",
-        children: [/*#__PURE__*/_jsxDEV("p", {
-          className: "text-xs font-bold uppercase tracking-[0.2em] text-audit-primary",
-          children: "Detail Store"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-          className: "mt-1 break-words text-lg font-extrabold leading-tight text-slate-950 md:text-xl",
-          children: detail.siteDescr || detail.storeName || 'Store belum dipilih'
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "hidden h-12 w-12 place-items-center rounded-2xl bg-slate-900 text-white md:grid",
-        children: /*#__PURE__*/_jsxDEV(Icon, {
-          name: "store",
-          className: "h-6 w-6"
-        }, void 0, false)
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "grid gap-3 sm:grid-cols-2 xl:grid-cols-4",
-      children: items.map(([label, value]) => /*#__PURE__*/_jsxDEV("div", {
-        className: cx('store-detail-item rounded-2xl border border-slate-200 bg-slate-50 p-3', label === 'Alamat' ? 'sm:col-span-2 xl:col-span-2' : ''),
-        children: [/*#__PURE__*/_jsxDEV("p", {
-          className: "text-[11px] font-bold uppercase tracking-wide text-slate-500",
-          children: label
-        }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-          className: "mt-1 min-w-0 break-words text-sm font-semibold leading-5 text-slate-800",
-          children: value
-        }, void 0, false)]
-      }, label, true))
-    }, void 0, false)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "store-detail-card surface-card rounded-[24px] p-4 md:rounded-[28px] md:p-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex min-w-0 items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-[0.2em] text-audit-primary"
+  }, "Detail Store"), /*#__PURE__*/React.createElement("h3", {
+    className: "mt-1 break-words text-lg font-extrabold leading-tight text-slate-950 md:text-xl"
+  }, detail.siteDescr || detail.storeName || 'Store belum dipilih')), /*#__PURE__*/React.createElement("div", {
+    className: "hidden h-12 w-12 place-items-center rounded-2xl bg-slate-900 text-white md:grid"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "store",
+    className: "h-6 w-6"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+  }, items.map(([label, value]) => /*#__PURE__*/React.createElement("div", {
+    key: label,
+    className: cx('store-detail-item rounded-2xl border border-slate-200 bg-slate-50 p-3', label === 'Alamat' ? 'sm:col-span-2 xl:col-span-2' : '')
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] font-bold uppercase tracking-wide text-slate-500"
+  }, label), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 min-w-0 break-words text-sm font-semibold leading-5 text-slate-800"
+  }, value)))));
 }
 function loadImageElement(src) {
   return new Promise((resolve, reject) => {
@@ -2001,146 +1902,110 @@ function PhotoEditorModal({
   }
   if (!open) return null;
   const hasMarkers = markers.length > 0;
-  const modal = /*#__PURE__*/_jsxDEV("div", {
+  const modal = /*#__PURE__*/React.createElement("div", {
     className: "photo-editor-overlay photo-editor-v10",
     role: "dialog",
-    "aria-modal": "true",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "photo-editor-panel photo-editor-v10-panel bg-white shadow-2xl",
-      onClick: event => event.stopPropagation(),
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "photo-editor-header photo-editor-v10-header",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "min-w-0",
-          children: [/*#__PURE__*/_jsxDEV("p", {
-            className: "photo-editor-eyebrow",
-            children: "Edit Foto"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-            children: title
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: "photo-editor-close",
-          onClick: onClose,
-          "aria-label": "Tutup editor",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "close",
-            className: "h-5 w-5"
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "photo-editor-v10-toolbar",
-        role: "toolbar",
-        "aria-label": "Toolbar edit foto",
-        children: [/*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: cx('photo-editor-tool', mode === 'move' && 'active'),
-          onClick: () => setMode('move'),
-          "aria-pressed": mode === 'move',
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "crop",
-            className: "h-4 w-4"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Geser"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: cx('photo-editor-tool', mode === 'marker' && 'active'),
-          onClick: () => setMode('marker'),
-          "aria-pressed": mode === 'marker',
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "marker",
-            className: "h-4 w-4"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Marker"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: "photo-editor-tool",
-          onClick: () => setMarkers(current => current.slice(0, -1)),
-          disabled: !hasMarkers,
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "left",
-            className: "h-4 w-4"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Undo"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: "photo-editor-tool",
-          onClick: resetEditor,
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "eraser",
-            className: "h-4 w-4"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Reset"
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "photo-editor-options",
-        "aria-label": "Pengaturan marker",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100",
-          children: "Crop otomatis mengikuti frame foto PDF."
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "photo-editor-option-row",
-          children: [/*#__PURE__*/_jsxDEV("span", {
-            children: "Marker"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            className: "photo-editor-chip-group",
-            children: MARKER_SIZE_OPTIONS.map(option => /*#__PURE__*/_jsxDEV("button", {
-              type: "button",
-              className: cx('photo-editor-chip', markerSize === option.key && 'active'),
-              onClick: () => setMarkerSize(option.key),
-              children: option.label
-            }, option.key, false))
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "photo-editor-canvas-shell photo-editor-v10-stage",
-        children: [!imageReady ? /*#__PURE__*/_jsxDEV("div", {
-          className: "photo-editor-loading",
-          children: "Memuat foto..."
-        }, void 0, false) : null, /*#__PURE__*/_jsxDEV("canvas", {
-          ref: canvasRef,
-          width: canvasSize.width,
-          height: canvasSize.height,
-          style: {
-            aspectRatio: canvasSize.width + ' / ' + canvasSize.height,
-            touchAction: 'none'
-          },
-          className: "photo-editor-canvas",
-          onPointerDown: handlePointerDown,
-          onPointerMove: handlePointerMove,
-          onPointerUp: handlePointerUp,
-          onPointerCancel: handlePointerUp,
-          onTouchStart: handleTouchStart,
-          onTouchMove: handleTouchMove,
-          onTouchEnd: handleTouchEnd,
-          onWheel: handleWheel
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "photo-editor-v10-footer",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "photo-editor-hint",
-          children: /*#__PURE__*/_jsxDEV("span", {
-            children: mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.'
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: "photo-editor-save",
-          onClick: saveEditedImage,
-          disabled: !imageReady,
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "check",
-            className: "h-5 w-5"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Simpan"
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true)]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-panel photo-editor-v10-panel bg-white shadow-2xl",
+    onClick: event => event.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-header photo-editor-v10-header"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "photo-editor-eyebrow"
+  }, "Edit Foto"), /*#__PURE__*/React.createElement("h3", null, title)), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "photo-editor-close",
+    onClick: onClose,
+    "aria-label": "Tutup editor"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    className: "h-5 w-5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-v10-toolbar",
+    role: "toolbar",
+    "aria-label": "Toolbar edit foto"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('photo-editor-tool', mode === 'move' && 'active'),
+    onClick: () => setMode('move'),
+    "aria-pressed": mode === 'move'
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crop",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Geser")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('photo-editor-tool', mode === 'marker' && 'active'),
+    onClick: () => setMode('marker'),
+    "aria-pressed": mode === 'marker'
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "marker",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Marker")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "photo-editor-tool",
+    onClick: () => setMarkers(current => current.slice(0, -1)),
+    disabled: !hasMarkers
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "left",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Undo")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "photo-editor-tool",
+    onClick: resetEditor
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "eraser",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Reset"))), /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-options",
+    "aria-label": "Pengaturan marker"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-4 text-emerald-900 ring-1 ring-emerald-100"
+  }, "Crop otomatis mengikuti frame foto PDF."), /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-option-row"
+  }, /*#__PURE__*/React.createElement("span", null, "Marker"), /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-chip-group"
+  }, MARKER_SIZE_OPTIONS.map(option => /*#__PURE__*/React.createElement("button", {
+    key: option.key,
+    type: "button",
+    className: cx('photo-editor-chip', markerSize === option.key && 'active'),
+    onClick: () => setMarkerSize(option.key)
+  }, option.label))))), /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-canvas-shell photo-editor-v10-stage"
+  }, !imageReady ? /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-loading"
+  }, "Memuat foto...") : null, /*#__PURE__*/React.createElement("canvas", {
+    ref: canvasRef,
+    width: canvasSize.width,
+    height: canvasSize.height,
+    style: {
+      aspectRatio: canvasSize.width + ' / ' + canvasSize.height,
+      touchAction: 'none'
+    },
+    className: "photo-editor-canvas",
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
+    onPointerCancel: handlePointerUp,
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+    onWheel: handleWheel
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-v10-footer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "photo-editor-hint"
+  }, /*#__PURE__*/React.createElement("span", null, mode === 'marker' ? 'Tap area foto untuk marker.' : 'Cubit untuk zoom, geser foto.')), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "photo-editor-save",
+    onClick: saveEditedImage,
+    disabled: !imageReady
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "check",
+    className: "h-5 w-5"
+  }), /*#__PURE__*/React.createElement("span", null, "Simpan")))));
   return ReactDOM?.createPortal ? ReactDOM.createPortal(modal, document.body) : modal;
 }
 function PhotoInput({
@@ -2193,125 +2058,111 @@ function PhotoInput({
   const cardStyle = photoAspect ? {
     '--photo-aspect': photoAspect
   } : undefined;
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame'),
-    style: cardStyle,
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "flex items-center justify-between border-b border-slate-200 px-4 py-3",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "min-w-0",
-        children: /*#__PURE__*/_jsxDEV("p", {
-          className: "truncate text-sm font-extrabold text-slate-900",
-          children: [label, required ? /*#__PURE__*/_jsxDEV("span", {
-            className: "ml-1 text-rose-600",
-            children: "*"
-          }, void 0, false) : null]
-        }, void 0, true)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "flex shrink-0 gap-2",
-        children: [value?.image ? /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: () => {
-            setEditorImageOverride('');
-            setEditorOpen(true);
-          },
-          "aria-label": "Edit crop dan marker",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "crop",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false) : null, value?.image ? /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: clearPhoto,
-          "aria-label": "Hapus foto",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "trash",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false) : null]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]'),
-      children: value?.image ? /*#__PURE__*/_jsxDEV("img", {
-        src: value.image,
-        alt: label
-      }, void 0, false) : /*#__PURE__*/_jsxDEV("div", {
-        className: "flex flex-col items-center px-5 text-center text-slate-500",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "image",
-            className: "h-7 w-7"
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-          className: "text-sm font-bold text-slate-700",
-          children: "Upload foto"
-        }, void 0, false)]
-      }, void 0, true)
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3",
-      children: [/*#__PURE__*/_jsxDEV("input", {
-        ref: cameraRef,
-        type: "file",
-        accept: "image/*",
-        capture: "environment",
-        className: "hidden",
-        onChange: handleFiles
-      }, void 0, false), /*#__PURE__*/_jsxDEV("input", {
-        ref: galleryRef,
-        type: "file",
-        accept: "image/*",
-        className: "hidden",
-        onChange: handleFiles
-      }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-        variant: "icon",
-        icon: "camera",
-        onClick: () => cameraRef.current?.click(),
-        "aria-label": "Ambil foto dari kamera"
-      }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-        variant: "icon",
-        icon: "gallery",
-        onClick: () => galleryRef.current?.click(),
-        "aria-label": "Pilih foto dari galeri"
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "border-t border-slate-200 p-3",
-      children: rich ? /*#__PURE__*/_jsxDEV(RichTextInput, {
-        value: description,
-        onChange: nextDescription => onChange({
-          ...(value || blankPhoto()),
-          description: nextDescription
-        }),
-        placeholder: "Deskripsi foto...",
-        minHeight: 92
-      }, void 0, false) : /*#__PURE__*/_jsxDEV(TextArea, {
-        value: description,
-        onChange: event => onChange({
-          ...(value || blankPhoto()),
-          description: event.target.value
-        }),
-        placeholder: "Deskripsi foto...",
-        minRows: 2
-      }, void 0, false)
-    }, void 0, false), /*#__PURE__*/_jsxDEV(PhotoEditorModal, {
-      open: editorOpen,
-      image: editorImageOverride || value?.image || '',
-      title: label,
-      cropRatio: cropRatio,
-      onClose: () => {
-        setEditorOpen(false);
-        setEditorImageOverride('');
-      },
-      onSave: (editedImage, meta) => {
-        setEditorImageOverride('');
-        onChange({
-          ...(value || blankPhoto()),
-          image: editedImage,
-          cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || ''
-        });
-      }
-    }, void 0, false)]
-  }, void 0, true);
+    style: cardStyle
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between border-b border-slate-200 px-4 py-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "truncate text-sm font-extrabold text-slate-900"
+  }, label, required ? /*#__PURE__*/React.createElement("span", {
+    className: "ml-1 text-rose-600"
+  }, "*") : null)), /*#__PURE__*/React.createElement("div", {
+    className: "flex shrink-0 gap-2"
+  }, value?.image ? /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: () => {
+      setEditorImageOverride('');
+      setEditorOpen(true);
+    },
+    "aria-label": "Edit crop dan marker"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crop",
+    className: "h-4 w-4"
+  })) : null, value?.image ? /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: clearPhoto,
+    "aria-label": "Hapus foto"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "h-4 w-4"
+  })) : null)), /*#__PURE__*/React.createElement("div", {
+    className: cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]')
+  }, value?.image ? /*#__PURE__*/React.createElement("img", {
+    src: value.image,
+    alt: label
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-center px-5 text-center text-slate-500"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "image",
+    className: "h-7 w-7"
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-bold text-slate-700"
+  }, "Upload foto"))), /*#__PURE__*/React.createElement("div", {
+    className: "photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3"
+  }, /*#__PURE__*/React.createElement("input", {
+    ref: cameraRef,
+    type: "file",
+    accept: "image/*",
+    capture: "environment",
+    className: "hidden",
+    onChange: handleFiles
+  }), /*#__PURE__*/React.createElement("input", {
+    ref: galleryRef,
+    type: "file",
+    accept: "image/*",
+    className: "hidden",
+    onChange: handleFiles
+  }), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    icon: "camera",
+    onClick: () => cameraRef.current?.click(),
+    "aria-label": "Ambil foto dari kamera"
+  }), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    icon: "gallery",
+    onClick: () => galleryRef.current?.click(),
+    "aria-label": "Pilih foto dari galeri"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "border-t border-slate-200 p-3"
+  }, rich ? /*#__PURE__*/React.createElement(RichTextInput, {
+    value: description,
+    onChange: nextDescription => onChange({
+      ...(value || blankPhoto()),
+      description: nextDescription
+    }),
+    placeholder: "Deskripsi foto...",
+    minHeight: 92
+  }) : /*#__PURE__*/React.createElement(TextArea, {
+    value: description,
+    onChange: event => onChange({
+      ...(value || blankPhoto()),
+      description: event.target.value
+    }),
+    placeholder: "Deskripsi foto...",
+    minRows: 2
+  })), /*#__PURE__*/React.createElement(PhotoEditorModal, {
+    open: editorOpen,
+    image: editorImageOverride || value?.image || '',
+    title: label,
+    cropRatio: cropRatio,
+    onClose: () => {
+      setEditorOpen(false);
+      setEditorImageOverride('');
+    },
+    onSave: (editedImage, meta) => {
+      setEditorImageOverride('');
+      onChange({
+        ...(value || blankPhoto()),
+        image: editedImage,
+        cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || ''
+      });
+    }
+  }));
 }
 function SectionShell({
   title,
@@ -2319,25 +2170,19 @@ function SectionShell({
   actions,
   preTitle
 }) {
-  return /*#__PURE__*/_jsxDEV("section", {
-    className: "slide-enter fade-in",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "section-heading mb-5 flex flex-col gap-3",
-      children: [preTitle ? /*#__PURE__*/_jsxDEV("div", {
-        className: "section-pretitle",
-        children: preTitle
-      }, void 0, false) : null, /*#__PURE__*/_jsxDEV("div", {
-        className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
-        children: [/*#__PURE__*/_jsxDEV("h2", {
-          className: "text-2xl font-black tracking-tight text-slate-950 md:text-3xl",
-          children: title
-        }, void 0, false), actions ? /*#__PURE__*/_jsxDEV("div", {
-          className: "section-actions flex flex-wrap gap-2 md:justify-end",
-          children: actions
-        }, void 0, false) : null]
-      }, void 0, true)]
-    }, void 0, true), children]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("section", {
+    className: "slide-enter fade-in"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "section-heading mb-5 flex flex-col gap-3"
+  }, preTitle ? /*#__PURE__*/React.createElement("div", {
+    className: "section-pretitle"
+  }, preTitle) : null, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-black tracking-tight text-slate-950 md:text-3xl"
+  }, title), actions ? /*#__PURE__*/React.createElement("div", {
+    className: "section-actions flex flex-wrap gap-2 md:justify-end"
+  }, actions) : null)), children);
 }
 function CrewEditor({
   visit,
@@ -2372,148 +2217,115 @@ function CrewEditor({
       }]
     });
   };
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "grid gap-5",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "grid gap-4 md:grid-cols-2",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "surface-card rounded-[28px] p-5",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-4 flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-audit-primary",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "user"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            children: /*#__PURE__*/_jsxDEV("h3", {
-              className: "font-extrabold text-slate-950",
-              children: "Store Leader"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "grid gap-3 sm:grid-cols-[1fr_120px]",
-          children: [/*#__PURE__*/_jsxDEV(Field, {
-            label: "Nama",
-            children: /*#__PURE__*/_jsxDEV(TextInput, {
-              value: visit.storeLeader || '',
-              onChange: e => update({
-                storeLeader: e.target.value
-              }),
-              placeholder: "Nama store leader"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-            label: "Level",
-            children: /*#__PURE__*/_jsxDEV(SelectInput, {
-              value: visit.storeLeaderLevel || '',
-              onChange: e => update({
-                storeLeaderLevel: e.target.value
-              }),
-              children: JOB_LEVELS.map(level => /*#__PURE__*/_jsxDEV("option", {
-                value: level,
-                children: level || 'Pilih'
-              }, level, false))
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "surface-card rounded-[28px] p-5",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-4 flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "grid h-10 w-10 place-items-center rounded-2xl bg-orange-50 text-audit-accent",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "user"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            children: /*#__PURE__*/_jsxDEV("h3", {
-              className: "font-extrabold text-slate-950",
-              children: "Shift Leader"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "grid gap-3 sm:grid-cols-[1fr_120px]",
-          children: [/*#__PURE__*/_jsxDEV(Field, {
-            label: "Nama",
-            children: /*#__PURE__*/_jsxDEV(TextInput, {
-              value: visit.shiftLeader || '',
-              onChange: e => update({
-                shiftLeader: e.target.value
-              }),
-              placeholder: "Nama shift leader"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-            label: "Level",
-            children: /*#__PURE__*/_jsxDEV(SelectInput, {
-              value: visit.shiftLeaderLevel || '',
-              onChange: e => update({
-                shiftLeaderLevel: e.target.value
-              }),
-              children: JOB_LEVELS.map(level => /*#__PURE__*/_jsxDEV("option", {
-                value: level,
-                children: level || 'Pilih'
-              }, level, false))
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "surface-card rounded-[28px] p-5 md:p-6",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-5",
-        children: /*#__PURE__*/_jsxDEV("h3", {
-          className: "text-lg font-extrabold text-slate-950",
-          children: "Crew Store"
-        }, void 0, false)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "grid gap-3",
-        children: crewList.map((crew, index) => /*#__PURE__*/_jsxDEV("div", {
-          className: "grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[44px_1fr_130px_44px] sm:items-end",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-slate-600",
-            children: index + 1
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-            label: "Nama Crew",
-            children: /*#__PURE__*/_jsxDEV(TextInput, {
-              value: crew.name || '',
-              onChange: e => updateCrew(index, {
-                name: e.target.value
-              }),
-              placeholder: "Nama crew"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-            label: "Level",
-            children: /*#__PURE__*/_jsxDEV(SelectInput, {
-              value: crew.level || '',
-              onChange: e => updateCrew(index, {
-                level: e.target.value
-              }),
-              children: JOB_LEVELS.map(level => /*#__PURE__*/_jsxDEV("option", {
-                value: level,
-                children: level || 'Pilih'
-              }, level, false))
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-            variant: "icon",
-            onClick: () => removeCrew(index),
-            "aria-label": "Hapus crew",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "trash",
-              className: "h-4 w-4"
-            }, void 0, false)
-          }, void 0, false)]
-        }, index, true))
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-4 flex justify-end",
-        children: /*#__PURE__*/_jsxDEV(Button, {
-          variant: "secondary",
-          icon: "plus",
-          onClick: addCrew,
-          children: "Tambah Crew"
-        }, void 0, false)
-      }, void 0, false)]
-    }, void 0, true)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-4 md:grid-cols-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "surface-card rounded-[28px] p-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-audit-primary"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "user"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "font-extrabold text-slate-950"
+  }, "Store Leader"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 sm:grid-cols-[1fr_120px]"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Nama"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: visit.storeLeader || '',
+    onChange: e => update({
+      storeLeader: e.target.value
+    }),
+    placeholder: "Nama store leader"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Level"
+  }, /*#__PURE__*/React.createElement(SelectInput, {
+    value: visit.storeLeaderLevel || '',
+    onChange: e => update({
+      storeLeaderLevel: e.target.value
+    })
+  }, JOB_LEVELS.map(level => /*#__PURE__*/React.createElement("option", {
+    key: level,
+    value: level
+  }, level || 'Pilih')))))), /*#__PURE__*/React.createElement("div", {
+    className: "surface-card rounded-[28px] p-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid h-10 w-10 place-items-center rounded-2xl bg-orange-50 text-audit-accent"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "user"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "font-extrabold text-slate-950"
+  }, "Shift Leader"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 sm:grid-cols-[1fr_120px]"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Nama"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: visit.shiftLeader || '',
+    onChange: e => update({
+      shiftLeader: e.target.value
+    }),
+    placeholder: "Nama shift leader"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Level"
+  }, /*#__PURE__*/React.createElement(SelectInput, {
+    value: visit.shiftLeaderLevel || '',
+    onChange: e => update({
+      shiftLeaderLevel: e.target.value
+    })
+  }, JOB_LEVELS.map(level => /*#__PURE__*/React.createElement("option", {
+    key: level,
+    value: level
+  }, level || 'Pilih'))))))), /*#__PURE__*/React.createElement("div", {
+    className: "surface-card rounded-[28px] p-5 md:p-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-extrabold text-slate-950"
+  }, "Crew Store")), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3"
+  }, crewList.map((crew, index) => /*#__PURE__*/React.createElement("div", {
+    key: index,
+    className: "grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[44px_1fr_130px_44px] sm:items-end"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-slate-600"
+  }, index + 1), /*#__PURE__*/React.createElement(Field, {
+    label: "Nama Crew"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: crew.name || '',
+    onChange: e => updateCrew(index, {
+      name: e.target.value
+    }),
+    placeholder: "Nama crew"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Level"
+  }, /*#__PURE__*/React.createElement(SelectInput, {
+    value: crew.level || '',
+    onChange: e => updateCrew(index, {
+      level: e.target.value
+    })
+  }, JOB_LEVELS.map(level => /*#__PURE__*/React.createElement("option", {
+    key: level,
+    value: level
+  }, level || 'Pilih')))), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: () => removeCrew(index),
+    "aria-label": "Hapus crew"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "h-4 w-4"
+  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex justify-end"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "plus",
+    onClick: addCrew
+  }, "Tambah Crew"))));
 }
 function ObservationCards({
   title,
@@ -2542,16 +2354,15 @@ function ObservationCards({
   };
   const goPrev = () => setActiveIndex(current => Math.max(0, current - 1));
   const goNext = () => setActiveIndex(current => Math.min(safeRows.length - 1, current + 1));
-  const richField = (label, key, row, index, placeholder) => /*#__PURE__*/_jsxDEV(Field, {
-    label: label,
-    children: /*#__PURE__*/_jsxDEV(RichTextInput, {
-      value: row[key] || '',
-      onChange: value => updateRow(index, {
-        [key]: value
-      }),
-      placeholder: placeholder
-    }, void 0, false)
-  }, void 0, false);
+  const richField = (label, key, row, index, placeholder) => /*#__PURE__*/React.createElement(Field, {
+    label: label
+  }, /*#__PURE__*/React.createElement(RichTextInput, {
+    value: row[key] || '',
+    onChange: value => updateRow(index, {
+      [key]: value
+    }),
+    placeholder: placeholder
+  }));
   const navButtonBase = {
     width: '34px',
     height: '34px',
@@ -2563,7 +2374,7 @@ function ObservationCards({
     color: '#0f172a',
     boxShadow: '0 6px 14px rgba(15, 23, 42, 0.08)'
   };
-  const mobileNavContent = /*#__PURE__*/_jsxDEV("div", {
+  const mobileNavContent = /*#__PURE__*/React.createElement("div", {
     className: "observation-inline-nav observation-nav-v68 md:hidden",
     "aria-label": "Navigasi temuan observation",
     style: {
@@ -2584,98 +2395,83 @@ function ObservationCards({
       boxShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)'
-    },
-    children: [/*#__PURE__*/_jsxDEV("button", {
-      type: "button",
-      onClick: goPrev,
-      disabled: activeIndex <= 0,
-      "aria-label": "Temuan sebelumnya",
-      style: {
-        ...navButtonBase,
-        opacity: activeIndex <= 0 ? 0.45 : 1
-      },
-      children: /*#__PURE__*/_jsxDEV(Icon, {
-        name: "left",
-        className: "h-4 w-4"
-      }, void 0, false)
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "observation-nav-center-v68",
-      "aria-live": "polite",
-      children: [/*#__PURE__*/_jsxDEV("span", {
-        className: "observation-count-badge-v68",
-        children: ["Temuan ", activeRowNumber, "/", safeRows.length]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        onClick: addRow,
-        "aria-label": "Tambah temuan",
-        className: "observation-add-center-v68",
-        children: /*#__PURE__*/_jsxDEV(Icon, {
-          name: "plus",
-          className: "h-5 w-5"
-        }, void 0, false)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "observation-count-spacer-v68",
-        "aria-hidden": "true"
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-      type: "button",
-      onClick: goNext,
-      disabled: activeIndex >= safeRows.length - 1,
-      "aria-label": "Temuan berikutnya",
-      style: {
-        ...navButtonBase,
-        opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1
-      },
-      children: /*#__PURE__*/_jsxDEV(Icon, {
-        name: "right",
-        className: "h-4 w-4"
-      }, void 0, false)
-    }, void 0, false)]
-  }, void 0, true);
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: goPrev,
+    disabled: activeIndex <= 0,
+    "aria-label": "Temuan sebelumnya",
+    style: {
+      ...navButtonBase,
+      opacity: activeIndex <= 0 ? 0.45 : 1
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "left",
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "observation-nav-center-v68",
+    "aria-live": "polite"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "observation-count-badge-v68"
+  }, "Temuan ", activeRowNumber, "/", safeRows.length), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: addRow,
+    "aria-label": "Tambah temuan",
+    className: "observation-add-center-v68"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "plus",
+    className: "h-5 w-5"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "observation-count-spacer-v68",
+    "aria-hidden": "true"
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: goNext,
+    disabled: activeIndex >= safeRows.length - 1,
+    "aria-label": "Temuan berikutnya",
+    style: {
+      ...navButtonBase,
+      opacity: activeIndex >= safeRows.length - 1 ? 0.45 : 1
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "right",
+    className: "h-4 w-4"
+  })));
   const mobileNav = typeof document !== 'undefined' && ReactDOM?.createPortal ? ReactDOM.createPortal(mobileNavContent, document.body) : mobileNavContent;
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "observation-card-system grid gap-4",
-    children: [mobileNav, safeRows.map((row, index) => /*#__PURE__*/_jsxDEV("article", {
-      className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active'),
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-4 flex items-center justify-between gap-3",
-        children: [/*#__PURE__*/_jsxDEV(Badge, {
-          tone: isMeaningfulObservation(row) ? 'success' : 'default',
-          children: ["Temuan ", index + 1]
-        }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: () => removeRow(index),
-          "aria-label": "Hapus row",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "trash",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "grid gap-4 lg:grid-cols-2",
-        children: [richField('Temuan', 'temuan', row, index, 'Tuliskan temuan audit...'), richField('Kondisi Ideal', 'kondisiIdeal', row, index, 'Kondisi ideal yang diharapkan...'), richField('Dampak', 'dampak', row, index, 'Dampak terhadap operasional...'), richField('Penyebab', 'penyebab', row, index, 'Penyebab utama...'), richField('Tindakan Aksi', 'tindakan', row, index, 'Aksi perbaikan yang disepakati...'), /*#__PURE__*/_jsxDEV("div", {
-          className: "observation-deadline-grid grid gap-4 sm:grid-cols-[170px_minmax(0,1fr)]",
-          children: [/*#__PURE__*/_jsxDEV(Field, {
-            label: "Deadline",
-            children: /*#__PURE__*/_jsxDEV(DateInput, {
-              value: row.deadline || '',
-              onChange: e => updateRow(index, {
-                deadline: e.target.value
-              })
-            }, void 0, false)
-          }, void 0, false), richField('Hasil', 'hasil', row, index, 'Hasil tindakan...')]
-        }, void 0, true)]
-      }, void 0, true)]
-    }, index, true)), /*#__PURE__*/_jsxDEV("div", {
-      className: "observation-desktop-add flex justify-end",
-      children: /*#__PURE__*/_jsxDEV(Button, {
-        variant: "secondary",
-        icon: "plus",
-        onClick: addRow,
-        children: "Tambah Row"
-      }, void 0, false)
-    }, void 0, false)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "observation-card-system grid gap-4"
+  }, mobileNav, safeRows.map((row, index) => /*#__PURE__*/React.createElement("article", {
+    key: index,
+    className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active')
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    tone: isMeaningfulObservation(row) ? 'success' : 'default'
+  }, "Temuan ", index + 1), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: () => removeRow(index),
+    "aria-label": "Hapus row"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "h-4 w-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-4 lg:grid-cols-2"
+  }, richField('Temuan', 'temuan', row, index, 'Tuliskan temuan audit...'), richField('Kondisi Ideal', 'kondisiIdeal', row, index, 'Kondisi ideal yang diharapkan...'), richField('Dampak', 'dampak', row, index, 'Dampak terhadap operasional...'), richField('Penyebab', 'penyebab', row, index, 'Penyebab utama...'), richField('Tindakan Aksi', 'tindakan', row, index, 'Aksi perbaikan yang disepakati...'), /*#__PURE__*/React.createElement("div", {
+    className: "observation-deadline-grid grid gap-4 sm:grid-cols-[170px_minmax(0,1fr)]"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Deadline"
+  }, /*#__PURE__*/React.createElement(DateInput, {
+    value: row.deadline || '',
+    onChange: e => updateRow(index, {
+      deadline: e.target.value
+    })
+  })), richField('Hasil', 'hasil', row, index, 'Hasil tindakan...'))))), /*#__PURE__*/React.createElement("div", {
+    className: "observation-desktop-add flex justify-end"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "plus",
+    onClick: addRow
+  }, "Tambah Row")));
 }
 function PhotoGrid({
   photos,
@@ -2706,38 +2502,34 @@ function PhotoGrid({
       length: Math.max(minSlots, next.length)
     }, (_, index) => next[index] || blankPhoto()));
   };
-  const renderActions = (position = 'top') => /*#__PURE__*/_jsxDEV("div", {
-    className: cx('photo-grid-actions flex flex-wrap gap-2', position === 'top' ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2' : 'justify-end pb-20 md:pb-0'),
-    children: [/*#__PURE__*/_jsxDEV(Button, {
-      variant: "secondary",
-      className: "min-w-[150px] flex-1 justify-center sm:flex-none",
-      icon: "eraser",
-      onClick: removeEmpty,
-      children: "Rapihkan Slot Foto"
-    }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-      variant: "secondary",
-      className: "min-w-[150px] flex-1 justify-center sm:flex-none",
-      icon: "plus",
-      onClick: addFour,
-      children: "Tambah Slot Foto"
-    }, void 0, false)]
-  }, void 0, true);
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "photo-grid-system grid gap-4",
-    children: [renderActions('top'), /*#__PURE__*/_jsxDEV("div", {
-      className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4",
-      children: safePhotos.map((photo, index) => /*#__PURE__*/_jsxDEV(PhotoInput, {
-        label: prefix + ' ' + (index + 1),
-        value: photo,
-        onChange: value => updatePhoto(index, value),
-        onRemove: () => removePhotoCard(index),
-        compact: true,
-        rich: true,
-        matchCropFrame: true,
-        cropRatio: PDF_PHOTO_CROP_RATIO
-      }, index, false))
-    }, void 0, false), renderActions('bottom')]
-  }, void 0, true);
+  const renderActions = (position = 'top') => /*#__PURE__*/React.createElement("div", {
+    className: cx('photo-grid-actions flex flex-wrap gap-2', position === 'top' ? 'items-center justify-end rounded-2xl border border-slate-200 bg-slate-50/80 p-2' : 'justify-end pb-20 md:pb-0')
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    className: "min-w-[150px] flex-1 justify-center sm:flex-none",
+    icon: "eraser",
+    onClick: removeEmpty
+  }, "Rapihkan Slot Foto"), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    className: "min-w-[150px] flex-1 justify-center sm:flex-none",
+    icon: "plus",
+    onClick: addFour
+  }, "Tambah Slot Foto"));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "photo-grid-system grid gap-4"
+  }, renderActions('top'), /*#__PURE__*/React.createElement("div", {
+    className: "evidence-photo-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+  }, safePhotos.map((photo, index) => /*#__PURE__*/React.createElement(PhotoInput, {
+    key: index,
+    label: prefix + ' ' + (index + 1),
+    value: photo,
+    onChange: value => updatePhoto(index, value),
+    onRemove: () => removePhotoCard(index),
+    compact: true,
+    rich: true,
+    matchCropFrame: true,
+    cropRatio: PDF_PHOTO_CROP_RATIO
+  }))), renderActions('bottom'));
 }
 const SECTION_DEFS = [{
   id: 'setup',
@@ -2774,18 +2566,17 @@ function ProgressBar({
   value
 }) {
   const safeValue = Math.max(0, Math.min(100, Number(value || 0)));
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "progress-mini",
     role: "progressbar",
     "aria-valuemin": "0",
     "aria-valuemax": "100",
-    "aria-valuenow": safeValue,
-    children: /*#__PURE__*/_jsxDEV("span", {
-      style: {
-        width: safeValue + '%'
-      }
-    }, void 0, false)
-  }, void 0, false);
+    "aria-valuenow": safeValue
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: safeValue + '%'
+    }
+  }));
 }
 function ProgressMissingInfo({
   visit,
@@ -2796,43 +2587,32 @@ function ProgressMissingInfo({
   const missingItems = visitProgressMissingItems(visit, activeSection);
   if (!visit) return null;
   if (!missingItems.length) {
-    return /*#__PURE__*/_jsxDEV("div", {
-      className: cx("progress-missing-info-v265 complete", compact && "compact"),
-      children: [/*#__PURE__*/_jsxDEV(Icon, {
-        name: "check",
-        className: "h-3.5 w-3.5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        children: "Semua bagian wajib sudah terisi"
-      }, void 0, false)]
-    }, void 0, true);
+    return /*#__PURE__*/React.createElement("div", {
+      className: cx("progress-missing-info-v265 complete", compact && "compact")
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "check",
+      className: "h-3.5 w-3.5"
+    }), /*#__PURE__*/React.createElement("span", null, "Semua bagian wajib sudah terisi"));
   }
   const visible = missingItems.slice(0, maxItems);
   const extra = Math.max(0, missingItems.length - visible.length);
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: cx("progress-missing-info-v265", compact && "compact"),
     role: "status",
-    "aria-live": "polite",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "progress-missing-title-v265",
-      children: [/*#__PURE__*/_jsxDEV(Icon, {
-        name: "alert",
-        className: "h-3.5 w-3.5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        children: ["Belum diisi ", /*#__PURE__*/_jsxDEV("strong", {
-          children: [missingItems.length, " item"]
-        }, void 0, true)]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "progress-missing-list-v265",
-      children: [visible.map(item => /*#__PURE__*/_jsxDEV("span", {
-        className: "progress-missing-pill-v265",
-        children: item.text
-      }, `${item.sectionId}-${item.label}`, false)), extra ? /*#__PURE__*/_jsxDEV("span", {
-        className: "progress-missing-pill-v265 more",
-        children: ["+", extra, " lainnya"]
-      }, void 0, true) : null]
-    }, void 0, true)]
-  }, void 0, true);
+    "aria-live": "polite"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "progress-missing-title-v265"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "alert",
+    className: "h-3.5 w-3.5"
+  }), /*#__PURE__*/React.createElement("span", null, "Belum diisi ", /*#__PURE__*/React.createElement("strong", null, missingItems.length, " item"))), /*#__PURE__*/React.createElement("div", {
+    className: "progress-missing-list-v265"
+  }, visible.map(item => /*#__PURE__*/React.createElement("span", {
+    key: `${item.sectionId}-${item.label}`,
+    className: "progress-missing-pill-v265"
+  }, item.text)), extra ? /*#__PURE__*/React.createElement("span", {
+    className: "progress-missing-pill-v265 more"
+  }, "+", extra, " lainnya") : null));
 }
 function VisitSetupSection({
   visit,
@@ -2873,132 +2653,111 @@ function VisitSetupSection({
       }
     });
   }
-  return /*#__PURE__*/_jsxDEV(SectionShell, {
-    title: "Mulai visit",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "visit-setup-card surface-card min-w-0 rounded-[24px] p-4 md:rounded-[28px] md:p-6",
-        children: /*#__PURE__*/_jsxDEV("div", {
-          className: "grid gap-4 md:gap-5",
-          children: [/*#__PURE__*/_jsxDEV(SelectField, {
-            label: "Nama Bestie",
-            required: true,
-            value: visit.nama || '',
-            options: BESTIE_NAMES,
-            onChange: handleBestieChange,
-            placeholder: "Pilih nama bestie",
-            icon: "user"
-          }, void 0, false), /*#__PURE__*/_jsxDEV(SelectField, {
-            label: "Store",
-            required: true,
-            value: visit.store || '',
-            options: storeOptions,
-            onChange: handleStoreChange,
-            placeholder: "Pilih store",
-            icon: "store"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            className: "visit-progress-card rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              className: "mb-2 flex items-center justify-between gap-3",
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-bold uppercase tracking-wide",
-                children: "Progress"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-                className: "text-sm font-black",
-                children: [progress, "%"]
-              }, void 0, true)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(ProgressBar, {
-              value: progress
-            }, void 0, false), /*#__PURE__*/_jsxDEV(ProgressMissingInfo, {
-              visit: visit,
-              maxItems: 5
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "visit-detail-edit rounded-2xl border border-slate-200 bg-white/80 p-3",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-audit-primary",
-              children: "Edit detail visit"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-              className: "grid gap-3 sm:grid-cols-2",
-              children: [/*#__PURE__*/_jsxDEV(Field, {
-                label: "Kode Store",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  value: detailValue('siteCode4', baseDetail.siteCode4 || baseDetail.siteCode || baseDetail.storeCode || ''),
-                  onChange: event => updateStoreDetail('siteCode4', event.target.value),
-                  placeholder: "Kode store"
-                }, void 0, false)
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-                label: "Store Head",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  value: detailValue('storeHead', baseDetail.storeHead || ''),
-                  onChange: event => updateStoreDetail('storeHead', event.target.value),
-                  placeholder: "Store head"
-                }, void 0, false)
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-                label: "Area Manager",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  value: detailValue('areaManager', baseDetail.areaManager || ''),
-                  onChange: event => updateStoreDetail('areaManager', event.target.value),
-                  placeholder: "Area manager"
-                }, void 0, false)
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-                label: "Regional Manager",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  value: detailValue('regionalManager', baseDetail.regionalManager || ''),
-                  onChange: event => updateStoreDetail('regionalManager', event.target.value),
-                  placeholder: "Regional manager"
-                }, void 0, false)
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-                label: "Email Store",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  value: detailValue('emailStore', baseDetail.emailStore || ''),
-                  onChange: event => updateStoreDetail('emailStore', event.target.value),
-                  placeholder: "Email store"
-                }, void 0, false)
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-                label: "Alamat",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  value: detailValue('address', baseDetail.address || baseDetail.storeAddress || ''),
-                  onChange: event => updateStoreDetail('address', event.target.value),
-                  placeholder: "Alamat"
-                }, void 0, false)
-              }, void 0, false)]
-            }, void 0, true)]
-          }, void 0, true)]
-        }, void 0, true)
-      }, void 0, false), /*#__PURE__*/_jsxDEV(StoreDetailCard, {
-        detail: detail
-      }, void 0, false)]
-    }, void 0, true)
-  }, void 0, false);
+  return /*#__PURE__*/React.createElement(SectionShell, {
+    title: "Mulai visit"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "visit-setup-card surface-card min-w-0 rounded-[24px] p-4 md:rounded-[28px] md:p-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-4 md:gap-5"
+  }, /*#__PURE__*/React.createElement(SelectField, {
+    label: "Nama Bestie",
+    required: true,
+    value: visit.nama || '',
+    options: BESTIE_NAMES,
+    onChange: handleBestieChange,
+    placeholder: "Pilih nama bestie",
+    icon: "user"
+  }), /*#__PURE__*/React.createElement(SelectField, {
+    label: "Store",
+    required: true,
+    value: visit.store || '',
+    options: storeOptions,
+    onChange: handleStoreChange,
+    placeholder: "Pilih store",
+    icon: "store"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "visit-progress-card rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-2 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-wide"
+  }, "Progress"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-black"
+  }, progress, "%")), /*#__PURE__*/React.createElement(ProgressBar, {
+    value: progress
+  }), /*#__PURE__*/React.createElement(ProgressMissingInfo, {
+    visit: visit,
+    maxItems: 5
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "visit-detail-edit rounded-2xl border border-slate-200 bg-white/80 p-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-audit-primary"
+  }, "Edit detail visit"), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 sm:grid-cols-2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Kode Store"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: detailValue('siteCode4', baseDetail.siteCode4 || baseDetail.siteCode || baseDetail.storeCode || ''),
+    onChange: event => updateStoreDetail('siteCode4', event.target.value),
+    placeholder: "Kode store"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Store Head"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: detailValue('storeHead', baseDetail.storeHead || ''),
+    onChange: event => updateStoreDetail('storeHead', event.target.value),
+    placeholder: "Store head"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Area Manager"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: detailValue('areaManager', baseDetail.areaManager || ''),
+    onChange: event => updateStoreDetail('areaManager', event.target.value),
+    placeholder: "Area manager"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Regional Manager"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: detailValue('regionalManager', baseDetail.regionalManager || ''),
+    onChange: event => updateStoreDetail('regionalManager', event.target.value),
+    placeholder: "Regional manager"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Email Store"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: detailValue('emailStore', baseDetail.emailStore || ''),
+    onChange: event => updateStoreDetail('emailStore', event.target.value),
+    placeholder: "Email store"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Alamat"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: detailValue('address', baseDetail.address || baseDetail.storeAddress || ''),
+    onChange: event => updateStoreDetail('address', event.target.value),
+    placeholder: "Alamat"
+  })))))), /*#__PURE__*/React.createElement(StoreDetailCard, {
+    detail: detail
+  })));
 }
 function GeneralInfoSection({
   visit,
   update
 }) {
-  return /*#__PURE__*/_jsxDEV(SectionShell, {
-    title: "General Information",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "grid gap-5",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "date-card surface-card rounded-[28px] p-5 md:p-6",
-        children: /*#__PURE__*/_jsxDEV(Field, {
-          label: "Hari, Tanggal",
-          required: true,
-          children: /*#__PURE__*/_jsxDEV(DateInput, {
-            value: visit.tanggal || '',
-            onChange: e => update({
-              tanggal: e.target.value
-            })
-          }, void 0, false)
-        }, void 0, false)
-      }, void 0, false), /*#__PURE__*/_jsxDEV(CrewEditor, {
-        visit: visit,
-        update: update
-      }, void 0, false)]
-    }, void 0, true)
-  }, void 0, false);
+  return /*#__PURE__*/React.createElement(SectionShell, {
+    title: "General Information"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "date-card surface-card rounded-[28px] p-5 md:p-6"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Hari, Tanggal",
+    required: true
+  }, /*#__PURE__*/React.createElement(DateInput, {
+    value: visit.tanggal || '',
+    onChange: e => update({
+      tanggal: e.target.value
+    })
+  }))), /*#__PURE__*/React.createElement(CrewEditor, {
+    visit: visit,
+    update: update
+  })));
 }
 function QscResultSection({
   visit,
@@ -3006,40 +2765,36 @@ function QscResultSection({
 }) {
   const enabled = visit.showQSCResult === true;
   const missing = normalizeQscPhotos(visit).filter(photo => !photo.image).length;
-  return /*#__PURE__*/_jsxDEV(SectionShell, {
+  return /*#__PURE__*/React.createElement(SectionShell, {
     title: "QSC / FAMITRACK Result",
-    actions: /*#__PURE__*/_jsxDEV(Toggle, {
+    actions: /*#__PURE__*/React.createElement(Toggle, {
       checked: enabled,
       onChange: value => update({
         showQSCResult: value
       }),
       label: enabled ? 'Hide slide' : 'Unhide slide'
-    }, void 0, false),
-    children: !enabled ? /*#__PURE__*/_jsxDEV(InactiveSection, {
-      title: "Slide QSC/Famitrack disembunyikan"
-    }, void 0, false) : /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [missing ? /*#__PURE__*/_jsxDEV("div", {
-        className: "mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900",
-        children: ["Kurang ", missing, " foto wajib."]
-      }, void 0, true) : null, /*#__PURE__*/_jsxDEV("div", {
-        className: "qsc-result-photo-grid grid gap-4",
-        children: normalizeQscPhotos(visit).map((photo, index) => /*#__PURE__*/_jsxDEV(PhotoInput, {
-          value: photo,
-          matchCropFrame: true,
-          cropRatio: QSC_PHOTO_CROP_RATIO,
-          onChange: value => {
-            const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item);
-            update({
-              qscResultPhotos,
-              qscResultPhoto: qscResultPhotos[0]
-            });
-          },
-          label: 'Foto QSC / FAMITRACK ' + (index + 1),
-          required: true
-        }, index, false))
-      }, void 0, false)]
-    }, void 0, true)
-  }, void 0, false);
+    })
+  }, !enabled ? /*#__PURE__*/React.createElement(InactiveSection, {
+    title: "Slide QSC/Famitrack disembunyikan"
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, missing ? /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-900"
+  }, "Kurang ", missing, " foto wajib.") : null, /*#__PURE__*/React.createElement("div", {
+    className: "qsc-result-photo-grid grid gap-4"
+  }, normalizeQscPhotos(visit).map((photo, index) => /*#__PURE__*/React.createElement(PhotoInput, {
+    key: index,
+    value: photo,
+    matchCropFrame: true,
+    cropRatio: QSC_PHOTO_CROP_RATIO,
+    onChange: value => {
+      const qscResultPhotos = normalizeQscPhotos(visit).map((item, itemIndex) => itemIndex === index ? value : item);
+      update({
+        qscResultPhotos,
+        qscResultPhoto: qscResultPhotos[0]
+      });
+    },
+    label: 'Foto QSC / FAMITRACK ' + (index + 1),
+    required: true
+  })))));
 }
 function ObservationSection({
   visit,
@@ -3056,52 +2811,49 @@ function ObservationSection({
   }) : update({
     showQSCTable: value
   });
-  const preTitle = /*#__PURE__*/_jsxDEV("div", {
-    className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "flex gap-2 overflow-x-auto pb-1",
-      children: [/*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('subnav-chip prominent', tab === 'opi' && 'active'),
-        onClick: () => setTab('opi'),
-        children: [/*#__PURE__*/_jsxDEV(Icon, {
-          name: "clipboard",
-          className: "h-4 w-4"
-        }, void 0, false), " OPI Project"]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('subnav-chip prominent', tab === 'qsc' && 'active'),
-        onClick: () => setTab('qsc'),
-        children: [/*#__PURE__*/_jsxDEV(Icon, {
-          name: "clipboard",
-          className: "h-4 w-4"
-        }, void 0, false), " QSC Observation"]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV(Toggle, {
-      checked: enabled,
-      onChange: setEnabled,
-      label: toggleLabel
-    }, void 0, false)]
-  }, void 0, true);
-  return /*#__PURE__*/_jsxDEV(SectionShell, {
+  const preTitle = /*#__PURE__*/React.createElement("div", {
+    className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 overflow-x-auto pb-1"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('subnav-chip prominent', tab === 'opi' && 'active'),
+    onClick: () => setTab('opi')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clipboard",
+    className: "h-4 w-4"
+  }), " OPI Project"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('subnav-chip prominent', tab === 'qsc' && 'active'),
+    onClick: () => setTab('qsc')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clipboard",
+    className: "h-4 w-4"
+  }), " QSC Observation")), /*#__PURE__*/React.createElement(Toggle, {
+    checked: enabled,
+    onChange: setEnabled,
+    label: toggleLabel
+  }));
+  return /*#__PURE__*/React.createElement(SectionShell, {
     title: "Observation & Root Cause Analysis",
-    preTitle: preTitle,
-    children: !enabled ? /*#__PURE__*/_jsxDEV(InactiveSection, {
-      title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan'
-    }, void 0, false) : tab === 'opi' ? /*#__PURE__*/_jsxDEV(ObservationCards, {
-      title: "OPI Project Observation",
-      rows: visit.opiData,
-      onChange: opiData => update({
-        opiData
-      })
-    }, "opi", false) : /*#__PURE__*/_jsxDEV(ObservationCards, {
-      title: "QSC Observation",
-      rows: visit.qscData,
-      onChange: qscData => update({
-        qscData
-      })
-    }, "qsc", false)
-  }, void 0, false);
+    preTitle: preTitle
+  }, !enabled ? /*#__PURE__*/React.createElement(InactiveSection, {
+    title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan'
+  }) : tab === 'opi' ? /*#__PURE__*/React.createElement(ObservationCards, {
+    key: "opi",
+    title: "OPI Project Observation",
+    rows: visit.opiData,
+    onChange: opiData => update({
+      opiData
+    })
+  }) : /*#__PURE__*/React.createElement(ObservationCards, {
+    key: "qsc",
+    title: "QSC Observation",
+    rows: visit.qscData,
+    onChange: qscData => update({
+      qscData
+    })
+  }));
 }
 function EvidenceSection({
   visit,
@@ -3126,90 +2878,78 @@ function EvidenceSection({
     paddingRight: '8px',
     whiteSpace: 'nowrap'
   };
-  const preTitle = /*#__PURE__*/_jsxDEV("div", {
-    className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]",
-      children: [/*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('subnav-chip prominent', tab === 'finding' && 'active'),
-        style: evidenceTabStyle,
-        onClick: () => setTab('finding'),
-        children: [/*#__PURE__*/_jsxDEV(Icon, {
-          name: "image",
-          className: "h-4 w-4 shrink-0"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-          className: "min-w-0 truncate",
-          children: "Finding Evidence"
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('subnav-chip prominent', tab === 'corrective' && 'active'),
-        style: evidenceTabStyle,
-        onClick: () => setTab('corrective'),
-        children: [/*#__PURE__*/_jsxDEV(Icon, {
-          name: "image",
-          className: "h-4 w-4 shrink-0"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-          className: "min-w-0 truncate",
-          children: "Corrective Action"
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV(Toggle, {
-      checked: enabled,
-      onChange: setEnabled,
-      label: toggleLabel
-    }, void 0, false)]
-  }, void 0, true);
-  return /*#__PURE__*/_jsxDEV(SectionShell, {
+  const preTitle = /*#__PURE__*/React.createElement("div", {
+    className: "section-switcher flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('subnav-chip prominent', tab === 'finding' && 'active'),
+    style: evidenceTabStyle,
+    onClick: () => setTab('finding')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "image",
+    className: "h-4 w-4 shrink-0"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0 truncate"
+  }, "Finding Evidence")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('subnav-chip prominent', tab === 'corrective' && 'active'),
+    style: evidenceTabStyle,
+    onClick: () => setTab('corrective')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "image",
+    className: "h-4 w-4 shrink-0"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0 truncate"
+  }, "Corrective Action"))), /*#__PURE__*/React.createElement(Toggle, {
+    checked: enabled,
+    onChange: setEnabled,
+    label: toggleLabel
+  }));
+  return /*#__PURE__*/React.createElement(SectionShell, {
     title: "Evidence Photos",
-    preTitle: preTitle,
-    children: !enabled ? /*#__PURE__*/_jsxDEV(InactiveSection, {
-      title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan'
-    }, void 0, false) : tab === 'finding' ? /*#__PURE__*/_jsxDEV(PhotoGrid, {
-      prefix: "Finding",
-      photos: visit.findingEvidencePhotos,
-      onChange: findingEvidencePhotos => update({
-        findingEvidencePhotos
-      })
-    }, void 0, false) : /*#__PURE__*/_jsxDEV(PhotoGrid, {
-      prefix: "Corrective",
-      photos: visit.correctiveActionPhotos,
-      onChange: correctiveActionPhotos => update({
-        correctiveActionPhotos
-      })
-    }, void 0, false)
-  }, void 0, false);
+    preTitle: preTitle
+  }, !enabled ? /*#__PURE__*/React.createElement(InactiveSection, {
+    title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan'
+  }) : tab === 'finding' ? /*#__PURE__*/React.createElement(PhotoGrid, {
+    prefix: "Finding",
+    photos: visit.findingEvidencePhotos,
+    onChange: findingEvidencePhotos => update({
+      findingEvidencePhotos
+    })
+  }) : /*#__PURE__*/React.createElement(PhotoGrid, {
+    prefix: "Corrective",
+    photos: visit.correctiveActionPhotos,
+    onChange: correctiveActionPhotos => update({
+      correctiveActionPhotos
+    })
+  }));
 }
 function AssignmentSection({
   visit,
   update,
   onPreview
 }) {
-  return /*#__PURE__*/_jsxDEV(SectionShell, {
-    title: "Store Assignment",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "surface-card rounded-[28px] p-5 md:p-6",
-      children: [/*#__PURE__*/_jsxDEV(Field, {
-        label: "Assignment Link",
-        children: /*#__PURE__*/_jsxDEV(TextInput, {
-          type: "url",
-          value: visit.storeAssignmentLink || '',
-          onChange: e => update({
-            storeAssignmentLink: e.target.value
-          }),
-          placeholder: "https://..."
-        }, void 0, false)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-5 flex flex-wrap gap-2",
-        children: /*#__PURE__*/_jsxDEV(Button, {
-          icon: "eye",
-          onClick: onPreview,
-          children: "Preview PDF"
-        }, void 0, false)
-      }, void 0, false)]
-    }, void 0, true)
-  }, void 0, false);
+  return /*#__PURE__*/React.createElement(SectionShell, {
+    title: "Store Assignment"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "surface-card rounded-[28px] p-5 md:p-6"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Assignment Link"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    type: "url",
+    value: visit.storeAssignmentLink || '',
+    onChange: e => update({
+      storeAssignmentLink: e.target.value
+    }),
+    placeholder: "https://..."
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 flex flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    icon: "eye",
+    onClick: onPreview
+  }, "Preview PDF"))));
 }
 function InstallGuideModal({
   open,
@@ -3270,76 +3010,55 @@ function InstallGuideModal({
   if (!open) return null;
   const canAutoInstall = Boolean(deferredPrompt) && !isIos;
   const guideItems = guideMode === 'mobile' ? mobileGuides : desktopGuides;
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[88] grid place-items-end bg-slate-950/65 p-0 backdrop-blur-sm md:place-items-center md:p-6",
     role: "dialog",
-    "aria-modal": "true",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[30px] md:p-6",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-4 flex items-start justify-between gap-3",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV("span", {
-            className: "grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "spark"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary",
-              children: "Install Apps"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("h2", {
-              className: "text-xl font-black text-slate-950",
-              children: "Tambahkan Bestie Visit ke perangkat"
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: onClose,
-          "aria-label": "Tutup",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "close",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "mb-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "install-guide-tabs",
-          children: [/*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: cx('install-guide-tab', guideMode === 'mobile' && 'active'),
-            onClick: () => setGuideMode('mobile'),
-            children: "Tutorial Mobile"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: cx('install-guide-tab', guideMode === 'desktop' && 'active'),
-            onClick: () => setGuideMode('desktop'),
-            children: "Tutorial Desktop"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("p", {
-          className: "mt-3 text-xs font-semibold leading-5 text-slate-500",
-          children: canAutoInstall ? 'Browser ini mendukung auto install. Gunakan tombol di bawah untuk menambahkan aplikasi dengan cepat.' : isIos ? 'Di iPhone / iPad auto install tidak didukung, jadi gunakan tutorial manual sesuai browser.' : 'Jika browser tidak menampilkan prompt install otomatis, gunakan langkah manual sesuai browser yang Anda pakai.'
-        }, void 0, false)]
-      }, void 0, true), canAutoInstall ? /*#__PURE__*/_jsxDEV(Button, {
-        className: "mb-4 w-full",
-        icon: "download",
-        onClick: installNow,
-        children: "Auto Add to Home / Install App"
-      }, void 0, false) : null, /*#__PURE__*/_jsxDEV("div", {
-        className: "install-guide-grid",
-        children: guideItems.map(item => /*#__PURE__*/_jsxDEV("div", {
-          className: "install-guide-card",
-          children: [/*#__PURE__*/_jsxDEV("strong", {
-            children: item.browser
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            children: item.steps
-          }, void 0, false)]
-        }, item.browser, true))
-      }, void 0, false)]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[30px] md:p-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-audit-primary"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "spark"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary"
+  }, "Install Apps"), /*#__PURE__*/React.createElement("h2", {
+    className: "text-xl font-black text-slate-950"
+  }, "Tambahkan Bestie Visit ke perangkat"))), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: onClose,
+    "aria-label": "Tutup"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    className: "h-4 w-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "install-guide-tabs"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('install-guide-tab', guideMode === 'mobile' && 'active'),
+    onClick: () => setGuideMode('mobile')
+  }, "Tutorial Mobile"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('install-guide-tab', guideMode === 'desktop' && 'active'),
+    onClick: () => setGuideMode('desktop')
+  }, "Tutorial Desktop")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-xs font-semibold leading-5 text-slate-500"
+  }, canAutoInstall ? 'Browser ini mendukung auto install. Gunakan tombol di bawah untuk menambahkan aplikasi dengan cepat.' : isIos ? 'Di iPhone / iPad auto install tidak didukung, jadi gunakan tutorial manual sesuai browser.' : 'Jika browser tidak menampilkan prompt install otomatis, gunakan langkah manual sesuai browser yang Anda pakai.')), canAutoInstall ? /*#__PURE__*/React.createElement(Button, {
+    className: "mb-4 w-full",
+    icon: "download",
+    onClick: installNow
+  }, "Auto Add to Home / Install App") : null, /*#__PURE__*/React.createElement("div", {
+    className: "install-guide-grid"
+  }, guideItems.map(item => /*#__PURE__*/React.createElement("div", {
+    key: item.browser,
+    className: "install-guide-card"
+  }, /*#__PURE__*/React.createElement("strong", null, item.browser), /*#__PURE__*/React.createElement("p", null, item.steps))))));
 }
 function getLinkedDeviceId() {
   const key = 'rbv_linked_device_id';
@@ -3590,44 +3309,37 @@ function HomeUpdateNotice({
   }, [notice.enabled, messages.length, notice.intervalSeconds, messageSignature]);
   if (!notice.enabled || !messages.length) return null;
   const activeMessage = messages[index % messages.length] || messages[0];
-  return /*#__PURE__*/_jsxDEV("section", {
+  return /*#__PURE__*/React.createElement("section", {
     className: "home-update-notice rounded-[24px] bg-white/90 px-4 py-4 shadow-sm",
     style: {
       overflow: 'hidden'
-    },
-    children: [/*#__PURE__*/_jsxDEV("style", {
-      children: `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "mx-auto flex min-h-[112px] max-w-2xl flex-col items-center justify-center text-center",
-      children: [/*#__PURE__*/_jsxDEV("p", {
-        className: "text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary",
-        children: "Informasi Update"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("h2", {
-        className: "mt-1 max-w-full truncate text-base font-black text-slate-950",
-        children: notice.title
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2",
-        children: /*#__PURE__*/_jsxDEV("p", {
-          className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700",
-          style: {
-            animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both',
-            willChange: 'opacity, transform'
-          },
-          children: activeMessage
-        }, `${index}-${activeMessage}`, false)
-      }, void 0, false), messages.length > 1 ? /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-2 flex items-center justify-center gap-1.5",
-        "aria-label": `${index + 1} dari ${messages.length} info`,
-        children: messages.map((_, dotIndex) => /*#__PURE__*/_jsxDEV("span", {
-          className: "h-1.5 w-1.5 rounded-full",
-          style: {
-            background: dotIndex === index ? '#0f766e' : 'rgba(148,163,184,.5)',
-            animation: dotIndex === index ? 'rbvNoticeDot 1.6s ease-in-out infinite' : 'none'
-          }
-        }, dotIndex, false))
-      }, void 0, false) : null]
-    }, void 0, true)]
-  }, void 0, true);
+    }
+  }, /*#__PURE__*/React.createElement("style", null, `@keyframes rbvNoticeSmoothIn{0%{opacity:0;transform:translate3d(18px,0,0) scale(.985)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvNoticeDot{0%,100%{transform:scale(.72);opacity:.34}50%{transform:scale(1);opacity:1}} @keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`), /*#__PURE__*/React.createElement("div", {
+    className: "mx-auto flex min-h-[112px] max-w-2xl flex-col items-center justify-center text-center"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] font-black uppercase tracking-[0.24em] text-audit-primary"
+  }, "Informasi Update"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-1 max-w-full truncate text-base font-black text-slate-950"
+  }, notice.title), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex min-h-[42px] w-full items-center justify-center overflow-hidden px-2"
+  }, /*#__PURE__*/React.createElement("p", {
+    key: `${index}-${activeMessage}`,
+    className: "mx-auto max-w-[34rem] text-center text-sm font-bold leading-5 text-slate-700",
+    style: {
+      animation: 'rbvNoticeSmoothIn 620ms cubic-bezier(.22,1,.36,1) both',
+      willChange: 'opacity, transform'
+    }
+  }, activeMessage)), messages.length > 1 ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex items-center justify-center gap-1.5",
+    "aria-label": `${index + 1} dari ${messages.length} info`
+  }, messages.map((_, dotIndex) => /*#__PURE__*/React.createElement("span", {
+    key: dotIndex,
+    className: "h-1.5 w-1.5 rounded-full",
+    style: {
+      background: dotIndex === index ? '#0f766e' : 'rgba(148,163,184,.5)',
+      animation: dotIndex === index ? 'rbvNoticeDot 1.6s ease-in-out infinite' : 'none'
+    }
+  }))) : null));
 }
 function AnalyticsView() {
   const [loading, setLoading] = useState(true);
@@ -3766,62 +3478,47 @@ function AnalyticsView() {
     };
   }, [loading, data]);
   if (loading) {
-    return /*#__PURE__*/_jsxDEV("div", {
-      className: "flex items-center justify-center py-20",
-      children: [/*#__PURE__*/_jsxDEV("span", {
-        className: "loading-spinner",
-        "aria-hidden": "true"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-        className: "ml-3 text-slate-500 font-semibold",
-        children: "Memuat data analitik..."
-      }, void 0, false)]
-    }, void 0, true);
+    return /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-center py-20"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "loading-spinner",
+      "aria-hidden": "true"
+    }), /*#__PURE__*/React.createElement("p", {
+      className: "ml-3 text-slate-500 font-semibold"
+    }, "Memuat data analitik..."));
   }
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: "analytics-view space-y-4 mb-8",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "grid grid-cols-1 md:grid-cols-2 gap-4",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm",
-        children: [/*#__PURE__*/_jsxDEV("p", {
-          className: "text-sm font-semibold text-slate-500 mb-1",
-          children: "Total Store Dikunjungi"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-          className: "text-5xl font-black text-slate-900 tracking-tight",
-          children: data.totalStores
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm",
-        children: [/*#__PURE__*/_jsxDEV("p", {
-          className: "text-sm font-semibold text-slate-500 mb-1",
-          children: "Total Kunjungan Keseluruhan"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-          className: "text-5xl font-black text-audit-primary tracking-tight",
-          children: data.monthlyVisits.reduce((acc, curr) => acc + curr.count, 0)
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "glass-panel p-5 rounded-[24px] shadow-sm",
-      children: [/*#__PURE__*/_jsxDEV("h3", {
-        className: "text-lg font-bold text-slate-900 mb-4 px-1",
-        children: "Tren Kunjungan & Aktivitas Bestie (Bulanan)"
-      }, void 0, false), data.labels && data.labels.length > 0 ? /*#__PURE__*/_jsxDEV("div", {
-        className: "relative w-full overflow-hidden",
-        style: {
-          height: '320px'
-        },
-        children: /*#__PURE__*/_jsxDEV("canvas", {
-          ref: chartRef
-        }, void 0, false)
-      }, void 0, false) : /*#__PURE__*/_jsxDEV("div", {
-        className: "flex items-center justify-center py-12 bg-slate-50 rounded-xl border border-slate-100",
-        children: /*#__PURE__*/_jsxDEV("p", {
-          className: "text-slate-500 font-medium",
-          children: "Belum ada data yang cukup untuk menampilkan grafik."
-        }, void 0, false)
-      }, void 0, false)]
-    }, void 0, true)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "analytics-view space-y-4 mb-8"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-semibold text-slate-500 mb-1"
+  }, "Total Store Dikunjungi"), /*#__PURE__*/React.createElement("p", {
+    className: "text-5xl font-black text-slate-900 tracking-tight"
+  }, data.totalStores)), /*#__PURE__*/React.createElement("div", {
+    className: "glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-semibold text-slate-500 mb-1"
+  }, "Total Kunjungan Keseluruhan"), /*#__PURE__*/React.createElement("p", {
+    className: "text-5xl font-black text-audit-primary tracking-tight"
+  }, data.monthlyVisits.reduce((acc, curr) => acc + curr.count, 0)))), /*#__PURE__*/React.createElement("div", {
+    className: "glass-panel p-5 rounded-[24px] shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-slate-900 mb-4 px-1"
+  }, "Tren Kunjungan & Aktivitas Bestie (Bulanan)"), data.labels && data.labels.length > 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "relative w-full overflow-hidden",
+    style: {
+      height: '320px'
+    }
+  }, /*#__PURE__*/React.createElement("canvas", {
+    ref: chartRef
+  })) : /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-center py-12 bg-slate-50 rounded-xl border border-slate-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-slate-500 font-medium"
+  }, "Belum ada data yang cukup untuk menampilkan grafik."))));
 }
 function DashboardPage({
   history,
@@ -3912,255 +3609,197 @@ function DashboardPage({
       setRestoreBusy(false);
     }
   }
-  return /*#__PURE__*/_jsxDEV("main", {
-    className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-28",
-    children: [/*#__PURE__*/_jsxDEV("style", {
-      children: `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`
-    }, void 0, false), /*#__PURE__*/_jsxDEV("section", {
-      className: "dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "flex items-start justify-between gap-3",
-        children: [/*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          onClick: onTitleTap,
-          className: "min-w-0 text-left",
-          children: [/*#__PURE__*/_jsxDEV("h1", {
-            className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl",
-            children: "Regional Bestie Visit Report"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "mt-1 text-xs font-semibold text-slate-500",
-            children: "Home"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "history-sync-wrap flex shrink-0 items-center gap-2",
-          children: [/*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: "dashboard-stat dark history-number-card min-w-[84px] px-3 py-2",
-            onClick: onTitleTap,
-            "aria-label": "History",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: "history",
-              className: "h-4 w-4"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-              children: "History"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-              children: history.length
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: cx('manual-sync-button', syncBusy && 'is-loading'),
-            onClick: handleManualWebsiteSync,
-            "aria-label": "Manual sync perubahan website",
-            title: "Sync update website",
-            disabled: syncBusy,
-            children: [syncBusy ? /*#__PURE__*/_jsxDEV("span", {
-              className: "loading-spinner mini",
-              "aria-hidden": "true"
-            }, void 0, false) : /*#__PURE__*/_jsxDEV(Icon, {
-              name: "download",
-              className: "h-4 w-4"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-              children: syncBusy ? 'Sync...' : 'Sync'
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-3",
-        "data-build": "revamp82-preview-send-email-gmail-api",
-        children: [/*#__PURE__*/_jsxDEV("input", {
-          ref: restoreInputRef,
-          type: "file",
-          accept: "application/json,.json",
-          className: "hidden",
-          onChange: handleRestoreFile
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "grid grid-cols-2 gap-2 sm:grid-cols-4",
-          children: [/*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'),
-            onClick: handleBackupData,
-            "aria-label": "Backup data",
-            title: "Backup data",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: "download",
-              className: "h-4 w-4 shrink-0 text-audit-primary"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-              className: "block max-w-full truncate",
-              children: "Backup"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'),
-            onClick: () => restoreInputRef.current?.click(),
-            "aria-label": "Restore data",
-            title: "Restore data",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: "upload",
-              className: "h-4 w-4 shrink-0 text-audit-primary"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-              className: "block max-w-full truncate",
-              children: "Restore"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]",
-            style: {
-              animation: 'rbvInstallPulse 1.8s ease-in-out infinite'
-            },
-            onClick: () => setInstallOpen(true),
-            "aria-label": "Info install apps",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: "spark",
-              className: "h-4 w-4 shrink-0"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-              className: "block max-w-full truncate",
-              children: "Install"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-extrabold leading-none shadow-sm transition hover:-translate-y-0.5 active:scale-[0.98]",
-            style: {
-              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-              color: '#ffffff',
-              border: '1px solid rgba(255,255,255,0.28)',
-              boxShadow: '0 10px 22px rgba(185,28,28,0.24)'
-            },
-            onClick: onClearHistory,
-            "aria-label": "Hapus history kunjungan",
-            title: "Hapus History",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: "trash",
-              className: "h-4 w-4 shrink-0"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-              className: "block max-w-full truncate",
-              style: {
-                color: '#ffffff'
-              },
-              children: "Hapus History"
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true), syncBusy ? /*#__PURE__*/_jsxDEV("div", {
-          className: "sync-loading-bar mt-3",
-          children: [/*#__PURE__*/_jsxDEV("span", {
-            className: "loading-spinner mini",
-            "aria-hidden": "true"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-            children: syncMessage || 'Sync update...'
-          }, void 0, false)]
-        }, void 0, true) : null]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "flex justify-center my-4 w-full px-2",
-      children: /*#__PURE__*/_jsxDEV("div", {
-        className: "flex bg-slate-200/70 p-1.5 rounded-[18px] w-full max-w-sm shadow-inner gap-1",
-        children: [/*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          onClick: () => setActiveTab('home'),
-          className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'home' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700"),
-          children: "Beranda"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          onClick: () => setActiveTab('analytics'),
-          className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'analytics' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700"),
-          children: "Analitik"
-        }, void 0, false)]
-      }, void 0, true)
-    }, void 0, false), activeTab === 'home' ? /*#__PURE__*/_jsxDEV(_Fragment, {
-      children: [/*#__PURE__*/_jsxDEV(HomeUpdateNotice, {
-        config: noticeConfig
-      }, void 0, false), /*#__PURE__*/_jsxDEV("section", {
-        className: "dashboard-history-section",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-3 flex items-center justify-between gap-3",
-          children: /*#__PURE__*/_jsxDEV("h2", {
-            className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl",
-            children: "History Kunjungan"
-          }, void 0, false)
-        }, void 0, false), history.length ? /*#__PURE__*/_jsxDEV("div", {
-          className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3",
-          children: history.map(item => /*#__PURE__*/_jsxDEV("article", {
-            className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              className: "mb-3 flex items-start justify-between gap-3",
-              children: [/*#__PURE__*/_jsxDEV("div", {
-                className: "min-w-0",
-                children: [/*#__PURE__*/_jsxDEV("p", {
-                  className: "truncate text-base font-extrabold text-slate-950 md:text-lg",
-                  children: item.storeName
-                }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-                  className: "mt-1 truncate text-xs text-slate-500",
-                  children: item.bestieName
-                }, void 0, false)]
-              }, void 0, true), /*#__PURE__*/_jsxDEV(Badge, {
-                tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default',
-                children: [item.progress || 0, "%"]
-              }, void 0, true)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-              className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500",
-              children: [/*#__PURE__*/_jsxDEV("span", {
-                children: item.storeCode || '-'
-              }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-                children: "•"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-                children: formatDate(item.visitDate)
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(ProgressBar, {
-              value: item.progress || 0
-            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-              className: "mt-4 flex gap-2",
-              children: [/*#__PURE__*/_jsxDEV(Button, {
-                className: "flex-1",
-                variant: "secondary",
-                icon: "clipboard",
-                onClick: () => onOpenVisit(item.id),
-                children: "Lanjutkan"
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-                variant: "icon",
-                onClick: () => onDeleteVisit(item.id),
-                "aria-label": "Hapus history",
-                children: /*#__PURE__*/_jsxDEV(Icon, {
-                  name: "trash",
-                  className: "h-4 w-4"
-                }, void 0, false)
-              }, void 0, false)]
-            }, void 0, true)]
-          }, item.id, true))
-        }, void 0, false) : /*#__PURE__*/_jsxDEV(EmptyState, {
-          icon: "clipboard",
-          title: "Belum ada history"
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true) : /*#__PURE__*/_jsxDEV(AnalyticsView, {}, void 0, false), activeTab === 'home' && /*#__PURE__*/_jsxDEV("button", {
-      type: "button",
-      className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]",
-      style: {
-        position: 'fixed',
-        left: '50%',
-        bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
-        transform: 'translateX(-50%)',
-        zIndex: 80,
-        width: 'min(360px, calc(100vw - 32px))',
-        height: '56px',
-        background: '#0f766e',
-        opacity: 1,
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none'
-      },
-      onClick: onNewVisit,
-      "aria-label": "Buat kunjungan baru",
-      children: [/*#__PURE__*/_jsxDEV(Icon, {
-        name: "plus",
-        className: "h-5 w-5"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        children: "Kunjungan Baru"
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV(InstallGuideModal, {
-      open: installOpen,
-      onClose: () => setInstallOpen(false),
-      deferredPrompt: deferredPrompt,
-      onPromptUsed: () => setDeferredPrompt(null)
-    }, void 0, false)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("main", {
+    className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-28"
+  }, /*#__PURE__*/React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`), /*#__PURE__*/React.createElement("section", {
+    className: "dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: onTitleTap,
+    className: "min-w-0 text-left"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl"
+  }, "Regional Bestie Visit Report"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs font-semibold text-slate-500"
+  }, "Home")), /*#__PURE__*/React.createElement("div", {
+    className: "history-sync-wrap flex shrink-0 items-center gap-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "dashboard-stat dark history-number-card min-w-[84px] px-3 py-2",
+    onClick: onTitleTap,
+    "aria-label": "History"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "history",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("p", null, "History"), /*#__PURE__*/React.createElement("strong", null, history.length)), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('manual-sync-button', syncBusy && 'is-loading'),
+    onClick: handleManualWebsiteSync,
+    "aria-label": "Manual sync perubahan website",
+    title: "Sync update website",
+    disabled: syncBusy
+  }, syncBusy ? /*#__PURE__*/React.createElement("span", {
+    className: "loading-spinner mini",
+    "aria-hidden": "true"
+  }) : /*#__PURE__*/React.createElement(Icon, {
+    name: "download",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, syncBusy ? 'Sync...' : 'Sync')))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3",
+    "data-build": "revamp82-preview-send-email-gmail-api"
+  }, /*#__PURE__*/React.createElement("input", {
+    ref: restoreInputRef,
+    type: "file",
+    accept: "application/json,.json",
+    className: "hidden",
+    onChange: handleRestoreFile
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2 sm:grid-cols-4"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60'),
+    onClick: handleBackupData,
+    "aria-label": "Backup data",
+    title: "Backup data"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "download",
+    className: "h-4 w-4 shrink-0 text-audit-primary"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "block max-w-full truncate"
+  }, "Backup")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', restoreBusy && 'pointer-events-none opacity-60'),
+    onClick: () => restoreInputRef.current?.click(),
+    "aria-label": "Restore data",
+    title: "Restore data"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "upload",
+    className: "h-4 w-4 shrink-0 text-audit-primary"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "block max-w-full truncate"
+  }, "Restore")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50/90 px-2 text-[10px] font-extrabold leading-none text-audit-primary shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 active:scale-[0.98]",
+    style: {
+      animation: 'rbvInstallPulse 1.8s ease-in-out infinite'
+    },
+    onClick: () => setInstallOpen(true),
+    "aria-label": "Info install apps"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "spark",
+    className: "h-4 w-4 shrink-0"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "block max-w-full truncate"
+  }, "Install")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-extrabold leading-none shadow-sm transition hover:-translate-y-0.5 active:scale-[0.98]",
+    style: {
+      background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+      color: '#ffffff',
+      border: '1px solid rgba(255,255,255,0.28)',
+      boxShadow: '0 10px 22px rgba(185,28,28,0.24)'
+    },
+    onClick: onClearHistory,
+    "aria-label": "Hapus history kunjungan",
+    title: "Hapus History"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "h-4 w-4 shrink-0"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "block max-w-full truncate",
+    style: {
+      color: '#ffffff'
+    }
+  }, "Hapus History"))), syncBusy ? /*#__PURE__*/React.createElement("div", {
+    className: "sync-loading-bar mt-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "loading-spinner mini",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/React.createElement("strong", null, syncMessage || 'Sync update...')) : null)), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-center my-4 w-full px-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex bg-slate-200/70 p-1.5 rounded-[18px] w-full max-w-sm shadow-inner gap-1"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setActiveTab('home'),
+    className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'home' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700")
+  }, "Beranda"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setActiveTab('analytics'),
+    className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'analytics' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700")
+  }, "Analitik"))), activeTab === 'home' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(HomeUpdateNotice, {
+    config: noticeConfig
+  }), /*#__PURE__*/React.createElement("section", {
+    className: "dashboard-history-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-lg font-black tracking-tight text-slate-950 md:text-2xl"
+  }, "History Kunjungan")), history.length ? /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+  }, history.map(item => /*#__PURE__*/React.createElement("article", {
+    key: item.id,
+    className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "truncate text-base font-extrabold text-slate-950 md:text-lg"
+  }, item.storeName), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 truncate text-xs text-slate-500"
+  }, item.bestieName)), /*#__PURE__*/React.createElement(Badge, {
+    tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default'
+  }, item.progress || 0, "%")), /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500"
+  }, /*#__PURE__*/React.createElement("span", null, item.storeCode || '-'), /*#__PURE__*/React.createElement("span", null, "•"), /*#__PURE__*/React.createElement("span", null, formatDate(item.visitDate))), /*#__PURE__*/React.createElement(ProgressBar, {
+    value: item.progress || 0
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    className: "flex-1",
+    variant: "secondary",
+    icon: "clipboard",
+    onClick: () => onOpenVisit(item.id)
+  }, "Lanjutkan"), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: () => onDeleteVisit(item.id),
+    "aria-label": "Hapus history"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "h-4 w-4"
+  })))))) : /*#__PURE__*/React.createElement(EmptyState, {
+    icon: "clipboard",
+    title: "Belum ada history"
+  }))) : /*#__PURE__*/React.createElement(AnalyticsView, null), activeTab === 'home' && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]",
+    style: {
+      position: 'fixed',
+      left: '50%',
+      bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+      transform: 'translateX(-50%)',
+      zIndex: 80,
+      width: 'min(360px, calc(100vw - 32px))',
+      height: '56px',
+      background: '#0f766e',
+      opacity: 1,
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none'
+    },
+    onClick: onNewVisit,
+    "aria-label": "Buat kunjungan baru"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "plus",
+    className: "h-5 w-5"
+  }), /*#__PURE__*/React.createElement("span", null, "Kunjungan Baru")), /*#__PURE__*/React.createElement(InstallGuideModal, {
+    open: installOpen,
+    onClose: () => setInstallOpen(false),
+    deferredPrompt: deferredPrompt,
+    onPromptUsed: () => setDeferredPrompt(null)
+  }));
 }
 function NewVisitModal({
   open,
@@ -4217,89 +3856,71 @@ function NewVisitModal({
   }
   if (!open) return null;
   const visitStoreName = manualOpen ? cleanText(manualStoreName) : storeName;
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[80] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6",
     role: "dialog",
-    "aria-modal": "true",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "new-visit-modal w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-5 flex items-start justify-between gap-3",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          children: [/*#__PURE__*/_jsxDEV("p", {
-            className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary",
-            children: "Kunjungan Baru"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("h2", {
-            className: "mt-2 text-2xl font-black text-slate-950",
-            children: "Pilih Bestie dan Store"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: onClose,
-          "aria-label": "Tutup",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "close",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "grid gap-4",
-        children: [/*#__PURE__*/_jsxDEV(SelectField, {
-          label: "Nama Bestie",
-          value: bestieName,
-          options: BESTIE_NAMES,
-          onChange: setBestieName,
-          placeholder: "Pilih nama bestie",
-          icon: "user",
-          required: true
-        }, void 0, false), /*#__PURE__*/_jsxDEV(SelectField, {
-          label: "Store",
-          value: storeName,
-          options: storeOptions,
-          onChange: setStoreName,
-          placeholder: "Pilih store",
-          icon: "store",
-          required: !manualOpen,
-          disabled: manualOpen
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "rounded-2xl border border-slate-200 p-3",
-          children: [/*#__PURE__*/_jsxDEV("button", {
-            type: "button",
-            className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900",
-            onClick: () => setManualOpen(state => !state),
-            children: [/*#__PURE__*/_jsxDEV("span", {
-              children: "Input store manual"
-            }, void 0, false), /*#__PURE__*/_jsxDEV(Icon, {
-              name: "right",
-              className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '')
-            }, void 0, false)]
-          }, void 0, true), manualOpen ? /*#__PURE__*/_jsxDEV("div", {
-            className: "mt-3 grid gap-3",
-            children: /*#__PURE__*/_jsxDEV(Field, {
-              label: "Nama Store Manual",
-              children: /*#__PURE__*/_jsxDEV(TextInput, {
-                value: manualStoreName,
-                onChange: e => setManualStoreName(e.target.value),
-                placeholder: "Ketik nama store"
-              }, void 0, false)
-            }, void 0, false)
-          }, void 0, false) : null]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        children: [/*#__PURE__*/_jsxDEV(Button, {
-          variant: "secondary",
-          onClick: onClose,
-          children: "Tutup"
-        }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-          icon: "plus",
-          onClick: () => onCreate(bestieName, visitStoreName),
-          disabled: !bestieName || !visitStoreName,
-          children: "Mulai Kunjungan"
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "new-visit-modal w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary"
+  }, "Kunjungan Baru"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-2 text-2xl font-black text-slate-950"
+  }, "Pilih Bestie dan Store")), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: onClose,
+    "aria-label": "Tutup"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    className: "h-4 w-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-4"
+  }, /*#__PURE__*/React.createElement(SelectField, {
+    label: "Nama Bestie",
+    value: bestieName,
+    options: BESTIE_NAMES,
+    onChange: setBestieName,
+    placeholder: "Pilih nama bestie",
+    icon: "user",
+    required: true
+  }), /*#__PURE__*/React.createElement(SelectField, {
+    label: "Store",
+    value: storeName,
+    options: storeOptions,
+    onChange: setStoreName,
+    placeholder: "Pilih store",
+    icon: "store",
+    required: !manualOpen,
+    disabled: manualOpen
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl border border-slate-200 p-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900",
+    onClick: () => setManualOpen(state => !state)
+  }, /*#__PURE__*/React.createElement("span", null, "Input store manual"), /*#__PURE__*/React.createElement(Icon, {
+    name: "right",
+    className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '')
+  })), manualOpen ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 grid gap-3"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Nama Store Manual"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: manualStoreName,
+    onChange: e => setManualStoreName(e.target.value),
+    placeholder: "Ketik nama store"
+  }))) : null)), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: onClose
+  }, "Tutup"), /*#__PURE__*/React.createElement(Button, {
+    icon: "plus",
+    onClick: () => onCreate(bestieName, visitStoreName),
+    disabled: !bestieName || !visitStoreName
+  }, "Mulai Kunjungan"))));
 }
 function getPickerAccept(fileName) {
   const lower = String(fileName || '').toLowerCase();
@@ -4422,149 +4043,123 @@ function EmailReportModal({
 }) {
   if (!open) return null;
   const config = getEmailReportConfig();
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[90] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6",
     role: "dialog",
-    "aria-modal": "true",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-3xl md:rounded-[32px] md:p-7",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-5 flex items-start justify-between gap-3",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          children: [/*#__PURE__*/_jsxDEV("p", {
-            className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary",
-            children: "Send Email"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("h2", {
-            className: "mt-2 text-2xl font-black text-slate-950",
-            children: "Kirim Visit Report"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "mt-1 text-xs font-semibold text-slate-500",
-            children: ["Sender dikunci dari backend: ", config.sender]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: onClose,
-          disabled: busy,
-          "aria-label": "Tutup",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "close",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "grid gap-4 md:grid-cols-2",
-        children: [/*#__PURE__*/_jsxDEV(Field, {
-          label: "From / Sender Locked",
-          children: /*#__PURE__*/_jsxDEV(TextInput, {
-            value: form.from || config.sender,
-            readOnly: true,
-            placeholder: "Sender backend"
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-          label: "To",
-          required: true,
-          children: /*#__PURE__*/_jsxDEV(TextInput, {
-            type: "email",
-            value: form.to,
-            onChange: e => onChange({
-              to: e.target.value
-            }),
-            placeholder: "email tujuan"
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-          label: "CC",
-          children: /*#__PURE__*/_jsxDEV(TextInput, {
-            value: form.cc,
-            onChange: e => onChange({
-              cc: e.target.value
-            }),
-            placeholder: "cc1@email.com, cc2@email.com"
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-          label: "Kode Kirim",
-          helper: "Isi jika EMAIL_SEND_PASSCODE diset di Vercel.",
-          children: /*#__PURE__*/_jsxDEV(TextInput, {
-            type: "password",
-            value: form.passcode,
-            onChange: e => onChange({
-              passcode: e.target.value
-            }),
-            placeholder: "Opsional"
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "md:col-span-2",
-          children: /*#__PURE__*/_jsxDEV(Field, {
-            label: "Subject",
-            required: true,
-            children: /*#__PURE__*/_jsxDEV(TextInput, {
-              value: form.subject,
-              onChange: e => onChange({
-                subject: e.target.value
-              }),
-              placeholder: "Subject email"
-            }, void 0, false)
-          }, void 0, false)
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "md:col-span-2",
-          children: /*#__PURE__*/_jsxDEV(Field, {
-            label: "Body Email",
-            required: true,
-            children: /*#__PURE__*/_jsxDEV(TextArea, {
-              value: form.body,
-              onChange: e => onChange({
-                body: e.target.value
-              }),
-              placeholder: "Tulis isi email...",
-              minRows: 7
-            }, void 0, false)
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-4 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-800 md:grid-cols-2",
-        children: [/*#__PURE__*/_jsxDEV("label", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV("input", {
-            type: "checkbox",
-            checked: !!form.attachPdf,
-            onChange: e => onChange({
-              attachPdf: e.target.checked
-            })
-          }, void 0, false), " Attach PDF Report"]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("label", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV("input", {
-            type: "checkbox",
-            checked: !!form.attachExcel,
-            onChange: e => onChange({
-              attachExcel: e.target.checked
-            })
-          }, void 0, false), " Attach Excel CA Assignment"]
-        }, void 0, true)]
-      }, void 0, true), status ? /*#__PURE__*/_jsxDEV("p", {
-        className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100",
-        children: status
-      }, void 0, false) : null, /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        children: [/*#__PURE__*/_jsxDEV(Button, {
-          variant: "secondary",
-          onClick: onClose,
-          disabled: busy,
-          children: "Tutup"
-        }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-          variant: "secondary",
-          icon: "pdf",
-          onClick: () => onSubmit('draft'),
-          disabled: busy || !form.to || !form.subject,
-          children: busy ? 'Memproses...' : 'Create Draft'
-        }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-          icon: "upload",
-          onClick: () => onSubmit('send'),
-          disabled: busy || !form.to || !form.subject,
-          children: busy ? 'Memproses...' : 'Send Now'
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-3xl md:rounded-[32px] md:p-7"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary"
+  }, "Send Email"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-2 text-2xl font-black text-slate-950"
+  }, "Kirim Visit Report"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs font-semibold text-slate-500"
+  }, "Sender dikunci dari backend: ", config.sender)), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: onClose,
+    disabled: busy,
+    "aria-label": "Tutup"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    className: "h-4 w-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-4 md:grid-cols-2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "From / Sender Locked"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: form.from || config.sender,
+    readOnly: true,
+    placeholder: "Sender backend"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "To",
+    required: true
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    type: "email",
+    value: form.to,
+    onChange: e => onChange({
+      to: e.target.value
+    }),
+    placeholder: "email tujuan"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "CC"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: form.cc,
+    onChange: e => onChange({
+      cc: e.target.value
+    }),
+    placeholder: "cc1@email.com, cc2@email.com"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Kode Kirim",
+    helper: "Isi jika EMAIL_SEND_PASSCODE diset di Vercel."
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    type: "password",
+    value: form.passcode,
+    onChange: e => onChange({
+      passcode: e.target.value
+    }),
+    placeholder: "Opsional"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Subject",
+    required: true
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: form.subject,
+    onChange: e => onChange({
+      subject: e.target.value
+    }),
+    placeholder: "Subject email"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Body Email",
+    required: true
+  }, /*#__PURE__*/React.createElement(TextArea, {
+    value: form.body,
+    onChange: e => onChange({
+      body: e.target.value
+    }),
+    placeholder: "Tulis isi email...",
+    minRows: 7
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-800 md:grid-cols-2"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: !!form.attachPdf,
+    onChange: e => onChange({
+      attachPdf: e.target.checked
+    })
+  }), " Attach PDF Report"), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: !!form.attachExcel,
+    onChange: e => onChange({
+      attachExcel: e.target.checked
+    })
+  }), " Attach Excel CA Assignment")), status ? /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100"
+  }, status) : null, /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: onClose,
+    disabled: busy
+  }, "Tutup"), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "pdf",
+    onClick: () => onSubmit('draft'),
+    disabled: busy || !form.to || !form.subject
+  }, busy ? 'Memproses...' : 'Create Draft'), /*#__PURE__*/React.createElement(Button, {
+    icon: "upload",
+    onClick: () => onSubmit('send'),
+    disabled: busy || !form.to || !form.subject
+  }, busy ? 'Memproses...' : 'Send Now'))));
 }
 function PdfCanvasPreview({
   blob,
@@ -4745,16 +4340,15 @@ function PdfCanvasPreview({
   }, [blob, renderZoom]);
   const liveScale = renderZoom ? zoom / renderZoom : 1;
   const zoomLabel = Math.round((zoom || 1) * 100);
-  if (!blob) return /*#__PURE__*/_jsxDEV("div", {
-    className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600",
-    children: status
-  }, void 0, false);
-  if (fallback && pdfUrl) return /*#__PURE__*/_jsxDEV("iframe", {
+  if (!blob) return /*#__PURE__*/React.createElement("div", {
+    className: "grid min-h-[52vh] place-items-center p-8 text-center text-slate-600"
+  }, status);
+  if (fallback && pdfUrl) return /*#__PURE__*/React.createElement("iframe", {
     className: "preview-frame",
     src: pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH',
     title: "Preview Regional Bestie PDF"
-  }, void 0, false);
-  return /*#__PURE__*/_jsxDEV("div", {
+  });
+  return /*#__PURE__*/React.createElement("div", {
     ref: scrollRef,
     className: "pdf-canvas-scroll",
     onTouchStart: handlePreviewTouchStart,
@@ -4765,43 +4359,39 @@ function PdfCanvasPreview({
       touchAction: 'pan-x pan-y',
       WebkitOverflowScrolling: 'touch',
       overscrollBehavior: 'contain'
-    },
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      ref: pagesRef,
-      className: "pdf-canvas-pages",
-      style: {
-        transform: `translateZ(0) scale(${liveScale})`,
-        transformOrigin: 'top center',
-        transition: pinchRef.current.active ? 'none' : 'transform 180ms cubic-bezier(.22,1,.36,1)',
-        willChange: 'transform'
-      }
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      "aria-hidden": "true",
-      style: {
-        position: 'sticky',
-        bottom: 10,
-        left: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        pointerEvents: 'none'
-      },
-      children: /*#__PURE__*/_jsxDEV("span", {
-        style: {
-          borderRadius: 999,
-          background: 'rgba(15,23,42,.72)',
-          color: '#fff',
-          padding: '5px 10px',
-          fontSize: 11,
-          fontWeight: 900,
-          boxShadow: '0 10px 24px rgba(15,23,42,.18)'
-        },
-        children: ["Zoom ", zoomLabel, "%"]
-      }, void 0, true)
-    }, void 0, false), renderStatus ? /*#__PURE__*/_jsxDEV("div", {
-      className: "pdf-render-status",
-      children: renderStatus
-    }, void 0, false) : null]
-  }, void 0, true);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: pagesRef,
+    className: "pdf-canvas-pages",
+    style: {
+      transform: `translateZ(0) scale(${liveScale})`,
+      transformOrigin: 'top center',
+      transition: pinchRef.current.active ? 'none' : 'transform 180ms cubic-bezier(.22,1,.36,1)',
+      willChange: 'transform'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      position: 'sticky',
+      bottom: 10,
+      left: 0,
+      display: 'flex',
+      justifyContent: 'center',
+      pointerEvents: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      borderRadius: 999,
+      background: 'rgba(15,23,42,.72)',
+      color: '#fff',
+      padding: '5px 10px',
+      fontSize: 11,
+      fontWeight: 900,
+      boxShadow: '0 10px 24px rgba(15,23,42,.18)'
+    }
+  }, "Zoom ", zoomLabel, "%")), renderStatus ? /*#__PURE__*/React.createElement("div", {
+    className: "pdf-render-status"
+  }, renderStatus) : null);
 }
 function PreviewPage({
   visit,
@@ -4959,134 +4549,102 @@ function PreviewPage({
       setBusy(false);
     }
   }
-  if (!visit) return /*#__PURE__*/_jsxDEV("main", {
-    className: "preview-page w-full px-4 py-8 md:px-8",
-    children: /*#__PURE__*/_jsxDEV(EmptyState, {
-      icon: "pdf",
-      title: "Belum ada visit aktif",
-      action: /*#__PURE__*/_jsxDEV(Button, {
-        variant: "secondary",
-        onClick: onBack,
-        children: "Kembali"
-      }, void 0, false)
-    }, void 0, false)
-  }, void 0, false);
-  return /*#__PURE__*/_jsxDEV("main", {
-    className: "preview-page w-full px-4 py-4 md:px-8 md:py-8",
-    children: [downloadBusy ? /*#__PURE__*/_jsxDEV("div", {
-      className: "download-pdf-overlay",
-      role: "status",
-      "aria-live": "polite",
-      children: /*#__PURE__*/_jsxDEV("div", {
-        className: "download-pdf-loader",
-        children: [/*#__PURE__*/_jsxDEV("span", {
-          className: "download-pdf-spinner",
-          "aria-hidden": "true"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-          children: downloadMessage || 'Menyiapkan PDF...'
-        }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-          children: "Jangan tutup halaman sampai file manager muncul."
-        }, void 0, false)]
-      }, void 0, true)
-    }, void 0, false) : null, /*#__PURE__*/_jsxDEV(EmailReportModal, {
-      open: emailOpen,
-      form: emailForm,
-      onChange: patch => setEmailForm(state => ({
-        ...state,
-        ...patch
-      })),
-      onClose: () => setEmailOpen(false),
-      onSubmit: handleSendReportEmail,
-      busy: emailBusy,
-      status: emailStatus,
-      visit: visit
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        children: [/*#__PURE__*/_jsxDEV("p", {
-          className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary",
-          children: "Preview PDF"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("h1", {
-          className: "mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl",
-          children: "Review Report"
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-2 flex items-center justify-between gap-3",
-          children: [/*#__PURE__*/_jsxDEV("p", {
-            className: "text-xs font-bold uppercase tracking-wide",
-            children: "Progress"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "text-sm font-black",
-            children: [visitProgress(visit), "%"]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV(ProgressBar, {
-          value: visitProgress(visit)
-        }, void 0, false), /*#__PURE__*/_jsxDEV(ProgressMissingInfo, {
-          visit: visit,
-          maxItems: 4,
-          compact: true
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "min-w-0",
-          children: [/*#__PURE__*/_jsxDEV("p", {
-            className: "truncate text-sm font-extrabold text-slate-950",
-            children: visit.store || 'Store belum dipilih'
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "truncate text-xs text-slate-500",
-            children: [visit.nama || 'Bestie belum dipilih', " • ", formatDate(visit.tanggal)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "preview-actions flex flex-wrap gap-2",
-          children: [/*#__PURE__*/_jsxDEV(Button, {
-            variant: "secondary",
-            icon: "left",
-            onClick: onBack,
-            children: "Kembali"
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-            icon: downloadBusy ? null : "download",
-            onClick: handleDownloadPdf,
-            disabled: busy || downloadBusy,
-            children: downloadBusy ? 'Memproses...' : 'Download PDF'
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-            variant: "secondary",
-            icon: "excel",
-            onClick: handleExportExcel,
-            disabled: busy || downloadBusy,
-            className: "excel-export-button",
-            children: /*#__PURE__*/_jsxDEV("span", {
-              className: "text-left leading-tight",
-              children: [/*#__PURE__*/_jsxDEV("span", {
-                className: "block",
-                children: "Export Excel CA Assigment"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-                className: "block text-[11px] font-semibold text-slate-500",
-                children: "file untuk feedback store"
-              }, void 0, false)]
-            }, void 0, true)
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-            icon: "upload",
-            onClick: openEmailReportModal,
-            disabled: busy || downloadBusy,
-            children: "Send Email"
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "preview-frame-wrap",
-        children: /*#__PURE__*/_jsxDEV(PdfCanvasPreview, {
-          blob: pdfBlob,
-          pdfUrl: pdfUrl,
-          status: status
-        }, void 0, false)
-      }, void 0, false)]
-    }, void 0, true)]
-  }, void 0, true);
+  if (!visit) return /*#__PURE__*/React.createElement("main", {
+    className: "preview-page w-full px-4 py-8 md:px-8"
+  }, /*#__PURE__*/React.createElement(EmptyState, {
+    icon: "pdf",
+    title: "Belum ada visit aktif",
+    action: /*#__PURE__*/React.createElement(Button, {
+      variant: "secondary",
+      onClick: onBack
+    }, "Kembali")
+  }));
+  return /*#__PURE__*/React.createElement("main", {
+    className: "preview-page w-full px-4 py-4 md:px-8 md:py-8"
+  }, downloadBusy ? /*#__PURE__*/React.createElement("div", {
+    className: "download-pdf-overlay",
+    role: "status",
+    "aria-live": "polite"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "download-pdf-loader"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "download-pdf-spinner",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'), /*#__PURE__*/React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null, /*#__PURE__*/React.createElement(EmailReportModal, {
+    open: emailOpen,
+    form: emailForm,
+    onChange: patch => setEmailForm(state => ({
+      ...state,
+      ...patch
+    })),
+    onClose: () => setEmailOpen(false),
+    onSubmit: handleSendReportEmail,
+    busy: emailBusy,
+    status: emailStatus,
+    visit: visit
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary"
+  }, "Preview PDF"), /*#__PURE__*/React.createElement("h1", {
+    className: "mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl"
+  }, "Review Report")), /*#__PURE__*/React.createElement("div", {
+    className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-2 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase tracking-wide"
+  }, "Progress"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-black"
+  }, visitProgress(visit), "%")), /*#__PURE__*/React.createElement(ProgressBar, {
+    value: visitProgress(visit)
+  }), /*#__PURE__*/React.createElement(ProgressMissingInfo, {
+    visit: visit,
+    maxItems: 4,
+    compact: true
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "truncate text-sm font-extrabold text-slate-950"
+  }, visit.store || 'Store belum dipilih'), /*#__PURE__*/React.createElement("p", {
+    className: "truncate text-xs text-slate-500"
+  }, visit.nama || 'Bestie belum dipilih', " • ", formatDate(visit.tanggal))), /*#__PURE__*/React.createElement("div", {
+    className: "preview-actions flex flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "left",
+    onClick: onBack
+  }, "Kembali"), /*#__PURE__*/React.createElement(Button, {
+    icon: downloadBusy ? null : "download",
+    onClick: handleDownloadPdf,
+    disabled: busy || downloadBusy
+  }, downloadBusy ? 'Memproses...' : 'Download PDF'), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "excel",
+    onClick: handleExportExcel,
+    disabled: busy || downloadBusy,
+    className: "excel-export-button"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-left leading-tight"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "block"
+  }, "Export Excel CA Assigment"), /*#__PURE__*/React.createElement("span", {
+    className: "block text-[11px] font-semibold text-slate-500"
+  }, "file untuk feedback store"))), /*#__PURE__*/React.createElement(Button, {
+    icon: "upload",
+    onClick: openEmailReportModal,
+    disabled: busy || downloadBusy
+  }, "Send Email"))), /*#__PURE__*/React.createElement("div", {
+    className: "preview-frame-wrap"
+  }, /*#__PURE__*/React.createElement(PdfCanvasPreview, {
+    blob: pdfBlob,
+    pdfUrl: pdfUrl,
+    status: status
+  }))));
 }
 
 // =============================================================
@@ -6129,80 +5687,76 @@ function exportJson(data, fileName) {
   downloadBlob(blob, fileName);
 }
 function WelcomePinkySwearArt() {
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "pinky-swear-art",
     role: "img",
-    "aria-label": "Animasi pinky swear dua tangan saling mendekat",
-    children: [/*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-art-texture texture-a"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-art-texture texture-b"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-art-spark spark-a"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-art-spark spark-b"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-art-spark spark-c"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-art-heart"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "pinky-hand pinky-hand-left",
-      children: [/*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-palm"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger thumb"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger index"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger middle"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger ring"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger pinky"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-cuff"
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      className: "pinky-hand pinky-hand-right",
-      children: [/*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-palm"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger thumb"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger index"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger middle"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger ring"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-finger pinky"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-        className: "pinky-cuff"
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("span", {
-      className: "pinky-hook-glow"
-    }, void 0, false)]
-  }, void 0, true);
+    "aria-label": "Animasi pinky swear dua tangan saling mendekat"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pinky-art-texture texture-a"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-art-texture texture-b"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-art-spark spark-a"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-art-spark spark-b"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-art-spark spark-c"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-art-heart"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "pinky-hand pinky-hand-left"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pinky-palm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger thumb"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger index"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger middle"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger ring"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger pinky"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-cuff"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "pinky-hand pinky-hand-right"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pinky-palm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger thumb"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger index"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger middle"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger ring"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-finger pinky"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-cuff"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "pinky-hook-glow"
+  }));
 }
 function WelcomeSparkStarArt() {
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "welcome-spark-star-art",
     role: "img",
-    "aria-label": "Animasi spark star",
-    children: [/*#__PURE__*/_jsxDEV("span", {
-      className: "spark-star-core"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "spark-star-small spark-a"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "spark-star-small spark-b"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "spark-star-small spark-c"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "spark-star-ring ring-a"
-    }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-      className: "spark-star-ring ring-b"
-    }, void 0, false)]
-  }, void 0, true);
+    "aria-label": "Animasi spark star"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "spark-star-core"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "spark-star-small spark-a"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "spark-star-small spark-b"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "spark-star-small spark-c"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "spark-star-ring ring-a"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "spark-star-ring ring-b"
+  }));
 }
 function WelcomeOverlay({
   config,
@@ -6252,7 +5806,7 @@ function WelcomeOverlay({
     card.style.setProperty('--glow-x', '50%');
     card.style.setProperty('--glow-y', '50%');
   }
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: cx("welcome-dream-overlay", closing && "is-closing"),
     role: "dialog",
     "aria-modal": "true",
@@ -6270,175 +5824,164 @@ function WelcomeOverlay({
       backfaceVisibility: 'hidden',
       WebkitBackfaceVisibility: 'hidden',
       animation: closing ? 'rbvWelcomeOverlayOut .34s cubic-bezier(.22,1,.36,1) forwards' : 'rbvWelcomeOverlayIn .38s cubic-bezier(.22,1,.36,1) both'
+    }
+  }, /*#__PURE__*/React.createElement("style", null, `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(10px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      position: 'absolute',
+      width: 220,
+      height: 220,
+      borderRadius: '999px',
+      left: '-72px',
+      top: '12%',
+      background: 'rgba(20,184,166,.22)',
+      filter: 'blur(18px)',
+      animation: 'rbvWelcomeAura 5.5s ease-in-out infinite'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      position: 'absolute',
+      width: 260,
+      height: 260,
+      borderRadius: '999px',
+      right: '-92px',
+      bottom: '12%',
+      background: 'rgba(34,197,94,.18)',
+      filter: 'blur(20px)',
+      animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    ref: cardRef,
+    className: "welcome-dream-card",
+    onPointerMove: handlePointerMove,
+    onPointerLeave: resetPointerTilt,
+    style: {
+      '--tilt-x': '0deg',
+      '--tilt-y': '0deg',
+      '--glow-x': '50%',
+      '--glow-y': '50%',
+      position: 'relative',
+      width: 'min(92vw, 420px)',
+      borderRadius: '34px',
+      padding: '1px',
+      background: 'linear-gradient(135deg, rgba(255,255,255,.82), rgba(20,184,166,.55), rgba(255,255,255,.22))',
+      boxShadow: '0 28px 80px rgba(2,6,23,.35)',
+      transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
+      transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
+      backfaceVisibility: 'hidden',
+      WebkitBackfaceVisibility: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      overflow: 'hidden',
+      borderRadius: '33px',
+      padding: '28px 24px 24px',
+      background: 'linear-gradient(160deg, rgba(255,255,255,.96), rgba(240,253,250,.92))'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      position: 'absolute',
+      inset: 0,
+      background: 'radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(20,184,166,.24), transparent 34%)',
+      pointerEvents: 'none',
+      transition: 'background 160ms ease'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      position: 'absolute',
+      top: '-30%',
+      bottom: '-30%',
+      left: 0,
+      width: '58%',
+      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)',
+      animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite',
+      pointerEvents: 'none'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "welcome-dream-content",
+    style: {
+      position: 'relative',
+      display: 'flex',
+      minHeight: 230,
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    className: "welcome-promise-logo",
+    style: {
+      display: 'grid',
+      placeItems: 'center',
+      width: 132,
+      height: 98,
+      borderRadius: '28px',
+      overflow: 'hidden',
+      background: '#fff7ed',
+      boxShadow: '0 18px 36px rgba(15,23,42,.16)',
+      animation: 'rbvWelcomeSpark 3s ease-in-out infinite'
+    }
+  }, /*#__PURE__*/React.createElement(WelcomeSparkStarArt, null)), /*#__PURE__*/React.createElement("p", {
+    className: "welcome-kicker",
+    style: {
+      marginTop: 18,
+      fontSize: 11,
+      fontWeight: 900,
+      letterSpacing: '.24em',
+      textTransform: 'uppercase',
+      color: '#0f766e',
+      animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both'
+    }
+  }, "Bestie Visit"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      marginTop: 8,
+      maxWidth: '100%',
+      fontSize: 'clamp(28px, 8vw, 44px)',
+      lineHeight: .95,
+      fontWeight: 950,
+      letterSpacing: '-.055em',
+      color: '#020617',
+      animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both'
+    }
+  }, title), /*#__PURE__*/React.createElement("p", {
+    className: "welcome-subtitle",
+    style: {
+      marginTop: 14,
+      maxWidth: 330,
+      fontSize: 14,
+      fontWeight: 700,
+      lineHeight: 1.55,
+      color: '#475569',
+      animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both'
+    }
+  }, subtitle), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      marginTop: 24,
+      height: 7,
+      width: 'min(260px, 78%)',
+      overflow: 'hidden',
+      borderRadius: '999px',
+      background: 'rgba(15,118,110,.12)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    onAnimationEnd: event => {
+      if (event.animationName === 'rbvWelcomeProgress') finishWelcome();
     },
-    children: [/*#__PURE__*/_jsxDEV("style", {
-      children: `@keyframes rbvWelcomeOverlayIn{from{opacity:0}to{opacity:1}} @keyframes rbvWelcomeOverlayOut{from{opacity:1;backdrop-filter:blur(0)}to{opacity:0;backdrop-filter:blur(10px)}} @keyframes rbvWelcomeAura{0%,100%{transform:translate3d(-10px,0,0) scale(1);opacity:.72}50%{transform:translate3d(10px,-8px,0) scale(1.08);opacity:1}} @keyframes rbvWelcomeFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}} @keyframes rbvWelcomeShine{0%{transform:translateX(-115%) rotate(14deg)}100%{transform:translateX(115%) rotate(14deg)}} @keyframes rbvWelcomeTextIn{0%{opacity:0;transform:translate3d(0,14px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}} @keyframes rbvWelcomeProgress{from{width:0%}to{width:100%}} @keyframes rbvWelcomeSpark{0%,100%{transform:scale(.78) rotate(0deg);opacity:.42}50%{transform:scale(1) rotate(18deg);opacity:1}} @keyframes rbvPromiseFloat{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(0,-4px,0) rotate(1deg)}} @keyframes rbvPromiseHook{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.035)}} @keyframes rbvPromiseDot{0%,100%{transform:scale(.86);opacity:.52}50%{transform:scale(1.1);opacity:.9}}`
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      "aria-hidden": "true",
-      style: {
-        position: 'absolute',
-        width: 220,
-        height: 220,
-        borderRadius: '999px',
-        left: '-72px',
-        top: '12%',
-        background: 'rgba(20,184,166,.22)',
-        filter: 'blur(18px)',
-        animation: 'rbvWelcomeAura 5.5s ease-in-out infinite'
-      }
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      "aria-hidden": "true",
-      style: {
-        position: 'absolute',
-        width: 260,
-        height: 260,
-        borderRadius: '999px',
-        right: '-92px',
-        bottom: '12%',
-        background: 'rgba(34,197,94,.18)',
-        filter: 'blur(20px)',
-        animation: 'rbvWelcomeAura 6.2s ease-in-out infinite reverse'
-      }
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      ref: cardRef,
-      className: "welcome-dream-card",
-      onPointerMove: handlePointerMove,
-      onPointerLeave: resetPointerTilt,
-      style: {
-        '--tilt-x': '0deg',
-        '--tilt-y': '0deg',
-        '--glow-x': '50%',
-        '--glow-y': '50%',
-        position: 'relative',
-        width: 'min(92vw, 420px)',
-        borderRadius: '34px',
-        padding: '1px',
-        background: 'linear-gradient(135deg, rgba(255,255,255,.82), rgba(20,184,166,.55), rgba(255,255,255,.22))',
-        boxShadow: '0 28px 80px rgba(2,6,23,.35)',
-        transform: 'perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0)',
-        transition: 'transform 220ms cubic-bezier(.22,1,.36,1)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden'
-      },
-      children: /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: '33px',
-          padding: '28px 24px 24px',
-          background: 'linear-gradient(160deg, rgba(255,255,255,.96), rgba(240,253,250,.92))'
-        },
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          "aria-hidden": "true",
-          style: {
-            position: 'absolute',
-            inset: 0,
-            background: 'radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(20,184,166,.24), transparent 34%)',
-            pointerEvents: 'none',
-            transition: 'background 160ms ease'
-          }
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          "aria-hidden": "true",
-          style: {
-            position: 'absolute',
-            top: '-30%',
-            bottom: '-30%',
-            left: 0,
-            width: '58%',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.62), transparent)',
-            animation: 'rbvWelcomeShine 2.8s cubic-bezier(.22,1,.36,1) infinite',
-            pointerEvents: 'none'
-          }
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "welcome-dream-content",
-          style: {
-            position: 'relative',
-            display: 'flex',
-            minHeight: 230,
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            animation: 'rbvWelcomeFloat 4.8s ease-in-out infinite'
-          },
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            "aria-hidden": "true",
-            className: "welcome-promise-logo",
-            style: {
-              display: 'grid',
-              placeItems: 'center',
-              width: 132,
-              height: 98,
-              borderRadius: '28px',
-              overflow: 'hidden',
-              background: '#fff7ed',
-              boxShadow: '0 18px 36px rgba(15,23,42,.16)',
-              animation: 'rbvWelcomeSpark 3s ease-in-out infinite'
-            },
-            children: /*#__PURE__*/_jsxDEV(WelcomeSparkStarArt, {}, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "welcome-kicker",
-            style: {
-              marginTop: 18,
-              fontSize: 11,
-              fontWeight: 900,
-              letterSpacing: '.24em',
-              textTransform: 'uppercase',
-              color: '#0f766e',
-              animation: 'rbvWelcomeTextIn .62s cubic-bezier(.22,1,.36,1) both'
-            },
-            children: "Bestie Visit"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("h1", {
-            style: {
-              marginTop: 8,
-              maxWidth: '100%',
-              fontSize: 'clamp(28px, 8vw, 44px)',
-              lineHeight: .95,
-              fontWeight: 950,
-              letterSpacing: '-.055em',
-              color: '#020617',
-              animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .08s both'
-            },
-            children: title
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "welcome-subtitle",
-            style: {
-              marginTop: 14,
-              maxWidth: 330,
-              fontSize: 14,
-              fontWeight: 700,
-              lineHeight: 1.55,
-              color: '#475569',
-              animation: 'rbvWelcomeTextIn .72s cubic-bezier(.22,1,.36,1) .16s both'
-            },
-            children: subtitle
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            "aria-hidden": "true",
-            style: {
-              marginTop: 24,
-              height: 7,
-              width: 'min(260px, 78%)',
-              overflow: 'hidden',
-              borderRadius: '999px',
-              background: 'rgba(15,118,110,.12)'
-            },
-            children: /*#__PURE__*/_jsxDEV("span", {
-              onAnimationEnd: event => {
-                if (event.animationName === 'rbvWelcomeProgress') finishWelcome();
-              },
-              style: {
-                display: 'block',
-                height: '100%',
-                borderRadius: '999px',
-                background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)',
-                animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards`
-              }
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true)
-    }, void 0, false)]
-  }, void 0, true);
+    style: {
+      display: 'block',
+      height: '100%',
+      borderRadius: '999px',
+      background: 'linear-gradient(90deg, #0f766e, #14b8a6, #22c55e)',
+      animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards`
+    }
+  }))))));
 }
 function SecretPinModal({
   open,
@@ -6465,55 +6008,44 @@ function SecretPinModal({
     }
   }, [pin]);
   if (!open) return null;
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-sm",
     role: "dialog",
-    "aria-modal": "true",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-5 flex items-center justify-between",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV("span", {
-            className: "grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "shield"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary",
-              children: "Panel Rahasia"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("h2", {
-              className: "text-xl font-black text-slate-950",
-              children: "Masukkan PIN"
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-          variant: "icon",
-          onClick: onClose,
-          "aria-label": "Tutup",
-          children: /*#__PURE__*/_jsxDEV(Icon, {
-            name: "close",
-            className: "h-4 w-4"
-          }, void 0, false)
-        }, void 0, false)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("input", {
-        ref: inputRef,
-        value: pin,
-        onChange: event => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)),
-        type: "password",
-        inputMode: "numeric",
-        maxLength: "6",
-        className: "form-control text-center text-3xl font-black tracking-[0.5em]",
-        placeholder: "------",
-        "aria-label": "PIN panel rahasia"
-      }, void 0, false), error ? /*#__PURE__*/_jsxDEV("p", {
-        className: "mt-3 text-center text-sm font-bold text-rose-600",
-        children: error
-      }, void 0, false) : null]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "shield"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary"
+  }, "Panel Rahasia"), /*#__PURE__*/React.createElement("h2", {
+    className: "text-xl font-black text-slate-950"
+  }, "Masukkan PIN"))), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: onClose,
+    "aria-label": "Tutup"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    className: "h-4 w-4"
+  }))), /*#__PURE__*/React.createElement("input", {
+    ref: inputRef,
+    value: pin,
+    onChange: event => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)),
+    type: "password",
+    inputMode: "numeric",
+    maxLength: "6",
+    className: "form-control text-center text-3xl font-black tracking-[0.5em]",
+    placeholder: "------",
+    "aria-label": "PIN panel rahasia"
+  }), error ? /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-center text-sm font-bold text-rose-600"
+  }, error) : null));
 }
 function SecretMonitorPanel({
   open,
@@ -6820,592 +6352,420 @@ function SecretMonitorPanel({
   const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime';
   const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
   const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm md:p-6",
     role: "dialog",
-    "aria-modal": "true",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "flex flex-wrap items-center gap-2",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary",
-              children: "Panel Rahasia Admin"
-            }, void 0, false), secretTab === 'monitoring' ? /*#__PURE__*/_jsxDEV(Badge, {
-              tone: isLive ? 'success' : 'default',
-              children: sourceBadgeLabel
-            }, void 0, false) : /*#__PURE__*/_jsxDEV(Badge, {
-              tone: "default",
-              children: "Setting Web"
-            }, void 0, false), secretTab === 'monitoring' ? /*#__PURE__*/_jsxDEV(Badge, {
-              tone: connectionTone,
-              children: connectionState
-            }, void 0, false) : null]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("h2", {
-            className: "mt-2 text-2xl font-black text-slate-950",
-            children: secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & PDF'
-          }, void 0, false), secretTab === 'monitoring' && lastSync ? /*#__PURE__*/_jsxDEV("p", {
-            className: "mt-1 text-xs font-semibold text-slate-500",
-            children: ["Update terakhir: ", formatDateTime(lastSync)]
-          }, void 0, true) : null]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "flex flex-wrap gap-2",
-          children: [secretTab === 'monitoring' ? /*#__PURE__*/_jsxDEV(Button, {
-            variant: "secondary",
-            icon: "download",
-            onClick: () => exportJson(rows, 'regional-bestie-monitor.json'),
-            children: "Export JSON"
-          }, void 0, false) : null, secretTab === 'monitoring' ? /*#__PURE__*/_jsxDEV(Button, {
-            variant: "secondary",
-            icon: "spark",
-            onClick: () => refresh(),
-            disabled: loading,
-            children: loading ? 'Sync...' : 'Refresh'
-          }, void 0, false) : null, /*#__PURE__*/_jsxDEV(Button, {
-            variant: "icon",
-            onClick: onClose,
-            "aria-label": "Tutup",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "close",
-              className: "h-4 w-4"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "secret-panel-tabs mb-5 grid grid-cols-2 gap-2 rounded-3xl bg-slate-100 p-1",
-        children: [/*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: cx('secret-panel-tab', secretTab === 'settings' && 'active'),
-          onClick: () => setSecretTab('settings'),
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "settings",
-            className: "h-4 w-4"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Setting Web"
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'),
-          onClick: () => setSecretTab('monitoring'),
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "history",
-            className: "h-4 w-4"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: "Monitoring"
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), secretTab === 'settings' ? /*#__PURE__*/_jsxDEV(_Fragment, {
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "mb-3 flex items-center justify-between gap-3",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary",
-                children: "Welcome Animation"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-                className: "text-lg font-black text-slate-950",
-                children: "Edit Welcome"
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-              variant: "secondary",
-              icon: "check",
-              onClick: saveWelcomeSettings,
-              children: "Simpan Welcome"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "grid gap-3 md:grid-cols-3",
-            children: [/*#__PURE__*/_jsxDEV(Field, {
-              label: "Head title",
-              children: /*#__PURE__*/_jsxDEV(TextInput, {
-                value: welcomeTitle,
-                onChange: event => setWelcomeTitle(event.target.value),
-                placeholder: DEFAULT_WELCOME_CONFIG.title
-              }, void 0, false)
-            }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-              label: "Sub title",
-              children: /*#__PURE__*/_jsxDEV(TextArea, {
-                value: welcomeSubtitle,
-                onChange: event => setWelcomeSubtitle(event.target.value),
-                minRows: 2,
-                placeholder: DEFAULT_WELCOME_CONFIG.subtitle
-              }, void 0, false)
-            }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-              label: "Durasi (detik)",
-              helper: "Bisa diisi 1 sampai 15 detik.",
-              children: /*#__PURE__*/_jsxDEV(TextInput, {
-                type: "number",
-                min: "1",
-                max: "15",
-                step: "0.5",
-                value: welcomeDurationSeconds,
-                onChange: event => setWelcomeDurationSeconds(event.target.value),
-                onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds))
-              }, void 0, false)
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "mb-3 flex items-center justify-between gap-3",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary",
-                children: "Hidden Control"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-                className: "text-lg font-black text-slate-950",
-                children: "Assignment Link"
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-              variant: "secondary",
-              icon: "check",
-              onClick: saveAssignmentSettings,
-              children: "Simpan Link"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV(Field, {
-            label: "Link corrective action assignment",
-            helper: "Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF.",
-            children: /*#__PURE__*/_jsxDEV(TextInput, {
-              type: "url",
-              value: assignmentLink,
-              onChange: event => setAssignmentLink(event.target.value),
-              placeholder: DEFAULT_ASSIGNMENT_LINK
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "mb-3 flex items-center justify-between gap-3",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary",
-                children: "Home Notification"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-                className: "text-lg font-black text-slate-950",
-                children: "Info Update Website"
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-              variant: "secondary",
-              icon: "check",
-              onClick: saveNoticeSettings,
-              children: "Simpan Info"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]",
-            children: [/*#__PURE__*/_jsxDEV(Field, {
-              label: "Judul",
-              children: /*#__PURE__*/_jsxDEV(TextInput, {
-                value: noticeTitle,
-                onChange: event => setNoticeTitle(event.target.value),
-                placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.title
-              }, void 0, false)
-            }, void 0, false), /*#__PURE__*/_jsxDEV(Field, {
-              label: "Isi slide text",
-              helper: "Pisahkan setiap informasi dengan baris baru.",
-              children: /*#__PURE__*/_jsxDEV(TextArea, {
-                value: noticeMessagesText,
-                onChange: event => setNoticeMessagesText(event.target.value),
-                minRows: 3,
-                placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n')
-              }, void 0, false)
-            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-              className: "grid gap-3",
-              children: [/*#__PURE__*/_jsxDEV(Field, {
-                label: "Interval",
-                helper: "2 sampai 15 detik",
-                children: /*#__PURE__*/_jsxDEV(TextInput, {
-                  type: "number",
-                  min: "2",
-                  max: "15",
-                  step: "0.5",
-                  value: noticeIntervalSeconds,
-                  onChange: event => setNoticeIntervalSeconds(event.target.value),
-                  onBlur: () => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds))
-                }, void 0, false)
-              }, void 0, false), /*#__PURE__*/_jsxDEV(Toggle, {
-                checked: noticeEnabled,
-                onChange: setNoticeEnabled,
-                label: noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan'
-              }, void 0, false)]
-            }, void 0, true)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("h3", {
-                className: "text-lg font-black text-slate-950",
-                children: "Pengaturan PDF"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-semibold text-slate-500",
-                children: "Atur ukuran isi table, title field seperti Temuan/Kondisi Ideal, jarak title ke isi konten, deskripsi foto, dan grid foto per halaman PDF."
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(Badge, {
-              tone: "success",
-              children: "Auto Save"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "grid gap-3 md:grid-cols-5",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100",
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-wide text-slate-500",
-                children: "Font Isi Table PDF"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-                className: "mt-3 flex items-center justify-between gap-2",
-                children: [/*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('tableFontSize', -0.5),
-                  children: "-"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-                  className: "text-lg text-slate-950",
-                  children: Number(pdfTableFontSize).toFixed(1)
-                }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('tableFontSize', 0.5),
-                  children: "+"
-                }, void 0, false)]
-              }, void 0, true)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100",
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-wide text-slate-500",
-                children: "Font Title Field PDF"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-                className: "mt-3 flex items-center justify-between gap-2",
-                children: [/*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('tableTitleFontSize', -0.5),
-                  children: "-"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-                  className: "text-lg text-slate-950",
-                  children: Number(pdfTableTitleFontSize).toFixed(1)
-                }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('tableTitleFontSize', 0.5),
-                  children: "+"
-                }, void 0, false)]
-              }, void 0, true), /*#__PURE__*/_jsxDEV("p", {
-                className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700",
-                children: "Untuk label Temuan, Kondisi Ideal, Dampak, dll. Spacing ke isi ikut menyesuaikan."
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100",
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-wide text-slate-500",
-                children: "Font Deskripsi Foto"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-                className: "mt-3 flex items-center justify-between gap-2",
-                children: [/*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('evidenceFontSize', -0.5),
-                  children: "-"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-                  className: "text-lg text-slate-950",
-                  children: Number(pdfEvidenceFontSize).toFixed(1)
-                }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('evidenceFontSize', 0.5),
-                  children: "+"
-                }, void 0, false)]
-              }, void 0, true)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100",
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-wide text-slate-500",
-                children: "Add Row Table PDF"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-                className: "mt-3 flex items-center justify-between gap-2",
-                children: [/*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('tableExtraRows', -1),
-                  children: "-"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("strong", {
-                  className: "text-lg text-slate-950",
-                  children: ["+", pdfTableExtraRows]
-                }, void 0, true), /*#__PURE__*/_jsxDEV(Button, {
-                  variant: "secondary",
-                  onClick: () => adjustPdfSetting('tableExtraRows', 1),
-                  children: "+"
-                }, void 0, false)]
-              }, void 0, true)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100",
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-wide text-slate-500",
-                children: "Grid Foto PDF"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-                className: "mt-3 grid grid-cols-3 gap-1",
-                children: [4, 6, 8].map(option => /*#__PURE__*/_jsxDEV("button", {
-                  type: "button",
-                  className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'),
-                  onClick: () => setPdfPhotoGrid(option),
-                  children: option
-                }, option, false))
-              }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-                className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700",
-                children: "Rekomendasi: 6 foto/halaman."
-              }, void 0, false)]
-            }, void 0, true)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "mt-3 flex flex-wrap gap-2",
-            children: [/*#__PURE__*/_jsxDEV(Button, {
-              variant: "secondary",
-              icon: "check",
-              onClick: () => applyPdfSettings({
-                tableFontSize: pdfTableFontSize,
-                tableTitleFontSize: pdfTableTitleFontSize,
-                evidenceFontSize: pdfEvidenceFontSize,
-                tableExtraRows: pdfTableExtraRows,
-                photoGridPerPage: pdfPhotoGridPerPage
-              }, true),
-              children: "Simpan PDF Setting"
-            }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-              variant: "secondary",
-              icon: "eraser",
-              onClick: resetPdfSettings,
-              children: "Reset Default"
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "mb-3 flex items-center justify-between gap-3",
-            children: [/*#__PURE__*/_jsxDEV("h3", {
-              className: "text-lg font-black text-slate-950",
-              children: "Request Toko Manual"
-            }, void 0, false), /*#__PURE__*/_jsxDEV(Badge, {
-              tone: "default",
-              children: [manualRequests.filter(item => item.status === 'pending').length, " pending"]
-            }, void 0, true)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "grid gap-3",
-            children: manualRequests.length ? manualRequests.map(item => /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-slate-200",
-              children: /*#__PURE__*/_jsxDEV("div", {
-                className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
-                children: [/*#__PURE__*/_jsxDEV("div", {
-                  className: "min-w-0",
-                  children: [/*#__PURE__*/_jsxDEV("p", {
-                    className: "font-extrabold text-slate-950",
-                    children: item.storeName || '-'
-                  }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-                    className: "text-xs text-slate-500",
-                    children: [item.bestieName || '-', " • ", item.storeCode || '-', " • ", formatDateTime(item.createdAt)]
-                  }, void 0, true), item.address ? /*#__PURE__*/_jsxDEV("p", {
-                    className: "mt-1 text-xs text-slate-600",
-                    children: item.address
-                  }, void 0, false) : null]
-                }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-                  className: "flex flex-wrap items-center gap-2",
-                  children: [/*#__PURE__*/_jsxDEV(Badge, {
-                    tone: item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default',
-                    children: item.status
-                  }, void 0, false), item.status === 'pending' ? /*#__PURE__*/_jsxDEV(_Fragment, {
-                    children: [/*#__PURE__*/_jsxDEV(Button, {
-                      variant: "secondary",
-                      icon: "check",
-                      onClick: () => approveRequest(item.id),
-                      children: "Approve"
-                    }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-                      variant: "danger",
-                      icon: "close",
-                      onClick: () => rejectRequest(item.id),
-                      children: "Reject"
-                    }, void 0, false)]
-                  }, void 0, true) : null]
-                }, void 0, true)]
-              }, void 0, true)
-            }, item.id, false)) : /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200",
-              children: "Belum ada request."
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true) : /*#__PURE__*/_jsxDEV(_Fragment, {
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "rounded-3xl bg-slate-950 p-5 text-white",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-bold uppercase text-slate-300",
-              children: "Source"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-              className: "mt-2 text-2xl font-black capitalize",
-              children: source
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-bold uppercase",
-              children: "Online"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-              className: "mt-2 text-3xl font-black",
-              children: onlinePresence.length
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-bold uppercase",
-              children: "Total Visit"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-              className: "mt-2 text-3xl font-black",
-              children: rows.length
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-bold uppercase",
-              children: "Bestie Unik"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-              className: "mt-2 text-3xl font-black",
-              children: uniqueBesties
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200",
-            children: [/*#__PURE__*/_jsxDEV("p", {
-              className: "text-xs font-bold uppercase text-slate-500",
-              children: "Visit Hari Ini"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-              className: "mt-2 text-3xl font-black",
-              children: todayVisits
-            }, void 0, false)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4",
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            className: "mb-3 flex items-center justify-between gap-3",
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("p", {
-                className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary",
-                children: "Live Presence"
-              }, void 0, false), /*#__PURE__*/_jsxDEV("h3", {
-                className: "text-lg font-black text-slate-950",
-                children: "Bestie Yang Sedang Online"
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV(Badge, {
-              tone: "success",
-              children: "Realtime"
-            }, void 0, false)]
-          }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-            className: "grid gap-3 md:grid-cols-2",
-            children: onlinePresence.length ? onlinePresence.map(row => /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100",
-              children: [/*#__PURE__*/_jsxDEV("div", {
-                className: "flex items-start justify-between gap-3",
-                children: [/*#__PURE__*/_jsxDEV("div", {
-                  className: "min-w-0",
-                  children: [/*#__PURE__*/_jsxDEV("div", {
-                    className: "flex items-center gap-2",
-                    children: [/*#__PURE__*/_jsxDEV("span", {
-                      className: "h-2.5 w-2.5 rounded-full bg-emerald-500",
-                      style: {
-                        boxShadow: '0 0 0 5px rgba(16,185,129,.14)'
-                      }
-                    }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-                      className: "truncate font-black text-slate-950",
-                      children: row.bestie_name || '-'
-                    }, void 0, false)]
-                  }, void 0, true), /*#__PURE__*/_jsxDEV("p", {
-                    className: "mt-1 truncate text-xs font-bold text-slate-600",
-                    children: ["Store: ", row.store_name || '-']
-                  }, void 0, true), /*#__PURE__*/_jsxDEV("p", {
-                    className: "mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400",
-                    children: [row.active_screen || 'home', " • ", row.store_code || '-']
-                  }, void 0, true)]
-                }, void 0, true), /*#__PURE__*/_jsxDEV(Badge, {
-                  tone: "success",
-                  children: "Online"
-                }, void 0, false)]
-              }, void 0, true), /*#__PURE__*/_jsxDEV("p", {
-                className: "mt-2 text-[11px] font-semibold text-slate-400",
-                children: ["Last seen: ", formatDateTime(row.last_seen_at || row.updated_at)]
-              }, void 0, true)]
-            }, row.session_id, true)) : /*#__PURE__*/_jsxDEV("div", {
-              className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100",
-              children: "Belum ada bestie online yang terdeteksi."
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "mb-4 max-w-md",
-          children: /*#__PURE__*/_jsxDEV("div", {
-            className: "relative",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: "search",
-              className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-            }, void 0, false), /*#__PURE__*/_jsxDEV(TextInput, {
-              value: query,
-              onChange: e => setQuery(e.target.value),
-              placeholder: "Cari bestie, store, kode...",
-              className: "pl-12"
-            }, void 0, false)]
-          }, void 0, true)
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          className: "table-scroll overflow-hidden rounded-3xl border border-slate-200",
-          children: /*#__PURE__*/_jsxDEV("table", {
-            className: "w-full border-collapse bg-white text-sm",
-            children: [/*#__PURE__*/_jsxDEV("thead", {
-              className: "bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500",
-              children: /*#__PURE__*/_jsxDEV("tr", {
-                children: [/*#__PURE__*/_jsxDEV("th", {
-                  className: "px-4 py-3",
-                  children: "No"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("th", {
-                  className: "px-4 py-3",
-                  children: "Bestie"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("th", {
-                  className: "px-4 py-3",
-                  children: "Kode"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("th", {
-                  className: "px-4 py-3",
-                  children: "Store"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("th", {
-                  className: "px-4 py-3",
-                  children: "Visit"
-                }, void 0, false), /*#__PURE__*/_jsxDEV("th", {
-                  className: "px-4 py-3",
-                  children: "Update"
-                }, void 0, false)]
-              }, void 0, true)
-            }, void 0, false), /*#__PURE__*/_jsxDEV("tbody", {
-              children: filtered.length ? filtered.map((row, index) => /*#__PURE__*/_jsxDEV("tr", {
-                className: "border-t border-slate-100",
-                children: [/*#__PURE__*/_jsxDEV("td", {
-                  className: "px-4 py-3 font-bold text-slate-500",
-                  children: index + 1
-                }, void 0, false), /*#__PURE__*/_jsxDEV("td", {
-                  className: "px-4 py-3 font-bold text-slate-900",
-                  children: row.bestie_name || '-'
-                }, void 0, false), /*#__PURE__*/_jsxDEV("td", {
-                  className: "px-4 py-3",
-                  children: row.store_code || '-'
-                }, void 0, false), /*#__PURE__*/_jsxDEV("td", {
-                  className: "px-4 py-3",
-                  children: row.store_name || '-'
-                }, void 0, false), /*#__PURE__*/_jsxDEV("td", {
-                  className: "px-4 py-3",
-                  children: formatDate(row.visit_date)
-                }, void 0, false), /*#__PURE__*/_jsxDEV("td", {
-                  className: "px-4 py-3 text-slate-500",
-                  children: formatDateTime(row.updated_at)
-                }, void 0, false)]
-              }, `${row.bestie_name}-${row.store_name}-${index}`, true)) : /*#__PURE__*/_jsxDEV("tr", {
-                children: /*#__PURE__*/_jsxDEV("td", {
-                  colSpan: "6",
-                  className: "px-4 py-10 text-center text-slate-500",
-                  children: "Tidak ada data."
-                }, void 0, false)
-              }, void 0, false)
-            }, void 0, false)]
-          }, void 0, true)
-        }, void 0, false)]
-      }, void 0, true)]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl md:p-7"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary"
+  }, "Panel Rahasia Admin"), secretTab === 'monitoring' ? /*#__PURE__*/React.createElement(Badge, {
+    tone: isLive ? 'success' : 'default'
+  }, sourceBadgeLabel) : /*#__PURE__*/React.createElement(Badge, {
+    tone: "default"
+  }, "Setting Web"), secretTab === 'monitoring' ? /*#__PURE__*/React.createElement(Badge, {
+    tone: connectionTone
+  }, connectionState) : null), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-2 text-2xl font-black text-slate-950"
+  }, secretTab === 'monitoring' ? 'Monitoring Bestie Realtime' : 'Setting Web & PDF'), secretTab === 'monitoring' && lastSync ? /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs font-semibold text-slate-500"
+  }, "Update terakhir: ", formatDateTime(lastSync)) : null), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, secretTab === 'monitoring' ? /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "download",
+    onClick: () => exportJson(rows, 'regional-bestie-monitor.json')
+  }, "Export JSON") : null, secretTab === 'monitoring' ? /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "spark",
+    onClick: () => refresh(),
+    disabled: loading
+  }, loading ? 'Sync...' : 'Refresh') : null, /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: onClose,
+    "aria-label": "Tutup"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    className: "h-4 w-4"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "secret-panel-tabs mb-5 grid grid-cols-2 gap-2 rounded-3xl bg-slate-100 p-1"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('secret-panel-tab', secretTab === 'settings' && 'active'),
+    onClick: () => setSecretTab('settings')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "settings",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Setting Web")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('secret-panel-tab', secretTab === 'monitoring' && 'active'),
+    onClick: () => setSecretTab('monitoring')
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "history",
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Monitoring"))), secretTab === 'settings' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 rounded-3xl border border-cyan-100 bg-cyan-50/70 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary"
+  }, "Welcome Animation"), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-slate-950"
+  }, "Edit Welcome")), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "check",
+    onClick: saveWelcomeSettings
+  }, "Simpan Welcome")), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 md:grid-cols-3"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Head title"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: welcomeTitle,
+    onChange: event => setWelcomeTitle(event.target.value),
+    placeholder: DEFAULT_WELCOME_CONFIG.title
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Sub title"
+  }, /*#__PURE__*/React.createElement(TextArea, {
+    value: welcomeSubtitle,
+    onChange: event => setWelcomeSubtitle(event.target.value),
+    minRows: 2,
+    placeholder: DEFAULT_WELCOME_CONFIG.subtitle
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Durasi (detik)",
+    helper: "Bisa diisi 1 sampai 15 detik."
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    type: "number",
+    min: "1",
+    max: "15",
+    step: "0.5",
+    value: welcomeDurationSeconds,
+    onChange: event => setWelcomeDurationSeconds(event.target.value),
+    onBlur: () => setWelcomeDurationSeconds(normalizeWelcomeDurationSeconds(welcomeDurationSeconds))
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary"
+  }, "Hidden Control"), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-slate-950"
+  }, "Assignment Link")), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "check",
+    onClick: saveAssignmentSettings
+  }, "Simpan Link")), /*#__PURE__*/React.createElement(Field, {
+    label: "Link corrective action assignment",
+    helper: "Button assignment di form audit sudah dihapus. Link ini dipakai otomatis di PDF."
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    type: "url",
+    value: assignmentLink,
+    onChange: event => setAssignmentLink(event.target.value),
+    placeholder: DEFAULT_ASSIGNMENT_LINK
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 rounded-3xl border border-teal-100 bg-teal-50/70 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary"
+  }, "Home Notification"), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-slate-950"
+  }, "Info Update Website")), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "check",
+    onClick: saveNoticeSettings
+  }, "Simpan Info")), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 md:grid-cols-[0.8fr_1.4fr_0.6fr]"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Judul"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    value: noticeTitle,
+    onChange: event => setNoticeTitle(event.target.value),
+    placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.title
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Isi slide text",
+    helper: "Pisahkan setiap informasi dengan baris baru."
+  }, /*#__PURE__*/React.createElement(TextArea, {
+    value: noticeMessagesText,
+    onChange: event => setNoticeMessagesText(event.target.value),
+    minRows: 3,
+    placeholder: DEFAULT_UPDATE_NOTICE_CONFIG.messages.join('\n')
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Interval",
+    helper: "2 sampai 15 detik"
+  }, /*#__PURE__*/React.createElement(TextInput, {
+    type: "number",
+    min: "2",
+    max: "15",
+    step: "0.5",
+    value: noticeIntervalSeconds,
+    onChange: event => setNoticeIntervalSeconds(event.target.value),
+    onBlur: () => setNoticeIntervalSeconds(normalizeUpdateNoticeIntervalSeconds(noticeIntervalSeconds))
+  })), /*#__PURE__*/React.createElement(Toggle, {
+    checked: noticeEnabled,
+    onChange: setNoticeEnabled,
+    label: noticeEnabled ? 'Tampil di HOME' : 'Sembunyikan'
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-slate-950"
+  }, "Pengaturan PDF"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-semibold text-slate-500"
+  }, "Atur ukuran isi table, title field seperti Temuan/Kondisi Ideal, jarak title ke isi konten, deskripsi foto, dan grid foto per halaman PDF.")), /*#__PURE__*/React.createElement(Badge, {
+    tone: "success"
+  }, "Auto Save")), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 md:grid-cols-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-wide text-slate-500"
+  }, "Font Isi Table PDF"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex items-center justify-between gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('tableFontSize', -0.5)
+  }, "-"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-lg text-slate-950"
+  }, Number(pdfTableFontSize).toFixed(1)), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('tableFontSize', 0.5)
+  }, "+"))), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-wide text-slate-500"
+  }, "Font Title Field PDF"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex items-center justify-between gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('tableTitleFontSize', -0.5)
+  }, "-"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-lg text-slate-950"
+  }, Number(pdfTableTitleFontSize).toFixed(1)), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('tableTitleFontSize', 0.5)
+  }, "+")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700"
+  }, "Untuk label Temuan, Kondisi Ideal, Dampak, dll. Spacing ke isi ikut menyesuaikan.")), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-wide text-slate-500"
+  }, "Font Deskripsi Foto"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex items-center justify-between gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('evidenceFontSize', -0.5)
+  }, "-"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-lg text-slate-950"
+  }, Number(pdfEvidenceFontSize).toFixed(1)), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('evidenceFontSize', 0.5)
+  }, "+"))), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-wide text-slate-500"
+  }, "Add Row Table PDF"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex items-center justify-between gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('tableExtraRows', -1)
+  }, "-"), /*#__PURE__*/React.createElement("strong", {
+    className: "text-lg text-slate-950"
+  }, "+", pdfTableExtraRows), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    onClick: () => adjustPdfSetting('tableExtraRows', 1)
+  }, "+"))), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-wide text-slate-500"
+  }, "Grid Foto PDF"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 grid grid-cols-3 gap-1"
+  }, [4, 6, 8].map(option => /*#__PURE__*/React.createElement("button", {
+    key: option,
+    type: "button",
+    className: cx('rounded-xl px-2 py-2 text-xs font-black ring-1 transition', pdfPhotoGridPerPage === option ? 'bg-audit-primary text-white ring-audit-primary' : 'bg-slate-50 text-slate-700 ring-slate-200'),
+    onClick: () => setPdfPhotoGrid(option)
+  }, option))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[10px] font-bold leading-4 text-emerald-700"
+  }, "Rekomendasi: 6 foto/halaman."))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "check",
+    onClick: () => applyPdfSettings({
+      tableFontSize: pdfTableFontSize,
+      tableTitleFontSize: pdfTableTitleFontSize,
+      evidenceFontSize: pdfEvidenceFontSize,
+      tableExtraRows: pdfTableExtraRows,
+      photoGridPerPage: pdfPhotoGridPerPage
+    }, true)
+  }, "Simpan PDF Setting"), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "eraser",
+    onClick: resetPdfSettings
+  }, "Reset Default"))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-slate-950"
+  }, "Request Toko Manual"), /*#__PURE__*/React.createElement(Badge, {
+    tone: "default"
+  }, manualRequests.filter(item => item.status === 'pending').length, " pending")), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3"
+  }, manualRequests.length ? manualRequests.map(item => /*#__PURE__*/React.createElement("div", {
+    key: item.id,
+    className: "rounded-2xl bg-white p-3 ring-1 ring-slate-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-extrabold text-slate-950"
+  }, item.storeName || '-'), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-500"
+  }, item.bestieName || '-', " • ", item.storeCode || '-', " • ", formatDateTime(item.createdAt)), item.address ? /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-xs text-slate-600"
+  }, item.address) : null), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    tone: item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'warning' : 'default'
+  }, item.status), item.status === 'pending' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    icon: "check",
+    onClick: () => approveRequest(item.id)
+  }, "Approve"), /*#__PURE__*/React.createElement(Button, {
+    variant: "danger",
+    icon: "close",
+    onClick: () => rejectRequest(item.id)
+  }, "Reject")) : null)))) : /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200"
+  }, "Belum ada request.")))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-3xl bg-slate-950 p-5 text-white"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase text-slate-300"
+  }, "Source"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-2xl font-black capitalize"
+  }, source)), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-3xl bg-emerald-50 p-5 text-emerald-900 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase"
+  }, "Online"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-3xl font-black"
+  }, onlinePresence.length)), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-3xl bg-cyan-50 p-5 text-cyan-900 ring-1 ring-cyan-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase"
+  }, "Total Visit"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-3xl font-black"
+  }, rows.length)), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-3xl bg-orange-50 p-5 text-orange-900 ring-1 ring-orange-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase"
+  }, "Bestie Unik"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-3xl font-black"
+  }, uniqueBesties)), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-3xl bg-slate-50 p-5 text-slate-900 ring-1 ring-slate-200"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold uppercase text-slate-500"
+  }, "Visit Hari Ini"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-3xl font-black"
+  }, todayVisits))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-3 flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.18em] text-audit-primary"
+  }, "Live Presence"), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-black text-slate-950"
+  }, "Bestie Yang Sedang Online")), /*#__PURE__*/React.createElement(Badge, {
+    tone: "success"
+  }, "Realtime")), /*#__PURE__*/React.createElement("div", {
+    className: "grid gap-3 md:grid-cols-2"
+  }, onlinePresence.length ? onlinePresence.map(row => /*#__PURE__*/React.createElement("div", {
+    key: row.session_id,
+    className: "rounded-2xl bg-white p-3 ring-1 ring-emerald-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "h-2.5 w-2.5 rounded-full bg-emerald-500",
+    style: {
+      boxShadow: '0 0 0 5px rgba(16,185,129,.14)'
+    }
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "truncate font-black text-slate-950"
+  }, row.bestie_name || '-')), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 truncate text-xs font-bold text-slate-600"
+  }, "Store: ", row.store_name || '-'), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-400"
+  }, row.active_screen || 'home', " • ", row.store_code || '-')), /*#__PURE__*/React.createElement(Badge, {
+    tone: "success"
+  }, "Online")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[11px] font-semibold text-slate-400"
+  }, "Last seen: ", formatDateTime(row.last_seen_at || row.updated_at)))) : /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-emerald-100"
+  }, "Belum ada bestie online yang terdeteksi."))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 max-w-md"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    className: "absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+  }), /*#__PURE__*/React.createElement(TextInput, {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "Cari bestie, store, kode...",
+    className: "pl-12"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll overflow-hidden rounded-3xl border border-slate-200"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full border-collapse bg-white text-sm"
+  }, /*#__PURE__*/React.createElement("thead", {
+    className: "bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"
+  }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-3"
+  }, "No"), /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-3"
+  }, "Bestie"), /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-3"
+  }, "Kode"), /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-3"
+  }, "Store"), /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-3"
+  }, "Visit"), /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-3"
+  }, "Update"))), /*#__PURE__*/React.createElement("tbody", null, filtered.length ? filtered.map((row, index) => /*#__PURE__*/React.createElement("tr", {
+    key: `${row.bestie_name}-${row.store_name}-${index}`,
+    className: "border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-3 font-bold text-slate-500"
+  }, index + 1), /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-3 font-bold text-slate-900"
+  }, row.bestie_name || '-'), /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-3"
+  }, row.store_code || '-'), /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-3"
+  }, row.store_name || '-'), /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-3"
+  }, formatDate(row.visit_date)), /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-3 text-slate-500"
+  }, formatDateTime(row.updated_at)))) : /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: "6",
+    className: "px-4 py-10 text-center text-slate-500"
+  }, "Tidak ada data."))))))));
 }
 function DesktopSidebar({
   screen,
@@ -7417,122 +6777,92 @@ function DesktopSidebar({
   onClearData,
   onTitleTap
 }) {
-  return /*#__PURE__*/_jsxDEV("aside", {
-    className: "desktop-sidebar hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col",
-    children: [/*#__PURE__*/_jsxDEV("button", {
-      type: "button",
-      onClick: onTitleTap,
-      className: "mb-6 rounded-[28px] bg-slate-950 p-5 text-left text-white transition hover:-translate-y-0.5",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/10",
-        children: /*#__PURE__*/_jsxDEV(Icon, {
-          name: "spark"
-        }, void 0, false)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-        className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200",
-        children: "Bestie Audit"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("h2", {
-        className: "mt-2 text-xl font-black leading-tight",
-        children: "Visit Report System"
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("nav", {
-      className: "space-y-2",
-      "aria-label": "System menu",
-      children: [/*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('nav-item', screen === 'dashboard' && 'active'),
-        onClick: () => {
-          onTitleTap?.();
-          setScreen('dashboard');
-        },
-        children: /*#__PURE__*/_jsxDEV("span", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "home"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: /*#__PURE__*/_jsxDEV("span", {
-              className: "block font-extrabold",
-              children: "Dashboard"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('nav-item', screen === 'audit' && 'active'),
-        onClick: () => visit ? setScreen('audit') : onNewVisit(),
-        children: /*#__PURE__*/_jsxDEV("span", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "clipboard"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: /*#__PURE__*/_jsxDEV("span", {
-              className: "block font-extrabold",
-              children: "Audit Form"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)
-      }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('nav-item', screen === 'preview' && 'active'),
-        onClick: () => visit ? setScreen('preview') : onNewVisit(),
-        children: /*#__PURE__*/_jsxDEV("span", {
-          className: "flex items-center gap-3",
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "pdf"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            children: /*#__PURE__*/_jsxDEV("span", {
-              className: "block font-extrabold",
-              children: "Preview PDF"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)
-      }, void 0, false)]
-    }, void 0, true), visit ? /*#__PURE__*/_jsxDEV("div", {
-      className: "mt-6",
-      children: [/*#__PURE__*/_jsxDEV("p", {
-        className: "mb-3 px-2 text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500",
-        children: "Sub Menu Section"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "space-y-1",
-        children: SECTION_DEFS.map((section, index) => /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: cx('nav-item !rounded-2xl !px-3 !py-2', screen === 'audit' && activeSection === index && 'active'),
-          onClick: () => {
-            setScreen('audit');
-            goSection(index);
-          },
-          children: /*#__PURE__*/_jsxDEV("span", {
-            className: "flex items-center gap-3",
-            children: [/*#__PURE__*/_jsxDEV(Icon, {
-              name: section.icon,
-              className: "h-4 w-4"
-            }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-              className: "min-w-0",
-              children: /*#__PURE__*/_jsxDEV("span", {
-                className: "block truncate text-sm font-extrabold",
-                children: section.title
-              }, void 0, false)
-            }, void 0, false)]
-          }, void 0, true)
-        }, section.id, false))
-      }, void 0, false)]
-    }, void 0, true) : null, /*#__PURE__*/_jsxDEV("div", {
-      className: "mt-auto space-y-2 pt-5",
-      children: [/*#__PURE__*/_jsxDEV(Button, {
-        className: "w-full",
-        variant: "secondary",
-        icon: "plus",
-        onClick: onNewVisit,
-        children: "Kunjungan Baru"
-      }, void 0, false), visit ? /*#__PURE__*/_jsxDEV(Button, {
-        className: "w-full",
-        variant: "danger",
-        icon: "eraser",
-        onClick: onClearData,
-        children: "Clear Data"
-      }, void 0, false) : null]
-    }, void 0, true)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("aside", {
+    className: "desktop-sidebar hidden min-h-screen border-r border-slate-200 bg-white/86 p-4 backdrop-blur-xl md:flex md:flex-col"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: onTitleTap,
+    className: "mb-6 rounded-[28px] bg-slate-950 p-5 text-left text-white transition hover:-translate-y-0.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/10"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "spark"
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200"
+  }, "Bestie Audit"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-2 text-xl font-black leading-tight"
+  }, "Visit Report System")), /*#__PURE__*/React.createElement("nav", {
+    className: "space-y-2",
+    "aria-label": "System menu"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('nav-item', screen === 'dashboard' && 'active'),
+    onClick: () => {
+      onTitleTap?.();
+      setScreen('dashboard');
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "home"
+  }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
+    className: "block font-extrabold"
+  }, "Dashboard")))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('nav-item', screen === 'audit' && 'active'),
+    onClick: () => visit ? setScreen('audit') : onNewVisit()
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clipboard"
+  }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
+    className: "block font-extrabold"
+  }, "Audit Form")))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: cx('nav-item', screen === 'preview' && 'active'),
+    onClick: () => visit ? setScreen('preview') : onNewVisit()
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "pdf"
+  }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
+    className: "block font-extrabold"
+  }, "Preview PDF"))))), visit ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-6"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mb-3 px-2 text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500"
+  }, "Sub Menu Section"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-1"
+  }, SECTION_DEFS.map((section, index) => /*#__PURE__*/React.createElement("button", {
+    key: section.id,
+    type: "button",
+    className: cx('nav-item !rounded-2xl !px-3 !py-2', screen === 'audit' && activeSection === index && 'active'),
+    onClick: () => {
+      setScreen('audit');
+      goSection(index);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: section.icon,
+    className: "h-4 w-4"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "block truncate text-sm font-extrabold"
+  }, section.title))))))) : null, /*#__PURE__*/React.createElement("div", {
+    className: "mt-auto space-y-2 pt-5"
+  }, /*#__PURE__*/React.createElement(Button, {
+    className: "w-full",
+    variant: "secondary",
+    icon: "plus",
+    onClick: onNewVisit
+  }, "Kunjungan Baru"), visit ? /*#__PURE__*/React.createElement(Button, {
+    className: "w-full",
+    variant: "danger",
+    icon: "eraser",
+    onClick: onClearData
+  }, "Clear Data") : null));
 }
 function MobileTopBar({
   screen,
@@ -7553,7 +6883,7 @@ function MobileTopBar({
   if (screen !== 'audit' || !visit) return null;
   const progress = visitProgress(visit);
   const safeProgress = Math.max(0, Math.min(100, progress || 0));
-  return /*#__PURE__*/_jsxDEV("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "visit-quick-dock-v54 md:hidden",
     role: "navigation",
     "aria-label": mobileMissingText,
@@ -7580,104 +6910,99 @@ function MobileTopBar({
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
       pointerEvents: 'auto'
-    },
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      ref: scrollerRef,
-      className: "visit-quick-dock-scroll-v54",
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: scrollerRef,
+    className: "visit-quick-dock-scroll-v54",
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      height: '54px',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      WebkitOverflowScrolling: 'touch',
+      overscrollBehaviorX: 'contain',
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none',
+      padding: '0 2px',
+      touchAction: 'pan-x'
+    }
+  }, SECTION_DEFS.map((section, index) => {
+    const active = activeSection === index;
+    const minWidth = section.id === 'evidence' ? 108 : section.id === 'qsc' ? 88 : section.id === 'observation' ? 92 : 96;
+    return /*#__PURE__*/React.createElement("button", {
+      key: section.id,
+      type: "button",
+      className: "visit-quick-dock-chip-v54",
+      onClick: () => goSection(index),
+      "aria-current": active ? 'page' : undefined,
+      "aria-label": `Buka section ${section.title}`,
+      "data-active": active ? 'true' : undefined,
       style: {
-        display: 'flex',
+        flex: '0 0 auto',
+        width: 'auto',
+        minWidth: `${minWidth}px`,
+        height: '50px',
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
-        height: '54px',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehaviorX: 'contain',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-        padding: '0 2px',
+        justifyContent: 'center',
+        gap: '7px',
+        borderRadius: '17px',
+        padding: '0 14px',
+        fontSize: '12px',
+        fontWeight: 900,
+        letterSpacing: '-0.01em',
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
+        color: active ? '#ffffff' : '#334155',
+        background: active ? '#172554' : 'rgba(248,250,252,0.78)',
+        border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
+        boxShadow: active ? '0 6px 14px rgba(23,37,84,0.14)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
+        transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
         touchAction: 'pan-x'
-      },
-      children: SECTION_DEFS.map((section, index) => {
-        const active = activeSection === index;
-        const minWidth = section.id === 'evidence' ? 108 : section.id === 'qsc' ? 88 : section.id === 'observation' ? 92 : 96;
-        return /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: "visit-quick-dock-chip-v54",
-          onClick: () => goSection(index),
-          "aria-current": active ? 'page' : undefined,
-          "aria-label": `Buka section ${section.title}`,
-          "data-active": active ? 'true' : undefined,
-          style: {
-            flex: '0 0 auto',
-            width: 'auto',
-            minWidth: `${minWidth}px`,
-            height: '50px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '7px',
-            borderRadius: '17px',
-            padding: '0 14px',
-            fontSize: '12px',
-            fontWeight: 900,
-            letterSpacing: '-0.01em',
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            color: active ? '#ffffff' : '#334155',
-            background: active ? '#172554' : 'rgba(248,250,252,0.78)',
-            border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
-            boxShadow: active ? '0 6px 14px rgba(23,37,84,0.14)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
-            transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
-            touchAction: 'pan-x'
-          },
-          children: [/*#__PURE__*/_jsxDEV("span", {
-            className: "visit-quick-dock-icon-v54",
-            style: {
-              display: 'inline-grid',
-              placeItems: 'center',
-              width: 22,
-              height: 22,
-              borderRadius: '999px',
-              background: active ? 'rgba(255,255,255,0.16)' : 'rgba(15,118,110,0.10)',
-              color: active ? '#ffffff' : '#0f766e',
-              flex: '0 0 auto'
-            },
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: section.icon,
-              className: "h-4 w-4"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-            style: {
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            },
-            children: section.label
-          }, void 0, false)]
-        }, section.id, true);
-      })
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      "aria-hidden": "true",
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "visit-quick-dock-icon-v54",
       style: {
-        position: 'absolute',
-        left: '16px',
-        right: '16px',
-        bottom: '6px',
-        height: '2px',
-        overflow: 'hidden',
+        display: 'inline-grid',
+        placeItems: 'center',
+        width: 22,
+        height: 22,
         borderRadius: '999px',
-        background: 'rgba(203,213,225,0.58)'
-      },
-      children: /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          width: safeProgress + '%',
-          height: '100%',
-          borderRadius: '999px',
-          background: 'linear-gradient(90deg, #0f766e, #14b8a6)'
-        }
-      }, void 0, false)
-    }, void 0, false)]
-  }, void 0, true);
+        background: active ? 'rgba(255,255,255,0.16)' : 'rgba(15,118,110,0.10)',
+        color: active ? '#ffffff' : '#0f766e',
+        flex: '0 0 auto'
+      }
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: section.icon,
+      className: "h-4 w-4"
+    })), /*#__PURE__*/React.createElement("span", {
+      style: {
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }
+    }, section.label));
+  })), /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    style: {
+      position: 'absolute',
+      left: '16px',
+      right: '16px',
+      bottom: '6px',
+      height: '2px',
+      overflow: 'hidden',
+      borderRadius: '999px',
+      background: 'rgba(203,213,225,0.58)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: safeProgress + '%',
+      height: '100%',
+      borderRadius: '999px',
+      background: 'linear-gradient(90deg, #0f766e, #14b8a6)'
+    }
+  })));
 }
 function MobileBottomNav({
   screen,
@@ -7707,34 +7032,27 @@ function MobileBottomNav({
     action: goPreview,
     active: screen === 'preview'
   }];
-  return /*#__PURE__*/_jsxDEV("nav", {
+  return /*#__PURE__*/React.createElement("nav", {
     className: "mobile-system-nav md:hidden",
-    "aria-label": "Mobile system navigation",
-    children: /*#__PURE__*/_jsxDEV("div", {
-      className: cx('mobile-system-grid', screen === 'audit' && visit ? 'cols-4' : 'cols-3'),
-      children: [items.map(item => /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: cx('mobile-system-button', item.active && 'active'),
-        onClick: item.action,
-        children: [/*#__PURE__*/_jsxDEV(Icon, {
-          name: item.icon,
-          className: "h-5 w-5"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-          children: item.label
-        }, void 0, false)]
-      }, item.key, true)), screen === 'audit' && visit ? /*#__PURE__*/_jsxDEV("button", {
-        type: "button",
-        className: "mobile-system-button danger",
-        onClick: onClearData,
-        children: [/*#__PURE__*/_jsxDEV(Icon, {
-          name: "eraser",
-          className: "h-5 w-5"
-        }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
-          children: "Clear"
-        }, void 0, false)]
-      }, void 0, true) : null]
-    }, void 0, true)
-  }, void 0, false);
+    "aria-label": "Mobile system navigation"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: cx('mobile-system-grid', screen === 'audit' && visit ? 'cols-4' : 'cols-3')
+  }, items.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.key,
+    type: "button",
+    className: cx('mobile-system-button', item.active && 'active'),
+    onClick: item.action
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: item.icon,
+    className: "h-5 w-5"
+  }), /*#__PURE__*/React.createElement("span", null, item.label))), screen === 'audit' && visit ? /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "mobile-system-button danger",
+    onClick: onClearData
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "eraser",
+    className: "h-5 w-5"
+  }), /*#__PURE__*/React.createElement("span", null, "Clear")) : null));
 }
 function VisitWorkspace({
   visit,
@@ -7752,90 +7070,79 @@ function VisitWorkspace({
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [activeSection]);
-  if (!visit) return /*#__PURE__*/_jsxDEV("main", {
-    className: "workspace-page w-full px-4 py-8 pb-44 md:px-8 md:pb-8",
-    children: /*#__PURE__*/_jsxDEV(EmptyState, {
-      icon: "clipboard",
-      title: "Belum ada visit aktif"
-    }, void 0, false)
-  }, void 0, false);
-  const screens = [/*#__PURE__*/_jsxDEV(VisitSetupSection, {
+  if (!visit) return /*#__PURE__*/React.createElement("main", {
+    className: "workspace-page w-full px-4 py-8 pb-44 md:px-8 md:pb-8"
+  }, /*#__PURE__*/React.createElement(EmptyState, {
+    icon: "clipboard",
+    title: "Belum ada visit aktif"
+  }));
+  const screens = [/*#__PURE__*/React.createElement(VisitSetupSection, {
     visit: visit,
     update: update
-  }, void 0, false), /*#__PURE__*/_jsxDEV(GeneralInfoSection, {
+  }), /*#__PURE__*/React.createElement(GeneralInfoSection, {
     visit: visit,
     update: update
-  }, void 0, false), /*#__PURE__*/_jsxDEV(QscResultSection, {
+  }), /*#__PURE__*/React.createElement(QscResultSection, {
     visit: visit,
     update: update
-  }, void 0, false), /*#__PURE__*/_jsxDEV(ObservationSection, {
+  }), /*#__PURE__*/React.createElement(ObservationSection, {
     visit: visit,
     update: update
-  }, void 0, false), /*#__PURE__*/_jsxDEV(EvidenceSection, {
+  }), /*#__PURE__*/React.createElement(EvidenceSection, {
     visit: visit,
     update: update
-  }, void 0, false)];
-  return /*#__PURE__*/_jsxDEV("main", {
-    className: "workspace-page w-full px-4 py-5 pb-44 md:px-8 md:py-8 md:pb-8",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      className: "desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block",
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        className: "flex items-center justify-between gap-3",
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          className: "min-w-0",
-          children: [/*#__PURE__*/_jsxDEV("p", {
-            className: "truncate text-sm font-extrabold text-slate-950",
-            children: visit.store || 'Store belum dipilih'
-          }, void 0, false), /*#__PURE__*/_jsxDEV("p", {
-            className: "truncate text-xs text-slate-500",
-            children: [visit.nama || 'Bestie belum dipilih', " • ", formatDate(visit.tanggal)]
-          }, void 0, true)]
-        }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-          className: "hidden gap-2 sm:flex",
-          children: [/*#__PURE__*/_jsxDEV(Button, {
-            variant: "icon",
-            onClick: () => goSection(activeSection - 1),
-            disabled: activeSection <= 0,
-            "aria-label": "Section sebelumnya",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "left",
-              className: "h-5 w-5"
-            }, void 0, false)
-          }, void 0, false), /*#__PURE__*/_jsxDEV(Button, {
-            variant: "icon",
-            onClick: () => goSection(activeSection + 1),
-            disabled: activeSection >= SECTION_DEFS.length - 1,
-            "aria-label": "Section berikutnya",
-            children: /*#__PURE__*/_jsxDEV(Icon, {
-              name: "right",
-              className: "h-5 w-5"
-            }, void 0, false)
-          }, void 0, false)]
-        }, void 0, true)]
-      }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-        className: "mt-3 flex gap-2 overflow-x-auto pb-1",
-        "aria-label": "Sub menu section",
-        children: SECTION_DEFS.map((section, index) => /*#__PURE__*/_jsxDEV("button", {
-          type: "button",
-          className: cx('subnav-chip', activeSection === index && 'active'),
-          onClick: () => goSection(index),
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: section.icon,
-            className: "h-4 w-4"
-          }, void 0, false), " ", section.label]
-        }, section.id, true))
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      children: screens[activeSection]
-    }, SECTION_DEFS[activeSection]?.id || activeSection, false), /*#__PURE__*/_jsxDEV("div", {
-      className: "md:hidden",
-      "aria-hidden": "true",
-      style: {
-        height: '96px',
-        flexShrink: 0
-      }
-    }, void 0, false)]
-  }, void 0, true);
+  })];
+  return /*#__PURE__*/React.createElement("main", {
+    className: "workspace-page w-full px-4 py-5 pb-44 md:px-8 md:py-8 md:pb-8"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 md:block"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "truncate text-sm font-extrabold text-slate-950"
+  }, visit.store || 'Store belum dipilih'), /*#__PURE__*/React.createElement("p", {
+    className: "truncate text-xs text-slate-500"
+  }, visit.nama || 'Bestie belum dipilih', " • ", formatDate(visit.tanggal))), /*#__PURE__*/React.createElement("div", {
+    className: "hidden gap-2 sm:flex"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: () => goSection(activeSection - 1),
+    disabled: activeSection <= 0,
+    "aria-label": "Section sebelumnya"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "left",
+    className: "h-5 w-5"
+  })), /*#__PURE__*/React.createElement(Button, {
+    variant: "icon",
+    onClick: () => goSection(activeSection + 1),
+    disabled: activeSection >= SECTION_DEFS.length - 1,
+    "aria-label": "Section berikutnya"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "right",
+    className: "h-5 w-5"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex gap-2 overflow-x-auto pb-1",
+    "aria-label": "Sub menu section"
+  }, SECTION_DEFS.map((section, index) => /*#__PURE__*/React.createElement("button", {
+    key: section.id,
+    type: "button",
+    className: cx('subnav-chip', activeSection === index && 'active'),
+    onClick: () => goSection(index)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: section.icon,
+    className: "h-4 w-4"
+  }), " ", section.label)))), /*#__PURE__*/React.createElement("div", {
+    key: SECTION_DEFS[activeSection]?.id || activeSection
+  }, screens[activeSection]), /*#__PURE__*/React.createElement("div", {
+    className: "md:hidden",
+    "aria-hidden": "true",
+    style: {
+      height: '96px',
+      flexShrink: 0
+    }
+  }));
 }
 function App() {
   const [screen, setScreen] = useState('dashboard');
@@ -8219,7 +7526,7 @@ function App() {
   }
   let content;
   if (screen === 'dashboard') {
-    content = /*#__PURE__*/_jsxDEV(DashboardPage, {
+    content = /*#__PURE__*/React.createElement(DashboardPage, {
       history: history,
       storageLabel: storageLabel,
       onNewVisit: () => setNewVisitOpen(true),
@@ -8227,74 +7534,71 @@ function App() {
       onDeleteVisit: deleteVisit,
       onClearHistory: clearAllHistory,
       onTitleTap: handleTitleTap
-    }, void 0, false);
+    });
   } else if (screen === 'preview') {
-    content = /*#__PURE__*/_jsxDEV(PreviewPage, {
+    content = /*#__PURE__*/React.createElement(PreviewPage, {
       visit: visit,
       onBack: () => setScreen('audit')
-    }, void 0, false);
+    });
   } else {
-    content = /*#__PURE__*/_jsxDEV(VisitWorkspace, {
+    content = /*#__PURE__*/React.createElement(VisitWorkspace, {
       visit: visit,
       update: updateVisit,
       activeSection: activeSection,
       goSection: goSection,
       onPreview: () => setScreen('preview')
-    }, void 0, false);
+    });
   }
-  return /*#__PURE__*/_jsxDEV("div", {
-    className: cx("audit-shell min-h-screen", screen !== 'dashboard' && "md:grid md:grid-cols-[300px_minmax(0,1fr)]"),
-    children: [screen !== 'dashboard' ? /*#__PURE__*/_jsxDEV(DesktopSidebar, {
-      screen: screen,
-      setScreen: setScreen,
-      visit: visit,
-      activeSection: activeSection,
-      goSection: goSection,
-      onNewVisit: () => setNewVisitOpen(true),
-      onClearData: clearCurrentData,
-      onTitleTap: handleTitleTap
-    }, void 0, false) : null, /*#__PURE__*/_jsxDEV("div", {
-      className: "flex min-h-screen min-w-0 flex-col",
-      children: [/*#__PURE__*/_jsxDEV(MobileTopBar, {
-        screen: screen,
-        setScreen: setScreen,
-        visit: visit,
-        activeSection: activeSection,
-        goSection: goSection,
-        onNewVisit: () => setNewVisitOpen(true),
-        onTitleTap: handleTitleTap
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        className: "min-w-0 flex-1",
-        children: content
-      }, void 0, false), screen !== 'dashboard' ? /*#__PURE__*/_jsxDEV(MobileBottomNav, {
-        screen: screen,
-        setScreen: setScreen,
-        visit: visit,
-        onNewVisit: () => setNewVisitOpen(true),
-        onClearData: clearCurrentData
-      }, void 0, false) : null]
-    }, void 0, true), welcomeOpen ? /*#__PURE__*/_jsxDEV(WelcomeOverlay, {
-      config: welcomeConfig,
-      onDone: closeWelcome
-    }, void 0, false) : null, /*#__PURE__*/_jsxDEV(NewVisitModal, {
-      open: newVisitOpen,
-      onClose: () => setNewVisitOpen(false),
-      onCreate: createNewVisit
-    }, void 0, false), /*#__PURE__*/_jsxDEV(SecretPinModal, {
-      open: pinOpen,
-      onClose: () => setPinOpen(false),
-      onUnlock: () => {
-        setPinOpen(false);
-        setSecretOpen(true);
-      }
-    }, void 0, false), /*#__PURE__*/_jsxDEV(SecretMonitorPanel, {
-      open: secretOpen,
-      onClose: () => setSecretOpen(false),
-      history: history,
-      welcomeConfig: welcomeConfig,
-      onWelcomeConfigChange: applyWelcomeConfig
-    }, void 0, false)]
-  }, void 0, true);
+  return /*#__PURE__*/React.createElement("div", {
+    className: cx("audit-shell min-h-screen", screen !== 'dashboard' && "md:grid md:grid-cols-[300px_minmax(0,1fr)]")
+  }, screen !== 'dashboard' ? /*#__PURE__*/React.createElement(DesktopSidebar, {
+    screen: screen,
+    setScreen: setScreen,
+    visit: visit,
+    activeSection: activeSection,
+    goSection: goSection,
+    onNewVisit: () => setNewVisitOpen(true),
+    onClearData: clearCurrentData,
+    onTitleTap: handleTitleTap
+  }) : null, /*#__PURE__*/React.createElement("div", {
+    className: "flex min-h-screen min-w-0 flex-col"
+  }, /*#__PURE__*/React.createElement(MobileTopBar, {
+    screen: screen,
+    setScreen: setScreen,
+    visit: visit,
+    activeSection: activeSection,
+    goSection: goSection,
+    onNewVisit: () => setNewVisitOpen(true),
+    onTitleTap: handleTitleTap
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0 flex-1"
+  }, content), screen !== 'dashboard' ? /*#__PURE__*/React.createElement(MobileBottomNav, {
+    screen: screen,
+    setScreen: setScreen,
+    visit: visit,
+    onNewVisit: () => setNewVisitOpen(true),
+    onClearData: clearCurrentData
+  }) : null), welcomeOpen ? /*#__PURE__*/React.createElement(WelcomeOverlay, {
+    config: welcomeConfig,
+    onDone: closeWelcome
+  }) : null, /*#__PURE__*/React.createElement(NewVisitModal, {
+    open: newVisitOpen,
+    onClose: () => setNewVisitOpen(false),
+    onCreate: createNewVisit
+  }), /*#__PURE__*/React.createElement(SecretPinModal, {
+    open: pinOpen,
+    onClose: () => setPinOpen(false),
+    onUnlock: () => {
+      setPinOpen(false);
+      setSecretOpen(true);
+    }
+  }), /*#__PURE__*/React.createElement(SecretMonitorPanel, {
+    open: secretOpen,
+    onClose: () => setSecretOpen(false),
+    history: history,
+    welcomeConfig: welcomeConfig,
+    onWelcomeConfigChange: applyWelcomeConfig
+  }));
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(/*#__PURE__*/_jsxDEV(App, {}, void 0, false));
+root.render(/*#__PURE__*/React.createElement(App, null));
