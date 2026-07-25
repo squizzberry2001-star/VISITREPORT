@@ -4604,7 +4604,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                                 React.createElement("button", { type: "button", className: "grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus" },
                                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))),
                     hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button mt-6", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " aktivitas lagi") : null) :
-                    React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" })))
+                    React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))))
         ) : null,
         activeTab === 'analytics' ? React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }) : null,
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
@@ -7851,7 +7851,8 @@ function WelcomeOverlay({ config, onDone }) {
                 )
             )
         )
-        );
+        )
+    );
 }
 function SecretPinModal({ open, onClose, onUnlock }) {
     const [pin, setPin] = useState('');
