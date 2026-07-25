@@ -25,7 +25,8 @@ const APP_CONFIG_KEYS = {
     updateNotice: 'home_update_notice',
     emailTemplate: 'email_report_template',
     webSync: 'web_update_signal',
-    schedule: 'rbv_schedule_config_v1'
+    schedule: 'rbv_schedule_config_v1',
+    features: 'rbv_features_config_v1'
 };
 const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
 const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
@@ -153,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v33';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v34';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -641,6 +642,19 @@ function saveWelcomeConfig(config) {
     return next;
 }
 const SCHEDULE_CONFIG_KEY = 'rbv_schedule_config_v1';
+
+function readFeaturesConfig() {
+    try {
+        const raw = localStorage.getItem('rbv_features_config_v1');
+        return raw ? JSON.parse(raw) : { map: true, ai: true, trend: true, leaderboard: true };
+    } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true }; }
+}
+function saveFeaturesConfig(config) {
+    localStorage.setItem('rbv_features_config_v1', JSON.stringify(config));
+    window.dispatchEvent(new Event('rbv-features-config-change'));
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.features, config);
+}
+
 function readScheduleConfig() {
     try {
         const parsed = JSON.parse(localStorage.getItem(SCHEDULE_CONFIG_KEY) || '[]');
@@ -3929,6 +3943,13 @@ function AiInsightsPanel({ data }) {
 }
 
 function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
+    const [features, setFeatures] = useState(() => readFeaturesConfig());
+    useEffect(() => {
+        const handler = () => setFeatures(readFeaturesConfig());
+        window.addEventListener('rbv-features-config-change', handler);
+        return () => window.removeEventListener('rbv-features-config-change', handler);
+    }, []);
+
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
@@ -4141,11 +4162,11 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
             )
         ),
         
-        React.createElement(VisitMap, { rows: data?.rows || [] }),
-        React.createElement(AiInsightsPanel, { data: data }),
-        React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8" },
-            React.createElement("div", { className: "analytics-card-large-header" },
-                React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (QSC vs OPI)"),
+        features.map && React.createElement(VisitMap, { rows: data?.rows || [] }),
+        features.ai && React.createElement(AiInsightsPanel, { data: data }),
+        features.trend && React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8 " + (features.trend ? '' : 'hidden') },
+                React.createElement("div", { className: "analytics-card-large-header" },
+                    React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (QSC vs OPI)"),
                 React.createElement("div", { className: "p-2 bg-audit-primary/10 rounded-xl text-audit-primary" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
             ),
             React.createElement("div", { className: "w-full h-[250px]" },
@@ -6706,7 +6727,7 @@ async function fetchAppConfigsFromCloudflare() {
     if (!cloudflareEnabled())
         return null;
     try {
-        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule].join(',') } });
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -6947,7 +6968,7 @@ async function fetchAppConfigsFromNetlify() {
     if (!netlifyEnabled())
         return null;
     try {
-        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule].join(',') } });
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -7197,7 +7218,7 @@ async function fetchAppConfigsFromSupabase() {
         const { data, error } = await client
             .from(table)
             .select('config_key,payload,updated_at')
-            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule]);
+            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features]);
         if (error)
             throw error;
         return normalizeRemoteAppConfigRows((data || []).map((item) => ({
@@ -7528,6 +7549,10 @@ function applyRemoteAppConfigRows(rows) {
             saveEmailTemplateConfig(row.payload);
         if (row.key === APP_CONFIG_KEYS.webSync)
             applySilentWebSyncSignal(row.payload);
+        if (row.key === APP_CONFIG_KEYS.features) {
+            localStorage.setItem('rbv_features_config_v1', JSON.stringify(row.value));
+            window.dispatchEvent(new Event('rbv-features-config-change'));
+        }
         if (row.key === APP_CONFIG_KEYS.schedule) {
             const saved = saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
             setScheduleConfig(saved);
@@ -7540,7 +7565,7 @@ async function fetchAppConfigsFromConvex() {
     if (convexEnabled()) {
         try {
             const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule] });
+            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features] });
             if (rows !== null)
                 return normalizeRemoteAppConfigRows(rows);
         }
@@ -7846,6 +7871,13 @@ function SecretPinModal({ open, onClose, onUnlock }) {
             error ? React.createElement("p", { className: "mt-3 text-center text-sm font-bold text-rose-600" }, error) : null)));
 }
 function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange, scheduleConfig, onScheduleConfigChange }) {
+    const [features, setFeatures] = useState(() => readFeaturesConfig());
+    const handleToggleFeature = async (key) => {
+        const next = { ...features, [key]: !features[key] };
+        setFeatures(next);
+        await saveFeaturesConfig(next);
+    };
+
     const [rows, setRows] = useState([]);
     const [source, setSource] = useState('local');
     const [query, setQuery] = useState('');
@@ -7965,7 +7997,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             healthUrl.searchParams.set('_panelCheck', String(Date.now()));
             const healthPayload = await cloudflarePanelFetchJson(healthUrl.toString());
             const d1Payload = await cloudflareRequest('testD1');
-            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule].join(',') } });
+            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features].join(',') } });
             const rows = settingsPayload?.rows || settingsPayload?.data || [];
             const count = Array.isArray(rows) ? rows.length : 0;
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
@@ -8041,7 +8073,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             if (!convexEnabled())
                 throw new Error('Convex belum aktif. Isi enabled:true dan deploymentUrl di convex-config.js.');
             const config = getConvexConfig();
-            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule] });
+            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features] });
             const masterRows = await runConvexQuery(config.masterStoreListQuery || 'masterStores:listStores', { limit: 10 });
             const settingCount = normalizeRemoteAppConfigRows(settingsRows).length;
             const masterCount = normalizeMasterStoreRows(masterRows?.rows || masterRows?.data || masterRows).length;
@@ -9164,7 +9196,7 @@ function App() {
             try {
                 await refreshRemoteConfigs();
                 if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
-                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule] }, (rows) => { if (!cancelled)
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
             }
