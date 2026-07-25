@@ -4260,14 +4260,7 @@ html.rbv-lite-mode .pdf-canvas-pages {
 
 
 /* Revamp 211 - fixed Home with only history list scrolling */
-html:has(.dashboard-page),
-body:has(.dashboard-page),
-#root:has(.dashboard-page) {
-  height: 100dvh !important;
-  min-height: 100dvh !important;
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
-}
+
 
 .dashboard-page > .dashboard-compact,
 .dashboard-page > .home-update-notice {
