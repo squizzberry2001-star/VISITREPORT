@@ -1,5 +1,5 @@
 {
-  "version": "279",
-  "build": "revamp279-css-encoding-fix-v14",
-  "label": "Revamp 279 - Fix Theme CSS Encoding Null Bytes"
+  "version": "280",
+  "build": "revamp280-leaderboard-chart-v15",
+  "label": "Revamp 280 - Interactive Chart and Leaderboard"
 }

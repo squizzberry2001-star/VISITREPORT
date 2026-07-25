@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp279-css-encoding-fix-v14';
+const APP_BUILD_VERSION = 'revamp280-leaderboard-chart-v15';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3685,6 +3685,9 @@ function AnalyticsView({ history }) {
                 let emailFeedbackCount = 0;
                 
                 const temuanByMonth = {};
+                const bestieMap = {};
+                BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { name, totalVisits: 0, totalAssigned: 0 });
+                BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
                 localVisits.forEach(v => {
                     if (v.isPdfDownloaded || v.isEmailSent) {
@@ -3700,7 +3703,14 @@ function AnalyticsView({ history }) {
                         const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
                         temuanByMonth[m] = (temuanByMonth[m] || 0) + (v.temuanCount || 0);
                     }
+                    const bk = normalize(v.bestieName);
+                    if (bk) {
+                        if (!bestieMap[bk]) bestieMap[bk] = { name: v.bestieName, totalVisits: 0, totalAssigned: 0 };
+                        bestieMap[bk].totalVisits++;
+                    }
                 });
+                
+                const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits);
 
                 setData({
                     globalStoreCount: globalStoreSet.size,
@@ -3709,6 +3719,7 @@ function AnalyticsView({ history }) {
                     emailSentCount,
                     emailFeedbackCount,
                     temuanByMonth,
+                    leaderboard,
                     localTotalVisits: localVisits.length
                 });
             } catch (e) {
@@ -3780,23 +3791,31 @@ function AnalyticsView({ history }) {
                 React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (Observasi)"),
                 React.createElement("div", { className: "p-2 bg-emerald-50 rounded-xl text-emerald-600" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
             ),
-            React.createElement("div", { className: "space-y-6" },
+            React.createElement("div", { className: "w-full h-[250px]" },
                 Object.keys(data?.temuanByMonth || {}).length === 0 ? 
-                    React.createElement("div", { className: "py-12 flex flex-col items-center justify-center text-audit-ink opacity-50" },
+                    React.createElement("div", { className: "h-full flex flex-col items-center justify-center text-audit-ink opacity-50" },
                         React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
                     ) :
-                    Object.entries(data?.temuanByMonth || {}).map(([month, count]) => {
-                        const maxCount = Math.max(...Object.values(data?.temuanByMonth || {}), 1);
-                        const percentage = count > 0 ? (count / maxCount) * 100 : 0;
-                        return React.createElement("div", { key: month, className: "group" },
-                            React.createElement("div", { className: "flex justify-between items-end mb-2.5" },
-                                React.createElement("span", { className: "text-[13px] font-bold text-audit-ink opacity-90" }, month),
-                                React.createElement("span", { className: "text-[13px] font-black text-emerald-600" }, count, " ", React.createElement("span", { className: "text-[10px] text-audit-ink opacity-50 font-bold uppercase tracking-widest ml-0.5" }, "temuan"))
-                            ),
-                            React.createElement("div", { className: "progress-bar-wrap" },
-                                React.createElement("div", { className: "progress-bar-fill bg-gradient-to-r from-emerald-400 to-emerald-500", style: { width: `${mounted ? Math.max(percentage, 1) : 0}%` } })
-                            )
-                        );
+                    React.createElement(SimpleChart, { 
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(data?.temuanByMonth || {}),
+                            datasets: [{
+                                label: 'Total Temuan',
+                                data: Object.values(data?.temuanByMonth || {}),
+                                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                                borderRadius: 6,
+                                maxBarThickness: 40
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0 } }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        }
                     })
             )
         ),
@@ -3828,6 +3847,32 @@ function AnalyticsView({ history }) {
                         React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium leading-snug" }, `${data?.emailFeedbackCount || 0} dari ${data?.emailSentCount || 0} email mendapat balasan`)
                     )
                 )
+            )
+        ),
+        
+        // Leaderboard Bestie
+        React.createElement("div", { className: "mt-6 sm:mt-8" },
+            React.createElement("h3", { className: "text-xl font-black text-audit-ink mb-4 px-1" }, "Leaderboard Kunjungan Bestie"),
+            React.createElement("div", { className: "grid gap-3" },
+                data?.leaderboard?.map((lb, idx) => {
+                    const isTop = idx === 0;
+                    return React.createElement("div", { key: lb.name, className: cx("flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all", isTop ? "bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-500/20" : "bg-white border-slate-200 text-audit-ink hover:border-audit-primary hover:shadow-md") },
+                        React.createElement("div", { className: "flex items-center gap-4" },
+                            React.createElement("div", { className: cx("w-10 h-10 rounded-full flex items-center justify-center font-black text-lg", isTop ? "bg-white text-emerald-600 shadow-sm" : "bg-slate-100 text-slate-500") }, idx + 1),
+                            React.createElement("div", null,
+                                React.createElement("h4", { className: cx("font-bold text-[15px]", isTop ? "text-white" : "text-audit-ink") }, lb.name),
+                                React.createElement("p", { className: cx("text-[11px] font-extrabold uppercase tracking-widest mt-0.5", isTop ? "text-emerald-100" : "text-slate-400") }, "Regional Bestie")
+                            )
+                        ),
+                        React.createElement("div", { className: "text-right" },
+                            React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
+                                React.createElement("span", { className: "text-2xl font-black leading-none" }, lb.totalVisits),
+                                React.createElement("span", { className: cx("text-sm font-bold", isTop ? "text-emerald-100" : "text-slate-400") }, "/", lb.totalAssigned)
+                            ),
+                            React.createElement("p", { className: cx("text-[10px] font-extrabold uppercase tracking-widest mt-1", isTop ? "text-emerald-100" : "text-slate-400") }, "Kunjungan / Store")
+                        )
+                    );
+                })
             )
         )
     );
