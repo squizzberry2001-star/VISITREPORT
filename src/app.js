@@ -4531,7 +4531,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement("div", { className: "dashboard-tab-bar w-full" },
-            React.createElement("div", { className: "dashboard-tab-bar-inner w-full px-2 md:px-6" },
+            React.createElement("div", { className: "dashboard-tab-bar-inner w-full px-4 md:px-8" },
                 React.createElement("div", { className: "flex items-center justify-around h-[56px]" },
                 React.createElement("button", { 
                     type: "button", 
@@ -4552,7 +4552,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             )
         ),
         activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in w-full" },
-            React.createElement("div", { className: "w-full px-4 md:px-8 lg:px-12 py-6 pb-32 space-y-6" },
+            React.createElement("div", { className: "w-full px-4 md:px-8 py-6 pb-32 space-y-6" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti & Pengaturan"),
                 React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" },
                 React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
@@ -4585,7 +4585,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-command-center w-full" },
-            React.createElement("div", { className: "w-full px-4 md:px-8 lg:px-12 py-6" },
+            React.createElement("div", { className: "w-full px-4 md:px-8 py-6" },
             // Section 1: Progress Ring & Daily Target
             React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
                 React.createElement("div", { className: "text-center md:text-left text-white" },
