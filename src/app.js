@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v38';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v39';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4076,6 +4076,16 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 
                 Object.values(bestieMap).forEach(b => {
                     b.visitHistory.sort((a, b) => b.date - a.date);
+                    const uniqueHistory = [];
+                    const seenDates = new Set();
+                    for (const vh of b.visitHistory) {
+                        if (String(vh.storeName).toUpperCase().trim() === 'OFF') continue;
+                        if (!seenDates.has(vh.dateStr)) {
+                            seenDates.add(vh.dateStr);
+                            uniqueHistory.push(vh);
+                        }
+                    }
+                    b.visitHistory = uniqueHistory;
                 });
                 const todayStrLb = new Date().toISOString().slice(0, 10);
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
