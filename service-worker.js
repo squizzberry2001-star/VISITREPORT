@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp280-leaderboard-chart-v15';
+const APP_VERSION = 'revamp281-fix-chart-crash-v16';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

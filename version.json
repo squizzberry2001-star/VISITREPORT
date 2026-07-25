@@ -1,5 +1,5 @@
 {
-  "version": "280",
-  "build": "revamp280-leaderboard-chart-v15",
-  "label": "Revamp 280 - Interactive Chart and Leaderboard"
+  "version": "281",
+  "build": "revamp281-fix-chart-crash-v16",
+  "label": "Revamp 281 - Fix React Crash on SimpleChart Missing"
 }
