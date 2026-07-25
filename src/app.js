@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v32';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v33';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -9568,6 +9568,20 @@ function App() {
         setScreen('audit');
         setNewVisitOpen(false);
         await putVisitRecord(next);
+        
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                next.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                await putVisitRecord(next);
+                upsertMonitorVisit(next);
+            }, (err) => {
+                console.warn('GPS failed/denied:', err);
+                if (err.code === err.PERMISSION_DENIED) {
+                    alert('Izin lokasi ditolak atau diblokir oleh browser.\\n\\nPeta tidak dapat merekam titik kunjungan ini. Silakan buka Pengaturan Browser -> Izin Situs (Site Settings) -> Izinkan Lokasi, lalu coba mulai kunjungan baru.');
+                }
+            }, { enableHighAccuracy: false, timeout: 10000 });
+        }
+
         const nextMeta = saveHistoryMeta([historyMetaFromVisit(next), ...readHistoryMeta()]);
         setHistory(nextMeta);
         localStorage.setItem(ACTIVE_VISIT_KEY, next.id);
