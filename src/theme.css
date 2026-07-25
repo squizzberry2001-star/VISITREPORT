@@ -1089,7 +1089,7 @@ select.form-control.select-control.has-leading-icon { padding-left: 2.75rem; }
 
 @media (max-width: 767px) {
   body { overflow-x: hidden; }
-  .dashboard-page { padding-inline: .8rem !important; }
+  .dashboard-page { padding-inline: 0 !important; }
   .dashboard-compact { padding: .8rem !important; }
   .dashboard-compact h1 { max-width: 78vw; }
   .dashboard-stat { min-height: 64px; }
@@ -1417,8 +1417,6 @@ select,
   .dashboard-page,
   .workspace-page,
   .preview-page {
-    padding-left: .75rem !important;
-    padding-right: .75rem !important;
     padding-bottom: calc(6.1rem + var(--safe-bottom)) !important;
   }
   .workspace-page {
@@ -4269,9 +4267,8 @@ html.rbv-lite-mode .pdf-canvas-pages {
 .dashboard-history-section {
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
+  overflow: visible !important;
+  display: block !important;
   margin-top: 0 !important;
   padding: 0 2px !important;
   position: relative !important;
@@ -4333,8 +4330,6 @@ html.rbv-lite-mode .pdf-canvas-pages {
 @media (max-width: 420px) {
   .dashboard-page {
     gap: 8px !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
   }
   .home-quick-action-button {
     min-height: 54px !important;
@@ -4350,14 +4345,14 @@ html.rbv-lite-mode .pdf-canvas-pages {
 /* Revamp 212 - reliable home history scrolling */
 
 
-body.rbv-home-lock .dashboard-page,
+
 
 .dashboard-history-section {
   flex: 1 1 0% !important;
   min-height: 0 !important;
   height: auto !important;
   max-height: none !important;
-  overflow-y: auto !important;
+  overflow-y: visible !important;
   overflow-x: hidden !important;
   display: block !important;
   -webkit-overflow-scrolling: touch !important;
@@ -7045,3 +7040,53 @@ body.rbv-keyboard-visible .evidence-floating-capture {
   .md\:rounded-t-3xl { border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem; }
   .md\:rounded-t-\[32px\] { border-top-left-radius: 32px; border-top-right-radius: 32px; }
 }
+
+/* === REVAMP-FINAL: Dashboard full-width, natural scrolling =============== */
+/* Override all historical rules that blocked scrolling or added side padding */
+
+/* The audit-shell must not constrain dashboard */
+.audit-shell:has(.dashboard-page) {
+  overflow: visible !important;
+}
+
+/* Main page: fills 100% width, scrolls naturally */
+.dashboard-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  position: static !important;
+  inset: unset !important;
+  height: auto !important;
+  max-height: none !important;
+  flex: 1 1 auto !important;
+}
+
+/* Header stays sticky inside the scroll container */
+.dashboard-page > .dashboard-compact {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 40 !important;
+}
+
+/* Tab bar is fixed at bottom, not part of scroll */
+.dashboard-page > .dashboard-tab-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 90 !important;
+}
+
+/* History section: flows naturally in the page scroll */
+.dashboard-history-section,
+.dashboard-command-center {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  flex: none !important;
+}
+/* ======================================================================== */

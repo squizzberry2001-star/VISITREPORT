@@ -4281,7 +4281,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
     );
 }
 
-function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
+function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
     const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -4513,7 +4513,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             setNotificationBusy(false);
         }
     }
-    return (React.createElement("main", { className: "dashboard-page flex w-full min-h-screen flex-col bg-slate-50 relative pb-32" },
+    return (React.createElement("main", { className: "dashboard-page w-full min-h-screen flex flex-col bg-slate-50 relative" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.2);transform:translateY(0)}50%{box-shadow:0 0 0 10px rgba(37,99,235,0);transform:translateY(-2px)}}`),
         React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-200/50" },
             React.createElement("div", { className: "flex items-center justify-between gap-4 w-full px-4 py-3 md:px-8 md:py-4" },
@@ -4585,7 +4585,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-command-center w-full" },
-            React.createElement("div", { className: "w-full px-0 py-6" },
+            React.createElement("div", { className: "w-full px-0 py-6 pb-32" },
             // Section 1: Progress Ring & Daily Target
             React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
                 React.createElement("div", { className: "text-center md:text-left text-white" },
@@ -4611,14 +4611,14 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                                 React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
                             React.createElement("h4", { className: "font-black text-slate-900 line-clamp-1" }, store.storeName || store.siteDescr || `Toko Prioritas ${i + 1}`),
                             React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, store.distance !== undefined ? `Radius ${store.distance.toFixed(1)} km dari Anda` : 'Sedang mengambil lokasi...'),
-                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: onNewVisit }, "Kunjungi"))
+                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: () => (onQuickVisit || onNewVisit)(store.storeName || store.siteDescr || '') }, "Kunjungi"))
                     )) : [1, 2, 3].map((_, i) => (
                         React.createElement("div", { key: i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
                             React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
                                 React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
                             React.createElement("h4", { className: "font-black text-slate-900" }, "Toko Prioritas ", i + 1),
                             React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Sedang mengambil lokasi..."),
-                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: onNewVisit }, "Kunjungi"))
+                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: () => (onQuickVisit || onNewVisit)(`Toko Prioritas ${i + 1}`) }, "Kunjungi"))
                     )))),
             
             // Section 3: Activity Timeline
@@ -9693,7 +9693,7 @@ function App() {
     }
     let content;
     if (screen === 'dashboard') {
-        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
+        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onQuickVisit: (storeName) => createNewVisit(readBestieLogin()?.name || '', storeName), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
     }
     else if (screen === 'preview') {
         content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });
@@ -9704,7 +9704,7 @@ function App() {
     return (React.createElement("div", { className: "audit-shell min-h-screen lg:flex lg:flex-row bg-slate-50" },
         screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-1 flex-col" },
-            !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
+            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
             screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
