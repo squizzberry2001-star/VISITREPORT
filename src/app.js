@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-global-analytics-minimalist-panel-v17';
+const APP_BUILD_VERSION = 'revamp281-fix-leaderboard-color-v18';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3896,21 +3896,20 @@ function AnalyticsView({ history }) {
             React.createElement("h3", { className: "text-xl font-black text-audit-ink mb-4 px-1" }, "Leaderboard Kunjungan Bestie"),
             React.createElement("div", { className: "grid gap-3" },
                 data?.leaderboard?.map((lb, idx) => {
-                    const isTop = idx === 0;
-                    return React.createElement("div", { key: lb.name, className: cx("flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all", isTop ? "bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-500/20" : "bg-white border-slate-200 text-audit-ink hover:border-audit-primary hover:shadow-md") },
+                    return React.createElement("div", { key: lb.name, className: "flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all bg-white border-slate-200 text-audit-ink hover:border-audit-primary hover:shadow-md" },
                         React.createElement("div", { className: "flex items-center gap-4" },
-                            React.createElement("div", { className: cx("w-10 h-10 rounded-full flex items-center justify-center font-black text-lg", isTop ? "bg-white text-emerald-600 shadow-sm" : "bg-slate-100 text-slate-500") }, idx + 1),
+                            React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500" }, idx + 1),
                             React.createElement("div", null,
-                                React.createElement("h4", { className: cx("font-bold text-[15px]", isTop ? "text-white" : "text-audit-ink") }, lb.name),
-                                React.createElement("p", { className: cx("text-[11px] font-extrabold uppercase tracking-widest mt-0.5", isTop ? "text-emerald-100" : "text-slate-400") }, "Regional Bestie")
+                                React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink" }, lb.name),
+                                React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400" }, "Regional Bestie")
                             )
                         ),
                         React.createElement("div", { className: "text-right" },
                             React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
                                 React.createElement("span", { className: "text-2xl font-black leading-none" }, lb.totalVisits),
-                                React.createElement("span", { className: cx("text-sm font-bold", isTop ? "text-emerald-100" : "text-slate-400") }, "/", lb.totalAssigned)
+                                React.createElement("span", { className: "text-sm font-bold text-slate-400" }, "/", lb.totalAssigned)
                             ),
-                            React.createElement("p", { className: cx("text-[10px] font-extrabold uppercase tracking-widest mt-1", isTop ? "text-emerald-100" : "text-slate-400") }, "Kunjungan / Store")
+                            React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-1 text-slate-400" }, "Kunjungan / Store")
                         )
                     );
                 })
