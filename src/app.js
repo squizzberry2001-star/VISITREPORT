@@ -2329,13 +2329,13 @@ function RichTextInput({ value, onChange, placeholder = 'Tulis catatan...', clas
 function SelectInput({ children, className = '', ...props }) {
     return React.createElement("select", { className: cx('form-control appearance-none', className), ...props }, children);
 }
-function SelectField({ label, value, options, onChange, placeholder = 'Pilih', required, icon }) {
+function SelectField({ label, value, options, onChange, placeholder = 'Pilih', required, icon, disabled }) {
     const normalizedOptions = (options || []).map((item) => typeof item === 'string' ? { label: item, value: item } : item);
     return (React.createElement(Field, { label: label, required: required },
         React.createElement("div", { className: "select-field-wrap relative" },
             icon ? React.createElement("span", { className: "select-field-icon pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 text-slate-400" },
                 React.createElement(Icon, { name: icon, className: "h-5 w-5" })) : null,
-            React.createElement(SelectInput, { value: value || '', onChange: (event) => onChange(event.target.value), className: cx('select-control', icon ? 'has-leading-icon' : ''), required: required },
+            React.createElement(SelectInput, { value: value || '', onChange: (event) => onChange(event.target.value), className: cx('select-control', icon ? 'has-leading-icon' : ''), required: required, disabled: disabled },
                 React.createElement("option", { value: "" }, placeholder),
                 normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label, disabled: item.disabled }, item.label))))));
 }
@@ -3040,7 +3040,7 @@ function ObservationCards({ title, rows, onChange }) {
             position: 'fixed',
             left: '0',
             right: '0',
-            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
             zIndex: 86,
             marginTop: '0',
             display: 'flex',
@@ -3223,7 +3223,7 @@ function VisitSetupSection({ visit, update }) {
     }
     return (React.createElement(SectionShell, { title: "Mulai visit" },
         React.createElement("div", { className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5" },
-            React.createElement("div", { className: "visit-setup-card surface-card min-w-0 rounded-[24px] p-4 md:rounded-[28px] md:p-6" },
+            React.createElement("div", { className: "visit-setup-card min-w-0 p-4 md:p-6" },
                 React.createElement("div", { className: "grid gap-4 md:gap-5" },
                     React.createElement(SelectField, { label: "Nama Bestie", required: true, value: visit.nama || '', options: BESTIE_NAMES, onChange: handleBestieChange, placeholder: "Pilih nama bestie", icon: "user" }),
                     React.createElement(SelectField, { label: "Store", required: true, value: visit.store || '', options: storeOptions, onChange: handleStoreChange, placeholder: "Pilih store", icon: "store" }),
@@ -3235,7 +3235,7 @@ function VisitSetupSection({ visit, update }) {
                                 "%")),
                         React.createElement(ProgressBar, { value: progress }),
                         React.createElement(ProgressMissingInfo, { visit: visit, maxItems: 5 })),
-                    React.createElement("div", { className: "visit-detail-edit rounded-2xl border border-slate-200 bg-white/80 p-3" },
+                    React.createElement("div", { className: "visit-detail-edit p-1" },
                         React.createElement("p", { className: "mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-audit-primary" }, "Edit detail visit"),
                         React.createElement("div", { className: "grid gap-3 sm:grid-cols-2" },
                             React.createElement(Field, { label: "Kode Store" },
@@ -4016,21 +4016,25 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 rows.forEach(r => {
                     const bk = normalize(r.bestie_name || r.bestieName || '');
                     
-                    // Filter anomali: abaikan jika kunjungan tidak memiliki data observasi sama sekali
                     if (r.has_meaningful_data === false) return;
                     
+                    if (r.visit_date || r.visitDate || r.updated_at) {
+                        const d = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
+                        const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
+                        opiByMonth[m] = (opiByMonth[m] || 0) + (Number(r.opi_score) || 0);
+                        qscByMonth[m] = (qscByMonth[m] || 0) + (Number(r.qsc_score) || 0);
+                    }
+
                     if (bk && bestieMap[bk]) {
                         const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
                         const rawStore = r.store_name || r.storeName || 'Unknown Store';
                         
-                        // Selalu masukkan ke history agar semua data dari Convex terlihat
                         bestieMap[bk].visitHistory.push({
                             storeName: rawStore,
                             date: vDate,
                             dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
                         });
 
-                        // Score / Total Visits Leaderboard difilter unik per toko per minggu (ALL TIME).
                         const storeName = normalize(r.store_name || r.storeName || '');
                         const mondayStr = getMonday(vDate);
                         const uniqueKey = `${storeName}_${mondayStr}`;
@@ -4053,34 +4057,21 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         emailFeedbackCount++;
                     }
                     
-                    if (v.visitDate) {
-                        const d = new Date(v.visitDate);
-                        const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
-                        
-                        let monthlyOpi = 0;
-                        let monthlyQsc = 0;
-
-                        if (Array.isArray(v.opiData)) {
-                            v.opiData.forEach(row => {
-                                if (isMeaningfulObservation(row)) {
-                                    monthlyOpi++;
-                                    const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
-                                    if (text) opiTexts.push(text);
-                                }
-                            });
-                        }
-                        if (Array.isArray(v.qscData)) {
-                            v.qscData.forEach(row => {
-                                if (isMeaningfulObservation(row)) {
-                                    monthlyQsc++;
-                                    const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
-                                    if (text) qscTexts.push(text);
-                                }
-                            });
-                        }
-
-                        opiByMonth[m] = (opiByMonth[m] || 0) + monthlyOpi;
-                        qscByMonth[m] = (qscByMonth[m] || 0) + monthlyQsc;
+                    if (Array.isArray(v.opiData)) {
+                        v.opiData.forEach(row => {
+                            if (isMeaningfulObservation(row)) {
+                                const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
+                                if (text) opiTexts.push(text);
+                            }
+                        });
+                    }
+                    if (Array.isArray(v.qscData)) {
+                        v.qscData.forEach(row => {
+                            if (isMeaningfulObservation(row)) {
+                                const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
+                                if (text) qscTexts.push(text);
+                            }
+                        });
                     }
                 });
                 
@@ -4303,6 +4294,46 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     const [syncMessage, setSyncMessage] = useState('');
     const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
     const [historyRenderLimit, setHistoryRenderLimit] = useState(() => RBV_ULTRA_LITE_CAMERA_MODE ? 12 : 9999);
+    const [userLocation, setUserLocation] = useState(null);
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                () => {},
+                { enableHighAccuracy: false, maximumAge: 600000 }
+            );
+        }
+    }, []);
+
+    const priorityStores = useMemo(() => {
+        const stores = getEffectiveMasterStores();
+        if (!userLocation) return stores.slice(0, 3); // Fallback
+
+        const toRad = x => (x * Math.PI) / 180;
+        const R = 6371; // Earth radius in km
+
+        return stores.map(store => {
+            const lat2 = parseFloat(store.latitude);
+            const lon2 = parseFloat(store.longitude);
+            if (!lat2 || !lon2) return { ...store, distance: Infinity };
+
+            const lat1 = userLocation.lat;
+            const lon1 = userLocation.lng;
+            
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const d = R * c;
+            
+            return { ...store, distance: d };
+        }).filter(s => s.distance < Infinity)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 5); // top 5 nearest
+    }, [userLocation]);
+
     const restoreInputRef = useRef(null);
     const visibleHistory = RBV_ULTRA_LITE_CAMERA_MODE ? history.slice(0, historyRenderLimit) : history;
     const hiddenHistoryCount = Math.max(0, history.length - visibleHistory.length);
@@ -4334,12 +4365,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         return () => window.clearInterval(timer);
     }, [history]);
     useEffect(() => {
-        document.documentElement.classList.add('rbv-home-lock');
-        document.body?.classList.add('rbv-home-lock');
-        return () => {
-            document.documentElement.classList.remove('rbv-home-lock');
-            document.body?.classList.remove('rbv-home-lock');
-        };
+        // Removed rbv-home-lock to allow natural scrolling of the dashboard
     }, []);
     useEffect(() => {
         function handleBeforeInstallPrompt(event) {
@@ -4577,12 +4603,19 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("h3", { className: "text-lg font-black tracking-tight text-slate-800" }, "Akses Cepat"),
                     React.createElement("button", { type: "button", className: "text-xs font-bold text-audit-primary hover:underline", onClick: onNewVisit }, "Lihat Semua")),
                 React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar" },
-                    [1, 2, 3].map((_, i) => (
+                    priorityStores.length > 0 ? priorityStores.map((store, i) => (
+                        React.createElement("div", { key: store.siteCode || i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
+                            React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
+                                React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
+                            React.createElement("h4", { className: "font-black text-slate-900 line-clamp-1" }, store.storeName || store.siteDescr || `Toko Prioritas ${i + 1}`),
+                            React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, store.distance !== undefined ? `Radius ${store.distance.toFixed(1)} km dari Anda` : 'Sedang mengambil lokasi...'),
+                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: onNewVisit }, "Kunjungi"))
+                    )) : [1, 2, 3].map((_, i) => (
                         React.createElement("div", { key: i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
                             React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
                                 React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
                             React.createElement("h4", { className: "font-black text-slate-900" }, "Toko Prioritas ", i + 1),
-                            React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Radius \u003C 2km dari Anda"),
+                            React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Sedang mengambil lokasi..."),
                             React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: onNewVisit }, "Kunjungi"))
                     )))),
             
@@ -4607,25 +4640,22 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))))
         ) : null,
         activeTab === 'analytics' ? React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }) : null,
-        activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
+        activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center rounded-full text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 right: '24px',
                 bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
                 transform: 'none',
                 left: 'auto',
                 zIndex: 80,
-                width: 'auto',
-                height: '52px',
-                paddingLeft: '20px',
-                paddingRight: '20px',
+                width: '56px',
+                height: '56px',
                 background: '#2563eb',
                 opacity: 1,
                 backdropFilter: 'none',
                 WebkitBackdropFilter: 'none',
                 boxShadow: '0 8px 24px -4px rgba(37, 99, 235, 0.4)'
             }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
-            React.createElement(Icon, { name: "plus", className: "h-5 w-5" }),
-            React.createElement("span", null, "Kunjungan Baru")),
+            React.createElement(Icon, { name: "plus", className: "h-6 w-6" })),
         React.createElement(MasterStoreDetailModal, { open: masterStoreModalOpen, onClose: () => setMasterStoreModalOpen(false) }),
         React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })));
 }
@@ -4793,14 +4823,14 @@ function NewVisitModal({ open, onClose, onCreate }) {
                     readBestieLogin().name ? React.createElement("p", { className: "mt-1 text-xs font-bold text-blue-700" }, "Login NIK: ", readBestieLogin().name) : null),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("div", { className: "flex-1 overflow-y-auto p-5 pb-32 grid gap-4" },
-                React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true }),
+            React.createElement("div", { className: "flex-1 overflow-y-auto p-5 pb-32 grid gap-5" },
+                React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true, disabled: !!readBestieLogin().name }),
                 React.createElement(StoreSearchSelect, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", disabled: manualOpen }),
-                React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
-                    React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-slate-900", onClick: () => setManualOpen((state) => !state) },
+                React.createElement("div", { className: "pt-2" },
+                    React.createElement("button", { type: "button", className: "flex w-full items-center justify-between gap-3 text-left text-sm font-extrabold text-audit-primary mb-3", onClick: () => setManualOpen((state) => !state) },
                         React.createElement("span", null, "Input store manual"),
                         React.createElement(Icon, { name: "right", className: cx('h-4 w-4 transition', manualOpen ? 'rotate-90' : '') })),
-                    manualOpen ? React.createElement("div", { className: "mt-3 grid gap-3" },
+                    manualOpen ? React.createElement("div", { className: "grid gap-3" },
                         React.createElement(Field, { label: "Nama Store Manual" },
                             React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value), placeholder: "Ketik nama store" }))) : null)),
             React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
@@ -8990,7 +9020,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
         { key: 'audit', label: 'Flow', icon: 'clipboard', action: goAudit, active: screen === 'audit' },
         { key: 'preview', label: 'PDF', icon: 'pdf', action: goPreview, active: screen === 'preview' }
     ];
-    return (React.createElement("nav", { className: "mobile-floating-nav fixed bottom-6 left-1/2 z-50 flex w-[90%] max-w-sm -translate-x-1/2 items-center justify-around rounded-full bg-slate-900/90 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 lg:hidden", "aria-label": "Mobile system navigation" },
+    return (React.createElement("nav", { className: "mobile-floating-nav fixed bottom-4 left-1/2 z-50 flex w-[90%] max-w-sm -translate-x-1/2 items-center justify-around rounded-full bg-slate-900/90 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 lg:hidden", "aria-label": "Mobile system navigation" },
         items.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('relative flex flex-1 flex-col items-center justify-center rounded-full py-2.5 transition-all active:scale-95', item.active ? 'text-white' : 'text-slate-400 hover:text-slate-200'), onClick: item.action },
             item.active && React.createElement("div", { className: "absolute inset-0 rounded-full bg-white/10" }),
             React.createElement(Icon, { name: item.icon, className: cx("h-6 w-6 transition-transform duration-300", item.active && "-translate-y-0.5") }),
@@ -9010,12 +9040,12 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
         return () => document.removeEventListener('keydown', handleKey);
     }, [activeSection]);
     if (!visit)
-        return React.createElement("main", { className: "workspace-page w-full px-4 py-8 pb-44 lg:px-8 lg:pb-8" },
+        return React.createElement("main", { className: "workspace-page w-full px-4 py-8 pb-[220px] lg:px-8 lg:pb-8" },
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
     const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update })];
     const progress = visitProgress(visit, activeSection);
     
-    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-5 pb-44 lg:px-8 lg:py-8 lg:pb-8" },
+    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-5 pb-[220px] lg:px-8 lg:py-8 lg:pb-8" },
         // Wizard Header Card
         React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100" },
             React.createElement("div", { className: "flex items-center justify-between p-6 md:p-8" },
@@ -9035,7 +9065,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
             React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
             
         // Mobile Wizard Controls (Bottom Fixed)
-        React.createElement("div", { className: "fixed bottom-24 left-4 right-4 z-40 flex gap-3 sm:hidden" },
+        React.createElement("div", { className: "fixed bottom-[145px] left-4 right-4 z-40 flex gap-3 sm:hidden" },
             React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "flex-1 !rounded-2xl shadow-xl backdrop-blur-md bg-white/90" }, "Back"),
             React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "flex-1 !rounded-2xl shadow-xl" }, activeSection >= SECTION_DEFS.length - 1 ? "Finish" : "Next")),
             
