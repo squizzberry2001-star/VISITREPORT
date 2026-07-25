@@ -4581,7 +4581,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Hapus History")
                 )
             )
-        ) : null,
+        )) : null,
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-command-center w-full" },
@@ -4640,7 +4640,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))),
                     hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button mt-6", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " aktivitas lagi") : null) :
                     React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))))
-        ) : null,
+        )) : null,
         activeTab === 'analytics' ? React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }) : null,
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center rounded-full text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
