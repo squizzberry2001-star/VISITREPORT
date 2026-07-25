@@ -3960,8 +3960,9 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         async function loadData() {
             try {
                 setLoading(true);
-                const rows = await fetchMonitorRowsFromConvex();
+                const fetchedRows = await fetchMonitorRowsFromConvex();
                 if (cancelled) return;
+                const rows = fetchedRows || [];
                 
                 const globalStoreSet = new Set();
                 rows.forEach(r => {
