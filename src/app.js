@@ -3660,32 +3660,34 @@ function AnalyticsView() {
                 
                 const storeSet = new Set();
                 const visitByMonth = {};
-                const bestieByMonth = {};
-                let totalTemuan = 0;
+                const bestieCounts = {};
                 
                 rows.forEach(r => {
-                    if (r.store) storeSet.add(r.store);
-                    const d = new Date(r.updatedAt || Date.now());
-                    const m = d.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+                    const storeName = r.store_name || r.storeName || r.store || '';
+                    if (storeName) storeSet.add(storeName);
                     
+                    const d = new Date(r.visit_date || r.visitDate || r.tanggal || Date.now());
+                    const m = d.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
                     visitByMonth[m] = (visitByMonth[m] || 0) + 1;
                     
-                    if (!bestieByMonth[m]) bestieByMonth[m] = new Set();
-                    if (r.nama) bestieByMonth[m].add(r.nama);
-                    
-                    if (r.progress < 100) totalTemuan++;
+                    const bestieName = r.bestie_name || r.bestieName || r.nama || '';
+                    if (bestieName) {
+                        bestieCounts[bestieName] = (bestieCounts[bestieName] || 0) + 1;
+                    }
                 });
                 
-                const bestieCountByMonth = {};
-                for (const m in bestieByMonth) {
-                    bestieCountByMonth[m] = bestieByMonth[m].size;
+                let topBestie = { name: '-', count: 0 };
+                for (const [name, count] of Object.entries(bestieCounts)) {
+                    if (count > topBestie.count) {
+                        topBestie = { name, count };
+                    }
                 }
                 
                 setData({
                     totalStores: storeSet.size,
+                    totalVisits: rows.length,
                     visitByMonth,
-                    bestieCountByMonth,
-                    totalTemuan
+                    topBestie
                 });
             } catch (e) {
                 console.error(e);
@@ -3698,38 +3700,52 @@ function AnalyticsView() {
     }, []);
 
     if (loading) {
-        return React.createElement("div", { className: "py-10 text-center text-slate-500 flex flex-col items-center justify-center" },
+        return React.createElement("div", { className: "py-16 text-center text-slate-500 flex flex-col items-center justify-center" },
             React.createElement("span", { className: "loading-spinner inline-block mb-3" }),
-            React.createElement("p", { className: "font-bold" }, "Mengambil data analitik global...")
+            React.createElement("p", { className: "font-bold tracking-wide" }, "Menganalisa Data Kunjungan...")
         );
     }
 
-    return React.createElement("div", { className: "analytics-view-container px-2 py-2" },
-        React.createElement("div", { className: "grid grid-cols-2 gap-3 mb-4" },
-            React.createElement("div", { className: "surface-card p-4 rounded-2xl text-center shadow-sm" },
-                React.createElement("p", { className: "text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "Total Store Dikunjungi"),
-                React.createElement("p", { className: "text-3xl font-black text-audit-primary mt-1" }, data?.totalStores || 0)
+    return React.createElement("div", { className: "analytics-view-container px-4 py-4 max-w-lg mx-auto" },
+        React.createElement("div", { className: "grid grid-cols-2 gap-4 mb-6" },
+            React.createElement("div", { className: "surface-card p-5 rounded-[22px] flex flex-col items-center justify-center shadow-sm relative overflow-hidden" },
+                React.createElement("div", { className: "absolute -right-4 -top-4 opacity-[0.03] pointer-events-none" }, React.createElement(Icon, { name: "store", className: "w-24 h-24" })),
+                React.createElement("p", { className: "text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 text-center" }, "Total Store"),
+                React.createElement("p", { className: "text-4xl font-black text-audit-primary" }, data?.totalStores || 0)
             ),
-            React.createElement("div", { className: "surface-card p-4 rounded-2xl text-center shadow-sm" },
-                React.createElement("p", { className: "text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "Visit dgn Temuan (Open)"),
-                React.createElement("p", { className: "text-3xl font-black text-rose-600 mt-1" }, data?.totalTemuan || 0)
+            React.createElement("div", { className: "surface-card p-5 rounded-[22px] flex flex-col items-center justify-center shadow-sm relative overflow-hidden" },
+                React.createElement("div", { className: "absolute -right-4 -top-4 opacity-[0.03] pointer-events-none" }, React.createElement(Icon, { name: "history", className: "w-24 h-24" })),
+                React.createElement("p", { className: "text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 text-center" }, "Total Visit"),
+                React.createElement("p", { className: "text-4xl font-black text-sky-600" }, data?.totalVisits || 0)
             )
         ),
-        React.createElement("div", { className: "surface-card p-5 rounded-[24px] shadow-sm" },
-            React.createElement("h3", { className: "text-sm font-black text-slate-800 mb-4 flex items-center gap-2" }, 
-                React.createElement(Icon, { name: "document", className: "h-4 w-4 text-audit-primary" }),
+
+        React.createElement("div", { className: "surface-card p-6 rounded-[26px] shadow-sm mb-6 relative overflow-hidden" },
+            React.createElement("div", { className: "absolute top-0 right-0 p-6 opacity-[0.04]" }, React.createElement(Icon, { name: "spark", className: "w-16 h-16" })),
+            React.createElement("h3", { className: "text-xs font-black text-slate-400 uppercase tracking-widest mb-1" }, "Bestie Teraktif"),
+            React.createElement("div", { className: "flex items-center gap-3 mt-2" },
+                React.createElement("div", { className: "w-10 h-10 rounded-full bg-audit-primary/10 flex items-center justify-center text-audit-primary shrink-0" },
+                    React.createElement(Icon, { name: "user", className: "w-5 h-5" })
+                ),
+                React.createElement("div", null,
+                    React.createElement("p", { className: "font-black text-slate-800 text-lg leading-tight truncate max-w-[200px]" }, data?.topBestie?.name || '-'),
+                    React.createElement("p", { className: "text-xs text-audit-primary font-bold mt-0.5" }, (data?.topBestie?.count || 0) + " Kunjungan")
+                )
+            )
+        ),
+
+        React.createElement("div", { className: "surface-card p-6 rounded-[26px] shadow-sm" },
+            React.createElement("h3", { className: "text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2" }, 
+                React.createElement(Icon, { name: "calendar", className: "h-3.5 w-3.5" }),
                 "Tren Kunjungan Bulanan"
             ),
             React.createElement("div", { className: "space-y-3" },
                 Object.keys(data?.visitByMonth || {}).length === 0 ? 
-                    React.createElement("p", { className: "text-sm text-slate-400 text-center py-2" }, "Belum ada data") :
+                    React.createElement("p", { className: "text-sm text-slate-400 text-center py-4 font-medium" }, "Belum ada data") :
                     Object.entries(data?.visitByMonth || {}).map(([month, count]) => 
-                    React.createElement("div", { key: month, className: "flex justify-between items-center text-sm border-b border-slate-100 pb-2 last:border-0 last:pb-0" },
-                        React.createElement("div", null,
-                            React.createElement("span", { className: "text-slate-700 font-bold block" }, month),
-                            React.createElement("span", { className: "text-[10px] text-slate-400" }, (data?.bestieCountByMonth?.[month] || 0) + " Bestie aktif")
-                        ),
-                        React.createElement("span", { className: "font-black text-audit-primary bg-teal-50 px-3 py-1 rounded-full" }, count + " visit")
+                    React.createElement("div", { key: month, className: "flex justify-between items-center text-sm border-b border-slate-100/80 pb-3 last:border-0 last:pb-0" },
+                        React.createElement("span", { className: "text-slate-700 font-extrabold" }, month),
+                        React.createElement("span", { className: "font-black text-audit-primary bg-audit-primary/10 px-3 py-1 rounded-full text-xs" }, count + " Visit")
                     )
                 )
             )
@@ -3985,18 +4001,18 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement("div", { className: "flex justify-center my-4 w-full px-2" },
-            React.createElement("div", { className: "flex bg-slate-200/70 p-1.5 rounded-[18px] w-full max-w-sm shadow-inner gap-1" },
+        React.createElement("div", { className: "flex justify-center my-6 w-full px-4" },
+            React.createElement("div", { className: "flex bg-slate-200/50 backdrop-blur-md p-1.5 rounded-2xl w-full max-w-sm shadow-inner gap-2" },
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('home'), 
-                    className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'home' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700") 
-                }, "Beranda"),
+                    className: cx("flex-1 py-3 px-4 rounded-[14px] text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'home' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
+                }, React.createElement(Icon, { name: "home", className: "w-4 h-4" }), "Beranda"),
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('analytics'), 
-                    className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'analytics' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700") 
-                }, "Analitik")
+                    className: cx("flex-1 py-3 px-4 rounded-[14px] text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'analytics' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
+                }, React.createElement(Icon, { name: "spark", className: "w-4 h-4" }), "Analitik")
             )
         ),
         activeTab === 'home' ? React.createElement(React.Fragment, null,
