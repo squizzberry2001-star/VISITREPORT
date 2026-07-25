@@ -4162,6 +4162,7 @@ body:has(.dashboard-page),
 }
 .dashboard-page {
   min-height: 100dvh !important;
+  overflow-x: hidden !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
