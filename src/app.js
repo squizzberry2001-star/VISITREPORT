@@ -3677,17 +3677,25 @@ function AnalyticsView() {
                 });
                 
                 let topBestie = { name: '-', count: 0 };
+                let totalBesties = 0;
                 for (const [name, count] of Object.entries(bestieCounts)) {
+                    totalBesties++;
                     if (count > topBestie.count) {
                         topBestie = { name, count };
                     }
                 }
                 
+                const totalStores = storeSet.size;
+                const totalVisits = rows.length;
+                const avgVisits = totalStores > 0 ? (totalVisits / totalStores).toFixed(1) : 0;
+                
                 setData({
-                    totalStores: storeSet.size,
-                    totalVisits: rows.length,
+                    totalStores,
+                    totalVisits,
                     visitByMonth,
-                    topBestie
+                    topBestie,
+                    totalBesties,
+                    avgVisits
                 });
             } catch (e) {
                 console.error(e);
@@ -3700,52 +3708,103 @@ function AnalyticsView() {
     }, []);
 
     if (loading) {
-        return React.createElement("div", { className: "py-16 text-center text-slate-500 flex flex-col items-center justify-center" },
-            React.createElement("span", { className: "loading-spinner inline-block mb-3" }),
-            React.createElement("p", { className: "font-bold tracking-wide" }, "Menganalisa Data Kunjungan...")
+        return React.createElement("div", { className: "py-24 w-full flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-3xl border border-slate-100" },
+            React.createElement("span", { className: "loading-spinner inline-block mb-4 scale-125" }),
+            React.createElement("p", { className: "font-bold tracking-wide text-lg" }, "Menganalisa Data Kunjungan Global...")
         );
     }
 
-    return React.createElement("div", { className: "analytics-view-container px-4 py-4 max-w-lg mx-auto" },
-        React.createElement("div", { className: "grid grid-cols-2 gap-4 mb-6" },
-            React.createElement("div", { className: "surface-card p-5 rounded-[22px] flex flex-col items-center justify-center shadow-sm relative overflow-hidden" },
-                React.createElement("div", { className: "absolute -right-4 -top-4 opacity-[0.03] pointer-events-none" }, React.createElement(Icon, { name: "store", className: "w-24 h-24" })),
-                React.createElement("p", { className: "text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 text-center" }, "Total Store"),
-                React.createElement("p", { className: "text-4xl font-black text-audit-primary" }, data?.totalStores || 0)
+    return React.createElement("div", { className: "analytics-view-container w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6" },
+        React.createElement("div", { className: "mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
+            React.createElement("div", null,
+                React.createElement("h2", { className: "text-2xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik"),
+                React.createElement("p", { className: "text-sm text-slate-500 font-medium mt-1" }, "Overview performa kunjungan di lapangan")
             ),
-            React.createElement("div", { className: "surface-card p-5 rounded-[22px] flex flex-col items-center justify-center shadow-sm relative overflow-hidden" },
-                React.createElement("div", { className: "absolute -right-4 -top-4 opacity-[0.03] pointer-events-none" }, React.createElement(Icon, { name: "history", className: "w-24 h-24" })),
-                React.createElement("p", { className: "text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 text-center" }, "Total Visit"),
-                React.createElement("p", { className: "text-4xl font-black text-sky-600" }, data?.totalVisits || 0)
+            React.createElement("div", { className: "px-4 py-2 bg-white rounded-full border border-slate-200 shadow-sm text-xs font-bold text-slate-600 flex items-center gap-2 w-max" },
+                React.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse" }),
+                "Data Realtime"
             )
         ),
 
-        React.createElement("div", { className: "surface-card p-6 rounded-[26px] shadow-sm mb-6 relative overflow-hidden" },
-            React.createElement("div", { className: "absolute top-0 right-0 p-6 opacity-[0.04]" }, React.createElement(Icon, { name: "spark", className: "w-16 h-16" })),
-            React.createElement("h3", { className: "text-xs font-black text-slate-400 uppercase tracking-widest mb-1" }, "Bestie Teraktif"),
-            React.createElement("div", { className: "flex items-center gap-3 mt-2" },
-                React.createElement("div", { className: "w-10 h-10 rounded-full bg-audit-primary/10 flex items-center justify-center text-audit-primary shrink-0" },
+        React.createElement("div", { className: "grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8" },
+            React.createElement("div", { className: "bg-white p-5 sm:p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-audit-primary/10 flex items-center justify-center text-audit-primary mb-4" },
+                    React.createElement(Icon, { name: "store", className: "w-5 h-5" })
+                ),
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1" }, "Total Store"),
+                React.createElement("p", { className: "text-3xl font-black text-slate-900" }, data?.totalStores || 0)
+            ),
+            React.createElement("div", { className: "bg-white p-5 sm:p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600 mb-4" },
+                    React.createElement(Icon, { name: "history", className: "w-5 h-5" })
+                ),
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1" }, "Total Kunjungan"),
+                React.createElement("p", { className: "text-3xl font-black text-slate-900" }, data?.totalVisits || 0)
+            ),
+            React.createElement("div", { className: "bg-white p-5 sm:p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 mb-4" },
                     React.createElement(Icon, { name: "user", className: "w-5 h-5" })
                 ),
-                React.createElement("div", null,
-                    React.createElement("p", { className: "font-black text-slate-800 text-lg leading-tight truncate max-w-[200px]" }, data?.topBestie?.name || '-'),
-                    React.createElement("p", { className: "text-xs text-audit-primary font-bold mt-0.5" }, (data?.topBestie?.count || 0) + " Kunjungan")
-                )
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1" }, "Active Besties"),
+                React.createElement("p", { className: "text-3xl font-black text-slate-900" }, data?.totalBesties || 0)
+            ),
+            React.createElement("div", { className: "bg-white p-5 sm:p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 mb-4" },
+                    React.createElement(Icon, { name: "spark", className: "w-5 h-5" })
+                ),
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1" }, "Avg. Visit/Store"),
+                React.createElement("p", { className: "text-3xl font-black text-slate-900" }, data?.avgVisits || 0)
             )
         ),
 
-        React.createElement("div", { className: "surface-card p-6 rounded-[26px] shadow-sm" },
-            React.createElement("h3", { className: "text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2" }, 
-                React.createElement(Icon, { name: "calendar", className: "h-3.5 w-3.5" }),
-                "Tren Kunjungan Bulanan"
+        React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8" },
+            React.createElement("div", { className: "lg:col-span-2 bg-white rounded-[24px] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.1)] border border-slate-100 p-6 sm:p-8" },
+                React.createElement("div", { className: "flex items-center justify-between mb-8" },
+                    React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Tren Kunjungan Bulanan"),
+                    React.createElement("button", { className: "p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition" }, React.createElement(Icon, { name: "calendar", className: "w-5 h-5" }))
+                ),
+                React.createElement("div", { className: "space-y-4" },
+                    Object.keys(data?.visitByMonth || {}).length === 0 ? 
+                        React.createElement("div", { className: "py-12 flex flex-col items-center justify-center text-slate-400" },
+                            React.createElement(Icon, { name: "history", className: "w-12 h-12 mb-3 opacity-20" }),
+                            React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data kunjungan")
+                        ) :
+                        Object.entries(data?.visitByMonth || {}).map(([month, count]) => {
+                            const maxCount = Math.max(...Object.values(data?.visitByMonth || {}));
+                            const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                            return React.createElement("div", { key: month, className: "group" },
+                                React.createElement("div", { className: "flex justify-between items-end mb-2" },
+                                    React.createElement("span", { className: "text-sm font-bold text-slate-700" }, month),
+                                    React.createElement("span", { className: "text-sm font-black text-audit-primary" }, count, " ", React.createElement("span", { className: "text-[10px] text-slate-400 font-medium" }, "visit"))
+                                ),
+                                React.createElement("div", { className: "h-3 w-full bg-slate-100 rounded-full overflow-hidden" },
+                                    React.createElement("div", { className: "h-full bg-audit-primary rounded-full transition-all duration-1000", style: { width: `${percentage}%` } })
+                                )
+                            );
+                        })
+                )
             ),
-            React.createElement("div", { className: "space-y-3" },
-                Object.keys(data?.visitByMonth || {}).length === 0 ? 
-                    React.createElement("p", { className: "text-sm text-slate-400 text-center py-4 font-medium" }, "Belum ada data") :
-                    Object.entries(data?.visitByMonth || {}).map(([month, count]) => 
-                    React.createElement("div", { key: month, className: "flex justify-between items-center text-sm border-b border-slate-100/80 pb-3 last:border-0 last:pb-0" },
-                        React.createElement("span", { className: "text-slate-700 font-extrabold" }, month),
-                        React.createElement("span", { className: "font-black text-audit-primary bg-audit-primary/10 px-3 py-1 rounded-full text-xs" }, count + " Visit")
+            
+            React.createElement("div", { className: "space-y-6 sm:space-y-8" },
+                React.createElement("div", { className: "bg-gradient-to-br from-audit-primary to-emerald-800 rounded-[24px] shadow-lg p-6 sm:p-8 text-white relative overflow-hidden" },
+                    React.createElement("div", { className: "absolute top-0 right-0 p-8 opacity-[0.08] transform rotate-12" }, React.createElement(Icon, { name: "user", className: "w-32 h-32" })),
+                    React.createElement("h3", { className: "text-sm font-bold text-emerald-100 uppercase tracking-widest mb-6" }, "👑 Bestie Teraktif"),
+                    React.createElement("div", { className: "relative z-10" },
+                        React.createElement("p", { className: "font-black text-3xl leading-tight mb-2 truncate" }, data?.topBestie?.name || '-'),
+                        React.createElement("div", { className: "inline-flex items-center gap-2 bg-black/20 rounded-full px-4 py-1.5 backdrop-blur-sm mt-1" },
+                            React.createElement(Icon, { name: "spark", className: "w-4 h-4 text-emerald-300" }),
+                            React.createElement("span", { className: "text-sm font-bold text-emerald-50" }, (data?.topBestie?.count || 0), " Kunjungan")
+                        )
+                    )
+                ),
+                
+                React.createElement("div", { className: "bg-slate-50 rounded-[24px] border border-slate-200 p-6" },
+                    React.createElement("h3", { className: "text-sm font-bold text-slate-800 mb-2 flex items-center gap-2" }, 
+                        React.createElement(Icon, { name: "bell", className: "w-4 h-4 text-slate-400" }),
+                        "Tips Analitik"
+                    ),
+                    React.createElement("p", { className: "text-xs text-slate-500 leading-relaxed font-medium" },
+                        "Data di atas dihitung secara realtime berdasarkan seluruh riwayat kunjungan yang telah disinkronisasi ke server. Pastikan Bestie selalu melakukan sinkronisasi agar laporan ini akurat."
                     )
                 )
             )
