@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v36';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v37';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -8735,8 +8735,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             { key: 'leaderboard', label: 'Leaderboard (Peringkat)' }
                         ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
                             React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
-                            React.createElement("button", { onClick: () => handleToggleFeature(f.key), className: \`w-12 h-6 rounded-full transition-colors relative \${features[f.key] ? 'bg-emerald-500' : 'bg-slate-300'}\` },
-                                React.createElement("span", { className: \`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform \${features[f.key] ? 'translate-x-6' : 'translate-x-0'}\` })
+                            React.createElement("button", { onClick: () => handleToggleFeature(f.key), className: `w-12 h-6 rounded-full transition-colors relative ${features[f.key] ? 'bg-emerald-500' : 'bg-slate-300'}` },
+                                React.createElement("span", { className: `absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${features[f.key] ? 'translate-x-6' : 'translate-x-0'}` })
                             )
                         ))
                     )
