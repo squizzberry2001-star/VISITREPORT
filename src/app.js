@@ -3657,6 +3657,45 @@ function MasterStoreDetailModal({ open, onClose }) {
                     React.createElement("span", null, "Coba cari dengan kode toko, nama store, Area Manager, atau Regional Manager."))))));
 }
 
+function SimpleChart({ type, data, options }) {
+    const canvasRef = useRef(null);
+    const chartRef = useRef(null);
+    
+    useEffect(() => {
+        if (!canvasRef.current) return;
+        
+        // Destroy old chart if exists
+        if (chartRef.current) {
+            chartRef.current.destroy();
+        }
+        
+        // Create new chart
+        chartRef.current = new window.Chart(canvasRef.current, {
+            type,
+            data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                },
+                ...options
+            }
+        });
+        
+        return () => {
+            if (chartRef.current) {
+                chartRef.current.destroy();
+            }
+        };
+    }, [type, data, options]);
+    
+    return React.createElement("div", { className: "w-full h-full relative" },
+        React.createElement("canvas", { ref: canvasRef })
+    );
+}
+
 function AnalyticsView({ history }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
