@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-fix-blank-page-schedule-v27';
+const APP_BUILD_VERSION = 'revamp281-fix-blank-page-schedule-scope-v28';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -7416,8 +7416,10 @@ function applyRemoteAppConfigRows(rows) {
             saveEmailTemplateConfig(row.payload);
         if (row.key === APP_CONFIG_KEYS.webSync)
             applySilentWebSyncSignal(row.payload);
-        if (row.key === APP_CONFIG_KEYS.schedule)
-            saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
+        if (row.key === APP_CONFIG_KEYS.schedule) {
+            const saved = saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
+            setScheduleConfig(saved);
+        }
     });
     return normalized;
 }
@@ -7731,7 +7733,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
             React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control secret-pin-input text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
             error ? React.createElement("p", { className: "mt-3 text-center text-sm font-bold text-rose-600" }, error) : null)));
 }
-function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange }) {
+function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange, scheduleConfig, onScheduleConfigChange }) {
     const [rows, setRows] = useState([]);
     const [source, setSource] = useState('local');
     const [query, setQuery] = useState('');
@@ -7766,7 +7768,6 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [masterStoreBusy, setMasterStoreBusy] = useState(false);
     const [masterStoreQuery, setMasterStoreQuery] = useState('');
     // --- Schedule state ---
-    const [scheduleConfig, setScheduleConfig] = useState(() => readScheduleConfig());
     const [schedStatus, setSchedStatus] = useState('');
     const [schedBusy, setSchedBusy] = useState(false);
     const schedFileRef = useRef(null);
@@ -8323,7 +8324,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             const parsed = await parseExcelSchedule(file);
             if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing.'); setSchedBusy(false); return; }
             const saved = saveScheduleConfig(parsed);
-            setScheduleConfig(saved);
+            onScheduleConfigChange(saved);
             setSchedStatus(`Berhasil import ${parsed.length} entri. Menyinkronkan ke Convex...`);
             const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.schedule, parsed);
             setSchedStatus(synced ? `✅ ${parsed.length} entri jadwal tersimpan & tersinkron.` : `⚠️ ${parsed.length} entri disimpan lokal, Convex sync gagal.`);
@@ -8337,7 +8338,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     function clearSchedule() {
         if (!window.confirm('Hapus semua data jadwal?')) return;
         saveScheduleConfig([]);
-        setScheduleConfig([]);
+        onScheduleConfigChange([]);
         setSchedStatus('Data jadwal dihapus.');
     }
     function renderSchedulePanel() {
@@ -8926,6 +8927,7 @@ function App() {
     const [pinOpen, setPinOpen] = useState(false);
     const [secretOpen, setSecretOpen] = useState(false);
     const [welcomeConfig, setWelcomeConfig] = useState(() => readWelcomeConfig());
+    const [scheduleConfig, setScheduleConfig] = useState(() => readScheduleConfig());
     const [welcomeOpen, setWelcomeOpen] = useState(() => {
         try {
             return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1';
@@ -9537,7 +9539,7 @@ function App() {
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
         React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
-        React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig })));
+        React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig, scheduleConfig: scheduleConfig, onScheduleConfigChange: setScheduleConfig })));
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App, null));

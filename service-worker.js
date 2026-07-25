@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-fix-blank-page-schedule-v27';
-const CACHE_NAME = `bestie-visit-revamp281-fix-blank-page-schedule-v27`;
+const APP_VERSION = 'revamp281-fix-blank-page-schedule-scope-v28';
+const CACHE_NAME = `bestie-visit-revamp281-fix-blank-page-schedule-scope-v28`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
