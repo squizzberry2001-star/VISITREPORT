@@ -4150,7 +4150,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 });
                 const todayStrLb = new Date().toISOString().slice(0, 10);
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
-                const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits).map(lb => ({
+                const leaderboard = Object.values(bestieMap).sort((a, b) => b.rawMonthly - a.rawMonthly).map(lb => ({
                     ...lb,
                     todaySchedule: activeSched.find(s => s.date === todayStrLb && normalize(s.nama) === normalize(lb.name)) || null
                 }));
@@ -4344,7 +4344,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         features?.leaderboard !== false ? React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
             React.createElement("h3", { className: "text-2xl font-black text-slate-800 mb-6" }, "Leaderboard Kinerja Bestie"),
             React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
-                Object.values(bestieMap).sort((a, b) => b.rawMonthly - a.rawMonthly).map((lb, idx) => 
+                data?.leaderboard?.map((lb, idx) => 
                     React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx })
                 )
             )
@@ -9215,14 +9215,9 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         
         // Wizard Content Card
         React.createElement("div", { className: "rounded-[32px] bg-white p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100" },
-            React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
+            React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection]))
             
-        // Mobile Wizard Controls (Bottom Fixed)
-        React.createElement("div", { className: "fixed left-4 right-4 z-40 flex gap-3 sm:hidden", style: { bottom: '24px' } },
-            React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "flex-1 !rounded-2xl shadow-xl backdrop-blur-md bg-white/90" }, "Back"),
-            React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "flex-1 !rounded-2xl shadow-xl" }, activeSection >= SECTION_DEFS.length - 1 ? "Finish" : "Next")),
-            
-        React.createElement("div", { className: "lg:hidden", "aria-hidden": "true", style: { height: '140px', flexShrink: 0 } })));
+        ));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
