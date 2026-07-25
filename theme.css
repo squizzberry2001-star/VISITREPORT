@@ -4158,16 +4158,10 @@ html.rbv-lite-mode .pdf-canvas-pages {
 html:has(.dashboard-page),
 body:has(.dashboard-page),
 #root:has(.dashboard-page) {
-  height: 100dvh !important;
   min-height: 100dvh !important;
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
 }
 .dashboard-page {
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
+  min-height: 100dvh !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
