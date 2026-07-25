@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v39';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v40';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4106,7 +4106,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     topOPI,
                     topQSC,
                     leaderboard,
-                    localTotalVisits: localVisits.length
+                    localTotalVisits: localVisits.length,
+                    rows: rows
                 });
             } catch (e) {
                 console.error(e);
