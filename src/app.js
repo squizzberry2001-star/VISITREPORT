@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-css-compiled-v56';
+const APP_BUILD_VERSION = 'revamp300-radical-redesign-v57';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4557,36 +4557,54 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         ) : null,
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
-        React.createElement("section", { className: "dashboard-history-section px-4 md:px-8 lg:px-12 py-6" },
-            React.createElement("div", { className: "dashboard-history-title mb-4 flex items-center justify-between gap-3" },
-                React.createElement("h2", { className: "history-title-with-count text-xl font-black tracking-tight text-slate-800" },
-                    React.createElement("span", null, "History Kunjungan"),
-                    React.createElement("strong", { className: "history-count-inline ml-2 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-500" }, history.length))),
-            history.length ? React.createElement("div", { className: "dashboard-history-list grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
-                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[24px] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" },
-                    React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
-                        React.createElement("div", { className: "min-w-0" },
-                            React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
-                            React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
-                        React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' },
-                            item.progress || 0,
-                            "%")),
-                    React.createElement("div", { className: "mb-3 flex items-center gap-2 text-xs font-bold text-slate-500" },
-                        React.createElement("span", null, item.storeCode || '-'),
-                        React.createElement("span", null, "•"),
-                        React.createElement("span", null, formatDate(item.visitDate))),
-                    React.createElement(ProgressBar, { value: item.progress || 0 }),
-                    item.isEmailSent && React.createElement("div", { className: "mt-3" },
-                        React.createElement("button", { type: "button", onClick: () => onToggleFeedback(item.id), className: cx("text-xs font-bold py-1 px-3 rounded-full border transition-all", item.isEmailFeedback ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100") },
-                            React.createElement(Icon, { name: "check", className: "h-3 w-3 inline mr-1" }),
-                            item.isEmailFeedback ? 'Sudah di-feedback' : 'Tandai Feedback')
-                    ),
-                    React.createElement("div", { className: "mt-4 flex gap-2" },
-                        React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
-                        React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
-                            React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
-                hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
-                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
+        React.createElement("section", { className: "dashboard-command-center px-4 md:px-8 lg:px-12 py-6" },
+            // Section 1: Progress Ring & Daily Target
+            React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
+                React.createElement("div", { className: "text-center md:text-left text-white" },
+                    React.createElement("h2", { className: "text-2xl font-black tracking-tight lg:text-3xl" }, "Target Harian"),
+                    React.createElement("p", { className: "mt-2 text-sm text-emerald-200 opacity-90" }, "Anda telah menyelesaikan ", history.length, " dari target 5 toko hari ini.")),
+                React.createElement("div", { className: "relative flex h-32 w-32 items-center justify-center rounded-full bg-white/10 shadow-inner backdrop-blur-md" },
+                    React.createElement("svg", { className: "absolute inset-0 h-full w-full -rotate-90", viewBox: "0 0 100 100" },
+                        React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-white/10 stroke-[8]" }),
+                        React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-emerald-400 stroke-[8] transition-all duration-1000 ease-out", strokeDasharray: "264", strokeDashoffset: Math.max(0, 264 - (history.length / 5) * 264) })),
+                    React.createElement("div", { className: "text-center" },
+                        React.createElement("span", { className: "block text-3xl font-black text-white leading-none" }, history.length),
+                        React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-widest text-emerald-200" }, "/ 5")))),
+            
+            // Section 2: Horizontal Carousel (Quick Access / Priority)
+            React.createElement("div", { className: "mb-8" },
+                React.createElement("div", { className: "mb-4 flex items-center justify-between" },
+                    React.createElement("h3", { className: "text-lg font-black tracking-tight text-slate-800" }, "Akses Cepat"),
+                    React.createElement("button", { type: "button", className: "text-xs font-bold text-audit-primary hover:underline", onClick: onNewVisit }, "Lihat Semua")),
+                React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar" },
+                    [1, 2, 3].map((_, i) => (
+                        React.createElement("div", { key: i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
+                            React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
+                                React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
+                            React.createElement("h4", { className: "font-black text-slate-900" }, "Toko Prioritas ", i + 1),
+                            React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Radius \u003C 2km dari Anda"),
+                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: onNewVisit }, "Kunjungi"))
+                    )))),
+            
+            // Section 3: Activity Timeline
+            React.createElement("div", null,
+                React.createElement("h3", { className: "mb-6 text-lg font-black tracking-tight text-slate-800" }, "Histori Aktivitas"),
+                history.length ? React.createElement("div", { className: "relative space-y-6 before:absolute before:inset-y-0 before:left-[21px] before:w-0.5 before:bg-slate-200" },
+                    visibleHistory.map((item, index) => React.createElement("article", { key: item.id, className: "relative flex items-start gap-4 pl-12 transition-all hover:translate-x-1" },
+                        React.createElement("div", { className: "absolute left-2.5 top-1 h-3 w-3 rounded-full border-2 border-white bg-audit-primary shadow-[0_0_0_4px_#f8fafc]" }),
+                        React.createElement("div", { className: "flex-1 rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100" },
+                            React.createElement("div", { className: "mb-2 flex items-start justify-between gap-2" },
+                                React.createElement("div", null,
+                                    React.createElement("p", { className: "text-base font-extrabold text-slate-950" }, item.storeName),
+                                    React.createElement("p", { className: "text-xs font-bold text-slate-500" }, formatDate(item.visitDate))),
+                                React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' }, item.progress || 0, "%")),
+                            React.createElement(ProgressBar, { value: item.progress || 0 }),
+                            React.createElement("div", { className: "mt-4 flex gap-2" },
+                                React.createElement(Button, { className: "flex-1 !rounded-xl !py-2", variant: "secondary", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
+                                React.createElement("button", { type: "button", className: "grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus" },
+                                    React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))),
+                    hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button mt-6", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " aktivitas lagi") : null) :
+                    React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" })))
         ) : null,
         activeTab === 'analytics' ? React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }) : null,
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
@@ -8955,135 +8973,55 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             React.createElement("td", { colSpan: "6", className: "px-4 py-10 text-center text-slate-500" }, "Tidak ada data."))))))))));
 }
 function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onClearData, onTitleTap }) {
-    return (React.createElement("aside", { className: "desktop-sidebar hidden min-h-screen border-r border-slate-200/60 bg-white p-5 backdrop-blur-xl lg:flex lg:flex-col" },
-        React.createElement("button", { type: "button", onClick: onTitleTap, className: "mb-6 rounded-[28px] bg-slate-950 p-5 text-left text-white transition hover:-translate-y-0.5" },
-            React.createElement("div", { className: "mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/10" },
-                React.createElement(Icon, { name: "spark" })),
-            React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-200" }, "Bestie Audit"),
-            React.createElement("h2", { className: "mt-2 text-xl font-black leading-tight" }, "Visit Report System")),
-        React.createElement("nav", { className: "space-y-2", "aria-label": "System menu" },
-            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'dashboard' && 'active'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
-                React.createElement("span", { className: "flex items-center gap-3" },
-                    React.createElement(Icon, { name: "home" }),
-                    React.createElement("span", null,
-                        React.createElement("span", { className: "block font-extrabold" }, "Dashboard")))),
-            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'audit' && 'active'), onClick: () => visit ? setScreen('audit') : onNewVisit() },
-                React.createElement("span", { className: "flex items-center gap-3" },
-                    React.createElement(Icon, { name: "clipboard" }),
-                    React.createElement("span", null,
-                        React.createElement("span", { className: "block font-extrabold" }, "Audit Form")))),
-            React.createElement("button", { type: "button", className: cx('nav-item', screen === 'preview' && 'active'), onClick: () => visit ? setScreen('preview') : onNewVisit() },
-                React.createElement("span", { className: "flex items-center gap-3" },
-                    React.createElement(Icon, { name: "pdf" }),
-                    React.createElement("span", null,
-                        React.createElement("span", { className: "block font-extrabold" }, "Preview PDF"))))),
-        visit ? (React.createElement("div", { className: "mt-6" },
-            React.createElement("p", { className: "mb-3 px-2 text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500" }, "Sub Menu Section"),
-            React.createElement("div", { className: "space-y-1" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('nav-item !rounded-2xl !px-3 !py-2', screen === 'audit' && activeSection === index && 'active'), onClick: () => { setScreen('audit'); goSection(index); } },
-                React.createElement("span", { className: "flex items-center gap-3" },
-                    React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
-                    React.createElement("span", { className: "min-w-0" },
-                        React.createElement("span", { className: "block truncate text-sm font-extrabold" }, section.title))))))))) : null,
-        React.createElement("div", { className: "mt-auto space-y-2 pt-5" },
-            React.createElement(Button, { className: "w-full", variant: "secondary", icon: "plus", onClick: onNewVisit }, "Kunjungan Baru"),
-            visit ? React.createElement(Button, { className: "w-full", variant: "danger", icon: "eraser", onClick: onClearData }, "Clear Data") : null)));
+    return (React.createElement("aside", { className: "group relative hidden min-h-screen w-20 flex-col items-center border-r border-slate-200/60 bg-white py-6 transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] hover:w-72 lg:flex" },
+        React.createElement("div", { className: "flex w-full flex-col items-center px-4" },
+            React.createElement("button", { type: "button", onClick: onTitleTap, className: "mb-8 flex w-full items-center justify-center rounded-2xl bg-slate-950 p-3 text-white transition-all hover:scale-105 group-hover:justify-start group-hover:px-4" },
+                React.createElement("div", { className: "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" },
+                    React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
+                React.createElement("div", { className: "ml-3 overflow-hidden whitespace-nowrap opacity-0 transition-opacity duration-300 group-hover:opacity-100" },
+                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest text-emerald-200" }, "Bestie Audit"),
+                    React.createElement("h2", { className: "text-sm font-black leading-tight" }, "Command Center"))),
+            React.createElement("nav", { className: "w-full space-y-3", "aria-label": "System menu" },
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'dashboard' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
+                    React.createElement(Icon, { name: "home", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Dashboard")),
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'audit' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('audit') : onNewVisit() },
+                    React.createElement(Icon, { name: "clipboard", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Audit Flow")),
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'preview' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('preview') : onNewVisit() },
+                    React.createElement(Icon, { name: "pdf", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Preview PDF")))),
+        visit ? (React.createElement("div", { className: "mt-8 flex w-full flex-col px-4" },
+            React.createElement("div", { className: "mb-3 h-px w-full bg-slate-100" }),
+            React.createElement("p", { className: "mb-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-400 group-hover:text-left group-hover:px-2" }, "Flow Sections"),
+            React.createElement("div", { className: "w-full space-y-1" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('relative flex w-full items-center justify-center rounded-xl p-2.5 transition-colors group-hover:justify-start group-hover:px-3', screen === 'audit' && activeSection === index ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => { setScreen('audit'); goSection(index); }, title: section.title },
+                React.createElement(Icon, { name: section.icon, className: "h-4 w-4 shrink-0" }),
+                React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap text-sm font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, section.title))))))) : null,
+        React.createElement("div", { className: "mt-auto flex w-full flex-col items-center px-4 pt-6 space-y-3" },
+            React.createElement("button", { type: "button", onClick: onNewVisit, className: "flex w-full items-center justify-center rounded-xl bg-slate-900 p-3 text-white transition-colors hover:bg-slate-800 group-hover:justify-start group-hover:px-4", title: "New Visit" },
+                React.createElement(Icon, { name: "plus", className: "h-5 w-5 shrink-0" }),
+                React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "New Visit")),
+            visit ? React.createElement("button", { type: "button", onClick: onClearData, className: "flex w-full items-center justify-center rounded-xl bg-rose-50 p-3 text-rose-600 transition-colors hover:bg-rose-100 group-hover:justify-start group-hover:px-4", title: "Clear Data" },
+                React.createElement(Icon, { name: "eraser", className: "h-5 w-5 shrink-0" }),
+                React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Clear Flow Data")) : null)));
 }
 function MobileTopBar({ screen, visit, activeSection, goSection }) {
-    const scrollerRef = useRef(null);
-    useEffect(() => {
-        if (screen !== 'audit' || !visit)
-            return;
-        const activeChip = scrollerRef.current?.querySelector('[data-active="true"]');
-        activeChip?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }, [screen, Boolean(visit), activeSection]);
-    if (screen !== 'audit' || !visit)
-        return null;
-    const progress = visitProgress(visit, activeSection);
-    const safeProgress = Math.max(0, Math.min(100, progress || 0));
-    const mobileMissingItems = visitProgressMissingItems(visit, activeSection);
-    const mobileMissingText = mobileMissingItems.length ? `Quick section. Progress ${safeProgress} persen. Belum diisi: ${mobileMissingItems.slice(0, 3).map((item) => item.text).join(', ')}${mobileMissingItems.length > 3 ? ' dan lainnya' : ''}` : `Quick section. Progress ${safeProgress} persen. Semua bagian section ini sudah terisi.`;
-    return (React.createElement("div", { className: "visit-quick-dock-v54 lg:hidden", role: "navigation", "aria-label": mobileMissingText, title: mobileMissingText, style: {
-            position: 'fixed',
-            left: '0',
-            top: 'auto',
-            right: '0',
-            bottom: '0',
-            transform: 'none',
-            zIndex: 82,
-            width: '100%',
-            height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
-            minHeight: '0',
-            maxHeight: 'none',
-            overflow: 'hidden',
-            borderRadius: '18px 18px 0 0',
-            padding: '9px 12px calc(9px + env(safe-area-inset-bottom, 0px))',
-            background: 'rgba(255,255,255,0.97)',
-            border: '0',
-            borderTop: '1px solid rgba(226,232,240,0.96)',
-            boxShadow: '0 -12px 30px rgba(15,23,42,0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            pointerEvents: 'auto'
-        } },
-        React.createElement("div", { ref: scrollerRef, className: "visit-quick-dock-scroll-v54", style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                height: '54px',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                WebkitOverflowScrolling: 'touch',
-                overscrollBehaviorX: 'contain',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-                padding: '0 2px',
-                touchAction: 'pan-x'
-            } }, SECTION_DEFS.map((section, index) => {
-            const active = activeSection === index;
-            const minWidth = section.id === 'evidence' ? 108 : section.id === 'qsc' ? 88 : section.id === 'observation' ? 92 : 96;
-            return (React.createElement("button", { key: section.id, type: "button", className: "visit-quick-dock-chip-v54", onClick: () => goSection(index), "aria-current": active ? 'page' : undefined, "aria-label": `Buka section ${section.title}`, "data-active": active ? 'true' : undefined, style: {
-                    flex: '0 0 auto',
-                    width: 'auto',
-                    minWidth: `${minWidth}px`,
-                    height: '50px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '7px',
-                    borderRadius: '17px',
-                    padding: '0 14px',
-                    fontSize: '12px',
-                    fontWeight: 900,
-                    letterSpacing: '-0.01em',
-                    lineHeight: 1,
-                    whiteSpace: 'nowrap',
-                    color: active ? '#ffffff' : '#334155',
-                    background: active ? '#172554' : 'rgba(248,250,252,0.78)',
-                    border: active ? '1px solid #172554' : '1px solid rgba(226,232,240,0.98)',
-                    boxShadow: active ? '0 6px 14px rgba(23,37,84,0.14)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
-                    transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
-                    touchAction: 'pan-x'
-                } },
-                React.createElement("span", { className: "visit-quick-dock-icon-v54", style: { display: 'inline-grid', placeItems: 'center', width: 22, height: 22, borderRadius: '999px', background: active ? 'rgba(255,255,255,0.16)' : 'rgba(15,118,110,0.10)', color: active ? '#ffffff' : '#0f766e', flex: '0 0 auto' } },
-                    React.createElement(Icon, { name: section.icon, className: "h-4 w-4" })),
-                React.createElement("span", { style: { overflow: 'hidden', textOverflow: 'ellipsis' } }, section.label)));
-        })),
-        React.createElement("div", { "aria-hidden": "true", style: { position: 'absolute', left: '16px', right: '16px', bottom: '6px', height: '2px', overflow: 'hidden', borderRadius: '999px', background: 'rgba(203,213,225,0.58)' } },
-            React.createElement("div", { style: { width: safeProgress + '%', height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #0f766e, #14b8a6)' } }))));
+    // Top bar is now replaced by the inline Wizard Header in VisitWorkspace
+    return null;
 }
 function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) {
     const goAudit = () => visit ? setScreen('audit') : onNewVisit();
     const goPreview = () => visit ? setScreen('preview') : onNewVisit();
     const items = [
         { key: 'dashboard', label: 'Home', icon: 'home', action: () => setScreen('dashboard'), active: screen === 'dashboard' },
-        { key: 'audit', label: 'Audit', icon: 'clipboard', action: goAudit, active: screen === 'audit' },
-        { key: 'preview', label: 'Preview', icon: 'pdf', action: goPreview, active: screen === 'preview' }
+        { key: 'audit', label: 'Flow', icon: 'clipboard', action: goAudit, active: screen === 'audit' },
+        { key: 'preview', label: 'PDF', icon: 'pdf', action: goPreview, active: screen === 'preview' }
     ];
-    return (React.createElement("nav", { className: "mobile-system-nav lg:hidden", "aria-label": "Mobile system navigation" },
-        React.createElement("div", { className: "mobile-system-grid cols-3" },
-            items.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('mobile-system-button', item.active && 'active'), onClick: item.action },
-                React.createElement(Icon, { name: item.icon, className: "h-5 w-5" }),
-                React.createElement("span", null, item.label))))));
+    return (React.createElement("nav", { className: "mobile-floating-nav fixed bottom-6 left-1/2 z-50 flex w-[90%] max-w-sm -translate-x-1/2 items-center justify-around rounded-full bg-slate-900/90 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 lg:hidden", "aria-label": "Mobile system navigation" },
+        items.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('relative flex flex-1 flex-col items-center justify-center rounded-full py-2.5 transition-all active:scale-95', item.active ? 'text-white' : 'text-slate-400 hover:text-slate-200'), onClick: item.action },
+            item.active && React.createElement("div", { className: "absolute inset-0 rounded-full bg-white/10" }),
+            React.createElement(Icon, { name: item.icon, className: cx("h-6 w-6 transition-transform duration-300", item.active && "-translate-y-0.5") }),
+            React.createElement("span", { className: cx("mt-1 text-[10px] font-bold tracking-wide transition-all duration-300", item.active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 absolute bottom-0") }, item.label)))));
 }
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
     useEffect(() => {
@@ -9102,26 +9040,33 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
         return React.createElement("main", { className: "workspace-page w-full px-4 py-8 pb-44 lg:px-8 lg:pb-8" },
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
     const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update })];
-    return (React.createElement("main", { className: "workspace-page w-full px-4 py-5 pb-44 lg:px-8 lg:py-8 lg:pb-8" },
-        React.createElement("div", { className: "desktop-section-card mb-5 hidden rounded-[28px] bg-white p-4 ring-1 ring-slate-200 lg:block" },
-            React.createElement("div", { className: "flex items-center justify-between gap-3" },
-                React.createElement("div", { className: "min-w-0" },
-                    React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-950" }, visit.store || 'Store belum dipilih'),
-                    React.createElement("p", { className: "truncate text-xs text-slate-500" },
-                        visit.nama || 'Bestie belum dipilih',
-                        " \u2022 ",
-                        formatDate(visit.tanggal))),
-                React.createElement("div", { className: "hidden gap-2 sm:flex" },
-                    React.createElement(Button, { variant: "icon", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, "aria-label": "Section sebelumnya" },
-                        React.createElement(Icon, { name: "left", className: "h-5 w-5" })),
-                    React.createElement(Button, { variant: "icon", onClick: () => goSection(activeSection + 1), disabled: activeSection >= SECTION_DEFS.length - 1, "aria-label": "Section berikutnya" },
-                        React.createElement(Icon, { name: "right", className: "h-5 w-5" })))),
-            React.createElement("div", { className: "mt-3 flex gap-2 overflow-x-auto pb-1", "aria-label": "Sub menu section" }, SECTION_DEFS.map((section, index) => React.createElement("button", { key: section.id, type: "button", className: cx('subnav-chip', activeSection === index && 'active'), onClick: () => goSection(index) },
-                React.createElement(Icon, { name: section.icon, className: "h-4 w-4" }),
-                " ",
-                section.label)))),
-        React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection }, screens[activeSection]),
-        React.createElement("div", { className: "lg:hidden", "aria-hidden": "true", style: { height: '96px', flexShrink: 0 } })));
+    const progress = visitProgress(visit, activeSection);
+    
+    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-5 pb-44 lg:px-8 lg:py-8 lg:pb-8" },
+        // Wizard Header Card
+        React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100" },
+            React.createElement("div", { className: "flex items-center justify-between p-6 md:p-8" },
+                React.createElement("div", { className: "min-w-0 flex-1" },
+                    React.createElement("p", { className: "mb-1 text-[10px] font-black uppercase tracking-widest text-emerald-500" }, "Step ", activeSection + 1, " of ", SECTION_DEFS.length),
+                    React.createElement("h2", { className: "truncate text-xl font-black text-slate-900 md:text-2xl" }, SECTION_DEFS[activeSection]?.title),
+                    React.createElement("p", { className: "mt-1 truncate text-sm font-bold text-slate-500" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih')),
+                React.createElement("div", { className: "hidden shrink-0 gap-2 sm:flex ml-4" },
+                    React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "!rounded-full !px-6", icon: "left" }, "Back"),
+                    React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "!rounded-full !px-8", icon: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right" }, activeSection >= SECTION_DEFS.length - 1 ? "Finish" : "Next"))),
+            // Progress Bar
+            React.createElement("div", { className: "h-2 w-full bg-slate-100" },
+                React.createElement("div", { className: "h-full bg-audit-primary transition-all duration-500 ease-out", style: { width: `${progress}%` } }))),
+        
+        // Wizard Content Card
+        React.createElement("div", { className: "rounded-[32px] bg-white p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100" },
+            React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
+            
+        // Mobile Wizard Controls (Bottom Fixed)
+        React.createElement("div", { className: "fixed bottom-24 left-4 right-4 z-40 flex gap-3 sm:hidden" },
+            React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "flex-1 !rounded-2xl shadow-xl backdrop-blur-md bg-white/90" }, "Back"),
+            React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "flex-1 !rounded-2xl shadow-xl" }, activeSection >= SECTION_DEFS.length - 1 ? "Finish" : "Next")),
+            
+        React.createElement("div", { className: "lg:hidden", "aria-hidden": "true", style: { height: '120px', flexShrink: 0 } })));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
@@ -9751,9 +9696,9 @@ function App() {
     else {
         content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, masterStoreRevision: masterStoreRevision });
     }
-    return (React.createElement("div", { className: "audit-shell min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]" },
+    return (React.createElement("div", { className: "audit-shell min-h-screen lg:flex lg:flex-row bg-slate-50" },
         React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }),
-        React.createElement("div", { className: "flex min-h-screen min-w-0 flex-col" },
+        React.createElement("div", { className: "flex min-h-screen min-w-0 flex-1 flex-col" },
             !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
             screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
