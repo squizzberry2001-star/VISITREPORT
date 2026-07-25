@@ -7267,13 +7267,44 @@ body.rbv-keyboard-visible .evidence-floating-capture {
   z-index: 40 !important;
 }
 
-/* Tab bar is fixed at bottom, not part of scroll */
+/* Tab bar is fixed at bottom, floating pill design */
 .dashboard-page > .dashboard-tab-bar {
   position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  min-width: 320px !important;
+  background: rgba(15, 23, 42, 0.95) !important; /* very dark slate for contrast */
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 9999px !important;
+  padding: 6px 16px !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
   z-index: 90 !important;
+}
+.dashboard-tab-bar-inner {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.dashboard-tab-btn {
+  color: #94a3b8 !important; /* slate-400 */
+  border-radius: 9999px !important;
+  padding: 8px 24px !important;
+  margin: 0 4px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.dashboard-tab-btn:hover {
+  color: #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.dashboard-tab-btn.active {
+  background: #34d399 !important; /* emerald-400 */
+  color: #022c22 !important; /* emerald-950 */
+  font-weight: 800 !important;
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3) !important;
 }
 
 /* History section: flows naturally in the page scroll */

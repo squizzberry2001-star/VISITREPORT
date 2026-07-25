@@ -3979,16 +3979,18 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }));
                 }
                 
+                // Local history metrics
+                const localVisits = history || [];
+                const datasetToUse = rows.length > 0 ? rows : localVisits;
+                
                 const globalStoreSet = new Set();
-                rows.forEach(r => {
+                datasetToUse.forEach(r => {
                     const storeName = r.store_name || r.storeName || r.store || '';
                     if (storeName) globalStoreSet.add(storeName);
                 });
                 const masterStores = getEffectiveMasterStores();
                 const totalMasterStores = masterStores.length;
                 
-                // Local history metrics
-                const localVisits = history || [];
                 let localCompleted = 0;
                 const qscByMonth = {};
                 const opiByMonth = {};
@@ -4013,8 +4015,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     return new Date(date.setDate(diff)).toISOString().slice(0, 10);
                 };
 
-                rows.forEach(r => {
-                    const bk = normalize(r.bestie_name || r.bestieName || '');
+                datasetToUse.forEach(r => {
+                    const bk = normalize(r.bestie_name || r.bestieName || r.nama || '');
                     
                     if (r.has_meaningful_data === false) return;
                     
@@ -4045,17 +4047,15 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         }
                     }
                 });
-
-                const datasetToUse = rows.length > 0 ? rows : localVisits;
                 
-                datasetToUse.forEach(v => {
-                    if (v.is_pdf_downloaded || v.isPdfDownloaded || v.is_email_sent || v.isEmailSent) {
+                localVisits.forEach(v => {
+                    if (v.isPdfDownloaded || v.isEmailSent || v.is_pdf_downloaded || v.is_email_sent) {
                         localCompleted++;
                     }
-                    if (v.is_email_sent || v.isEmailSent) {
+                    if (v.isEmailSent || v.is_email_sent) {
                         emailSentCount++;
                     }
-                    if (v.email_feedback_time || v.emailFeedbackTime) {
+                    if (v.emailFeedbackTime || v.email_feedback_time) {
                         emailFeedbackCount++;
                     }
                 });
@@ -4589,7 +4589,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-command-center w-full" },
-            React.createElement("div", { className: "w-full px-0 py-6 pb-32" },
+            React.createElement("div", { className: "w-full px-4 md:px-8 lg:px-12 py-6 pb-32" },
             // Section 1: Progress Ring & Daily Target
             React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
                 React.createElement("div", { className: "text-center md:text-left text-white" },
@@ -4724,7 +4724,7 @@ function StoreSearchSelect({ label, value, options, onChange, placeholder, disab
                         React.createElement("div", { className: "py-12 text-center text-slate-500 font-medium" }, "Tidak ada toko yang cocok dengan pencarian.") :
                         React.createElement("div", { className: "grid gap-1" },
                             filteredOptions.map((opt, i) => {
-                                const isSeparator = opt.disabled && String(opt.label).includes('---');
+                                const isSeparator = opt.disabled && (opt.value === '___SEPARATOR___' || String(opt.label).includes('Store Lainnya'));
                                 if (isSeparator) {
                                     return React.createElement("div", { key: i, className: "px-4 py-3 mt-2 text-xs font-black uppercase tracking-widest text-slate-400 text-center" }, opt.label.replace(/-/g, ''));
                                 }
@@ -4839,7 +4839,7 @@ function NewVisitModal({ open, onClose, onCreate }) {
                     manualOpen ? React.createElement("div", { className: "grid gap-3" },
                         React.createElement(Field, { label: "Nama Store Manual" },
                             React.createElement(TextInput, { value: manualStoreName, onChange: (e) => setManualStoreName(e.target.value), placeholder: "Ketik nama store" }))) : null)),
-            React.createElement("div", { className: "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end" },
+            React.createElement("div", { className: "p-5 border-t border-slate-200/60 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end bg-slate-50 shrink-0" },
                 React.createElement(Button, { variant: "secondary", onClick: onClose }, "Tutup"),
                 React.createElement(Button, { icon: "plus", onClick: () => onCreate(bestieName, visitStoreName), disabled: !bestieName || !visitStoreName }, "Mulai Kunjungan")))));
 }
