@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp272-analytics-dashboard-v7';
+const APP_BUILD_VERSION = 'revamp271-welcome-coffee-vector-tip';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -947,22 +947,15 @@ function getStoresForBestie(bestieName) {
         master: item,
         value: cleanText(item.storeName || item.siteDescr)
     })).filter((item) => item.label);
-    const userStores = assigned.length ? assigned : fallback;
-    const otherStores = getEffectiveMasterStores().map((item) => ({
+    const fallback = getEffectiveMasterStores().map((item) => ({
         label: cleanText(item.siteDescr),
         source: 'master',
         master: item,
         value: cleanText(item.siteDescr)
-    })).filter((item) => item.label && !userStores.some(u => normalize(u.label) === normalize(item.label)));
-    
-    const combined = [...userStores, ...approvedManual];
-    const uniqueCombined = uniqueBy(combined, (item) => normalize(item.label)).sort((a, b) => a.label.localeCompare(b.label));
-    
-    if (uniqueCombined.length && otherStores.length) {
-        uniqueCombined.push({ label: '─── Store Lainnya ───', value: '___SEPARATOR___', disabled: true });
-    }
-    
-    return [...uniqueCombined, ...otherStores];
+    })).filter((item) => item.label);
+    const base = assigned.length ? assigned : fallback;
+    return uniqueBy([...base, ...approvedManual], (item) => normalize(item.label))
+        .sort((a, b) => a.label.localeCompare(b.label));
 }
 function findAssignmentStore(storeName, bestieName) {
     const storeKey = normalize(storeName);
@@ -1185,11 +1178,7 @@ function historyMetaFromVisit(visit) {
         visitDate: cleanText(visit.tanggal, ''),
         updatedAt: visit.updatedAt || Date.now(),
         createdAt: visit.createdAt || Date.now(),
-        progress: visitProgress(visit),
-        isPdfDownloaded: !!visit.isPdfDownloaded,
-        isEmailSent: !!visit.isEmailSent,
-        isEmailFeedback: !!visit.isEmailFeedback,
-        temuanCount: Array.isArray(visit.observationData) ? visit.observationData.length : 0
+        progress: visitProgress(visit)
     };
 }
 
@@ -2309,7 +2298,7 @@ function SelectField({ label, value, options, onChange, placeholder = 'Pilih', r
                 React.createElement(Icon, { name: icon, className: "h-5 w-5" })) : null,
             React.createElement(SelectInput, { value: value || '', onChange: (event) => onChange(event.target.value), className: cx('select-control', icon ? 'has-leading-icon' : ''), required: required },
                 React.createElement("option", { value: "" }, placeholder),
-                normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label, disabled: item.disabled }, item.label))))));
+                normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label }, item.label))))));
 }
 function Toggle({ checked, onChange, label, className = '' }) {
     return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, "aria-label": label || (checked ? 'Hide section' : 'Unhide section'), onClick: () => onChange(!checked), className: cx('slide-toggle compact-toggle', checked && 'active', className) },
@@ -3657,187 +3646,7 @@ function MasterStoreDetailModal({ open, onClose }) {
                     React.createElement("span", null, "Coba cari dengan kode toko, nama store, Area Manager, atau Regional Manager."))))));
 }
 
-function AnalyticsView({ history }) {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function loadData() {
-            try {
-                setLoading(true);
-                const rows = await fetchMonitorRowsFromConvex();
-                if (cancelled) return;
-                
-                const globalStoreSet = new Set();
-                rows.forEach(r => {
-                    const storeName = r.store_name || r.storeName || r.store || '';
-                    if (storeName) globalStoreSet.add(storeName);
-                });
-                const masterStores = getEffectiveMasterStores();
-                const totalMasterStores = masterStores.length;
-                
-                // Local history metrics
-                const localVisits = history || [];
-                let localCompleted = 0;
-                let emailSentCount = 0;
-                let emailFeedbackCount = 0;
-                
-                const temuanByMonth = {};
-                
-                localVisits.forEach(v => {
-                    if (v.isPdfDownloaded || v.isEmailSent) {
-                        localCompleted++;
-                    }
-                    if (v.isEmailSent) {
-                        emailSentCount++;
-                        if (v.isEmailFeedback) emailFeedbackCount++;
-                    }
-                    
-                    if (v.visitDate) {
-                        const d = new Date(v.visitDate);
-                        const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
-                        temuanByMonth[m] = (temuanByMonth[m] || 0) + (v.temuanCount || 0);
-                    }
-                });
-
-                setData({
-                    globalStoreCount: globalStoreSet.size,
-                    totalMasterStores,
-                    localCompleted,
-                    emailSentCount,
-                    emailFeedbackCount,
-                    temuanByMonth,
-                    localTotalVisits: localVisits.length
-                });
-            } catch (e) {
-                console.error(e);
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                    // Trigger animation after render
-                    setTimeout(() => setMounted(true), 100);
-                }
-            }
-        }
-        loadData();
-        return () => { cancelled = true; };
-    }, [history]);
-
-    if (loading) {
-        return React.createElement("div", { className: "py-24 w-full flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-3xl border border-slate-100" },
-            React.createElement("span", { className: "loading-spinner inline-block mb-4 scale-125" }),
-            React.createElement("p", { className: "font-bold tracking-wide text-lg" }, "Menganalisa Data Kunjungan...")
-        );
-    }
-    
-    // Coverage percentage
-    const coveragePercent = data?.totalMasterStores > 0 ? ((data.globalStoreCount / data.totalMasterStores) * 100).toFixed(1) : 0;
-    const feedbackPercent = data?.emailSentCount > 0 ? ((data.emailFeedbackCount / data.emailSentCount) * 100).toFixed(1) : 0;
-
-    return React.createElement("div", { className: "analytics-view-container w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 flex-1 overflow-y-auto min-h-0 pb-32" },
-        React.createElement("div", { className: "mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
-            React.createElement("div", null,
-                React.createElement("h2", { className: "text-2xl font-black text-audit-ink tracking-tight" }, "Dashboard Analitik"),
-                React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium mt-1" }, "Overview performa dan tracking kunjungan")
-            )
-        ),
-        
-        React.createElement("div", { className: "analytics-grid-4" },
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-emerald-500/10 text-emerald-600" },
-                    React.createElement(Icon, { name: "check", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Report Selesai (PDF/Email)"),
-                React.createElement("p", { className: "analytics-metric-value" }, data?.localCompleted || 0)
-            ),
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-sky-500/10 text-sky-600" },
-                    React.createElement(Icon, { name: "send", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Email Terkirim"),
-                React.createElement("p", { className: "analytics-metric-value" }, data?.emailSentCount || 0)
-            ),
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-amber-500/10 text-amber-600" },
-                    React.createElement(Icon, { name: "history", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Email Di-Feedback"),
-                React.createElement("p", { className: "analytics-metric-value" }, data?.emailFeedbackCount || 0)
-            ),
-            React.createElement("div", { className: "analytics-metric-card group" },
-                React.createElement("div", { className: "analytics-metric-icon bg-indigo-500/10 text-indigo-600" },
-                    React.createElement(Icon, { name: "store", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "analytics-metric-label" }, "Coverage Global"),
-                React.createElement("p", { className: "analytics-metric-value" }, `${coveragePercent}%`)
-            )
-        ),
-        
-        React.createElement("div", { className: "analytics-grid-2" },
-            React.createElement("div", { className: "analytics-card-large" },
-                React.createElement("div", { className: "analytics-card-large-header" },
-                    React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (Observasi)"),
-                    React.createElement("div", { className: "p-2 bg-emerald-50 rounded-xl text-emerald-600" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
-                ),
-                React.createElement("div", { className: "space-y-6" },
-                    Object.keys(data?.temuanByMonth || {}).length === 0 ? 
-                        React.createElement("div", { className: "py-12 flex flex-col items-center justify-center text-audit-ink opacity-50" },
-                            React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
-                        ) :
-                        Object.entries(data?.temuanByMonth || {}).map(([month, count]) => {
-                            const maxCount = Math.max(...Object.values(data?.temuanByMonth || {}), 1);
-                            const percentage = count > 0 ? (count / maxCount) * 100 : 0;
-                            // Add a min-width of 2% for 0 count just to show a small pip if desired, but 0 is fine
-                            return React.createElement("div", { key: month, className: "group" },
-                                React.createElement("div", { className: "flex justify-between items-end mb-2.5" },
-                                    React.createElement("span", { className: "text-[13px] font-bold text-audit-ink opacity-90" }, month),
-                                    React.createElement("span", { className: "text-[13px] font-black text-emerald-600" }, count, " ", React.createElement("span", { className: "text-[10px] text-audit-ink opacity-50 font-bold uppercase tracking-widest ml-0.5" }, "temuan"))
-                                ),
-                                React.createElement("div", { className: "progress-bar-wrap" },
-                                    React.createElement("div", { className: "progress-bar-fill bg-gradient-to-r from-emerald-400 to-emerald-500", style: { width: `${mounted ? Math.max(percentage, 1) : 0}%` } })
-                                )
-                            );
-                        })
-                )
-            ),
-            React.createElement("div", { className: "flex flex-col gap-6" },
-                React.createElement("div", { className: "analytics-card-large py-6" },
-                    React.createElement("div", { className: "chart-flex-row" },
-                        React.createElement("div", { className: "chart-circle-wrap text-emerald-500" },
-                            React.createElement("svg", { viewBox: "0 0 36 36" },
-                                React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? coveragePercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
-                            ),
-                            React.createElement("span", { className: "chart-circle-text" }, `${Math.round(coveragePercent)}%`)
-                        ),
-                        React.createElement("div", { className: "chart-flex-col" },
-                            React.createElement("h3", { className: "analytics-card-large-title" }, "Coverage Global (Semua Bestie)"),
-                            React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium" }, `${data?.globalStoreCount || 0} dari ${data?.totalMasterStores || 0} toko dikunjungi`)
-                        )
-                    )
-                ),
-                React.createElement("div", { className: "analytics-card-large py-6" },
-                    React.createElement("div", { className: "chart-flex-row" },
-                        React.createElement("div", { className: "chart-circle-wrap text-sky-500" },
-                            React.createElement("svg", { viewBox: "0 0 36 36" },
-                                React.createElement("path", { className: "chart-circle-path stroke-current", strokeDasharray: `${mounted ? feedbackPercent : 0}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
-                            ),
-                            React.createElement("span", { className: "chart-circle-text" }, `${Math.round(feedbackPercent)}%`)
-                        ),
-                        React.createElement("div", { className: "chart-flex-col" },
-                            React.createElement("h3", { className: "analytics-card-large-title" }, "Email Feedback Rate"),
-                            React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium" }, `${data?.emailFeedbackCount || 0} dari ${data?.emailSentCount || 0} email mendapat balasan`)
-                        )
-                    )
-                )
-            )
-        )
-    );
-}
-
-function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback }) {
-    const [activeTab, setActiveTab] = useState('home');
+function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
@@ -4084,22 +3893,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement("div", { className: "flex justify-center my-6 w-full px-4" },
-            React.createElement("div", { className: "flex bg-slate-200/50 backdrop-blur-md p-1.5 rounded-2xl w-full max-w-sm shadow-inner gap-2" },
-                React.createElement("button", { 
-                    type: "button", 
-                    onClick: () => setActiveTab('home'), 
-                    className: cx("flex-1 py-3 px-4 rounded-[14px] text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'home' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
-                }, React.createElement(Icon, { name: "home", className: "w-4 h-4" }), "Beranda"),
-                React.createElement("button", { 
-                    type: "button", 
-                    onClick: () => setActiveTab('analytics'), 
-                    className: cx("flex-1 py-3 px-4 rounded-[14px] text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'analytics' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
-                }, React.createElement(Icon, { name: "spark", className: "w-4 h-4" }), "Analitik")
-            )
-        ),
-        activeTab === 'home' ? React.createElement(React.Fragment, null,
-            React.createElement(HomeUpdateNotice, { config: noticeConfig }),
+        React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
             React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "history-title-with-count text-lg font-black tracking-tight text-slate-950 md:text-2xl" },
@@ -4119,18 +3913,12 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement("span", null, "•"),
                         React.createElement("span", null, formatDate(item.visitDate))),
                     React.createElement(ProgressBar, { value: item.progress || 0 }),
-                    item.isEmailSent && React.createElement("div", { className: "mt-3" },
-                        React.createElement("button", { type: "button", onClick: () => onToggleFeedback(item.id), className: cx("text-xs font-bold py-1 px-3 rounded-full border transition-all", item.isEmailFeedback ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100") },
-                            React.createElement(Icon, { name: "check", className: "h-3 w-3 inline mr-1" }),
-                            item.isEmailFeedback ? 'Sudah di-feedback' : 'Tandai Feedback')
-                    ),
                     React.createElement("div", { className: "mt-4 flex gap-2" },
                         React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
                         React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
                             React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
                 hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
-                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
-        ) : React.createElement(AnalyticsView, { history: history }),
+                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
@@ -5589,7 +5377,7 @@ function RbvHtmlReportPreview({ visit }) {
     }
     return React.createElement("div", { className: "rbv-html-preview-stage", "aria-label": "Preview report" }, pages);
 }
-function PreviewPage({ visit, update, onBack }) {
+function PreviewPage({ visit, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
     const [pdfBlob, setPdfBlob] = useState(null);
     const [status, setStatus] = useState('Menyiapkan preview PDF...');
@@ -5664,9 +5452,6 @@ function PreviewPage({ visit, update, onBack }) {
             setDownloadMessage('Pilih lokasi simpan...');
             const didSave = await downloadBlobManaged(blob, fileName);
             setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
-            if (didSave && update) {
-                update({ isPdfDownloaded: true });
-            }
             await new Promise((resolve) => window.setTimeout(resolve, didSave ? 420 : 260));
         }
         catch (error) {
@@ -5782,9 +5567,6 @@ function PreviewPage({ visit, update, onBack }) {
             }
             const successMessage = mode === 'send' ? (sendSkipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (sendSkipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
             setEmailStatus(successMessage);
-            if (update && mode === 'send') {
-                update({ isEmailSent: true });
-            }
             if (mode === 'draft')
                 window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'pdf', title: 'Draft tersimpan', message: 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.' } }));
             if (mode === 'send')
@@ -8977,22 +8759,6 @@ function App() {
     function updateVisit(patch) {
         setVisit((current) => current ? { ...current, ...patch, updatedAt: Date.now() } : current);
     }
-    async function toggleVisitFeedback(id) {
-        try {
-            const data = await getVisitRecord(id);
-            if (!data) return;
-            data.isEmailFeedback = !data.isEmailFeedback;
-            data.updatedAt = Date.now();
-            await putVisitRecord(data);
-            const nextMeta = saveHistoryMeta([historyMetaFromVisit(data), ...readHistoryMeta().filter((item) => item.id !== data.id)]);
-            setHistory(nextMeta);
-            if (visit && visit.id === id) {
-                setVisit(data);
-            }
-        } catch (error) {
-            console.warn('Gagal toggle feedback:', error);
-        }
-    }
     async function openPreviewScreen() {
         if (!visit) {
             setScreen('dashboard');
@@ -9099,10 +8865,10 @@ function App() {
     }
     let content;
     if (screen === 'dashboard') {
-        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback });
+        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap });
     }
     else if (screen === 'preview') {
-        content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });
+        content = React.createElement(PreviewPage, { visit: visit, onBack: () => navigateScreen('audit') });
     }
     else {
         content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, masterStoreRevision: masterStoreRevision });
