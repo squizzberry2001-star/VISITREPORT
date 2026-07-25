@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-fix-schedule-hooks-crash-v25';
+const APP_BUILD_VERSION = 'revamp281-deepfix-schedule-state-v26';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3792,6 +3792,7 @@ function LeaderboardItem({ lb, idx }) {
                 React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500 shrink-0" }, idx + 1),
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate" }, lb.name),
+                    lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') + (lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : '') }, "\u{1F4C5} ", (lb.todaySchedule.description || '').replace(/^Agenda\s*:\s*/i, '').split('\n')[0].slice(0, 40) || lb.todaySchedule.location || 'Terjadwal') : null,
                     React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
                 )
             ),
@@ -4136,7 +4137,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
     );
 }
 
-function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback }) {
+function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
     const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -7769,6 +7770,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Convex untuk semua device.');
     const [masterStoreBusy, setMasterStoreBusy] = useState(false);
     const [masterStoreQuery, setMasterStoreQuery] = useState('');
+    const [scheduleConfig, setScheduleConfig] = useState(() => readScheduleConfig());
+    const [schedStatus, setSchedStatus] = useState('');
+    const [schedBusy, setSchedBusy] = useState(false);
+    const schedFileRef = useRef(null);
     async function saveWelcomeSettings() {
         const saved = saveWelcomeConfig({ title: welcomeTitle, subtitle: welcomeSubtitle, durationSeconds: welcomeDurationSeconds });
         if (typeof onWelcomeConfigChange === 'function')
@@ -9543,7 +9548,7 @@ function App() {
     }
     let content;
     if (screen === 'dashboard') {
-        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback });
+        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
     }
     else if (screen === 'preview') {
         content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });

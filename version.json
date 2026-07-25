@@ -1,5 +1,5 @@
 {
-  "version": "v25",
-  "build": "revamp281-fix-schedule-hooks-crash-v25",
-  "updated_at": "2026-07-25T06:54:29.970Z"
+  "version": "v26",
+  "build": "revamp281-deepfix-schedule-state-v26",
+  "updated_at": "2026-07-25T07:00:13.534Z"
 }
