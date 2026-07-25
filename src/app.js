@@ -6468,17 +6468,17 @@ function PreviewPage({ visit, update, onBack }) {
                 React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'),
                 React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null,
         React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
-        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-30 bg-slate-50 pt-4 pb-2 sm:static sm:bg-transparent sm:pt-0 sm:pb-0" },
+        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-40 bg-slate-50 pt-4 pb-3 -mx-4 px-4 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0" },
             React.createElement("div", { className: "flex items-center gap-4 sm:block" },
                 React.createElement("button", { 
                     onClick: onBack, 
-                    className: "sm:hidden w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600 shrink-0" 
+                    className: "sm:hidden w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600 flex-shrink-0" 
                 },
                     React.createElement(Icon, { name: "left", className: "w-5 h-5" })
                 ),
-                React.createElement("div", null,
-                    React.createElement("p", { className: "text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
-                    React.createElement("h1", { className: "mt-0.5 sm:mt-1 text-xl sm:text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review Report")
+                React.createElement("div", { className: "flex-1 min-w-0" },
+                    React.createElement("p", { className: "text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary truncate" }, "Preview PDF"),
+                    React.createElement("h1", { className: "mt-0.5 sm:mt-1 text-xl sm:text-2xl font-black tracking-tight text-slate-950 md:text-3xl truncate" }, "Review Report")
                 )
             ),
             React.createElement("div", { className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100" },
@@ -9143,7 +9143,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
 
     if (viewMode === 'grid') {
         return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 lg:px-8 min-h-screen bg-slate-50 flex flex-col" },
-            React.createElement("div", { className: "mb-6 flex flex-col items-center text-center sticky top-0 z-30 bg-slate-50 pt-6 pb-2 border-b border-slate-200/50 sm:static sm:border-0 sm:pt-6 sm:pb-4" },
+            React.createElement("div", { className: "mb-6 flex flex-col items-center text-center sticky top-0 z-40 bg-slate-50 pt-6 pb-3 border-b border-slate-200/50 -mx-4 px-4 sm:static sm:border-0 sm:pt-6 sm:pb-4 sm:mx-0 sm:px-0" },
                 React.createElement("div", { className: "w-16 h-16 sm:w-20 sm:h-20 bg-audit-primary/10 rounded-full flex items-center justify-center mb-3 sm:mb-4" },
                     React.createElement(Icon, { name: "clipboard", className: "w-8 h-8 sm:w-10 sm:h-10 text-audit-primary" })
                 ),
@@ -9185,14 +9185,15 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
 
     return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-0 sm:py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
         // Simplified Mobile Header (Only visible in section mode)
-        React.createElement("div", { className: "flex items-center justify-center relative mb-4 sm:mb-6 pt-4 pb-3 sm:pt-2 sticky top-0 z-30 bg-slate-50 sm:static sm:bg-transparent" },
+        React.createElement("div", { className: "flex items-center justify-between mb-4 sm:mb-6 pt-4 pb-3 sm:pt-2 sticky top-0 z-40 bg-slate-50 -mx-4 px-4 sm:static sm:bg-transparent sm:mx-0 sm:px-0" },
             React.createElement("button", { 
                 onClick: () => setViewMode('grid'),
-                className: "absolute left-0 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600"
+                className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600"
             },
                 React.createElement(Icon, { name: "left", className: "w-5 h-5" })
             ),
-            React.createElement("h2", { className: "text-lg font-black text-slate-800 max-w-[60%] text-center truncate" }, SECTION_DEFS[activeSection]?.title)
+            React.createElement("h2", { className: "text-lg font-black text-slate-800 text-center flex-1 mx-3 truncate" }, SECTION_DEFS[activeSection]?.title),
+            React.createElement("div", { className: "w-10 h-10 flex-shrink-0 sm:hidden" }) // Balance flex centering
         ),
         
         // Wizard Header Card (Hidden on mobile)
