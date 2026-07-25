@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v31';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v32';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3901,7 +3901,7 @@ function VisitMap({ rows }) {
             React.createElement("h3", { className: "analytics-card-large-title text-slate-700" }, "Peta Kunjungan Live (GIS)"),
             React.createElement("div", { className: "p-2 bg-slate-100 rounded-xl text-slate-500" }, React.createElement(Icon, { name: "map", className: "w-5 h-5" }))
         ),
-        React.createElement("div", { ref: mapRef, className: "w-full h-[350px] rounded-xl z-0" },
+        React.createElement("div", { ref: mapRef, className: "w-full rounded-xl z-0", style: { height: '350px' } },
             (!rows || rows.filter(r => r.location).length === 0) && React.createElement("div", { className: "w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium z-10 relative rounded-xl" }, "Belum ada kunjungan dengan data koordinat lokasi.")
         )
     );
