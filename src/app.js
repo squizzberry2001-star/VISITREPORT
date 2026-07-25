@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v41';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v42';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4571,7 +4571,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
                 React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
         ) : React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }),
-        React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
+        activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
                 bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
@@ -4639,8 +4639,7 @@ function StoreSearchSelect({ label, value, options, onChange, placeholder, disab
                             className: "w-full rounded-2xl border-2 border-slate-200 bg-slate-50 pl-11 pr-4 py-3.5 text-[15px] font-bold text-audit-ink placeholder:text-slate-400 focus:border-audit-primary focus:bg-white focus:outline-none transition-colors",
                             placeholder: "Cari nama toko atau kode...",
                             value: search,
-                            onChange: (e) => setSearch(e.target.value),
-                            autoFocus: true
+                            onChange: (e) => setSearch(e.target.value)
                         })
                     )
                 ),
@@ -7883,6 +7882,8 @@ function SecretPinModal({ open, onClose, onUnlock }) {
 }
 function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange, scheduleConfig, onScheduleConfigChange }) {
     const [features, setFeatures] = useState(() => readFeaturesConfig());
+    const [settingsTab, setSettingsTab] = useState('features');
+    const isSuperUser = readBestieLogin()?.name === 'Aan Bagus Permana';
     const handleToggleFeature = async (key) => {
         const next = { ...features, [key]: !features[key] };
         setFeatures(next);
@@ -8736,7 +8737,20 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement(Icon, { name: "history", className: "h-4 w-4" }),
                     React.createElement("span", null, "Monitoring"))),
             secretTab === 'settings' ? (React.createElement(React.Fragment, null,
-                React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-white p-5 space-y-4" },
+                React.createElement("div", { className: "flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar" },
+                    [
+                        { id: 'features', label: 'Fitur & Analitik', icon: 'spark' },
+                        { id: 'sync', label: 'Data & Migrasi', icon: 'upload' },
+                        { id: 'content', label: 'Konten Tampilan', icon: 'clipboard' },
+                        { id: 'docs', label: 'Email & PDF', icon: 'document' },
+                        { id: 'master', label: 'Data Master', icon: 'store' }
+                    ].map(st => React.createElement("button", {
+                        key: st.id,
+                        onClick: () => setSettingsTab(st.id),
+                        className: cx("flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all", settingsTab === st.id ? "bg-slate-800 text-white shadow-md" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+                    }, React.createElement(Icon, { name: st.icon, className: "w-3.5 h-3.5" }), st.label))
+                ),
+                settingsTab === 'features' && React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-white p-5 space-y-4 fade-in" },
                     React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-3" }, "Tampilan Fitur Analitik"),
                     React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
                         [
@@ -8746,13 +8760,14 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             { key: 'leaderboard', label: 'Leaderboard (Peringkat)' }
                         ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
                             React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
-                            React.createElement("button", { onClick: () => handleToggleFeature(f.key), className: "w-12 h-6 rounded-full transition-colors relative", style: { backgroundColor: features[f.key] ? '#10b981' : '#cbd5e1' } },
-                                React.createElement("span", { className: "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform", style: { transform: features[f.key] ? 'translateX(24px)' : 'translateX(0)' } })
+                            React.createElement("button", { onClick: () => isSuperUser && handleToggleFeature(f.key), className: cx("relative inline-flex h-8 w-16 items-center rounded-full transition-colors shadow-inner", !isSuperUser && "opacity-50 cursor-not-allowed"), style: { backgroundColor: features[f.key] ? '#10b981' : '#cbd5e1' } },
+                                React.createElement("span", { className: "inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform", style: { transform: features[f.key] ? 'translateX(34px)' : 'translateX(4px)' } }),
+                                React.createElement("span", { className: "absolute text-[10px] font-black text-white pointer-events-none", style: { left: features[f.key] ? '10px' : 'auto', right: features[f.key] ? 'auto' : '10px' } }, features[f.key] ? 'ON' : 'OFF')
                             )
                         ))
                     )
                 ),
-                React.createElement("div", { className: "mb-5 grid gap-4 md:grid-cols-2" },
+                settingsTab === 'sync' && React.createElement("div", { className: "mb-5 grid gap-4 md:grid-cols-2 fade-in" },
                     React.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-emerald-50 p-5" },
                         React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-1" }, "Sync & Refresh All"),
                         React.createElement("p", { className: "text-xs text-slate-600 mb-4" }, "Tarik setting terbaru, kirim history kunjungan, dan sinkronisasi data global dengan satu klik."),
@@ -8767,7 +8782,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         )
                     )
                 ),
-                React.createElement("div", { className: "grid gap-5 md:grid-cols-2 mb-5" },
+                settingsTab === 'content' && React.createElement("div", { className: "grid gap-5 md:grid-cols-2 mb-5 fade-in" },
                     React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4" },
                         React.createElement("div", { className: "flex justify-between items-center" },
                             React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Welcome & Assignment"),
@@ -8789,48 +8804,49 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement(Field, { label: "Teks Slide" }, React.createElement(TextArea, { value: noticeMessagesText, onChange: e => setNoticeMessagesText(e.target.value), minRows: 4 }))
                     )
                 ),
-                React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 mb-5" },
-                    React.createElement("div", { className: "flex justify-between items-center mb-4" },
-                        React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Email Template & Directory"),
-                        React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveEmailTemplateSettings }, "Simpan Template")
-                    ),
-                    React.createElement("div", { className: "grid gap-5 md:grid-cols-2" },
-                        React.createElement("div", { className: "space-y-3" },
-                            React.createElement(Field, { label: "Subject" }, React.createElement(TextInput, { value: emailSubjectTemplate, onChange: e => setEmailSubjectTemplate(e.target.value) })),
-                            React.createElement(Field, { label: "Body" }, React.createElement(TextArea, { value: emailBodyTemplate, onChange: e => setEmailBodyTemplate(e.target.value), minRows: 5 }))
+                settingsTab === 'docs' && React.createElement(React.Fragment, null,
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 mb-5 fade-in" },
+                        React.createElement("div", { className: "flex justify-between items-center mb-4" },
+                            React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Email Template & Directory"),
+                            React.createElement(Button, { variant: "secondary", icon: "check", onClick: saveEmailTemplateSettings }, "Simpan Template")
                         ),
-                        React.createElement("div", null,
-                            React.createElement("div", { className: "flex gap-2 mb-3" },
-                                React.createElement(TextInput, { value: emailDirectoryDraft.email, onChange: e => setEmailDirectoryDraft(s => ({ ...s, email: e.target.value })), placeholder: "email@domain.com" }),
-                                React.createElement(Button, { variant: "secondary", icon: "plus", onClick: saveEmailDirectoryItem }, "Add")
+                        React.createElement("div", { className: "grid gap-5 md:grid-cols-2" },
+                            React.createElement("div", { className: "space-y-3" },
+                                React.createElement(Field, { label: "Subject" }, React.createElement(TextInput, { value: emailSubjectTemplate, onChange: e => setEmailSubjectTemplate(e.target.value) })),
+                                React.createElement(Field, { label: "Body" }, React.createElement(TextArea, { value: emailBodyTemplate, onChange: e => setEmailBodyTemplate(e.target.value), minRows: 5 }))
                             ),
-                            React.createElement("div", { className: "h-32 overflow-y-auto border border-slate-100 rounded-xl p-2 space-y-1" },
-                                emailDirectory.map(item => React.createElement("div", { key: item.id, className: "flex justify-between items-center p-2 bg-slate-50 rounded-lg text-xs" },
-                                    React.createElement("span", { className: "font-bold text-slate-700" }, item.email),
-                                    React.createElement("button", { onClick: () => deleteEmailDirectoryItem(item.id), className: "text-red-500 hover:text-red-700" }, React.createElement(Icon, { name: "trash", className: "w-4 h-4" }))
-                                ))
+                            React.createElement("div", null,
+                                React.createElement("div", { className: "flex gap-2 mb-3" },
+                                    React.createElement(TextInput, { value: emailDirectoryDraft.email, onChange: e => setEmailDirectoryDraft(s => ({ ...s, email: e.target.value })), placeholder: "email@domain.com" }),
+                                    React.createElement(Button, { variant: "secondary", icon: "plus", onClick: saveEmailDirectoryItem }, "Add")
+                                ),
+                                React.createElement("div", { className: "h-32 overflow-y-auto border border-slate-100 rounded-xl p-2 space-y-1" },
+                                    emailDirectory.map(item => React.createElement("div", { key: item.id, className: "flex justify-between items-center p-2 bg-slate-50 rounded-lg text-xs" },
+                                        React.createElement("span", { className: "font-bold text-slate-700" }, item.email),
+                                        React.createElement("button", { onClick: () => deleteEmailDirectoryItem(item.id), className: "text-red-500 hover:text-red-700" }, React.createElement(Icon, { name: "trash", className: "w-4 h-4" }))
+                                    ))
+                                )
                             )
                         )
-                    )
-                ),
-                React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 mb-5" },
-                    React.createElement("div", { className: "flex justify-between items-center mb-4" },
-                        React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "PDF Settings"),
-                        React.createElement("div", { className: "flex gap-2" },
-                            React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset"),
-                            React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF")
-                        )
                     ),
-                    React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-5 gap-3" },
-                        React.createElement(Field, { label: "Font Isi" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfTableFontSize, onChange: e => setPdfTableFontSize(e.target.value) })),
-                        React.createElement(Field, { label: "Font Judul" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfTableTitleFontSize, onChange: e => setPdfTableTitleFontSize(e.target.value) })),
-                        React.createElement(Field, { label: "Font Foto" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfEvidenceFontSize, onChange: e => setPdfEvidenceFontSize(e.target.value) })),
-                        React.createElement(Field, { label: "Extra Baris" }, React.createElement(TextInput, { type: "number", value: pdfTableExtraRows, onChange: e => setPdfTableExtraRows(e.target.value) })),
-                        React.createElement(Field, { label: "Grid Foto" }, React.createElement(TextInput, { type: "number", value: pdfPhotoGridPerPage, onChange: e => setPdfPhotoGridPerPage(e.target.value) }))
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 mb-5" },
+                        React.createElement("div", { className: "flex justify-between items-center mb-4" },
+                            React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "PDF Settings"),
+                            React.createElement("div", { className: "flex gap-2" },
+                                React.createElement(Button, { variant: "secondary", icon: "eraser", onClick: resetPdfSettings }, "Reset"),
+                                React.createElement(Button, { variant: "secondary", icon: "check", onClick: () => applyPdfSettings({ tableFontSize: pdfTableFontSize, tableTitleFontSize: pdfTableTitleFontSize, evidenceFontSize: pdfEvidenceFontSize, tableExtraRows: pdfTableExtraRows, photoGridPerPage: pdfPhotoGridPerPage }, true) }, "Simpan PDF")
+                            )
+                        ),
+                        React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-5 gap-3" },
+                            React.createElement(Field, { label: "Font Isi" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfTableFontSize, onChange: e => setPdfTableFontSize(e.target.value) })),
+                            React.createElement(Field, { label: "Font Judul" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfTableTitleFontSize, onChange: e => setPdfTableTitleFontSize(e.target.value) })),
+                            React.createElement(Field, { label: "Font Foto" }, React.createElement(TextInput, { type: "number", step: "0.5", value: pdfEvidenceFontSize, onChange: e => setPdfEvidenceFontSize(e.target.value) })),
+                            React.createElement(Field, { label: "Extra Baris" }, React.createElement(TextInput, { type: "number", value: pdfTableExtraRows, onChange: e => setPdfTableExtraRows(e.target.value) })),
+                            React.createElement(Field, { label: "Grid Foto" }, React.createElement(TextInput, { type: "number", value: pdfPhotoGridPerPage, onChange: e => setPdfPhotoGridPerPage(e.target.value) }))
+                        )
                     )
                 ),
-                renderSchedulePanel(),
-                renderMasterStorePanel(),
+                settingsTab === 'master' && React.createElement(React.Fragment, null, renderSchedulePanel(), renderMasterStorePanel()),
                 React.createElement("div", { className: "hidden" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
                         React.createElement("h3", { className: "text-lg font-black text-slate-950" }, "Request Toko Manual"),
