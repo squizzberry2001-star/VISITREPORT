@@ -6949,6 +6949,15 @@ body.rbv-keyboard-visible .evidence-floating-capture {
 .z-\[90\] { z-index: 90; }
 .z-\[100\] { z-index: 100; }
 .z-\[110\] { z-index: 110; }
+.bottom-0 { bottom: 0px; }
+.top-0 { top: 0px; }
+.left-0 { left: 0px; }
+.right-0 { right: 0px; }
+.inset-0 { top: 0px; right: 0px; bottom: 0px; left: 0px; }
+.sticky { position: sticky; }
+.fixed { position: fixed; }
+.pointer-events-none { pointer-events: none; }
+.pointer-events-auto { pointer-events: auto; }
 @media (min-width: 768px) {
   .md\:mt-12 { margin-top: 3rem; }
   .md\:h-\[calc\(100\%-48px\)\] { height: calc(100% - 48px); }
