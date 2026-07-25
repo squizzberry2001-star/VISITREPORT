@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp277-analytics-fix-v12';
+const APP_VERSION = 'revamp278-sync-fix-v13';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',

@@ -1,5 +1,5 @@
 {
-  "version": "277",
-  "build": "revamp277-analytics-fix-v12",
-  "label": "Revamp 277 - Fix Index HTML Cache Busters"
+  "version": "278",
+  "build": "revamp278-sync-fix-v13",
+  "label": "Revamp 278 - Fix Service Worker Sync Cache"
 }
