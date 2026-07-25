@@ -1,4 +1,4 @@
-const APP_VERSION = 'revamp271-welcome-coffee-vector-tip';
+const APP_VERSION = 'revamp272-analytics-dashboard-v6';
 const CACHE_NAME = `bestie-visit-${APP_VERSION}`;
 const LOCAL_ASSETS = [
   './src/theme.css',
