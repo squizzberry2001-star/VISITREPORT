@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-fix-blank-page-schedule-scope-v28';
+const APP_BUILD_VERSION = 'revamp281-add-off-schedule-badge-v29';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3788,7 +3788,7 @@ function LeaderboardItem({ lb, idx }) {
                 React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500 shrink-0" }, idx + 1),
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate" }, lb.name),
-                    lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') + (lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : '') }, "📅 ", ((lb.todaySchedule.description || '').replace(/^Agenda\s*:\s*/i, '').split('\n')[0] || lb.todaySchedule.location || 'Terjadwal').slice(0, 35)) : null,
+                    lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') + (lb.todaySchedule.location ? ' \u2014 ' + lb.todaySchedule.location : '') }, "\u{1F4C5} ", ((lb.todaySchedule.description || '').replace(/^Agenda\\s*:\\s*/i, '').split('\\n')[0] || lb.todaySchedule.location || 'Terjadwal').slice(0, 35)) : React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200" }, "\u{1F4F4} OFF"),
                     React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
                 )
             ),
