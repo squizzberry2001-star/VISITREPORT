@@ -4079,22 +4079,17 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                             const rawStore = r.store_name || r.storeName || 'Unknown Store';
                             const storeName = normalize(r.store_name || r.storeName || '');
                             
-                            // Weekly unique logic (from user's past request)
+                            // Weekly unique logic
                             const uniqueKey = `${storeName}_${mondayStr}`;
                             if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
                                 bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
-                                // add to history only if it's the first time this week
+                                bestieMap[bk].uniqueStoresMonthly++; // Counted as 1 per week per store
+                                
                                 bestieMap[bk].visitHistory.push({
                                     storeName: rawStore,
                                     date: vDate,
                                     dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
                                 });
-                            }
-                            
-                            // Monthly unique stores (for the main ratio UI)
-                            if (!bestieMap[bk].uniqueStoresSet.has(storeName)) {
-                                bestieMap[bk].uniqueStoresSet.add(storeName);
-                                bestieMap[bk].uniqueStoresMonthly++;
                             }
                         }
                     }
@@ -4137,20 +4132,12 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 
                 Object.values(bestieMap).forEach(b => {
                     b.visitHistory.sort((a, b) => b.date - a.date);
-                    const uniqueHistory = [];
-                    const seenDates = new Set();
-                    for (const vh of b.visitHistory) {
-                        if (String(vh.storeName).toUpperCase().trim() === 'OFF') continue;
-                        if (!seenDates.has(vh.dateStr)) {
-                            seenDates.add(vh.dateStr);
-                            uniqueHistory.push(vh);
-                        }
-                    }
-                    b.visitHistory = uniqueHistory;
+                    // Filter out OFF days but keep all unique weekly visits
+                    b.visitHistory = b.visitHistory.filter(vh => String(vh.storeName).toUpperCase().trim() !== 'OFF');
                 });
                 const todayStrLb = new Date().toISOString().slice(0, 10);
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
-                const leaderboard = Object.values(bestieMap).sort((a, b) => b.rawMonthly - a.rawMonthly).map(lb => ({
+                const leaderboard = Object.values(bestieMap).sort((a, b) => b.uniqueStoresMonthly - a.uniqueStoresMonthly).map(lb => ({
                     ...lb,
                     todaySchedule: activeSched.find(s => s.date === todayStrLb && normalize(s.nama) === normalize(lb.name)) || null
                 }));
@@ -4406,9 +4393,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
             const d = R * c;
             
             return { ...store, distance: d };
-        }).filter(s => s.distance < Infinity)
+        }).filter(s => s.distance <= 10)
           .sort((a, b) => a.distance - b.distance)
-          .slice(0, 5); // top 5 nearest
+          .slice(0, 10); // show up to 10 nearest stores within 10km
     }, [userLocation]);
 
     const restoreInputRef = useRef(null);
