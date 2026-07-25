@@ -4046,17 +4046,21 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }
                 });
 
-                localVisits.forEach(v => {
-                    if (v.isPdfDownloaded || v.isEmailSent) {
+                const datasetToUse = rows.length > 0 ? rows : localVisits;
+                
+                datasetToUse.forEach(v => {
+                    if (v.is_pdf_downloaded || v.isPdfDownloaded || v.is_email_sent || v.isEmailSent) {
                         localCompleted++;
                     }
-                    if (v.isEmailSent) {
+                    if (v.is_email_sent || v.isEmailSent) {
                         emailSentCount++;
                     }
-                    if (v.emailFeedbackTime) {
+                    if (v.email_feedback_time || v.emailFeedbackTime) {
                         emailFeedbackCount++;
                     }
-                    
+                });
+
+                localVisits.forEach(v => {
                     if (Array.isArray(v.opiData)) {
                         v.opiData.forEach(row => {
                             if (isMeaningfulObservation(row)) {
@@ -4554,31 +4558,31 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in w-full" },
             React.createElement("div", { className: "w-full px-0 py-6 pb-32 space-y-6" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight px-4 md:px-8" }, "Utiliti & Pengaturan"),
-                React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" },
-                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
-                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, syncBusy ? 'Sync...' : 'Update App')
+                React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-6 px-4 md:px-8" },
+                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '130px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
+                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-8 w-8 text-audit-primary mb-2" }),
+                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, syncBusy ? 'Sync...' : 'Update App')
                 ),
-                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleBackupData },
-                    React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Backup Data")
+                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '130px' }, onClick: handleBackupData },
+                    React.createElement(Icon, { name: "download", className: "h-8 w-8 text-audit-primary mb-2" }),
+                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Backup Data")
                 ),
-                React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker flex-col items-center justify-center', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px', display: 'flex' }, role: "button" },
-                    React.createElement(Icon, { name: "upload", className: "h-6 w-6 text-audit-primary mb-1" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Restore Data"),
+                React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker flex-col items-center justify-center', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '130px', display: 'flex' }, role: "button" },
+                    React.createElement(Icon, { name: "upload", className: "h-8 w-8 text-audit-primary mb-2" }),
+                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Restore Data"),
                     React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native hidden", onChange: handleRestoreFile, disabled: restoreBusy })
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral", style: { minHeight: '80px' }, onClick: () => setMasterStoreModalOpen(true) },
-                    React.createElement(Icon, { name: "store", className: "h-6 w-6 text-audit-primary mb-1" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Master Store")
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral", style: { minHeight: '130px' }, onClick: () => setMasterStoreModalOpen(true) },
+                    React.createElement(Icon, { name: "store", className: "h-8 w-8 text-audit-primary mb-2" }),
+                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Master Store")
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '80px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true) },
-                    React.createElement(Icon, { name: "spark", className: "h-6 w-6 mb-1" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Install App")
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '130px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true) },
+                    React.createElement(Icon, { name: "spark", className: "h-8 w-8 mb-2" }),
+                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Install App")
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '80px' }, onClick: onClearHistory },
-                    React.createElement(Icon, { name: "trash", className: "h-6 w-6 mb-1" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Hapus History")
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '130px' }, onClick: onClearHistory },
+                    React.createElement(Icon, { name: "trash", className: "h-8 w-8 mb-2" }),
+                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Hapus History")
                 )
             )
         )) : null,
@@ -6545,7 +6549,12 @@ function normalizeMonitorRows(rows) {
         visit_date: row.visit_date || row.visitDate || row.tanggal || '',
         total_visits: row.total_visits || row.totalVisits || 1,
         updated_at: row.updated_at || row.updatedAt || row.last_visit_at || row.lastVisitAt || '',
-        session_id: row.session_id || row.sessionId || '-'
+        session_id: row.session_id || row.sessionId || '-',
+        qsc_score: row.qsc_score || row.qscScore || 0,
+        opi_score: row.opi_score || row.opiScore || 0,
+        is_pdf_downloaded: !!(row.is_pdf_downloaded || row.isPdfDownloaded),
+        is_email_sent: !!(row.is_email_sent || row.isEmailSent),
+        email_feedback_time: row.email_feedback_time || row.emailFeedbackTime || 0
     }));
 }
 function normalizeManualRequestRows(rows) {
@@ -7361,7 +7370,13 @@ function monitorPayloadFromVisit(visit) {
         event_type: 'autosave',
         page_url: location.href,
         user_agent: navigator.userAgent,
-        has_meaningful_data: hasMeaningfulData(visit)
+        has_meaningful_data: hasMeaningfulData(visit),
+        progress: visitProgress(visit) || 0,
+        qsc_score: visit.qscScore || 0,
+        opi_score: visit.opiScore || 0,
+        is_pdf_downloaded: !!visit.isPdfDownloaded,
+        is_email_sent: !!visit.isEmailSent,
+        email_feedback_time: visit.emailFeedbackTime || 0
     };
 }
 async function upsertMonitorVisit(visit) {

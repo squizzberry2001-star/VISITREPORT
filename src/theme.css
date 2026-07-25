@@ -7073,6 +7073,201 @@ body.rbv-keyboard-visible .evidence-floating-capture {
 }
 
 /* Tab bar is fixed at bottom, not part of scroll */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.chart-circle-path {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.chart-circle-text {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.analytics-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+@media (min-width: 1024px) {
+  .analytics-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.analytics-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+@media (min-width: 1024px) {
+  .analytics-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+.analytics-card-large {
+  background: #fff;
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.analytics-card-large-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.analytics-card-large-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.progress-bar-wrap {
+  height: 12px;
+  width: 100%;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chart-flex-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.chart-flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+
+.analytics-grid-circular {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .analytics-grid-circular {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+.chart-flex-row { flex-wrap: wrap; }
+
+
+/* --- PREMIUM REVAMP UTILITY CLASSES --- */
+.max-w-lg { max-width: 32rem; }
+.rounded-3xl { border-radius: 1.5rem; }
+.rounded-t-3xl { border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem; }
+.rounded-t-\[32px\] { border-top-left-radius: 32px; border-top-right-radius: 32px; }
+.backdrop-blur-xl { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.backdrop-blur-sm { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.bg-white\/85 { background-color: rgba(255, 255, 255, 0.85); }
+.bg-slate-950\/40 { background-color: rgba(2, 6, 23, 0.4); }
+.border-slate-200\/60 { border-color: rgba(226, 232, 240, 0.6); }
+.border-slate-200\/70 { border-color: rgba(226, 232, 240, 0.7); }
+.hover\:border-audit-primary\/30:hover { border-color: rgba(37, 99, 235, 0.3); }
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+.hover\:shadow-xl:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+.hover\:-translate-y-1:hover { transform: translateY(-0.25rem); }
+.duration-300 { transition-duration: 300ms; }
+.z-40 { z-index: 40; }
+.z-\[90\] { z-index: 90; }
+.z-\[100\] { z-index: 100; }
+.z-\[110\] { z-index: 110; }
+.bottom-0 { bottom: 0px; }
+.bottom-6 { bottom: 1.5rem; }
+.bottom-8 { bottom: 2rem; }
+.top-0 { top: 0px; }
+.left-0 { left: 0px; }
+.right-0 { right: 0px; }
+.left-4 { left: 1rem; }
+.right-4 { right: 1rem; }
+.inset-0 { top: 0px; right: 0px; bottom: 0px; left: 0px; }
+.sticky { position: sticky; }
+.fixed { position: fixed; }
+.pointer-events-none { pointer-events: none; }
+.pointer-events-auto { pointer-events: auto; }
+.rounded-full { border-radius: 9999px; }
+.bg-white\/90 { background-color: rgba(255,255,255,0.9); }
+.shadow-pill { box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1); }
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+.from-emerald-400 { --tw-gradient-from: #34d399 var(--tw-gradient-from-position); --tw-gradient-to: rgba(52, 211, 153, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.to-teal-500 { --tw-gradient-to: #14b8a6 var(--tw-gradient-to-position); }
+.h-2\.5 { height: 0.625rem; }
+.h-3 { height: 0.75rem; }
+.w-full { width: 100%; }
+.bg-slate-100 { background-color: #f1f5f9; }
+.overflow-hidden { overflow: hidden; }
+.border-transparent { border-color: transparent; }
+.backdrop-saturate-150 { backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%); }
+
+@media (min-width: 768px) {
+  .md\:mt-12 { margin-top: 3rem; }
+  .md\:h-\[calc\(100\%-48px\)\] { height: calc(100% - 48px); }
+  .md\:border-x { border-left-width: 1px; border-right-width: 1px; }
+  .md\:rounded-t-3xl { border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem; }
+  .md\:rounded-t-\[32px\] { border-top-left-radius: 32px; border-top-right-radius: 32px; }
+}
+
+/* === REVAMP-FINAL: Dashboard full-width, natural scrolling =============== */
+/* Override all historical rules that blocked scrolling or added side padding */
+
+/* The audit-shell must not constrain dashboard */
+.audit-shell:has(.dashboard-page) {
+  overflow: visible !important;
+}
+
+/* Main page: fills 100% width, scrolls naturally */
+.dashboard-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  position: static !important;
+  inset: unset !important;
+  height: auto !important;
+  max-height: none !important;
+  flex: 1 1 auto !important;
+}
+
+/* Header stays sticky inside the scroll container */
+.dashboard-page > .dashboard-compact {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 40 !important;
+}
+
+/* Tab bar is fixed at bottom, not part of scroll */
 .dashboard-page > .dashboard-tab-bar {
   position: fixed !important;
   bottom: 0 !important;
@@ -7083,10 +7278,21 @@ body.rbv-keyboard-visible .evidence-floating-capture {
 
 /* History section: flows naturally in the page scroll */
 .dashboard-history-section,
-.dashboard-command-center {
+.dashboard-command-center,
+.dashboard-history-list {
   height: auto !important;
   max-height: none !important;
   overflow: visible !important;
   flex: none !important;
+}
+
+/* Ensure no gap on desktop */
+@media (min-width: 1024px) {
+  .audit-shell:has(.dashboard-page) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 /* ======================================================================== */
