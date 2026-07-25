@@ -3173,7 +3173,7 @@ const SECTION_DEFS = [
 function ProgressBar({ value }) {
     const capped = Math.max(0, Math.min(100, value || 0));
     return (React.createElement("div", { className: "w-full rounded-full bg-slate-100 h-2.5 overflow-hidden border border-transparent shadow-inner" },
-        React.createElement("div", { className: "bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-300 ease-out", style: { width: `${capped}%` } })));
+        React.createElement("div", { className: "bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-300 ease-out", style: { width: `${capped}%` } })));
 }
 
 function ProgressMissingInfo({ visit, activeSection = null, maxItems = 4, compact = false }) {
@@ -3953,6 +3953,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
+    const [syncTrigger, setSyncTrigger] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -4134,11 +4135,12 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
     const feedbackPercent = data?.emailSentCount > 0 ? ((data.emailFeedbackCount / data.emailSentCount) * 100).toFixed(1) : 0;
 
     return React.createElement("div", { className: "analytics-view-container w-full max-w-7xl mx-auto px-4 lg:px-8 py-6 flex-1 overflow-y-auto min-h-0 pb-32" },
-        React.createElement("div", { className: "mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
+        React.createElement("div", { className: "mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" },
             React.createElement("div", null,
-                React.createElement("h2", { className: "text-2xl font-black text-audit-ink tracking-tight" }, "Dashboard Analitik"),
-                React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium mt-1" }, "Overview performa dan tracking kunjungan")
-            )
+                React.createElement("h2", { className: "text-2xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik"),
+                React.createElement("p", { className: "mt-1 text-sm font-semibold text-slate-500" }, "Kinerja Visit & Kepatuhan")
+            ),
+            React.createElement(Button, { variant: "secondary", onClick: () => { setMounted(false); setSyncTrigger(t => t + 1); }, disabled: loading, icon: "refresh" }, loading ? "Menyinkronkan..." : "Tarik Data Terbaru")
         ),
         
         React.createElement("div", { className: "analytics-grid-4" },
@@ -4562,7 +4564,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement("span", null, formatDate(item.visitDate))),
                     React.createElement(ProgressBar, { value: item.progress || 0 }),
                     item.isEmailSent && React.createElement("div", { className: "mt-3" },
-                        React.createElement("button", { type: "button", onClick: () => onToggleFeedback(item.id), className: cx("text-xs font-bold py-1 px-3 rounded-full border transition-all", item.isEmailFeedback ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100") },
+                        React.createElement("button", { type: "button", onClick: () => onToggleFeedback(item.id), className: cx("text-xs font-bold py-1 px-3 rounded-full border transition-all", item.isEmailFeedback ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100") },
                             React.createElement(Icon, { name: "check", className: "h-3 w-3 inline mr-1" }),
                             item.isEmailFeedback ? 'Sudah di-feedback' : 'Tandai Feedback')
                     ),
@@ -4572,7 +4574,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                             React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
                 hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
                 React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
-        ) : React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }),
+        ) : null,
+        activeTab === 'analytics' ? React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }) : null,
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
@@ -4581,10 +4584,11 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 zIndex: 80,
                 width: 'min(360px, calc(100vw - 32px))',
                 height: '56px',
-                background: '#0f766e',
+                background: '#2563eb', /* Cobalt Blue */
                 opacity: 1,
                 backdropFilter: 'none',
-                WebkitBackdropFilter: 'none'
+                WebkitBackdropFilter: 'none',
+                boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.4)'
             }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
             React.createElement(Icon, { name: "plus", className: "h-5 w-5" }),
             React.createElement("span", null, "Kunjungan Baru")),
@@ -4752,7 +4756,7 @@ function NewVisitModal({ open, onClose, onCreate }) {
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Kunjungan Baru"),
                     React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store"),
-                    readBestieLogin().name ? React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-700" }, "Login NIK: ", readBestieLogin().name) : null),
+                    readBestieLogin().name ? React.createElement("p", { className: "mt-1 text-xs font-bold text-blue-700" }, "Login NIK: ", readBestieLogin().name) : null),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
             React.createElement("div", { className: "flex-1 overflow-y-auto p-5 pb-32 grid gap-4" },
