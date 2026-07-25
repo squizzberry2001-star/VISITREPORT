@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-history-all-data-v22';
+const APP_BUILD_VERSION = 'revamp281-prevent-empty-visit-anomaly-v23';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3852,6 +3852,10 @@ function AnalyticsView({ history }) {
 
                 rows.forEach(r => {
                     const bk = normalize(r.bestie_name || r.bestieName || '');
+                    
+                    // Filter anomali: abaikan jika kunjungan tidak memiliki data observasi sama sekali
+                    if (r.has_meaningful_data === false) return;
+                    
                     if (bk && bestieMap[bk]) {
                         const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
                         const rawStore = r.store_name || r.storeName || 'Unknown Store';
@@ -7098,6 +7102,15 @@ async function syncAppConfigToSupabase(key, payload) {
         return false;
     }
 }
+function hasMeaningfulData(visit) {
+    if (!visit) return false;
+    const hasOpi = Array.isArray(visit.opiData) && visit.opiData.some(isMeaningfulObservation);
+    const hasQsc = Array.isArray(visit.qscData) && visit.qscData.some(isMeaningfulObservation);
+    const hasStoreLeader = Boolean(cleanText(visit.storeLeader));
+    const hasShiftLeader = Boolean(cleanText(visit.shiftLeader));
+    const hasPhotos = Array.isArray(visit.findingEvidencePhotos) && visit.findingEvidencePhotos.length > 0;
+    return hasOpi || hasQsc || hasStoreLeader || hasShiftLeader || hasPhotos;
+}
 function monitorPayloadFromVisit(visit) {
     const detail = getStoreWebDetail(visit.store);
     return {
@@ -7112,7 +7125,8 @@ function monitorPayloadFromVisit(visit) {
         session_id: SESSION_ID,
         event_type: 'autosave',
         page_url: location.href,
-        user_agent: navigator.userAgent
+        user_agent: navigator.userAgent,
+        has_meaningful_data: hasMeaningfulData(visit)
     };
 }
 async function upsertMonitorVisit(visit) {
