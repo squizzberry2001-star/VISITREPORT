@@ -86,7 +86,7 @@ function savePdfSettings(settings) {
 }
 
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp272-analytics-dashboard';
+const APP_BUILD_VERSION = 'revamp271-welcome-coffee-vector-tip';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2305,166 +2305,7 @@ function HomeUpdateNotice({ config }) {
   );
 }
 
-function AnalyticsView() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({ totalStores: 0, monthlyBesties: [], monthlyVisits: [] });
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadData() {
-      setLoading(true);
-      try {
-        const rows = await fetchMonitorRowsFromConvex();
-        if (cancelled || !rows) return;
-        
-        const storeCodes = new Set();
-        const bestiesByMonth = {};
-        const visitsByMonth = {};
-
-        rows.forEach(row => {
-          if (row.store_code) storeCodes.add(row.store_code.trim());
-          else if (row.store_name) storeCodes.add(row.store_name.trim());
-          
-          let dateStr = row.visit_date || row.updated_at || '';
-          let monthMatch = dateStr.match(/^(\d{4}-\d{2})/);
-          if (!monthMatch) {
-            try {
-               const d = new Date(dateStr);
-               if (!isNaN(d)) {
-                 monthMatch = [null, `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`];
-               }
-            } catch (e) {}
-          }
-          const month = monthMatch ? monthMatch[1] : 'Unknown';
-          
-          if (!bestiesByMonth[month]) bestiesByMonth[month] = new Set();
-          if (row.bestie_name) bestiesByMonth[month].add(row.bestie_name.trim());
-          
-          if (!visitsByMonth[month]) visitsByMonth[month] = 0;
-          visitsByMonth[month] += 1;
-        });
-
-        const sortedMonths = Object.keys(visitsByMonth).filter(m => m !== 'Unknown').sort();
-        const monthlyBestiesData = sortedMonths.map(m => ({ month: m, count: bestiesByMonth[m] ? bestiesByMonth[m].size : 0 }));
-        const monthlyVisitsData = sortedMonths.map(m => ({ month: m, count: visitsByMonth[m] || 0 }));
-
-        setData({
-          totalStores: storeCodes.size,
-          monthlyBesties: monthlyBestiesData,
-          monthlyVisits: monthlyVisitsData,
-          labels: sortedMonths
-        });
-      } catch (error) {
-        console.warn('Gagal fetch data analytics:', error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadData();
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (loading || !chartRef.current || !data.labels || data.labels.length === 0) return;
-    
-    if (chartInstance.current) {
-      chartInstance.current.destroy();
-    }
-    
-    if (typeof window.Chart === 'undefined') {
-      console.warn('Chart.js tidak dimuat. Pastikan ada tag script Chart.js di index.html');
-      return;
-    }
-
-    const ctx = chartRef.current.getContext('2d');
-    chartInstance.current = new window.Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: data.labels,
-        datasets: [
-          {
-            label: 'Jumlah Kunjungan (Tren)',
-            data: data.monthlyVisits.map(d => d.count),
-            backgroundColor: 'rgba(15, 118, 110, 0.7)',
-            borderColor: 'rgba(15, 118, 110, 1)',
-            borderWidth: 1,
-            borderRadius: 4,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Jumlah Bestie Aktif',
-            type: 'line',
-            data: data.monthlyBesties.map(d => d.count),
-            backgroundColor: 'rgba(234, 179, 8, 1)',
-            borderColor: 'rgba(234, 179, 8, 1)',
-            borderWidth: 2,
-            pointBackgroundColor: 'rgba(255, 255, 255, 1)',
-            pointBorderColor: 'rgba(234, 179, 8, 1)',
-            tension: 0.3,
-            yAxisID: 'y1'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-          y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Visits' } },
-          y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Besties' } }
-        }
-      }
-    });
-    
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, [loading, data]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <span className="loading-spinner" aria-hidden="true"></span>
-        <p className="ml-3 text-slate-500 font-semibold">Memuat data analitik...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="analytics-view space-y-4 mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm">
-          <p className="text-sm font-semibold text-slate-500 mb-1">Total Store Dikunjungi</p>
-          <p className="text-5xl font-black text-slate-900 tracking-tight">{data.totalStores}</p>
-        </div>
-        <div className="glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm">
-          <p className="text-sm font-semibold text-slate-500 mb-1">Total Kunjungan Keseluruhan</p>
-          <p className="text-5xl font-black text-audit-primary tracking-tight">{data.monthlyVisits.reduce((acc, curr) => acc + curr.count, 0)}</p>
-        </div>
-      </div>
-      
-      <div className="glass-panel p-5 rounded-[24px] shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 px-1">Tren Kunjungan & Aktivitas Bestie (Bulanan)</h3>
-        {data.labels && data.labels.length > 0 ? (
-          <div className="relative w-full overflow-hidden" style={{ height: '320px' }}>
-            <canvas ref={chartRef}></canvas>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center py-12 bg-slate-50 rounded-xl border border-slate-100">
-            <p className="text-slate-500 font-medium">Belum ada data yang cukup untuk menampilkan grafik.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
-  const [activeTab, setActiveTab] = useState('home');
   const [installOpen, setInstallOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [backupBusy, setBackupBusy] = useState(false);
@@ -2611,18 +2452,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         </div>
       </section>
 
-      <div className="flex justify-center my-4 w-full px-2">
-        <div className="flex bg-slate-200/70 p-1.5 rounded-[18px] w-full max-w-sm shadow-inner gap-1">
-           <button type="button" onClick={() => setActiveTab('home')} className={cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'home' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700")}>Beranda</button>
-           <button type="button" onClick={() => setActiveTab('analytics')} className={cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'analytics' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700")}>Analitik</button>
-        </div>
-      </div>
+      <HomeUpdateNotice config={noticeConfig} />
 
-      {activeTab === 'home' ? (
-        <>
-          <HomeUpdateNotice config={noticeConfig} />
-
-          <section className="dashboard-history-section">
+      <section className="dashboard-history-section">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-lg font-black tracking-tight text-slate-950 md:text-2xl">History Kunjungan</h2>
         </div>
@@ -2650,11 +2482,6 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
           <EmptyState icon="clipboard" title="Belum ada history" />
         )}
       </section>
-      </>
-      ) : (
-        <AnalyticsView />
-      )}
-      
       <button
         type="button"
         className="inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]"
@@ -2672,10 +2499,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
           WebkitBackdropFilter: 'none'
         }}
         onClick={onNewVisit}
-        aria-label="Buat visit report baru"
+        aria-label="Buat kunjungan baru"
       >
         <Icon name="plus" className="h-5 w-5" />
-        <span>Buat Visit Baru</span>
+        <span>Kunjungan Baru</span>
       </button>
       <InstallGuideModal open={installOpen} onClose={() => setInstallOpen(false)} deferredPrompt={deferredPrompt} onPromptUsed={() => setDeferredPrompt(null)} />
     </main>
