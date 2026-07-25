@@ -4014,17 +4014,14 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                             dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
                         });
 
-                        // Score / Total Visits Leaderboard HANYA dihitung untuk bulan berjalan
-                        // dan difilter unik per toko per minggu.
-                        if (vDate.getMonth() === currentMonth && vDate.getFullYear() === currentYear) {
-                            const storeName = normalize(r.store_name || r.storeName || '');
-                            const mondayStr = getMonday(vDate);
-                            const uniqueKey = `${storeName}_${mondayStr}`;
-                            
-                            if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
-                                bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
-                                bestieMap[bk].totalVisits++;
-                            }
+                        // Score / Total Visits Leaderboard difilter unik per toko per minggu (ALL TIME).
+                        const storeName = normalize(r.store_name || r.storeName || '');
+                        const mondayStr = getMonday(vDate);
+                        const uniqueKey = `${storeName}_${mondayStr}`;
+                        
+                        if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
+                            bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
+                            bestieMap[bk].totalVisits++;
                         }
                     }
                 });
@@ -4268,12 +4265,12 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         ),
         
         // Leaderboard Bestie
-        React.createElement("div", { className: "mt-6 sm:mt-8" },
+        features?.leaderboard !== false ? React.createElement("div", { className: "mt-6 sm:mt-8" },
             React.createElement("h3", { className: "text-xl font-black text-audit-ink mb-4 px-1" }, "Leaderboard Kunjungan Bestie"),
             React.createElement("div", { className: "grid gap-3" },
                 data?.leaderboard?.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx }))
             )
-        )
+        ) : null
     );
 }
 
