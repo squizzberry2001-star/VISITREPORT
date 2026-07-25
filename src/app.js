@@ -4515,8 +4515,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
     }
     return (React.createElement("main", { className: "dashboard-page flex w-full min-h-screen flex-col bg-slate-50 relative pb-32" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.2);transform:translateY(0)}50%{box-shadow:0 0 0 10px rgba(37,99,235,0);transform:translateY(-2px)}}`),
-        React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full px-4 py-3 md:px-8 md:py-4 bg-white/80 backdrop-blur-2xl border-b border-slate-200/50" },
-            React.createElement("div", { className: "flex items-center justify-between gap-4 w-full max-w-4xl mx-auto" },
+        React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-200/50" },
+            React.createElement("div", { className: "flex items-center justify-between gap-4 w-full max-w-5xl mx-auto px-4 py-3 md:px-8 md:py-4" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-900 md:text-2xl" }, "Regional Bestie Visit"),
                     React.createElement("p", { className: "mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400" }, "Dashboard")),
@@ -4531,8 +4531,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement("div", { className: "dashboard-tab-bar w-full" },
-            React.createElement("div", { className: "dashboard-tab-bar-inner w-full max-w-4xl mx-auto" },
-                React.createElement("div", { className: "flex items-center justify-around h-[56px] px-1" },
+            React.createElement("div", { className: "dashboard-tab-bar-inner w-full max-w-5xl mx-auto px-2 md:px-6" },
+                React.createElement("div", { className: "flex items-center justify-around h-[56px]" },
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('home'), 
@@ -4551,9 +4551,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 )
             )
         ),
-        activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in space-y-6 px-4 md:px-8 lg:px-12 py-6 pb-32 w-full max-w-4xl mx-auto" },
-            React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti & Pengaturan"),
-            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" },
+        activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in w-full" },
+            React.createElement("div", { className: "w-full max-w-5xl mx-auto px-4 md:px-8 lg:px-12 py-6 pb-32 space-y-6" },
+                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti & Pengaturan"),
+                React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" },
                 React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
                     syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
                     React.createElement("span", { className: "home-quick-action-label text-[13px]" }, syncBusy ? 'Sync...' : 'Update App')
@@ -4583,7 +4584,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         ) : null,
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
-        React.createElement("section", { className: "dashboard-command-center px-4 md:px-8 lg:px-12 py-6 w-full max-w-4xl mx-auto" },
+        React.createElement("section", { className: "dashboard-command-center w-full" },
+            React.createElement("div", { className: "w-full max-w-5xl mx-auto px-4 md:px-8 lg:px-12 py-6" },
             // Section 1: Progress Ring & Daily Target
             React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
                 React.createElement("div", { className: "text-center md:text-left text-white" },
