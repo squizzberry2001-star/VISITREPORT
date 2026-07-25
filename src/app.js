@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-ai-analytics-qsc-opi-v20';
+const APP_BUILD_VERSION = 'revamp281-leaderboard-accordion-history-v21';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3745,7 +3745,6 @@ function analyzeFindingTrends(texts) {
     if (results.length < 3) {
         const topWords = Object.entries(wordCounts)
             .filter(([w, count]) => !usedWords.has(w))
-            .sort((a, b) => b[1] - a[1]);
         
         for (let i = 0; i < topWords.length && results.length < 3; i++) {
             results.push({ keyword: topWords[i][0], count: topWords[i][1] });
@@ -3753,6 +3752,55 @@ function analyzeFindingTrends(texts) {
     }
 
     return results;
+}
+
+function LeaderboardItem({ lb, idx }) {
+    const [expanded, setExpanded] = useState(false);
+    
+    let narasi = "Belum Ada Kunjungan 🚀";
+    if (lb.totalVisits > 0) {
+        if (lb.totalVisits >= lb.totalAssigned && lb.totalAssigned > 0) narasi = "Target Achieved! 🎯";
+        else if (idx === 0) narasi = "Top Performer Bulan Ini 🔥";
+        else if (idx <= 2) narasi = "Great Progress ⭐";
+        else narasi = "On Progress 💪";
+    }
+
+    return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
+        React.createElement("div", { 
+            className: "flex items-center justify-between p-4 sm:p-5 cursor-pointer text-audit-ink select-none", 
+            onClick: () => setExpanded(!expanded) 
+        },
+            React.createElement("div", { className: "flex items-center gap-4" },
+                React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500 shrink-0" }, idx + 1),
+                React.createElement("div", { className: "min-w-0" },
+                    React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate" }, lb.name),
+                    React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
+                )
+            ),
+            React.createElement("div", { className: "flex items-center gap-4 shrink-0" },
+                React.createElement("div", { className: "text-right" },
+                    React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
+                        React.createElement("span", { className: "text-2xl font-black leading-none" }, lb.totalVisits),
+                        React.createElement("span", { className: "text-sm font-bold text-slate-400" }, "/", lb.totalAssigned)
+                    ),
+                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-1 text-slate-400 hidden sm:block" }, "Kunjungan Unik (Mingguan)")
+                ),
+                React.createElement("button", { className: `w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}` },
+                    React.createElement(Icon, { name: "chevron-down", className: "w-4 h-4" })
+                )
+            )
+        ),
+        expanded && React.createElement("div", { className: "px-4 pb-4 sm:px-5 sm:pb-5 border-t border-slate-100 bg-slate-50/50 pt-4" },
+            (!lb.visitHistory || lb.visitHistory.length === 0) ? 
+                React.createElement("p", { className: "text-sm text-slate-400 text-center font-medium py-2" }, "Belum ada rincian history bulan ini.") :
+                React.createElement("ul", { className: "space-y-2" },
+                    lb.visitHistory.map((v, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm" },
+                        React.createElement("span", { className: "font-bold text-sm text-slate-700 truncate pr-3" }, v.storeName),
+                        React.createElement("span", { className: "text-[11px] font-bold text-slate-400 shrink-0 bg-slate-100 px-2.5 py-1 rounded-md" }, v.dateStr)
+                    ))
+                )
+        )
+    );
 }
 
 function AnalyticsView({ history }) {
@@ -3788,7 +3836,7 @@ function AnalyticsView({ history }) {
                 
                 // Reset map with Sets for tracking unique weekly visits
                 const bestieMap = {};
-                BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { name, totalVisits: 0, totalAssigned: 0, uniqueWeeklyVisits: new Set() });
+                BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { name, totalVisits: 0, totalAssigned: 0, uniqueWeeklyVisits: new Set(), visitHistory: [] });
                 BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
                 const now = new Date();
@@ -3810,12 +3858,18 @@ function AnalyticsView({ history }) {
                         // Auto refresh setiap bulan
                         if (vDate.getMonth() === currentMonth && vDate.getFullYear() === currentYear) {
                             const storeName = normalize(r.store_name || r.storeName || '');
+                            const rawStore = r.store_name || r.storeName || 'Unknown Store';
                             const mondayStr = getMonday(vDate);
                             const uniqueKey = `${storeName}_${mondayStr}`;
                             
                             if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
                                 bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
                                 bestieMap[bk].totalVisits++;
+                                bestieMap[bk].visitHistory.push({
+                                    storeName: rawStore,
+                                    date: vDate,
+                                    dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+                                });
                             }
                         }
                     }
@@ -3867,6 +3921,9 @@ function AnalyticsView({ history }) {
                 const topQSC = analyzeFindingTrends(qscTexts);
                 const allMonths = Array.from(new Set([...Object.keys(opiByMonth), ...Object.keys(qscByMonth)]));
                 
+                Object.values(bestieMap).forEach(b => {
+                    b.visitHistory.sort((a, b) => b.date - a.date);
+                });
                 const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits);
 
                 setData({
@@ -4042,32 +4099,7 @@ function AnalyticsView({ history }) {
         React.createElement("div", { className: "mt-6 sm:mt-8" },
             React.createElement("h3", { className: "text-xl font-black text-audit-ink mb-4 px-1" }, "Leaderboard Kunjungan Bestie"),
             React.createElement("div", { className: "grid gap-3" },
-                data?.leaderboard?.map((lb, idx) => {
-                    let narasi = "Belum Ada Kunjungan 🚀";
-                    if (lb.totalVisits > 0) {
-                        if (lb.totalVisits >= lb.totalAssigned && lb.totalAssigned > 0) narasi = "Target Achieved! 🎯";
-                        else if (idx === 0) narasi = "Top Performer Bulan Ini 🔥";
-                        else if (idx <= 2) narasi = "Great Progress ⭐";
-                        else narasi = "On Progress 💪";
-                    }
-
-                    return React.createElement("div", { key: lb.name, className: "flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all bg-white border-slate-200 text-audit-ink hover:border-audit-primary hover:shadow-md" },
-                        React.createElement("div", { className: "flex items-center gap-4" },
-                            React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500" }, idx + 1),
-                            React.createElement("div", null,
-                                React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink" }, lb.name),
-                                React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary" }, narasi)
-                            )
-                        ),
-                        React.createElement("div", { className: "text-right" },
-                            React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
-                                React.createElement("span", { className: "text-2xl font-black leading-none" }, lb.totalVisits),
-                                React.createElement("span", { className: "text-sm font-bold text-slate-400" }, "/", lb.totalAssigned)
-                            ),
-                            React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-1 text-slate-400" }, "Kunjungan Unik (Mingguan)")
-                        )
-                    );
-                })
+                data?.leaderboard?.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx }))
             )
         )
     );
