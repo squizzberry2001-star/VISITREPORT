@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-prevent-empty-visit-anomaly-v23';
-const CACHE_NAME = `bestie-visit-revamp281-prevent-empty-visit-anomaly-v23`;
+const APP_VERSION = 'revamp281-schedule-upload-analytics-badge-v24';
+const CACHE_NAME = `bestie-visit-revamp281-schedule-upload-analytics-badge-v24`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',

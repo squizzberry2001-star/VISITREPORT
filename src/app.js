@@ -24,7 +24,8 @@ const APP_CONFIG_KEYS = {
     welcome: 'welcome_animation',
     updateNotice: 'home_update_notice',
     emailTemplate: 'email_report_template',
-    webSync: 'web_update_signal'
+    webSync: 'web_update_signal',
+    schedule: 'rbv_schedule_config_v1'
 };
 const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
 const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
@@ -152,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-prevent-empty-visit-anomaly-v23';
+const APP_BUILD_VERSION = 'revamp281-schedule-upload-analytics-badge-v24';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -637,6 +638,23 @@ function saveWelcomeConfig(config) {
     };
     localStorage.setItem(WELCOME_CONFIG_KEY, JSON.stringify(next));
     window.dispatchEvent(new CustomEvent('rbv-welcome-config-change', { detail: next }));
+    return next;
+}
+const SCHEDULE_CONFIG_KEY = 'rbv_schedule_config_v1';
+const DEFAULT_SCHEDULE_CONFIG = [];
+function readScheduleConfig() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(SCHEDULE_CONFIG_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch (error) {
+        return [];
+    }
+}
+function saveScheduleConfig(config) {
+    const next = Array.isArray(config) ? config : [];
+    localStorage.setItem(SCHEDULE_CONFIG_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('rbv-schedule-config-change', { detail: next }));
     return next;
 }
 function normalizeUpdateNoticeIntervalSeconds(value, fallback = DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds) {
@@ -3803,7 +3821,7 @@ function LeaderboardItem({ lb, idx }) {
     );
 }
 
-function AnalyticsView({ history }) {
+function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
@@ -3931,7 +3949,13 @@ function AnalyticsView({ history }) {
                 Object.values(bestieMap).forEach(b => {
                     b.visitHistory.sort((a, b) => b.date - a.date);
                 });
-                const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits);
+                const todayStrLb = new Date().toISOString().slice(0, 10);
+                const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
+                const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits).map(lb => {
+                    // Find today's schedule for this bestie (case-insensitive normalized match)
+                    const todaySched = activeSched.find(s => s.date === todayStrLb && normalize(s.nama) === normalize(lb.name));
+                    return { ...lb, todaySchedule: todaySched || null };
+                });
 
                 setData({
                     globalStoreCount: globalStoreSet.size,
@@ -4406,7 +4430,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                             React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
                 hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
                 React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
-        ) : React.createElement(AnalyticsView, { history: history }),
+        ) : React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
@@ -6574,7 +6598,7 @@ async function fetchAppConfigsFromCloudflare() {
     if (!cloudflareEnabled())
         return null;
     try {
-        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -6815,7 +6839,7 @@ async function fetchAppConfigsFromNetlify() {
     if (!netlifyEnabled())
         return null;
     try {
-        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -7065,7 +7089,7 @@ async function fetchAppConfigsFromSupabase() {
         const { data, error } = await client
             .from(table)
             .select('config_key,payload,updated_at')
-            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync]);
+            .in('config_key', [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule]);
         if (error)
             throw error;
         return normalizeRemoteAppConfigRows((data || []).map((item) => ({
@@ -7396,6 +7420,8 @@ function applyRemoteAppConfigRows(rows) {
             saveEmailTemplateConfig(row.payload);
         if (row.key === APP_CONFIG_KEYS.webSync)
             applySilentWebSyncSignal(row.payload);
+        if (row.key === APP_CONFIG_KEYS.schedule)
+            saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
     });
     return normalized;
 }
@@ -7404,7 +7430,7 @@ async function fetchAppConfigsFromConvex() {
     if (convexEnabled()) {
         try {
             const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] });
+            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule] });
             if (rows !== null)
                 return normalizeRemoteAppConfigRows(rows);
         }
@@ -7825,7 +7851,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             healthUrl.searchParams.set('_panelCheck', String(Date.now()));
             const healthPayload = await cloudflarePanelFetchJson(healthUrl.toString());
             const d1Payload = await cloudflareRequest('testD1');
-            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync].join(',') } });
+            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule].join(',') } });
             const rows = settingsPayload?.rows || settingsPayload?.data || [];
             const count = Array.isArray(rows) ? rows.length : 0;
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
@@ -7901,7 +7927,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             if (!convexEnabled())
                 throw new Error('Convex belum aktif. Isi enabled:true dan deploymentUrl di convex-config.js.');
             const config = getConvexConfig();
-            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] });
+            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule] });
             const masterRows = await runConvexQuery(config.masterStoreListQuery || 'masterStores:listStores', { limit: 10 });
             const settingCount = normalizeRemoteAppConfigRows(settingsRows).length;
             const masterCount = normalizeMasterStoreRows(masterRows?.rows || masterRows?.data || masterRows).length;
@@ -8247,6 +8273,130 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setMasterStoreRows(fallbackRows);
         setMasterStoreStatus(`Data lokal direset. Fallback bawaan: ${fallbackRows.length} toko.`);
     }
+    function parseExcelSchedule(file) {
+        return new Promise((resolve, reject) => {
+            if (typeof window.XLSX === 'undefined') {
+                reject(new Error('Library SheetJS belum dimuat. Coba refresh halaman.'));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = window.XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rawRows = window.XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    if (!rawRows.length) { resolve([]); return; }
+                    const header = rawRows[0].map(h => String(h || '').trim().toLowerCase());
+                    const namaIdx = header.findIndex(h => h.includes('nama'));
+                    const dateIdx = header.findIndex(h => h.includes('start date') || h.includes('tanggal'));
+                    const descIdx = header.findIndex(h => h.includes('description') || h.includes('deskripsi') || h.includes('agenda'));
+                    const locIdx  = header.findIndex(h => h.includes('location') || h.includes('lokasi'));
+                    if (namaIdx < 0 || dateIdx < 0) { reject(new Error('Kolom Nama atau Start Date tidak ditemukan di baris header Excel.')); return; }
+                    const parsed = [];
+                    for (let i = 1; i < rawRows.length; i++) {
+                        const row = rawRows[i];
+                        const rawNama = String(row[namaIdx] || '').trim();
+                        if (!rawNama) continue;
+                        let rawDate = row[dateIdx];
+                        let dateStr = '';
+                        if (typeof rawDate === 'number') {
+                            // Excel serial date number
+                            const d = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+                            dateStr = d.toISOString().slice(0, 10);
+                        } else if (rawDate) {
+                            dateStr = String(rawDate).slice(0, 10);
+                        }
+                        const desc = descIdx >= 0 ? String(row[descIdx] || '').trim() : '';
+                        const loc  = locIdx  >= 0 ? String(row[locIdx]  || '').trim() : '';
+                        parsed.push({ nama: rawNama, date: dateStr, description: desc, location: loc });
+                    }
+                    resolve(parsed);
+                } catch(err) { reject(err); }
+            };
+            reader.onerror = () => reject(new Error('Gagal membaca file.'));
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    function renderSchedulePanel() {
+        const fileRef = React.useRef(null);
+        const [schedStatus, setSchedStatus] = React.useState('');
+        const [schedBusy, setSchedBusy] = React.useState(false);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todaySchedules = scheduleConfig.filter(s => s.date === todayStr);
+        async function handleScheduleUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            setSchedBusy(true);
+            setSchedStatus('Membaca file Excel...');
+            try {
+                const parsed = await parseExcelSchedule(file);
+                if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing dari file ini.'); setSchedBusy(false); return; }
+                const saved = saveScheduleConfig(parsed);
+                setScheduleConfig(saved);
+                setSchedStatus(`Berhasil import ${parsed.length} entri jadwal. Menyinkronkan ke Convex...`);
+                const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.schedule, parsed);
+                setSchedStatus(synced
+                    ? `✅ ${parsed.length} entri jadwal disimpan & disinkronkan ke Convex.`
+                    : `⚠️ ${parsed.length} entri disimpan lokal, tapi Convex sync gagal. Data tetap tersedia.`);
+            } catch(err) {
+                setSchedStatus(`❌ Error: ${err?.message || 'Gagal memproses file.'}`);
+            } finally {
+                setSchedBusy(false);
+                if (fileRef.current) fileRef.current.value = '';
+            }
+        }
+        function clearSchedule() {
+            if (!window.confirm('Hapus semua data jadwal?')) return;
+            saveScheduleConfig([]);
+            setScheduleConfig([]);
+            setSchedStatus('Data jadwal dihapus.');
+        }
+        return React.createElement('div', { className: 'rounded-3xl border border-violet-200 bg-violet-50 p-5 mb-5' },
+            React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+                React.createElement('div', null,
+                    React.createElement('p', { className: 'text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700' }, '📅 Upload Jadwal'),
+                    React.createElement('h3', { className: 'text-lg font-black text-slate-900' }, 'Import Jadwal Mingguan (Excel)')
+                ),
+                scheduleConfig.length > 0
+                    ? React.createElement('button', { type: 'button', onClick: clearSchedule, className: 'text-xs font-bold text-red-500 hover:text-red-700 underline' }, 'Hapus Semua')
+                    : null
+            ),
+            React.createElement('p', { className: 'text-xs text-slate-600 mb-4' },
+                'Upload file .xlsx yang mengandung kolom Nama, Start Date, dan Description. Data akan tersinkronisasi ke Convex dan tampil sebagai badge di halaman Analitik.'
+            ),
+            React.createElement('div', { className: 'flex flex-col gap-3 sm:flex-row sm:items-center' },
+                React.createElement('label', {
+                    className: 'flex cursor-pointer items-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-violet-700 transition-colors',
+                    style: schedBusy ? { opacity: 0.6, pointerEvents: 'none' } : {}
+                },
+                    React.createElement(Icon, { name: 'upload', className: 'h-4 w-4' }),
+                    schedBusy ? 'Memproses...' : 'Pilih File Excel (.xlsx)',
+                    React.createElement('input', {
+                        ref: fileRef, type: 'file', accept: '.xlsx,.xls',
+                        className: 'hidden', onChange: handleScheduleUpload, disabled: schedBusy
+                    })
+                ),
+                scheduleConfig.length > 0
+                    ? React.createElement('p', { className: 'text-xs font-bold text-violet-700 bg-violet-100 px-3 py-1.5 rounded-full' },
+                        `${scheduleConfig.length} entri aktif · ${todaySchedules.length} jadwal hari ini`
+                    )
+                    : React.createElement('p', { className: 'text-xs text-slate-500' }, 'Belum ada data jadwal.')
+            ),
+            schedStatus ? React.createElement('p', { className: 'mt-3 text-xs font-semibold text-slate-700 bg-white rounded-xl px-4 py-3 border border-violet-100' }, schedStatus) : null,
+            todaySchedules.length > 0
+                ? React.createElement('div', { className: 'mt-4' },
+                    React.createElement('p', { className: 'text-xs font-bold text-slate-700 mb-2' }, `Pratinjau jadwal hari ini (${todayStr}):`),
+                    React.createElement('div', { className: 'space-y-2 max-h-40 overflow-y-auto' },
+                        todaySchedules.map((s, i) => React.createElement('div', { key: i, className: 'flex gap-3 bg-white rounded-xl p-3 border border-violet-100 text-xs' },
+                            React.createElement('span', { className: 'font-bold text-violet-800 shrink-0' }, s.nama),
+                            React.createElement('span', { className: 'text-slate-600 truncate' }, s.description || s.location || '-')
+                        ))
+                    )
+                  )
+                : null
+        );
+    }
     function renderMasterStorePanel() {
         const normalizedMasterRows = normalizeMasterStoreRows(masterStoreRows);
         const previewRows = masterStoreFiltered.slice(0, 20);
@@ -8535,6 +8685,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         React.createElement(Field, { label: "Grid Foto" }, React.createElement(TextInput, { type: "number", value: pdfPhotoGridPerPage, onChange: e => setPdfPhotoGridPerPage(e.target.value) }))
                     )
                 ),
+                renderSchedulePanel(),
                 renderMasterStorePanel(),
                 React.createElement("div", { className: "hidden" },
                     React.createElement("div", { className: "mb-3 flex items-center justify-between gap-3" },
@@ -8927,7 +9078,7 @@ function App() {
             try {
                 await refreshRemoteConfigs();
                 if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
-                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync] }, (rows) => { if (!cancelled)
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
             }
