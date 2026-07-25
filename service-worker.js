@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-enterprise-features-v37';
-const CACHE_NAME = `bestie-visit-revamp281-enterprise-features-v37`;
+const APP_VERSION = 'revamp281-enterprise-features-v38';
+const CACHE_NAME = `bestie-visit-revamp281-enterprise-features-v38`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
