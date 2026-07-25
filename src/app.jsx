@@ -2655,30 +2655,28 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         <AnalyticsView />
       )}
       
-      {activeTab === 'home' && (
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]"
-          style={{
-            position: 'fixed',
-            left: '50%',
-            bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
-            transform: 'translateX(-50%)',
-            zIndex: 80,
-            width: 'min(360px, calc(100vw - 32px))',
-            height: '56px',
-            background: '#0f766e',
-            opacity: 1,
-            backdropFilter: 'none',
-            WebkitBackdropFilter: 'none'
-          }}
-          onClick={onNewVisit}
-          aria-label="Buat kunjungan baru"
-        >
-          <Icon name="plus" className="h-5 w-5" />
-          <span>Kunjungan Baru</span>
-        </button>
-      )}
+      <button
+        type="button"
+        className="inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]"
+        style={{
+          position: 'fixed',
+          left: '50%',
+          bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+          transform: 'translateX(-50%)',
+          zIndex: 80,
+          width: 'min(360px, calc(100vw - 32px))',
+          height: '56px',
+          background: '#0f766e',
+          opacity: 1,
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none'
+        }}
+        onClick={onNewVisit}
+        aria-label="Buat visit report baru"
+      >
+        <Icon name="plus" className="h-5 w-5" />
+        <span>Buat Visit Baru</span>
+      </button>
       <InstallGuideModal open={installOpen} onClose={() => setInstallOpen(false)} deferredPrompt={deferredPrompt} onPromptUsed={() => setDeferredPrompt(null)} />
     </main>
   );

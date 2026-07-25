@@ -3773,7 +3773,7 @@ function DashboardPage({
   })))))) : /*#__PURE__*/React.createElement(EmptyState, {
     icon: "clipboard",
     title: "Belum ada history"
-  }))) : /*#__PURE__*/React.createElement(AnalyticsView, null), activeTab === 'home' && /*#__PURE__*/React.createElement("button", {
+  }))) : /*#__PURE__*/React.createElement(AnalyticsView, null), /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]",
     style: {
@@ -3790,11 +3790,11 @@ function DashboardPage({
       WebkitBackdropFilter: 'none'
     },
     onClick: onNewVisit,
-    "aria-label": "Buat kunjungan baru"
+    "aria-label": "Buat visit report baru"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "plus",
     className: "h-5 w-5"
-  }), /*#__PURE__*/React.createElement("span", null, "Kunjungan Baru")), /*#__PURE__*/React.createElement(InstallGuideModal, {
+  }), /*#__PURE__*/React.createElement("span", null, "Buat Visit Baru")), /*#__PURE__*/React.createElement(InstallGuideModal, {
     open: installOpen,
     onClose: () => setInstallOpen(false),
     deferredPrompt: deferredPrompt,
