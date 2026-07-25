@@ -15,7 +15,89 @@ img { max-width: 100%; display: block; }
 
 .audit-shell {
   min-height: 100vh;
-  background-color: #f8fafc; /* Very light slate for modern feel */
+  background-color: #f8fafc;
+}
+
+/* ─── Dashboard Tab Bar ─── */
+.dashboard-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  padding: 6px 16px calc(6px + var(--safe-bottom));
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .dashboard-tab-bar {
+    position: sticky;
+    bottom: auto;
+    top: auto;
+    padding: 0 0 0 0;
+    background: transparent;
+    border-bottom: 1px solid rgba(226,232,240,0.5);
+  }
+}
+.dashboard-tab-bar-inner {
+  max-width: 400px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 8px 32px rgba(15,23,42,0.08), 0 0 0 1px rgba(255,255,255,0.3) inset;
+  pointer-events: auto;
+}
+@media (min-width: 1024px) {
+  .dashboard-tab-bar-inner {
+    max-width: none;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    padding: 0 2rem;
+  }
+}
+.dashboard-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  gap: 2px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+  cursor: pointer;
+}
+.dashboard-tab-btn:hover { color: #64748b; }
+.dashboard-tab-btn.active {
+  color: #2563eb;
+  background: rgba(37,99,235,0.08);
+}
+@media (min-width: 1024px) {
+  .dashboard-tab-btn {
+    flex-direction: row;
+    gap: 8px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 12px 20px;
+  }
+  .dashboard-tab-btn.active {
+    background: rgba(37,99,235,0.06);
+    box-shadow: inset 0 -2px 0 #2563eb;
+    border-radius: 0;
+  }
 }
 
 .glass-panel {
@@ -2834,7 +2916,12 @@ select,
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 2px 4px calc(6.5rem + var(--safe-bottom));
+  padding-bottom: calc(6.5rem + var(--safe-bottom));
+}
+@media (min-width: 1024px) {
+  .dashboard-history-section {
+    padding-bottom: 2rem;
+  }
 }
 
 /* Minimalist previous / next nav attached above quick section */
