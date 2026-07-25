@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-schedule-no-location-v30';
-const CACHE_NAME = `bestie-visit-revamp281-schedule-no-location-v30`;
+const APP_VERSION = 'revamp281-enterprise-features-v31';
+const CACHE_NAME = `bestie-visit-revamp281-enterprise-features-v31`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',

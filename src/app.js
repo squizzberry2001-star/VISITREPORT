@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-schedule-no-location-v30';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v31';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2490,6 +2490,8 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [markers, setMarkers] = useState([]);
     const [mode, setMode] = useState('move');
+    const [paths, setPaths] = useState([]);
+    const [currentPath, setCurrentPath] = useState(null);
     const activeCropRatio = ORIGINAL_PHOTO_CROP_RATIO;
     const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
     const [markerSize, setMarkerSize] = useState(58);
@@ -2823,6 +2825,12 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
                 React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'move' && 'active'), onClick: () => { setMode('move'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'move' },
                     React.createElement(Icon, { name: "crop", className: "h-4 w-4" }),
                     React.createElement("span", null, "Geser")),
+                React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'draw' && 'active'), onClick: () => { setMode('draw'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'draw' },
+                    React.createElement(Icon, { name: "pencil", className: "w-6 h-6" })
+                ),
+                React.createElement("button", { type: "button", className: "photo-editor-tool", onClick: () => setPaths((current) => current.slice(0, -1)), disabled: paths.length === 0 },
+                    React.createElement(Icon, { name: "rotate-ccw", className: "w-5 h-5 text-red-500" })
+                ),
                 React.createElement("button", { type: "button", className: cx('photo-editor-tool', mode === 'marker' && 'active'), onClick: () => { setMode('marker'); setMarkerSliderActive(false); }, "aria-pressed": mode === 'marker' },
                     React.createElement(Icon, { name: "marker", className: "h-4 w-4" }),
                     React.createElement("span", null, "Marker")),
@@ -3785,9 +3793,9 @@ function LeaderboardItem({ lb, idx }) {
             onClick: () => setExpanded(!expanded) 
         },
             React.createElement("div", { className: "flex items-center gap-4" },
-                React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500 shrink-0" }, idx + 1),
+                React.createElement("div", { className: "w-11 h-11 rounded-full flex items-center justify-center font-black text-xl " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
                 React.createElement("div", { className: "min-w-0" },
-                    React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate" }, lb.name),
+                    React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate flex items-center gap-2" }, lb.name, idx === 0 ? React.createElement("span", { className: "px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[9px] font-black text-white rounded-full uppercase tracking-widest shadow-sm" }, "MVP") : null),
                     lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') }, "\u{1F4C5} ", ((lb.todaySchedule.description || '').replace(/^Agenda\\s*:\\s*/i, '').split('\\n')[0] || 'Terjadwal').slice(0, 35)) : React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200" }, "\u{1F4F4} OFF"),
                     React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
                 )
@@ -3814,6 +3822,108 @@ function LeaderboardItem({ lb, idx }) {
                         React.createElement("span", { className: "text-[11px] font-bold text-slate-400 shrink-0 bg-slate-100 px-2.5 py-1 rounded-md" }, v.dateStr)
                     ))
                 )
+        )
+    );
+}
+
+
+function generateAiSummary(topQSC, topOPI, totalVisits) {
+    if (totalVisits === 0) return "Belum ada data kunjungan untuk dianalisis oleh AI.";
+    let summary = `Berdasarkan analisis ${totalVisits} kunjungan terakhir, `;
+    
+    const qscIssues = topQSC.filter(q => q.count > 0);
+    const opiIssues = topOPI.filter(o => o.count > 0);
+    
+    if (qscIssues.length > 0) {
+        const topIssue = qscIssues[0];
+        const pct = Math.round((topIssue.count / totalVisits) * 100);
+        summary += `\n• ⚠️ Peringatan: Sebanyak ${pct}% kunjungan memiliki temuan QSC terkait "${topIssue.keyword}". Ini perlu menjadi fokus perbaikan segera.`;
+    } else {
+        summary += `\n• ✅ Kualitas QSC secara umum sangat baik, minim temuan berulang.`;
+    }
+    
+    if (opiIssues.length > 0) {
+        const topIssue = opiIssues[0];
+        const pct = Math.round((topIssue.count / totalVisits) * 100);
+        summary += `\n• 📋 Catatan OPI: ${pct}% masalah operasional berpusat pada "${topIssue.keyword}".`;
+    }
+    
+    if (qscIssues.length > 0 && opiIssues.length > 0) {
+        summary += `\n• 💡 Rekomendasi: Lakukan training ulang atau briefing pagi untuk area ${qscIssues[0].keyword} dan ${opiIssues[0].keyword}.`;
+    }
+    
+    return summary;
+}
+
+
+function VisitMap({ rows }) {
+    const mapRef = useRef(null);
+    const mapInstance = useRef(null);
+
+    useEffect(() => {
+        if (!window.L || !mapRef.current) return;
+        if (!mapInstance.current) {
+            mapInstance.current = window.L.map(mapRef.current).setView([-2.5489, 118.0149], 5); // Center of Indonesia
+            window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(mapInstance.current);
+        }
+
+        const map = mapInstance.current;
+        // Clear old markers
+        map.eachLayer((layer) => {
+            if (layer instanceof window.L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+
+        const validRows = (rows || []).filter(r => r.location && r.location.lat && r.location.lng);
+        if (validRows.length === 0) return;
+
+        const bounds = window.L.latLngBounds();
+        validRows.forEach(r => {
+            const loc = [r.location.lat, r.location.lng];
+            bounds.extend(loc);
+            
+            // Marker with popups
+            const dateStr = r.updated_at ? new Date(r.updated_at).toLocaleDateString('id-ID') : '';
+            window.L.marker(loc).addTo(map)
+                .bindPopup(`<b>${r.store_name || r.storeName || 'Store'}</b><br>Oleh: ${r.bestie_name || r.bestieName || '-'}<br>${dateStr}`);
+        });
+        
+        if (validRows.length > 0) {
+            map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+        }
+    }, [rows]);
+
+    return React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8 bg-white border border-slate-200 shadow-sm" },
+        React.createElement("div", { className: "analytics-card-large-header pb-3" },
+            React.createElement("h3", { className: "analytics-card-large-title text-slate-700" }, "Peta Kunjungan Live (GIS)"),
+            React.createElement("div", { className: "p-2 bg-slate-100 rounded-xl text-slate-500" }, React.createElement(Icon, { name: "map", className: "w-5 h-5" }))
+        ),
+        React.createElement("div", { ref: mapRef, className: "w-full h-[350px] rounded-xl z-0" },
+            (!rows || rows.filter(r => r.location).length === 0) && React.createElement("div", { className: "w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 text-sm font-medium z-10 relative rounded-xl" }, "Belum ada kunjungan dengan data koordinat lokasi.")
+        )
+    );
+}
+
+function AiInsightsPanel({ data }) {
+    if (!data) return null;
+    const summaryText = generateAiSummary(data.topQSC || [], data.topOPI || [], data.totalVisits || 0);
+    const paragraphs = summaryText.split('\n').filter(p => p.trim() !== '');
+    
+    return React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8 bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100 shadow-sm" },
+        React.createElement("div", { className: "flex items-center gap-3 mb-4" },
+            React.createElement("div", { className: "p-2 bg-indigo-600 rounded-xl text-white shadow-md" }, 
+                React.createElement(Icon, { name: "spark", className: "w-5 h-5" })
+            ),
+            React.createElement("div", null,
+                React.createElement("h3", { className: "text-lg font-black text-indigo-900" }, "AI Executive Summary"),
+                React.createElement("p", { className: "text-xs font-bold text-indigo-600 uppercase tracking-widest" }, "Auto-Generated Insights")
+            )
+        ),
+        React.createElement("div", { className: "space-y-3 bg-white/60 p-4 rounded-xl text-sm font-medium text-slate-700 leading-relaxed" },
+            paragraphs.map((p, i) => React.createElement("p", { key: i }, p))
         )
     );
 }
@@ -4031,6 +4141,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
             )
         ),
         
+        React.createElement(VisitMap, { rows: data?.rows || [] }),
+        React.createElement(AiInsightsPanel, { data: data }),
         React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8" },
             React.createElement("div", { className: "analytics-card-large-header" },
                 React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (QSC vs OPI)"),
