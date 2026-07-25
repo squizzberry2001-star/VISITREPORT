@@ -3171,9 +3171,9 @@ const SECTION_DEFS = [
     { id: 'evidence', label: 'Evidence', title: 'Evidence', icon: 'image', hint: 'Foto temuan' }
 ];
 function ProgressBar({ value }) {
-    const safeValue = Math.max(0, Math.min(100, Number(value || 0)));
-    return (React.createElement("div", { className: "progress-mini", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": safeValue },
-        React.createElement("span", { style: { width: safeValue + '%' } })));
+    const capped = Math.max(0, Math.min(100, value || 0));
+    return (React.createElement("div", { className: "w-full rounded-full bg-slate-100 h-2.5 overflow-hidden border border-transparent shadow-inner" },
+        React.createElement("div", { className: "bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-300 ease-out", style: { width: `${capped}%` } })));
 }
 
 function ProgressMissingInfo({ visit, activeSection = null, maxItems = 4, compact = false }) {
@@ -4477,8 +4477,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full overflow-hidden p-4 md:p-6 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-sm" },
             React.createElement("div", { className: "flex items-start justify-between gap-3" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
-                    React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
-                    React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" }, "Home")),
+                    React.createElement("h1", { className: "text-2xl font-black tracking-tight text-slate-900 md:text-3xl" }, "Regional Bestie Visit"),
+                    React.createElement("p", { className: "mt-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400" }, "Dashboard")),
                 React.createElement("div", { className: "home-header-actions history-sync-wrap flex shrink-0 items-center gap-2" },
                     React.createElement("button", { type: "button", className: cx("home-notification-top-button", rbvProgressNotificationEnabled() && "is-active", notificationBusy && "is-busy"), onClick: handleEnableProgressNotification, disabled: notificationBusy, "aria-label": "Aktifkan pengingat otomatis progress", title: "Pengingat Otomatis 4 Jam" },
                         notificationBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "bell", className: "h-4 w-4" }),
@@ -4489,9 +4489,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement("div", { className: "fixed bottom-0 left-0 right-0 z-[90] pointer-events-none pb-[env(safe-area-inset-bottom,0px)]" },
-            React.createElement("div", { className: "mx-auto max-w-lg w-full bg-white/85 backdrop-blur-xl border-t border-slate-200/60 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] pointer-events-auto" },
-                React.createElement("div", { className: "flex items-center justify-around h-[70px] px-2" },
+        React.createElement("div", { className: "fixed bottom-6 left-4 right-4 z-[90] pointer-events-none pb-[env(safe-area-inset-bottom,0px)]" },
+            React.createElement("div", { className: "mx-auto max-w-sm w-full bg-white/90 backdrop-blur-xl backdrop-saturate-150 border border-slate-200/60 shadow-pill rounded-full pointer-events-auto" },
+                React.createElement("div", { className: "flex items-center justify-around h-[64px] px-2" },
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('home'), 
@@ -4543,12 +4543,12 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
-            React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
-                React.createElement("h2", { className: "history-title-with-count text-lg font-black tracking-tight text-slate-950 md:text-2xl" },
+            React.createElement("div", { className: "dashboard-history-title mb-4 flex items-center justify-between gap-3 px-1" },
+                React.createElement("h2", { className: "history-title-with-count text-[17px] font-black tracking-tight text-slate-800" },
                     React.createElement("span", null, "History Kunjungan"),
-                    React.createElement("strong", { className: "history-count-inline" }, history.length))),
-            history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-3" },
-                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-slate-200/70 hover:border-audit-primary/30" },
+                    React.createElement("strong", { className: "history-count-inline ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500" }, history.length))),
+            history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-4" },
+                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[24px] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" },
                     React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
@@ -4576,7 +4576,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
-                bottom: 'calc(85px + env(safe-area-inset-bottom, 0px))',
+                bottom: 'calc(105px + env(safe-area-inset-bottom, 0px))',
                 transform: 'translateX(-50%)',
                 zIndex: 80,
                 width: 'min(360px, calc(100vw - 32px))',
