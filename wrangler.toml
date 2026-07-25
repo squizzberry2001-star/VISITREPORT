@@ -1,0 +1,12 @@
+name = "visitreport-rbv-api"
+main = "cloudflare/worker.mjs"
+compatibility_date = "2025-08-01"
+workers_dev = true
+
+# Setelah menjalankan:
+#   npx wrangler d1 create visitreport_rbv
+# ganti database_id di bawah dengan ID yang diberikan Cloudflare.
+[[d1_databases]]
+binding = "DB"
+database_name = "visitreport_rbv"
+database_id = "9ebe3f41-6994-4845-ba05-f96a57f49542"

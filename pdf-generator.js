@@ -1,0 +1,1410 @@
+(function () {
+  'use strict';
+
+  const TEMPLATE = window.RBV_PDF_TEMPLATE_ASSETS || {};
+
+  const PDF_SETTINGS_KEY = 'rbv_pdf_settings_v2';
+  const DEFAULT_ASSIGNMENT_LINK = 'https://tinyurl.com/store-caassignment';
+  const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
+  const DEFAULT_PDF_SETTINGS = {
+    tableFontSize: 9.4,
+    tableTitleFontSize: 9.8,
+    evidenceFontSize: 8.9,
+    tableExtraRows: 0,
+    photoGridPerPage: 6
+  };
+
+  function clampNumber(value, min, max, fallback) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, number));
+  }
+
+  function normalizePdfPhotoGridPerPage(value, fallback) {
+    const allowed = [4, 6, 8];
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback || DEFAULT_PDF_SETTINGS.photoGridPerPage;
+    return allowed.reduce(function (closest, item) { return Math.abs(item - number) < Math.abs(closest - number) ? item : closest; }, allowed.indexOf(fallback) !== -1 ? fallback : 6);
+  }
+
+  function readPdfSettings() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PDF_SETTINGS_KEY) || '{}') || {};
+      return {
+        tableFontSize: clampNumber(raw.tableFontSize, 8, 13, DEFAULT_PDF_SETTINGS.tableFontSize),
+        tableTitleFontSize: clampNumber(raw.tableTitleFontSize, 8, 14, DEFAULT_PDF_SETTINGS.tableTitleFontSize),
+        evidenceFontSize: clampNumber(raw.evidenceFontSize, 8, 12, DEFAULT_PDF_SETTINGS.evidenceFontSize),
+        tableExtraRows: Math.round(clampNumber(raw.tableExtraRows, 0, 4, DEFAULT_PDF_SETTINGS.tableExtraRows)),
+        photoGridPerPage: normalizePdfPhotoGridPerPage(raw.photoGridPerPage, DEFAULT_PDF_SETTINGS.photoGridPerPage)
+      };
+    } catch (error) {
+      return Object.assign({}, DEFAULT_PDF_SETTINGS);
+    }
+  }
+
+  function pdfTableFontSize() {
+    return readPdfSettings().tableFontSize;
+  }
+
+  function pdfTableTitleFontSize() {
+    return readPdfSettings().tableTitleFontSize;
+  }
+
+  function pdfFieldTitleGap() {
+    const titleSize = pdfTableTitleFontSize();
+    return Math.max(4.2, titleSize * 0.52);
+  }
+
+  function pdfEvidenceFontSize() {
+    return readPdfSettings().evidenceFontSize;
+  }
+
+  function pdfTableExtraRows() {
+    return readPdfSettings().tableExtraRows;
+  }
+
+  function pdfPhotoGridPerPage() {
+    return readPdfSettings().photoGridPerPage;
+  }
+
+  function readAssignmentLinkConfig() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(ASSIGNMENT_CONFIG_KEY) || '{}') || {};
+      return plainText(parsed.link, DEFAULT_ASSIGNMENT_LINK);
+    } catch (error) {
+      return DEFAULT_ASSIGNMENT_LINK;
+    }
+  }
+
+  function getAssignmentLink(data) {
+    const hiddenLink = readAssignmentLinkConfig();
+    return hiddenLink || text(data && data.storeAssignmentLink, DEFAULT_ASSIGNMENT_LINK);
+  }
+
+
+  function plainText(value, fallback) {
+    let raw = value === undefined || value === null ? '' : String(value);
+    raw = raw
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '- ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\r/g, '')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    return raw || (fallback === undefined ? '-' : fallback);
+  }
+
+  function text(value, fallback) {
+    return plainText(value, fallback);
+  }
+
+  function sanitizeFileName(value) {
+    return String(value || 'Regional_Bestie_Visit_Report')
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '_') || 'Regional_Bestie_Visit_Report';
+  }
+
+  function formatDate(value) {
+    const raw = text(value, '');
+    if (!raw || raw === '-') return '-';
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatDayDate(value) {
+    const raw = text(value, '');
+    if (!raw || raw === '-') return '-';
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function buildFileName(data) {
+    return sanitizeFileName('Regional_Bestie_Visit_Report_' + text(data && data.store, 'Store')) + '.pdf';
+  }
+
+  function getStoreDetail(storeName, data) {
+    let detail = {};
+    if (typeof window.getStoreWebDetail === 'function') {
+      try { detail = window.getStoreWebDetail(storeName) || {}; } catch (error) { detail = {}; }
+    }
+    const manual = data && data.manualStoreDetail && typeof data.manualStoreDetail === 'object' ? data.manualStoreDetail : {};
+    return Object.assign({}, detail, manual);
+  }
+
+  function addWrapped(doc, value, x, y, width, lineHeight, options) {
+    const lines = doc.splitTextToSize(text(value), width);
+    doc.text(lines, x, y, options || {});
+    return y + Math.max(1, lines.length) * lineHeight;
+  }
+
+  function richTokens(value) {
+    const raw = value === undefined || value === null ? '' : String(value);
+    const tokens = [];
+    function push(value, style) {
+      const safe = String(value || '').replace(/\u00a0/g, ' ');
+      if (safe) tokens.push(Object.assign({ text: safe }, style || {}));
+    }
+    function newline() { tokens.push({ text: '\n' }); }
+    if (!/<[a-z][\s\S]*>/i.test(raw) || typeof document === 'undefined') {
+      text(raw, '').split('\n').forEach(function (line, index) {
+        if (index) newline();
+        push(line, {});
+      });
+      return tokens.length ? tokens : [{ text: '-' }];
+    }
+    const root = document.createElement('div');
+    root.innerHTML = raw;
+    function walk(node, style, list) {
+      if (node.nodeType === 3) { push(node.nodeValue, style); return; }
+      if (node.nodeType !== 1) return;
+      const tag = String(node.tagName || '').toLowerCase();
+      if (tag === 'br') { newline(); return; }
+      const nextStyle = Object.assign({}, style);
+      if (tag === 'b' || tag === 'strong') nextStyle.bold = true;
+      if (tag === 'i' || tag === 'em') nextStyle.italic = true;
+      if (tag === 'u') nextStyle.underline = true;
+      if (tag === 'ul' || tag === 'ol') {
+        Array.from(node.children || []).forEach(function (child, index) { walk(child, nextStyle, { type: tag, index: index + 1 }); });
+        newline();
+        return;
+      }
+      if (tag === 'li') {
+        if (tokens.length && tokens[tokens.length - 1].text !== '\n') newline();
+        push(list && list.type === 'ol' ? String(list.index || 1) + '. ' : '• ', nextStyle);
+        Array.from(node.childNodes || []).forEach(function (child) { walk(child, nextStyle, list); });
+        newline();
+        return;
+      }
+      const block = ['p', 'div'].indexOf(tag) !== -1;
+      if (block && tokens.length && tokens[tokens.length - 1].text !== '\n') newline();
+      Array.from(node.childNodes || []).forEach(function (child) { walk(child, nextStyle, list); });
+      if (block) newline();
+    }
+    Array.from(root.childNodes || []).forEach(function (child) { walk(child, {}, null); });
+    while (tokens.length && tokens[0].text === '\n') tokens.shift();
+    while (tokens.length && tokens[tokens.length - 1].text === '\n') tokens.pop();
+    return tokens.length ? tokens : [{ text: '-' }];
+  }
+
+  function setRichFont(doc, token, baseBold) {
+    const bold = Boolean(baseBold || token.bold);
+    const italic = Boolean(token.italic);
+    const style = bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal';
+    try { doc.setFont('helvetica', style); } catch (error) { doc.setFont('helvetica', bold ? 'bold' : 'normal'); }
+  }
+
+  function measureRich(doc, token, baseBold) {
+    setRichFont(doc, token, baseBold);
+    return doc.getTextWidth(token.text || '');
+  }
+
+  function splitRichTextToLines(doc, value, width, baseBold) {
+    const source = richTokens(value);
+    const lines = [[]];
+    function current() { return lines[lines.length - 1]; }
+    function lineWidth(line) { return line.reduce(function (sum, token) { return sum + measureRich(doc, token, baseBold); }, 0); }
+    function pushLine() { if (current().length || lines.length === 0) lines.push([]); }
+    source.forEach(function (token) {
+      String(token.text || '').replace(/\r/g, '').split(/(\n|\s+)/).forEach(function (piece) {
+        if (!piece) return;
+        if (piece === '\n') { pushLine(); return; }
+        const isSpace = /^\s+$/.test(piece);
+        if (isSpace) { if (!current().length) return; piece = ' '; }
+        const next = Object.assign({}, token, { text: piece });
+        if (!isSpace && current().length && lineWidth(current()) + measureRich(doc, next, baseBold) > width) pushLine();
+        current().push(next);
+      });
+    });
+    const clean = lines.filter(function (line) { return line.length; });
+    return clean.length ? clean : [[{ text: '-' }]];
+  }
+
+  function richLineToText(line) {
+    return (line || []).map(function (token) { return token.text || ''; }).join('').trim() || '-';
+  }
+
+  function drawRichLines(doc, lines, x, y, lineHeight, options) {
+    const opts = options || {};
+    const baseBold = Boolean(opts.bold);
+    const textColor = opts.textColor || null;
+    const fontSize = opts.fontSize || doc.getFontSize();
+    doc.setFontSize(fontSize);
+    if (textColor) doc.setTextColor.apply(doc, textColor);
+    (lines && lines.length ? lines : [[{ text: '-' }]]).forEach(function (line, lineIndex) {
+      let cx = x;
+      const cy = y + lineIndex * lineHeight;
+      line.forEach(function (token) {
+        const chunk = token.text || '';
+        if (!chunk) return;
+        setRichFont(doc, token, baseBold);
+        if (textColor) doc.setTextColor.apply(doc, textColor);
+        doc.text(chunk, cx, cy, opts.textOptions || {});
+        const w = doc.getTextWidth(chunk);
+        if (token.underline) {
+          doc.setDrawColor.apply(doc, textColor || [39, 39, 42]);
+          doc.setLineWidth(0.18);
+          doc.line(cx, cy + 0.8, cx + w, cy + 0.8);
+        }
+        cx += w;
+      });
+    });
+  }
+
+
+  function fitRichLinesToBox(doc, lines, maxLines, width, baseBold) {
+    const sourceLines = lines && lines.length ? lines : [[{ text: '-' }]];
+    const source = sourceLines.slice(0, Math.max(1, maxLines));
+    if (!source.length) return [[{ text: '-' }]];
+    const hasMore = sourceLines.length > source.length;
+    if (!hasMore) return source;
+    const last = (source[source.length - 1] || []).map(function (token) { return Object.assign({}, token); });
+    function lineWidth(line) {
+      return (line || []).reduce(function (sum, token) { return sum + measureRich(doc, token, baseBold); }, 0);
+    }
+    if (!last.length) {
+      source[source.length - 1] = [{ text: '…' }];
+      return source;
+    }
+    let lastToken = last[last.length - 1];
+    lastToken.text = String(lastToken.text || '').replace(/\s+$/g, '');
+    while (last.length && lineWidth(last) + doc.getTextWidth('…') > width) {
+      lastToken = last[last.length - 1];
+      const txt = String(lastToken.text || '');
+      if (txt.length > 1) {
+        lastToken.text = txt.slice(0, -1).replace(/\s+$/g, '');
+      } else {
+        last.pop();
+      }
+    }
+    if (!last.length) last.push({ text: '…' });
+    else last.push({ text: '…' });
+    source[source.length - 1] = last;
+    return source;
+  }
+
+  function drawRichLinesInBox(doc, lines, x, y, width, height, lineHeight, options) {
+    const opts = options || {};
+    const fontSize = opts.fontSize || doc.getFontSize();
+    doc.setFontSize(fontSize);
+    const usableHeight = Math.max(0, height || 0);
+    const maxLines = Math.max(1, Math.floor(usableHeight / Math.max(1, lineHeight)));
+    const fitted = fitRichLinesToBox(doc, lines, maxLines, width, Boolean(opts.bold));
+    drawRichLines(doc, fitted, x, y, lineHeight, opts);
+  }
+
+  async function prepareImage(src) {
+    return new Promise(function (resolve) {
+      if (!src) return resolve(null);
+      const img = new Image();
+      img.onload = function () {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxSide = 2200;
+          let width = img.naturalWidth || img.width || 1;
+          let height = img.naturalHeight || img.height || 1;
+          const ratio = Math.min(1, maxSide / Math.max(width, height));
+          width = Math.max(1, Math.round(width * ratio));
+          height = Math.max(1, Math.round(height * ratio));
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext('2d');
+          context.drawImage(img, 0, 0, width, height);
+          resolve({ dataUrl: canvas.toDataURL('image/jpeg', 0.88), width: width, height: height, canvas: canvas });
+        } catch (error) { resolve(null); }
+      };
+      img.onerror = function () { resolve(null); };
+      img.crossOrigin = 'anonymous';
+      img.src = src;
+    });
+  }
+
+  async function addImageInBox(doc, src, x, y, width, height, mode) {
+    const prepared = await prepareImage(src);
+    if (!prepared) return false;
+
+    if (mode === 'coverCrop') {
+      try {
+        const targetAspect = width / height;
+        let sx = 0;
+        let sy = 0;
+        let sw = prepared.width;
+        let sh = prepared.height;
+        const sourceAspect = prepared.width / prepared.height;
+        if (sourceAspect > targetAspect) {
+          sw = prepared.height * targetAspect;
+          sx = (prepared.width - sw) / 2;
+        } else {
+          sh = prepared.width / targetAspect;
+          sy = (prepared.height - sh) / 2;
+        }
+        const canvas = document.createElement('canvas');
+        const outW = Math.max(480, Math.round(width * 8));
+        const outH = Math.max(480, Math.round(height * 8));
+        canvas.width = outW;
+        canvas.height = outH;
+        const context = canvas.getContext('2d');
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+        context.drawImage(prepared.canvas, sx, sy, sw, sh, 0, 0, outW, outH);
+        doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, width, height);
+        return true;
+      } catch (error) {
+        doc.addImage(prepared.dataUrl, 'JPEG', x, y, width, height);
+        return true;
+      }
+    }
+
+    const aspect = prepared.width / prepared.height;
+    let targetWidth = width;
+    let targetHeight = height;
+    if (mode === 'cover') {
+      if (aspect > targetWidth / targetHeight) targetWidth = targetHeight * aspect;
+      else targetHeight = targetWidth / aspect;
+    } else if (aspect > targetWidth / targetHeight) {
+      targetHeight = targetWidth / aspect;
+    } else {
+      targetWidth = targetHeight * aspect;
+    }
+    const tx = x + (width - targetWidth) / 2;
+    const ty = y + (height - targetHeight) / 2;
+    doc.addImage(prepared.dataUrl, 'JPEG', tx, ty, targetWidth, targetHeight);
+    return true;
+  }
+
+  function addBackground(doc, key, pageWidth, pageHeight) {
+    if (!TEMPLATE[key]) return false;
+    try {
+      doc.addImage(TEMPLATE[key], 'JPEG', 0, 0, pageWidth, pageHeight);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function pickRowValue(row, keys) {
+    for (var i = 0; i < keys.length; i += 1) {
+      var key = keys[i];
+      if (row && row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== '') return String(row[key]);
+    }
+    return '';
+  }
+
+  function normalizeRows(rows) {
+    return (Array.isArray(rows) ? rows : [])
+      .map(function (row) {
+        return {
+          temuan: pickRowValue(row, ['temuan', 'finding', 'observation', 'observasi', 'issue', 'desc', 'description']),
+          kondisiIdeal: pickRowValue(row, ['kondisiIdeal', 'kondisi_ideal', 'idealCondition', 'standard', 'targetCondition']),
+          dampak: pickRowValue(row, ['dampak', 'impact', 'risk', 'risiko']),
+          penyebab: pickRowValue(row, ['penyebab', 'rootCause', 'root_cause', 'cause']),
+          tindakan: pickRowValue(row, ['tindakan', 'action', 'correctiveAction', 'corrective_action', 'aksi']),
+          deadline: text(pickRowValue(row, ['deadline', 'dueDate', 'due_date', 'targetDate']), ''),
+          hasil: pickRowValue(row, ['hasil', 'result', 'status', 'followUp', 'follow_up'])
+        };
+      })
+      .filter(function (row) {
+        return Object.keys(row).some(function (key) {
+          var value = plainText(row[key], '');
+          return value && value !== '-';
+        });
+      });
+  }
+
+  function normalizePhotos(photos) {
+    return (Array.isArray(photos) ? photos : [])
+      .map(function (photo) {
+        photo = photo || {};
+        const image = photo.image || photo.dataUrl || photo.dataURL || photo.url || photo.src || photo.previewUrl || photo.previewURL || photo.blobUrl || photo.blobURL || '';
+        const description = photo.description !== undefined && photo.description !== null ? photo.description
+          : (photo.desc !== undefined && photo.desc !== null ? photo.desc
+          : (photo.caption !== undefined && photo.caption !== null ? photo.caption
+          : (photo.note !== undefined && photo.note !== null ? photo.note
+          : (photo.notes !== undefined && photo.notes !== null ? photo.notes
+          : (photo.text !== undefined && photo.text !== null ? photo.text
+          : (photo.keterangan !== undefined && photo.keterangan !== null ? photo.keterangan : ''))))));
+        return { image: image ? String(image) : '', description: description !== undefined && description !== null ? String(description) : '' };
+      })
+      .filter(function (photo) { return photo.image || plainText(photo.description, ''); });
+  }
+
+  function normalizeQscPhotos(data) {
+    const modern = Array.isArray(data && data.qscResultPhotos) ? data.qscResultPhotos : [];
+    const legacy = data && data.qscResultPhoto ? [data.qscResultPhoto] : [];
+    const source = modern.length ? modern : legacy;
+    return [0, 1].map(function (index) {
+      const item = source[index] || {};
+      const normalized = normalizePhotos([item])[0] || { image: '', description: '' };
+      return normalized;
+    });
+  }
+
+  function drawTopBar(doc, title, palette, pageWidth) {
+    doc.setFillColor.apply(doc, palette.primary);
+    doc.rect(0, 0, pageWidth, 18, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12.5);
+    doc.text(title, 12, 11.8);
+  }
+
+  function drawSubtlePageTitle(doc, title, subtitle, palette, pageWidth, margin) {
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(24);
+    doc.text(title, margin, 24);
+    if (subtitle) {
+      doc.setTextColor(82, 82, 91);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.text(subtitle, margin, 32);
+    }
+    doc.setDrawColor.apply(doc, palette.primary);
+    doc.setLineWidth(0.4);
+    doc.line(margin, 37, pageWidth - margin, 37);
+  }
+
+  function addFooter(doc, pageWidth, pageHeight) {
+    const text = 'GENERATED BY BESTIE VISIT WEB REPORT';
+    let appliedOpacity = false;
+    try {
+      if (doc.GState && typeof doc.setGState === 'function') {
+        doc.setGState(new doc.GState({ opacity: 0.40 }));
+        appliedOpacity = true;
+      }
+    } catch (error) {}
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.4);
+    doc.setTextColor(100, 116, 139);
+    doc.text(text, pageWidth / 2, pageHeight - 4.8, {
+      align: 'center',
+      charSpace: 0.12
+    });
+    if (appliedOpacity) {
+      try { doc.setGState(new doc.GState({ opacity: 1 })); } catch (error) {}
+    }
+  }
+
+  function applyFooterAllPages(doc, pageWidth, pageHeight) {
+    const totalPages = typeof doc.internal.getNumberOfPages === 'function' ? doc.internal.getNumberOfPages() : 1;
+    for (let page = 1; page <= totalPages; page += 1) {
+      doc.setPage(page);
+      addFooter(doc, pageWidth, pageHeight);
+    }
+  }
+
+  function drawLabelValue(doc, label, value, x, y, labelWidth, maxWidth, palette, options) {
+    const opts = options || {};
+    const colonX = x + Math.max(10, labelWidth - 4);
+    const valueX = x + labelWidth + 2;
+    doc.setFont('helvetica', opts.boldLabel ? 'bold' : 'normal');
+    doc.setFontSize(opts.fontSize || 12.5);
+    doc.setTextColor(82, 82, 91);
+    doc.text(String(label || ''), x, y);
+    doc.text(':', colonX, y);
+    doc.setFont('helvetica', opts.boldValue ? 'bold' : 'normal');
+    doc.setTextColor.apply(doc, opts.valueColor || palette.ink);
+    doc.text(doc.splitTextToSize(text(value), Math.max(8, maxWidth)), valueX, y);
+  }
+
+  function drawCover(doc, data, detail, palette, pageWidth, pageHeight, margin) {
+    if (!addBackground(doc, 'cover', pageWidth, pageHeight)) {
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      doc.setFillColor(229, 247, 244);
+      doc.rect(0, 0, pageWidth, 102, 'F');
+    }
+
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 103, pageWidth, pageHeight - 103, 'F');
+
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(26);
+    doc.text('Regional Bestie Visit Report', margin + 2, 126);
+
+    const storeHead = text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-');
+    const storeCode = text(detail.siteCode4 || detail.siteCode || detail.storeCode || (data && (data.siteCode4 || data.siteCode || data.storeCode)), '-');
+    const storeType = text(detail.typeStore || detail.storeType || detail.type || (data && (data.typeStore || data.storeType || data.type)), '-');
+    const areaManager = text(detail.areaManager || (data && data.areaManager), '-');
+    const regionalManager = text(detail.regionalManager || (data && data.regionalManager), '-');
+
+    const leftX = margin + 2;
+    const coverLabelW = 43;
+    let y = 144;
+    drawLabelValue(doc, 'Nama', data && data.nama, leftX, y, coverLabelW, 108, palette, { fontSize: 12.5, boldValue: true });
+    y += 9;
+    drawLabelValue(doc, 'Store', data && data.store, leftX, y, coverLabelW, 108, palette, { fontSize: 12.5, boldValue: true });
+    y += 9;
+    drawLabelValue(doc, 'Store Head', storeHead, leftX, y, coverLabelW, 108, palette, { fontSize: 11.5, boldValue: true });
+
+    const cardX = 180;
+    const cardY = 134;
+    const cardW = pageWidth - cardX - margin;
+    const cardH = 50;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'FD');
+
+    const items = [
+      ['Tanggal Visit', formatDate(data && data.tanggal)],
+      ['Kode Toko', storeCode],
+      ['Tipe Toko', storeType],
+      ['Area Manager', areaManager],
+      ['Regional Manager', regionalManager]
+    ];
+    items.forEach(function (item, index) {
+      const col = index % 2;
+      const row = Math.floor(index / 2);
+      const x = cardX + 8 + col * (cardW / 2);
+      const yy = cardY + 8 + row * 13;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(100, 116, 139);
+      doc.text(item[0].toUpperCase(), x, yy);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.7, 8.2, 10.6, 8.7));
+      doc.setTextColor.apply(doc, palette.ink);
+      doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
+    });
+
+    // Alamat sengaja tidak ditampilkan pada hasil PDF.
+  }
+
+  async function drawQscResultSlide(doc, data, palette, pageWidth, pageHeight, margin) {
+    // QSC slide is always included in revamp99.
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    drawSubtlePageTitle(doc, 'QSC/ Famitrack Result', '', palette, pageWidth, margin);
+
+    const photos = normalizeQscPhotos(data || {});
+    const gap = 10;
+    const cardY = 42;
+    const cardW = (pageWidth - margin * 2 - gap) / 2;
+    const imageH = Math.round((cardW - 6) * 3 / 4);
+    const cardH = imageH + 15;
+
+    for (let index = 0; index < 2; index += 1) {
+      const photo = photos[index];
+      const x = margin + index * (cardW + gap);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(x, cardY, cardW, cardH, 4, 4, 'FD');
+      const added = await addImageInBox(doc, photo.image, x + 3, cardY + 3, cardW - 6, imageH, 'coverCrop');
+      if (!added) {
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(x + 3, cardY + 3, cardW - 6, imageH, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Belum ada foto', x + cardW / 2, cardY + 60, { align: 'center' });
+      }
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      const lines = doc.splitTextToSize(text(photo.description, index === 0 ? 'Foto QSC / Famitrack 1' : 'Foto QSC / Famitrack 2'), cardW - 10);
+      doc.text(lines.slice(0, 2), x + 5, cardY + imageH + 8);
+    }
+  }
+
+  function drawCrewTable(doc, rows, palette, pageWidth, pageHeight, margin) {
+    const headers = ['Role', 'Nama', 'Job Level'];
+    const colWidths = [58, pageWidth - margin * 2 - 108, 50];
+    const tableWidth = colWidths.reduce(function (total, width) { return total + width; }, 0);
+    const left = margin;
+    const bottomLimit = pageHeight - 16;
+    const lineHeight = 5.2;
+    let y = 52;
+
+    function fillColor(rgb) {
+      doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+    }
+    function textColor(rgb) {
+      doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+    }
+    function drawHeader() {
+      fillColor(palette.primary);
+      doc.rect(left, y, tableWidth, 12, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.25);
+      textColor([255, 255, 255]);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12.5);
+      let x = left;
+      headers.forEach(function (header, index) {
+        doc.rect(x, y, colWidths[index], 12, 'S');
+        doc.text(header, x + colWidths[index] / 2, y + 7.8, { align: 'center' });
+        x += colWidths[index];
+      });
+      y += 12;
+    }
+    function newTablePage() {
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      textColor(palette.ink);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(17);
+      doc.text('General Information (lanjutan)', margin, 25);
+      y = 34;
+      drawHeader();
+    }
+
+    drawHeader();
+    rows.forEach(function (row, rowIndex) {
+      const cellLines = row.map(function (value, index) {
+        const maxWidth = Math.max(12, colWidths[index] - 8);
+        return doc.splitTextToSize(text(value, '-'), maxWidth).slice(0, 4);
+      });
+      const rowHeight = Math.max(11, Math.max.apply(null, cellLines.map(function (lines) { return lines.length; })) * lineHeight + 5.5);
+      if (y + rowHeight > bottomLimit) newTablePage();
+      fillColor(rowIndex % 2 ? [255, 255, 255] : [248, 250, 252]);
+      doc.rect(left, y, tableWidth, rowHeight, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.25);
+      textColor(palette.ink);
+      let x = left;
+      cellLines.forEach(function (lines, index) {
+        doc.rect(x, y, colWidths[index], rowHeight, 'S');
+        doc.setFont('helvetica', index === 0 ? 'bold' : 'normal');
+        doc.setFontSize(12.5);
+        const textY = y + rowHeight / 2 - ((lines.length - 1) * lineHeight) / 2 + 1.8;
+        if (index === 2) {
+          doc.text(lines, x + colWidths[index] / 2, textY, { align: 'center' });
+        } else {
+          doc.text(lines, x + 4, textY);
+        }
+        x += colWidths[index];
+      });
+      y += rowHeight;
+    });
+  }
+
+  function drawCrewSlide(doc, data, palette, pageWidth, pageHeight, margin) {
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    doc.setTextColor.apply(doc, palette.ink);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(19);
+    doc.text('General Information', margin, 25);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12.5);
+    drawLabelValue(doc, 'Hari, Tanggal', formatDayDate(data && data.tanggal), margin, 42, 40, 150, palette, { fontSize: 12.5, boldValue: true });
+
+    const crew = Array.isArray(data && data.crewList) ? data.crewList.filter(function (item) {
+      return text(item && item.name, '') || text(item && item.level, '');
+    }) : [];
+    const detail = getStoreDetail(data && data.store, data || {});
+    const rows = [
+      ['Store Head', text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-'), text(data && data.storeLeaderLevel, '-')],
+      ['Shift Leader', text(data && data.shiftLeader, '-'), text(data && data.shiftLeaderLevel, '-')]
+    ];
+    (crew.length ? crew : [{ name: '-', level: '-' }]).forEach(function (item, index) {
+      rows.push(['Crew Store ' + String(index + 1), text(item.name, '-'), text(item.level, '-')]);
+    });
+
+    drawCrewTable(doc, rows, palette, pageWidth, pageHeight, margin);
+  }
+
+  function drawStaticTitleSlide(doc, key, fallbackTitle, fallbackSubtitle, palette, pageWidth, pageHeight, margin) {
+    doc.addPage();
+    const ok = addBackground(doc, key, pageWidth, pageHeight);
+    if (!ok) {
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      doc.setTextColor.apply(doc, palette.primary);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(28);
+      doc.text(fallbackTitle, margin, pageHeight / 2 - 8);
+      doc.setTextColor(82, 82, 91);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(14);
+      doc.text(fallbackSubtitle, margin, pageHeight / 2 + 8);
+    }
+  }
+
+  function calcObservationColumnStyles(doc, rows, pageWidth, margin) {
+    const keys = ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'];
+    const header = ['Temuan', 'Kondisi Ideal', 'Dampak', 'Penyebab', 'Tindakan Perbaikan', 'Tanggal Perbaikan/Deadline', 'Hasil'];
+    const minWidths = [32, 34, 29, 29, 42, 30, 30];
+    const maxWidths = [62, 62, 52, 52, 76, 44, 56];
+    const available = pageWidth - margin * 2;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12.5);
+    const ideal = keys.map(function (key, index) {
+      let widestWord = doc.getTextWidth(header[index]);
+      let totalLength = header[index].length;
+      rows.forEach(function (row) {
+        const value = text(row[key], '');
+        totalLength += value.length;
+        value.split(/\s+/).forEach(function (word) {
+          if (word) widestWord = Math.max(widestWord, doc.getTextWidth(word));
+        });
+      });
+      const contentBias = Math.sqrt(Math.max(12, totalLength / Math.max(1, rows.length))) * 1.7;
+      const actionBias = index === 4 ? 8 : 0;
+      return Math.min(maxWidths[index], Math.max(minWidths[index], widestWord + 8 + contentBias + actionBias));
+    });
+    let total = ideal.reduce(function (sum, value) { return sum + value; }, 0);
+    let widths = ideal.slice();
+    if (total > available) {
+      const shrinkable = widths.map(function (value, index) { return Math.max(0, value - minWidths[index]); });
+      const shrinkTotal = shrinkable.reduce(function (sum, value) { return sum + value; }, 0) || 1;
+      const need = total - available;
+      widths = widths.map(function (value, index) {
+        return Math.max(minWidths[index], value - need * (shrinkable[index] / shrinkTotal));
+      });
+    } else if (total < available) {
+      let spare = available - total;
+      const growOrder = [4, 0, 1, 6, 2, 3, 5];
+      growOrder.forEach(function (index) {
+        if (spare <= 0) return;
+        const room = Math.max(0, maxWidths[index] - widths[index]);
+        const add = Math.min(room, spare * (index === 4 ? 0.5 : 0.22));
+        widths[index] += add;
+        spare -= add;
+      });
+      if (spare > 0) widths[4] += spare;
+    }
+    const after = widths.reduce(function (sum, value) { return sum + value; }, 0);
+    if (Math.abs(after - available) > 0.5) {
+      const scale = available / after;
+      widths = widths.map(function (value) { return value * scale; });
+    }
+    return widths.reduce(function (styles, width, index) {
+      styles[index] = { cellWidth: width };
+      if (index === 5) styles[index].halign = 'center';
+      return styles;
+    }, {});
+  }
+
+  function parseDeadlineDate(value) {
+    const raw = text(value, '');
+    if (!raw || raw === '-') return null;
+    const isoLike = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + 'T00:00:00' : raw;
+    const date = new Date(isoLike);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function deadlineHighlight(value) {
+    const due = parseDeadlineDate(value);
+    if (!due) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+    if (days <= 3) return { fill: [254, 226, 226], text: [153, 27, 27] };
+    if (days <= 7) return { fill: [220, 252, 231], text: [22, 101, 52] };
+    return { fill: [219, 234, 254], text: [30, 64, 175] };
+  }
+
+  function drawObservationStackPageHeader(doc, title, rowIndex, totalRows, row, palette, pageWidth, pageHeight, margin, continuation) {
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    drawTopBar(doc, title, palette, pageWidth);
+
+    const cardX = margin;
+    const cardW = pageWidth - margin * 2;
+    let y = 29;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Temuan ' + String(rowIndex + 1) + ' dari ' + String(totalRows) + (continuation ? ' - lanjutan' : ''), cardX, 25.2);
+
+    const titleLines = doc.splitTextToSize(text(row.temuan, 'Temuan ' + String(rowIndex + 1)), cardW - 18).slice(0, 3);
+    const titleH = Math.max(14, 8 + titleLines.length * 5.1);
+    doc.setFillColor.apply(doc, palette.primary);
+    doc.roundedRect(cardX, y, cardW, titleH, 4, 4, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.text(String(rowIndex + 1) + '. ' + titleLines[0], cardX + 7, y + 8.5);
+    if (titleLines.length > 1) {
+      doc.setFontSize(10.5);
+      doc.text(titleLines.slice(1), cardX + 7, y + 13.5);
+    }
+    return y + titleH + 5;
+  }
+
+  function drawObservationStackRow(doc, label, lines, x, y, width, labelWidth, rowHeight, palette, options) {
+    const opts = options || {};
+    const valueFill = opts.valueFill || [255, 255, 255];
+    const valueText = opts.valueText || palette.ink;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.22);
+    doc.setFillColor(236, 253, 245);
+    doc.roundedRect(x, y, labelWidth, rowHeight, 2.4, 2.4, 'FD');
+    doc.setFillColor.apply(doc, valueFill);
+    doc.roundedRect(x + labelWidth, y, width - labelWidth, rowHeight, 2.4, 2.4, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.2);
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.text(doc.splitTextToSize(label, labelWidth - 6), x + 3.2, y + 6.3);
+
+    doc.setFont('helvetica', opts.boldValue ? 'bold' : 'normal');
+    doc.setFontSize(8.8);
+    doc.setTextColor.apply(doc, valueText);
+    doc.text(lines.length ? lines : ['-'], x + labelWidth + 4, y + 6.1);
+  }
+
+  function fitLinesToBox(doc, value, width, maxLines) {
+    const lines = doc.splitTextToSize(text(value, '-'), width);
+    if (lines.length <= maxLines) return lines.length ? lines : ['-'];
+    const clipped = lines.slice(0, Math.max(1, maxLines));
+    const lastIndex = clipped.length - 1;
+    let last = clipped[lastIndex] || '';
+    while (last.length > 4 && doc.getTextWidth(last + '...') > width) last = last.slice(0, -1);
+    clipped[lastIndex] = (last || clipped[lastIndex]).replace(/[\s.,;:-]+$/g, '') + '...';
+    return clipped;
+  }
+
+  function makeObservationCompactRows(doc, row, tableWidth) {
+    const cellGap = 1.0;
+    const cellPadX = 2.2;
+    const fullW = tableWidth;
+    const halfW = (tableWidth - cellGap) / 2;
+    const valueFontSize = pdfTableFontSize();
+
+    function buildField(label, value, width, options) {
+      const opts = options || {};
+      doc.setFontSize(valueFontSize);
+      doc.setFont('helvetica', opts.boldValue ? 'bold' : 'normal');
+      const richLines = splitRichTextToLines(doc, value, width - cellPadX * 2, opts.boldValue);
+      return Object.assign({}, opts, {
+        label: label,
+        value: value,
+        rawValue: value,
+        richLines: richLines.length ? richLines : [[{ text: '-' }]],
+        lines: (richLines.length ? richLines : [[{ text: '-' }]]).map(richLineToText)
+      });
+    }
+
+    function chunkField(field, maxLines) {
+      const lines = field.richLines && field.richLines.length ? field.richLines : [[{ text: '-' }]];
+      const chunks = [];
+      for (let i = 0; i < lines.length; i += maxLines) {
+        chunks.push(Object.assign({}, field, {
+          label: field.label + (i > 0 ? ' (lanjutan)' : ''),
+          richLines: lines.slice(i, i + maxLines),
+          lines: lines.slice(i, i + maxLines).map(richLineToText)
+        }));
+      }
+      return chunks.length ? chunks : [Object.assign({}, field, { richLines: [[{ text: '-' }]], lines: ['-'] })];
+    }
+
+    function addFull(rows, field, maxLines) {
+      chunkField(field, maxLines).forEach(function (chunk) {
+        rows.push({ cells: [chunk], full: true });
+      });
+    }
+
+    function addPair(rows, leftField, rightField, maxLines) {
+      const leftChunks = chunkField(leftField, maxLines);
+      const rightChunks = chunkField(rightField, maxLines);
+      const total = Math.max(leftChunks.length, rightChunks.length);
+      for (let i = 0; i < total; i += 1) {
+        rows.push({ cells: [leftChunks[i] || null, rightChunks[i] || null], full: false });
+      }
+    }
+
+    const rows = [];
+    addFull(rows, buildField('Temuan', row.temuan || '-', fullW, { highlight: { fill: [254, 249, 195], text: [66, 32, 6] }, boldValue: true, labelColor: [133, 77, 14] }), 5);
+    addPair(
+      rows,
+      buildField('Kondisi Ideal', row.kondisiIdeal || '-', halfW),
+      buildField('Dampak', row.dampak || '-', halfW),
+      5
+    );
+    addFull(rows, buildField('Penyebab', row.penyebab || '-', fullW), 5);
+    addFull(rows, buildField('Tindakan Perbaikan', row.tindakan || '-', fullW), 6);
+    addFull(rows, buildField('Deadline', row.deadline ? formatDate(row.deadline) : '-', fullW, { highlight: deadlineHighlight(row.deadline), boldValue: true }), 2);
+    addFull(rows, buildField('Hasil', row.hasil || '-', fullW), 5);
+    return rows;
+  }
+
+  function observationCompactCellHeight(field) {
+    if (!field) return 0;
+    const fontSize = pdfTableFontSize();
+    const labelFontSize = pdfTableTitleFontSize();
+    const lineHeight = Math.max(3.35, fontSize * 0.405);
+    const lineCount = Math.max(1, (field.lines || ['-']).length);
+    const labelBlock = Math.max(7.6, pdfFieldTitleGap() + labelFontSize * 0.18);
+    return Math.max(fontSize + labelFontSize * 0.62, 2.4 + labelBlock + lineCount * lineHeight);
+  }
+
+  function observationCompactRowHeight(row) {
+    return Math.max.apply(null, row.cells.map(observationCompactCellHeight));
+  }
+
+  function drawObservationCompactCell(doc, field, x, y, width, height, palette, fillColor) {
+    if (!field) {
+      doc.setDrawColor(226, 232, 240);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
+      return;
+    }
+    const valueFill = field.highlight ? field.highlight.fill : fillColor;
+    const valueText = field.highlight ? field.highlight.text : [15, 23, 42];
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.28);
+    doc.setFillColor.apply(doc, valueFill);
+    doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
+
+    const valueFontSize = pdfTableFontSize();
+    const labelFontSize = pdfTableTitleFontSize();
+    const lineHeight = Math.max(3.35, valueFontSize * 0.405);
+    const labelY = y + Math.max(4.2, labelFontSize * 0.44);
+    const valueY = labelY + pdfFieldTitleGap();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(labelFontSize);
+    doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
+    doc.text(field.label, x + 2.2, labelY, { baseline: 'alphabetic' });
+
+    doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
+    doc.setFontSize(valueFontSize);
+    doc.setTextColor.apply(doc, valueText);
+    drawRichLines(doc, field.richLines || (field.lines || ['-']).map(function (line) { return [{ text: line }]; }), x + 2.2, valueY, lineHeight, { bold: field.boldValue, textColor: valueText, fontSize: valueFontSize });
+  }
+
+
+
+  function addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight) {
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    drawTopBar(doc, title, palette, pageWidth);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Ringkasan observasi - beberapa temuan per halaman', 12, 23.5);
+    return 27;
+  }
+
+  function buildObservationSummaryField(doc, label, value, width, options) {
+    const opts = options || {};
+    let fontSize = clampNumber(opts.fontSize || pdfTableFontSize() - 1.2, 6.3, 9.8, 7.6);
+    const maxInnerWidth = Math.max(12, width - 3.2);
+    let richLines = [];
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      doc.setFontSize(fontSize);
+      richLines = splitRichTextToLines(doc, value, maxInnerWidth, Boolean(opts.boldValue));
+      if (richLines.length <= (opts.preferredMaxLines || 6) || fontSize <= 6.2) break;
+      fontSize -= 0.25;
+    }
+    const lineHeight = Math.max(2.35, fontSize * 0.40);
+    const labelFontSize = clampNumber((opts.labelFontSize || pdfTableTitleFontSize() - 1.6), 6.4, 10.0, 7.4);
+    const contentHeight = 6.8 + Math.max(1, richLines.length) * lineHeight + 1.6;
+    return {
+      label: label,
+      richLines: richLines.length ? richLines : splitRichTextToLines(doc, '-', maxInnerWidth, Boolean(opts.boldValue)),
+      boldValue: Boolean(opts.boldValue),
+      highlight: opts.highlight || null,
+      labelColor: opts.labelColor || null,
+      valueText: opts.valueText || null,
+      fontSize: fontSize,
+      labelFontSize: labelFontSize,
+      lineHeight: lineHeight,
+      height: Math.max(opts.minHeight || 10.8, contentHeight)
+    };
+  }
+
+  function drawObservationSummaryField(doc, field, x, y, width, height, palette) {
+    const labelFontSize = field.labelFontSize || clampNumber(pdfTableTitleFontSize() - 1.6, 6.4, 10.0, 7.4);
+    const valueFontSize = field.fontSize || clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.6);
+    const fill = field.highlight && field.highlight.fill ? field.highlight.fill : [255, 255, 255];
+    const textColor = field.valueText || (field.highlight && field.highlight.text ? field.highlight.text : [15, 23, 42]);
+    const lineHeight = field.lineHeight || Math.max(2.35, valueFontSize * 0.40);
+    const insetX = 1.7;
+    const labelY = y + 3.3;
+    const valueY = y + 6.3;
+
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.34);
+    doc.setFillColor.apply(doc, fill);
+    doc.roundedRect(x, y, width, height, 1.2, 1.2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(labelFontSize);
+    doc.setTextColor.apply(doc, field.labelColor || [30, 64, 175]);
+    doc.text(field.label, x + insetX, labelY);
+
+    doc.setFont('helvetica', field.boldValue ? 'bold' : 'normal');
+    doc.setFontSize(valueFontSize);
+    doc.setTextColor.apply(doc, textColor);
+    drawRichLines(doc, field.richLines, x + insetX, valueY, lineHeight, {
+      bold: field.boldValue,
+      textColor: textColor,
+      fontSize: valueFontSize
+    });
+  }
+
+  function buildObservationSummaryCardLayout(doc, row, width) {
+    const pad = 2.4;
+    const headerH = 8.0;
+    const colGap = 1.4;
+    const rowGap = 1.1;
+    const colW = (width - pad * 2 - colGap) / 2;
+
+    const topLeft = buildObservationSummaryField(doc, 'Temuan', row.temuan || '-', colW, {
+      boldValue: true,
+      labelColor: [133, 77, 14],
+      highlight: { fill: [254, 249, 195], text: [66, 32, 6] },
+      fontSize: clampNumber(pdfTableFontSize() - 0.9, 6.4, 10.0, 7.8),
+      preferredMaxLines: 7,
+      minHeight: 13.4
+    });
+    const topRight = buildObservationSummaryField(doc, 'Dampak', row.dampak || '-', colW, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
+    });
+    const midLeft = buildObservationSummaryField(doc, 'Kondisi Ideal', row.kondisiIdeal || '-', colW, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
+    });
+    const midRight = buildObservationSummaryField(doc, 'Tindakan Perbaikan', row.tindakan || '-', colW, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 7,
+      minHeight: 13.0
+    });
+    const botLeft = buildObservationSummaryField(doc, 'Penyebab', row.penyebab || '-', colW, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
+    });
+    const botRight = buildObservationSummaryField(doc, 'Hasil', row.hasil || '-', colW, {
+      fontSize: clampNumber(pdfTableFontSize() - 1.2, 6.3, 9.8, 7.5),
+      preferredMaxLines: 5,
+      minHeight: 11.6
+    });
+
+    const row1H = Math.max(topLeft.height, topRight.height);
+    const row2H = Math.max(midLeft.height, midRight.height);
+    const row3H = Math.max(botLeft.height, botRight.height);
+    const contentH = row1H + row2H + row3H + rowGap * 2;
+    return {
+      pad: pad,
+      headerH: headerH,
+      colGap: colGap,
+      rowGap: rowGap,
+      colW: colW,
+      row1H: row1H,
+      row2H: row2H,
+      row3H: row3H,
+      cardHeight: headerH + 2.0 + contentH + 3.2,
+      fields: {
+        topLeft: topLeft,
+        topRight: topRight,
+        midLeft: midLeft,
+        midRight: midRight,
+        botLeft: botLeft,
+        botRight: botRight
+      }
+    };
+  }
+
+  function drawObservationSummaryCard(doc, row, rowIndex, totalRows, x, y, width, layout, palette) {
+    const pad = layout.pad;
+    const headerH = layout.headerH;
+    const colW = layout.colW;
+    const rowGap = layout.rowGap;
+    const leftX = x + pad;
+    const rightX = leftX + colW + layout.colGap;
+    const row1Y = y + headerH + 2.0;
+    const row2Y = row1Y + layout.row1H + rowGap;
+    const row3Y = row2Y + layout.row2H + rowGap;
+    const height = layout.cardHeight;
+
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.26);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, y, width, height, 2.4, 2.4, 'FD');
+    doc.setFillColor.apply(doc, palette.primary);
+    doc.roundedRect(x, y, width, headerH, 2.4, 2.4, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Temuan ' + String(rowIndex + 1) + '/' + String(totalRows), x + 3.2, y + 5.7);
+
+    const dueDate = row.deadline ? formatDate(row.deadline) : 'Belum diisi';
+    const dueLabel = 'Deadline Perbaikan: ' + dueDate;
+    const dueBadge = deadlineHighlight(row.deadline);
+    const badgeWidth = Math.min(82, Math.max(50, doc.getTextWidth(dueLabel) + 8));
+    const badgeX = x + width - badgeWidth - 3.0;
+    const badgeFill = dueBadge && dueBadge.fill ? dueBadge.fill : [237, 242, 247];
+    const badgeText = dueBadge && dueBadge.text ? dueBadge.text : [51, 65, 85];
+    doc.setFillColor.apply(doc, badgeFill);
+    doc.roundedRect(badgeX, y + 1.8, badgeWidth, 5.2, 2.2, 2.2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor.apply(doc, badgeText);
+    doc.text(dueLabel, badgeX + badgeWidth / 2, y + 5.2, { align: 'center' });
+
+    drawObservationSummaryField(doc, layout.fields.topLeft, leftX, row1Y, colW, layout.row1H, palette);
+    drawObservationSummaryField(doc, layout.fields.topRight, rightX, row1Y, colW, layout.row1H, palette);
+    drawObservationSummaryField(doc, layout.fields.midLeft, leftX, row2Y, colW, layout.row2H, palette);
+    drawObservationSummaryField(doc, layout.fields.midRight, rightX, row2Y, colW, layout.row2H, palette);
+    drawObservationSummaryField(doc, layout.fields.botLeft, leftX, row3Y, colW, layout.row3H, palette);
+    drawObservationSummaryField(doc, layout.fields.botRight, rightX, row3Y, colW, layout.row3H, palette);
+  }
+
+  function drawObservationTable(doc, title, rows, palette, pageWidth, pageHeight, margin) {
+    const cleanRows = normalizeRows(rows);
+    if (!cleanRows.length) return;
+
+    const sideMargin = 8;
+    const pageStartY = 27;
+    const contentBottom = pageHeight - 8;
+    const cardGap = 4.2;
+    const cardWidth = pageWidth - sideMargin * 2;
+    const maxCardsPerPage = 2;
+
+    let currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
+    let cardsOnPage = 0;
+
+    cleanRows.forEach(function (row, index) {
+      const layout = buildObservationSummaryCardLayout(doc, row, cardWidth);
+      const gapBefore = cardsOnPage > 0 ? cardGap : 0;
+      const remainingHeight = contentBottom - currentY;
+      const fitsCurrentPage = (layout.cardHeight + gapBefore) <= remainingHeight;
+
+      if (cardsOnPage >= maxCardsPerPage || (cardsOnPage > 0 && !fitsCurrentPage)) {
+        currentY = addObservationSummaryPage(doc, title, palette, pageWidth, pageHeight);
+        cardsOnPage = 0;
+      }
+
+      const drawY = currentY + (cardsOnPage > 0 ? cardGap : 0);
+      drawObservationSummaryCard(doc, row, index, cleanRows.length, sideMargin, drawY, cardWidth, layout, palette);
+      currentY = drawY + layout.cardHeight;
+      cardsOnPage += 1;
+    });
+  }
+
+  function getPortraitEvidenceCardMetrics(width, height) {
+    const padding = 3;
+    const gap = 3;
+    const innerW = Math.max(32, width - padding * 2 - gap);
+    const panelW = innerW / 2;
+    const innerH = Math.max(24, height - padding * 2);
+    return {
+      imgX: padding,
+      imgY: padding,
+      imgW: panelW,
+      imgH: innerH,
+      descX: padding + panelW + gap,
+      descY: padding,
+      descW: panelW,
+      descH: innerH
+    };
+  }
+
+  function buildPhotoGridItems(doc, photos, cardWidth, cardHeight) {
+    const evidenceFontSize = pdfEvidenceFontSize();
+    const lineHeight = Math.max(3.6, evidenceFontSize * 0.45);
+    const portraitMetrics = getPortraitEvidenceCardMetrics(cardWidth, cardHeight);
+    const maxLinesWithImage = Math.max(1, Math.floor((portraitMetrics.descH - 5) / lineHeight));
+    const maxLinesTextOnly = Math.max(2, Math.floor((cardHeight - 12) / lineHeight));
+    const textWidthWithImage = Math.max(12, portraitMetrics.descW - 4);
+    const textWidthOnly = Math.max(12, cardWidth - 12);
+    const items = [];
+    photos.forEach(function (photo, index) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(evidenceFontSize);
+      const richLines = splitRichTextToLines(doc, photo.description, textWidthWithImage, false);
+      const first = richLines.slice(0, maxLinesWithImage);
+      items.push({ image: photo.image, rawDescription: photo.description, richLines: first, lines: first.map(richLineToText), lineHeight: lineHeight, imageHeight: portraitMetrics.imgH, imageWidth: portraitMetrics.imgW, title: 'Foto ' + String(index + 1), continuation: false });
+      let rest = richLines.slice(maxLinesWithImage);
+      let continuationIndex = 1;
+      while (rest.length) {
+        const chunk = rest.slice(0, maxLinesTextOnly).map(function (line) {
+          return splitRichTextToLines(doc, richLineToText(line), textWidthOnly, false)[0] || line;
+        });
+        items.push({ image: '', rawDescription: chunk.map(richLineToText).join('\n'), richLines: chunk, lines: chunk.map(richLineToText), lineHeight: lineHeight, imageHeight: 0, imageSize: 0, title: 'Lanjutan deskripsi Foto ' + String(index + 1) + '.' + String(continuationIndex), continuation: true });
+        rest = rest.slice(maxLinesTextOnly);
+        continuationIndex += 1;
+      }
+    });
+    return items;
+  }
+
+  async function drawPhotoGridCard(doc, item, x, y, width, height, palette) {
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(148, 163, 184);
+    doc.setLineWidth(0.24);
+    doc.roundedRect(x, y, width, height, 3, 3, 'FD');
+
+    const evidenceFontSize = pdfEvidenceFontSize();
+    const evidenceLineHeight = item.lineHeight || Math.max(3.6, evidenceFontSize * 0.45);
+    let descX = x + 3;
+    let descY = y + 4.2;
+    let descW = width - 6;
+    let descHeight = height - 8;
+
+    if (item.image) {
+      const metrics = getPortraitEvidenceCardMetrics(width, height);
+      const imgX = x + metrics.imgX;
+      const imgY = y + metrics.imgY;
+      const imgW = metrics.imgW;
+      const imgH = metrics.imgH;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(imgX, imgY, imgW, imgH, 2.5, 2.5, 'F');
+      const added = await addImageInBox(doc, item.image, imgX, imgY, imgW, imgH, 'coverCrop');
+      if (!added) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.8);
+        doc.setTextColor(100, 116, 139);
+        doc.text('No photo', imgX + imgW / 2, imgY + imgH / 2, { align: 'center' });
+      }
+      descX = x + metrics.descX;
+      descY = y + metrics.descY;
+      descW = metrics.descW;
+      descHeight = metrics.descH;
+    }
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(descX, descY, descW, Math.max(8, descHeight), 2.5, 2.5, 'F');
+    let textY = descY + 3.1;
+    if (item.continuation) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(clampNumber(evidenceFontSize - 1.1, 7.2, 9.2, 7.6));
+      const continuationTitleColor = palette && palette.primary ? palette.primary : [30, 64, 175];
+      doc.setTextColor.apply(doc, continuationTitleColor);
+      doc.text(item.title, descX + 2, textY, { baseline: 'top' });
+      textY += Math.max(4.2, evidenceLineHeight);
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(evidenceFontSize);
+    doc.setTextColor(15, 23, 42);
+    drawRichLines(doc, item.richLines || (item.lines || ['-']).map(function (line) { return [{ text: line }]; }), descX + 2, textY, evidenceLineHeight, { textColor: [15, 23, 42], fontSize: evidenceFontSize, textOptions: { baseline: 'top' } });
+  }
+
+  async function drawPhotoSlides(doc, title, subtitle, templateKey, photos, palette, pageWidth, pageHeight, margin) {
+    const cleanPhotos = normalizePhotos(photos);
+    if (!cleanPhotos.length) return;
+
+    drawStaticTitleSlide(doc, templateKey, title, subtitle, palette, pageWidth, pageHeight, margin);
+
+    const preferredGrid = pdfPhotoGridPerPage();
+    const columns = preferredGrid === 4 ? 2 : preferredGrid === 8 ? 4 : 3;
+    const rowsPerPage = 2;
+    const maxPerPage = columns * rowsPerPage;
+    const gap = preferredGrid === 8 ? 3.0 : 3.6;
+    const contentTop = 22;
+    const contentBottom = pageHeight - 9;
+    const cardWidth = (pageWidth - margin * 2 - gap * (columns - 1)) / columns;
+    const cardHeight = (contentBottom - contentTop - gap * (rowsPerPage - 1)) / rowsPerPage;
+    const items = buildPhotoGridItems(doc, cleanPhotos, cardWidth, cardHeight);
+
+    function newPhotoPage() {
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      drawTopBar(doc, title + ' - Evidence Photos', palette, pageWidth);
+    }
+
+    for (let index = 0; index < items.length; index += 1) {
+      if (index % maxPerPage === 0) newPhotoPage();
+      const slot = index % maxPerPage;
+      const col = slot % columns;
+      const row = Math.floor(slot / columns);
+      const x = margin + col * (cardWidth + gap);
+      const y = contentTop + row * (cardHeight + gap);
+      await drawPhotoGridCard(doc, items[index], x, y, cardWidth, cardHeight, palette);
+    }
+  }
+
+  function drawAssignmentSlide(doc, data, palette, pageWidth, pageHeight, margin) {
+    drawStaticTitleSlide(doc, 'assignmentTitle', 'Store Assignment', 'Corrective Action Purpose', palette, pageWidth, pageHeight, margin);
+
+    doc.addPage();
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor.apply(doc, palette.ink);
+    doc.text('Mekanisme pelaporan', margin, 30);
+
+    let y = 47;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor.apply(doc, palette.primary);
+    doc.text(getAssignmentLink(data), margin, y);
+    y += 17;
+
+    doc.setTextColor.apply(doc, palette.ink);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12.5);
+    const steps = [
+      '1. Unduh file pada link di atas.',
+      '2. Tim store mengisi form tersebut berdasarkan temuan yang telah ditunjukkan pada file laporan ini.',
+      '3. Tindakan perbaikan WAJIB dilakukan sebelum deadline yang diberikan oleh Regional Bestie.',
+      '4. Form tindakan perbaikan yang telah dibuat WAJIB dikirimkan kembali via email dengan terusan: Regional Manager, Area Manager, Regional Bestie, dan FMCU.'
+    ];
+    steps.forEach(function (step) {
+      y = addWrapped(doc, step, margin, y, pageWidth - margin * 2, 7.2);
+      y += 4;
+    });
+  }
+
+  async function createDocument(data) {
+    if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('Library jsPDF belum tersedia. Pastikan koneksi internet aktif saat membuka halaman.');
+    const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: [320, 180] });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+    const palette = { primary: [0, 153, 166], accent: [249, 115, 22], ink: [39, 39, 42] };
+    const detail = getStoreDetail(data && data.store, data || {});
+
+    drawCover(doc, data || {}, detail, palette, pageWidth, pageHeight, margin);
+    await drawQscResultSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
+    drawCrewSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
+
+    const opiRows = normalizeRows(data && data.opiData);
+    const qscRows = normalizeRows(data && data.qscData);
+    if (data && opiRows.length) {
+      drawStaticTitleSlide(doc, 'opiTitle', 'OPI Project Observation', 'Findings & Root Cause Analysis', palette, pageWidth, pageHeight, margin);
+      drawObservationTable(doc, 'OPI Project Observation', opiRows, palette, pageWidth, pageHeight, margin);
+    }
+    if (data && qscRows.length) {
+      drawStaticTitleSlide(doc, 'qscTitle', 'QSC Observation', 'Findings & Root Cause Analysis', palette, pageWidth, pageHeight, margin);
+      drawObservationTable(doc, 'QSC Observation', qscRows, palette, pageWidth, pageHeight, margin);
+    }
+    if (data && data.showFindingEvidence === true) await drawPhotoSlides(doc, 'Finding Evidence', 'of OPI & QSC Observation', 'findingTitle', data.findingEvidencePhotos, palette, pageWidth, pageHeight, margin);
+    if (data && data.showCorrectiveAction === true) await drawPhotoSlides(doc, 'Corrective Action Evidence & Result', 'by Regional Bestie', 'correctiveTitle', data.correctiveActionPhotos, palette, pageWidth, pageHeight, margin);
+    drawAssignmentSlide(doc, data || {}, palette, pageWidth, pageHeight, margin);
+    applyFooterAllPages(doc, pageWidth, pageHeight);
+    return doc;
+  }
+
+  async function createBlob(data) {
+    const doc = await createDocument(data);
+    return doc.output('blob');
+  }
+
+  async function save(data) {
+    const doc = await createDocument(data);
+    doc.save(buildFileName(data));
+  }
+
+  window.ReportVisitPDF = { createDocument: createDocument, createBlob: createBlob, save: save, buildFileName: buildFileName };
+})();

@@ -1,0 +1,19 @@
+// Cloudflare D1 legacy/fallback connection config for Bestie Visit Report.
+//
+// MODE 1 - Cloudflare Worker standalone:
+// Isi endpoint dengan URL Worker kamu, contoh:
+//   endpoint: 'https://visitreport-rbv-api.NAMA-AKUN.workers.dev'
+//
+// MODE 2 - Cloudflare Pages Functions di domain yang sama:
+// Biarkan endpoint kosong dan pakai apiPath '/api/rbv-data'.
+
+window.RB_CLOUDFLARE_CONFIG = {
+  enabled: false,
+  endpoint: 'https://visitreport-rbv-api.domainsquizzberry.workers.dev',
+  // Standalone Worker sudah memakai endpoint root. Jangan append /api/rbv-data.
+  apiPath: '',
+  adminToken: '',
+  pollMs: 5000,
+  monitorLimit: 500,
+  presenceLimit: 300
+};
