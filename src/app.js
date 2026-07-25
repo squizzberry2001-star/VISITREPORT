@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v42';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v43';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -7560,7 +7560,7 @@ function applyRemoteAppConfigRows(rows) {
         if (row.key === APP_CONFIG_KEYS.webSync)
             applySilentWebSyncSignal(row.payload);
         if (row.key === APP_CONFIG_KEYS.features) {
-            localStorage.setItem('rbv_features_config_v1', JSON.stringify(row.value));
+            localStorage.setItem('rbv_features_config_v1', JSON.stringify(row.payload));
             window.dispatchEvent(new Event('rbv-features-config-change'));
         }
         if (row.key === APP_CONFIG_KEYS.schedule) {
