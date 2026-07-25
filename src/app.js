@@ -3794,8 +3794,8 @@ function LeaderboardItem({ lb, idx }) {
     const [expanded, setExpanded] = useState(false);
     
     let narasi = "Belum Ada Kunjungan 🚀";
-    if (lb.totalVisits > 0) {
-        if (lb.totalVisits >= lb.totalAssigned && lb.totalAssigned > 0) narasi = "Target Achieved! 🎯";
+    if (lb.uniqueStoresMonthly > 0) {
+        if (lb.uniqueStoresMonthly >= lb.totalAssigned && lb.totalAssigned > 0) narasi = "Target Achieved! 🎯";
         else if (idx === 0) narasi = "Top Performer Bulan Ini 🔥";
         else if (idx <= 2) narasi = "Great Progress ⭐";
         else narasi = "On Progress 💪";
@@ -3803,37 +3803,54 @@ function LeaderboardItem({ lb, idx }) {
 
     return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
         React.createElement("div", { 
-            className: "flex items-center justify-between p-4 sm:p-5 cursor-pointer text-audit-ink select-none", 
+            className: "flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer text-audit-ink select-none gap-3 sm:gap-4", 
             onClick: () => setExpanded(!expanded) 
         },
-            React.createElement("div", { className: "flex items-center gap-4" },
-                React.createElement("div", { className: "w-11 h-11 rounded-full flex items-center justify-center font-black text-xl " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
-                React.createElement("div", { className: "min-w-0" },
-                    React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate flex items-center gap-2" }, lb.name, idx === 0 ? React.createElement("span", { className: "px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[9px] font-black text-white rounded-full uppercase tracking-widest shadow-sm" }, "MVP") : null),
-                    lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') }, "\u{1F4C5} ", ((lb.todaySchedule.description || '').replace(/^Agenda\\s*:\\s*/i, '').split('\\n')[0] || 'Terjadwal').slice(0, 35)) : React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200" }, "\u{1F4F4} OFF"),
-                    React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
+            // Left side: Avatar + Info
+            React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
+                React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
+                React.createElement("div", { className: "min-w-0 flex-1" },
+                    React.createElement("h4", { className: "font-bold text-sm text-audit-ink truncate flex items-center gap-2" }, lb.name, idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null),
+                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
                 )
             ),
-            React.createElement("div", { className: "flex items-center gap-4 shrink-0" },
-                React.createElement("div", { className: "text-right" },
-                    React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
-                        React.createElement("span", { className: "text-2xl font-black leading-none" }, lb.totalVisits),
-                        React.createElement("span", { className: "text-sm font-bold text-slate-400" }, "/", lb.totalAssigned)
+            // Right side: Badges + Score + Toggle
+            React.createElement("div", { className: "flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto ml-12 sm:ml-0" },
+                // Badges W/M/Y
+                React.createElement("div", { className: "flex items-center gap-1.5" },
+                    React.createElement("div", { className: "flex flex-col items-center bg-slate-50 rounded-md px-2 py-0.5 border border-slate-100", title: "Kunjungan Minggu Ini" },
+                        React.createElement("span", { className: "text-[8px] font-bold text-slate-400 uppercase" }, "Week"),
+                        React.createElement("span", { className: "text-[11px] font-black text-slate-700" }, lb.rawWeekly || 0)
                     ),
-                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-1 text-slate-400 hidden sm:block" }, "Kunjungan Unik (Mingguan)")
+                    React.createElement("div", { className: "flex flex-col items-center bg-indigo-50 rounded-md px-2 py-0.5 border border-indigo-100", title: "Kunjungan Bulan Ini" },
+                        React.createElement("span", { className: "text-[8px] font-bold text-indigo-400 uppercase" }, "Month"),
+                        React.createElement("span", { className: "text-[11px] font-black text-indigo-700" }, lb.rawMonthly || 0)
+                    ),
+                    React.createElement("div", { className: "flex flex-col items-center bg-emerald-50 rounded-md px-2 py-0.5 border border-emerald-100", title: "Kunjungan Tahun Ini" },
+                        React.createElement("span", { className: "text-[8px] font-bold text-emerald-400 uppercase" }, "Year"),
+                        React.createElement("span", { className: "text-[11px] font-black text-emerald-700" }, lb.rawAnnually || 0)
+                    )
                 ),
-                React.createElement("button", { className: `w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}` },
+                // Main Score
+                React.createElement("div", { className: "text-right border-l border-slate-100 pl-3 flex-1 sm:flex-none flex justify-end" },
+                    React.createElement("div", { className: "flex items-baseline justify-end gap-1" },
+                        React.createElement("span", { className: "text-xl font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
+                        React.createElement("span", { className: "text-xs font-bold text-slate-400" }, "/", lb.totalAssigned)
+                    ),
+                    React.createElement("p", { className: "text-[9px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400" }, "Toko/Bulan")
+                ),
+                React.createElement("button", { className: `w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 shrink-0 ${expanded ? 'rotate-180' : ''}` },
                     React.createElement(Icon, { name: "chevron-down", className: "w-4 h-4" })
                 )
             )
         ),
-        expanded && React.createElement("div", { className: "px-4 pb-4 sm:px-5 sm:pb-5 border-t border-slate-100 bg-slate-50/50 pt-4" },
+        expanded && React.createElement("div", { className: "px-4 pb-4 border-t border-slate-100 bg-slate-50/50 pt-4" },
             (!lb.visitHistory || lb.visitHistory.length === 0) ? 
-                React.createElement("p", { className: "text-sm text-slate-400 text-center font-medium py-2" }, "Belum ada rincian history di Convex.") :
+                React.createElement("p", { className: "text-sm text-slate-400 text-center font-medium py-2" }, "Belum ada rincian history bulan ini.") :
                 React.createElement("ul", { className: "space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar" },
-                    lb.visitHistory.map((v, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm" },
-                        React.createElement("span", { className: "font-bold text-sm text-slate-700 truncate pr-3" }, v.storeName),
-                        React.createElement("span", { className: "text-[11px] font-bold text-slate-400 shrink-0 bg-slate-100 px-2.5 py-1 rounded-md" }, v.dateStr)
+                    lb.visitHistory.map((v, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm gap-2" },
+                        React.createElement("span", { className: "font-bold text-[13px] text-slate-700 truncate" }, v.storeName),
+                        React.createElement("span", { className: "text-[10px] font-bold text-slate-400 shrink-0 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md" }, v.dateStr)
                     ))
                 )
         )
@@ -3996,12 +4013,23 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 let emailFeedbackCount = 0;
                 
                 const bestieMap = {};
-                BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { name, totalVisits: 0, totalAssigned: 0, uniqueWeeklyVisits: new Set(), visitHistory: [] });
+                BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { 
+                    name, 
+                    uniqueStoresMonthly: 0, 
+                    totalAssigned: 0, 
+                    uniqueStoresSet: new Set(), 
+                    uniqueWeeklyVisits: new Set(), // Retained if needed for other logic
+                    rawAnnually: 0,
+                    rawMonthly: 0,
+                    rawWeekly: 0,
+                    visitHistory: [] 
+                });
                 BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
                 const now = new Date();
                 const currentMonth = now.getMonth();
                 const currentYear = now.getFullYear();
+                const currentMondayStr = getMonday(now);
                 const allMonths = [];
                 for (let i = 5; i >= 0; i--) {
                     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -4029,23 +4057,35 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
 
                     if (bk && bestieMap[bk]) {
                         const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
+                        const isCurrentYear = vDate.getFullYear() === currentYear;
+                        const isCurrentMonth = isCurrentYear && vDate.getMonth() === currentMonth;
+                        const mondayStr = getMonday(vDate);
+                        const isCurrentWeek = mondayStr === currentMondayStr;
                         
-                        if (vDate.getMonth() === currentMonth && vDate.getFullYear() === currentYear) {
-                            const rawStore = r.store_name || r.storeName || 'Unknown Store';
-                            
-                            bestieMap[bk].visitHistory.push({
-                                storeName: rawStore,
-                                date: vDate,
-                                dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                            });
+                        if (isCurrentYear) bestieMap[bk].rawAnnually++;
+                        if (isCurrentMonth) bestieMap[bk].rawMonthly++;
+                        if (isCurrentWeek) bestieMap[bk].rawWeekly++;
 
+                        if (isCurrentMonth) {
+                            const rawStore = r.store_name || r.storeName || 'Unknown Store';
                             const storeName = normalize(r.store_name || r.storeName || '');
-                            const mondayStr = getMonday(vDate);
-                            const uniqueKey = `${storeName}_${mondayStr}`;
                             
+                            // Weekly unique logic (from user's past request)
+                            const uniqueKey = `${storeName}_${mondayStr}`;
                             if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
                                 bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
-                                bestieMap[bk].totalVisits++;
+                                // add to history only if it's the first time this week
+                                bestieMap[bk].visitHistory.push({
+                                    storeName: rawStore,
+                                    date: vDate,
+                                    dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                                });
+                            }
+                            
+                            // Monthly unique stores (for the main ratio UI)
+                            if (!bestieMap[bk].uniqueStoresSet.has(storeName)) {
+                                bestieMap[bk].uniqueStoresSet.add(storeName);
+                                bestieMap[bk].uniqueStoresMonthly++;
                             }
                         }
                     }
@@ -4294,7 +4334,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         // Leaderboard
         features?.leaderboard !== false ? React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
             React.createElement("h3", { className: "text-2xl font-black text-slate-800 mb-6" }, "Leaderboard Kinerja Bestie"),
-            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" },
+            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" },
                 data?.leaderboard?.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx }))
             )
         ) : null
