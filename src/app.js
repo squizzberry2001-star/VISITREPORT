@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v43';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v45';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -4472,9 +4472,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             setNotificationBusy(false);
         }
     }
-    return (React.createElement("main", { className: "dashboard-page flex w-full min-h-screen flex-col bg-slate-50 pb-24" },
+    return (React.createElement("main", { className: "dashboard-page flex w-full max-w-lg mx-auto min-h-screen flex-col bg-slate-50 shadow-2xl relative pb-24 md:border-x md:border-slate-200" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
-        React.createElement("section", { className: "dashboard-compact w-full overflow-hidden p-4 md:p-6 pb-20 bg-white" },
+        React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full overflow-hidden p-4 md:p-6 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-sm" },
             React.createElement("div", { className: "flex items-start justify-between gap-3" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
@@ -4489,8 +4489,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement("div", { className: "fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-[90] pb-[env(safe-area-inset-bottom,0px)]" },
-            React.createElement("div", { className: "flex items-center justify-around h-[70px] max-w-lg mx-auto px-2" },
+        React.createElement("div", { className: "fixed bottom-0 left-0 right-0 z-[90] pointer-events-none pb-[env(safe-area-inset-bottom,0px)]" },
+            React.createElement("div", { className: "mx-auto max-w-lg w-full bg-white/85 backdrop-blur-xl border-t border-slate-200/60 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] pointer-events-auto" },
+                React.createElement("div", { className: "flex items-center justify-around h-[70px] px-2" },
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('home'), 
@@ -4506,6 +4507,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     onClick: () => setActiveTab('utility'), 
                     className: cx("flex flex-col items-center justify-center w-full h-full space-y-1 transition-all", activeTab === 'utility' ? "text-audit-primary" : "text-slate-400 hover:text-slate-600") 
                 }, React.createElement(Icon, { name: "settings", className: cx("w-6 h-6 transition-transform", activeTab==='utility'&&"scale-110") }), React.createElement("span", { className: cx("text-[10px] font-black", activeTab==='utility'?"opacity-100":"opacity-70") }, "Utiliti"))
+                )
             )
         ),
         activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in space-y-4 px-4 py-6 pb-28 max-w-lg mx-auto w-full" },
@@ -4545,9 +4547,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 React.createElement("h2", { className: "history-title-with-count text-lg font-black tracking-tight text-slate-950 md:text-2xl" },
                     React.createElement("span", null, "History Kunjungan"),
                     React.createElement("strong", { className: "history-count-inline" }, history.length))),
-            history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-3 md:grid-cols-2 xl:grid-cols-3" },
-                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-[22px] p-4 transition hover:-translate-y-0.5 hover:shadow-soft md:p-5" },
-                    React.createElement("div", { className: "mb-3 flex items-start justify-between gap-3" },
+            history.length ? React.createElement("div", { className: "dashboard-history-list grid gap-3" },
+                visibleHistory.map((item) => React.createElement("article", { key: item.id, className: "history-card surface-card rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-slate-200/70 hover:border-audit-primary/30" },
+                    React.createElement("div", { className: "mb-4 flex items-start justify-between gap-3" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("p", { className: "truncate text-base font-extrabold text-slate-950 md:text-lg" }, item.storeName),
                             React.createElement("p", { className: "mt-1 truncate text-xs text-slate-500" }, item.bestieName)),
@@ -4621,9 +4623,9 @@ function StoreSearchSelect({ label, value, options, onChange, placeholder, disab
                 )
             )
         ),
-        open ? React.createElement("div", { className: "fixed inset-0 z-[100] bg-white flex flex-col fade-in animate-slide-up", role: "dialog", style: { width: '100%', height: '100%' } },
-            React.createElement("div", { className: "w-full h-full flex flex-col bg-white safe-area-pt safe-area-pb" },
-                React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 px-5 py-4 shrink-0" },
+        open ? React.createElement("div", { className: "fixed inset-0 z-[100] flex justify-center bg-slate-950/40 backdrop-blur-sm fade-in", role: "dialog" },
+            React.createElement("div", { className: "w-full max-w-lg h-full flex flex-col bg-slate-50 relative animate-slide-up shadow-2xl md:mt-12 md:h-[calc(100%-48px)] md:rounded-t-3xl overflow-hidden safe-area-pb" },
+                React.createElement("div", { className: "flex items-center justify-between border-b border-slate-200/60 bg-white/85 backdrop-blur-xl px-5 py-4 shrink-0 z-10 sticky top-0" },
                     React.createElement("h3", { className: "text-lg font-black text-audit-ink" }, "Pilih Store"),
                     React.createElement(Button, { variant: "icon", onClick: () => setOpen(false), "aria-label": "Tutup" },
                         React.createElement(Icon, { name: "close", className: "h-4 w-4" })
@@ -4744,9 +4746,9 @@ function NewVisitModal({ open, onClose, onCreate }) {
     if (!open)
         return null;
     const visitStoreName = manualOpen ? cleanText(manualStoreName) : storeName;
-    return (React.createElement("div", { className: "fixed inset-0 z-[110] bg-white flex flex-col fade-in animate-slide-up", role: "dialog", "aria-modal": "true", style: { width: '100%', height: '100%' } },
-        React.createElement("div", { className: "new-visit-modal w-full h-full flex flex-col bg-slate-50 relative" },
-            React.createElement("div", { className: "flex items-start justify-between gap-3 p-5 border-b border-slate-200 bg-white shadow-sm shrink-0 sticky top-0 z-10" },
+    return (React.createElement("div", { className: "fixed inset-0 z-[110] flex justify-center bg-slate-950/40 backdrop-blur-sm fade-in", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "new-visit-modal w-full max-w-lg h-full flex flex-col bg-slate-50 relative animate-slide-up shadow-2xl md:mt-12 md:h-[calc(100%-48px)] md:rounded-t-[32px] overflow-hidden" },
+            React.createElement("div", { className: "flex items-start justify-between gap-3 p-5 border-b border-slate-200/60 bg-white/85 backdrop-blur-xl shadow-sm shrink-0 sticky top-0 z-20" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Kunjungan Baru"),
                     React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store"),
