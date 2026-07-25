@@ -28,7 +28,7 @@ const DEFAULT_UPDATE_NOTICE_CONFIG = {
   enabled: true,
   title: 'Info Update Website',
   messages: [
-    
+  
     'Area ini untuk mengumumkan perubahan fitur, maintenance, atau instruksi terbaru.'
   ],
   intervalSeconds: 4
@@ -1115,7 +1115,6 @@ function StoreDetailCard({ detail }) {
     ['Store Head', detail.storeHead || '-'],
     ['Area Manager', detail.areaManager || '-'],
     ['Regional Manager', detail.regionalManager || '-'],
-    ['Email Store', detail.emailStore || '-'],
     ['Alamat', detail.address || detail.storeAddress || '-']
   ];
   return (
@@ -1162,10 +1161,12 @@ function distanceBetweenTouches(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+const ORIGINAL_PHOTO_CROP_RATIO = { key: 'original', label: 'Default', original: true };
 const PDF_PHOTO_CROP_RATIO = { key: 'pdf', label: 'PDF Portrait', w: 9, h: 16 };
 const QSC_PHOTO_CROP_RATIO = { key: 'qsc', label: 'QSC', w: 4, h: 3 };
-const PHOTO_EDITOR_RATIOS = [PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
+const PHOTO_EDITOR_RATIOS = [ORIGINAL_PHOTO_CROP_RATIO, PDF_PHOTO_CROP_RATIO, QSC_PHOTO_CROP_RATIO];
 function ratioToAspectString(ratio) {
+  if (ratio && ratio.original) return '';
   return ratio && ratio.w && ratio.h ? `${ratio.w} / ${ratio.h}` : '';
 }
 
@@ -1179,6 +1180,10 @@ function getEditorCanvasSize(imageElement, ratio = PHOTO_EDITOR_RATIOS[0]) {
   const sourceWidth = Math.max(1, imageElement?.naturalWidth || imageElement?.width || 1080);
   const sourceHeight = Math.max(1, imageElement?.naturalHeight || imageElement?.height || 1080);
   const maxSide = 1400;
+  if (ratio?.original) {
+    const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+    return { width: Math.max(360, Math.round(sourceWidth * scale)), height: Math.max(360, Math.round(sourceHeight * scale)) };
+  }
   if (ratio?.w && ratio?.h) {
     const targetRatio = ratio.w / ratio.h;
     let width = maxSide;
@@ -1212,7 +1217,7 @@ function PhotoEditorModal({ open, image, onClose, onSave, title = 'Edit Foto', c
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [markers, setMarkers] = useState([]);
   const [mode, setMode] = useState('move');
-  const activeCropRatio = cropRatio && cropRatio.w && cropRatio.h ? cropRatio : PDF_PHOTO_CROP_RATIO;
+  const activeCropRatio = ORIGINAL_PHOTO_CROP_RATIO;
   const [selectedRatio, setSelectedRatio] = useState(activeCropRatio);
   const [markerSize, setMarkerSize] = useState('medium');
   const [canvasSize, setCanvasSize] = useState({ width: 1080, height: 1080 });
@@ -1549,6 +1554,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorImageOverride, setEditorImageOverride] = useState('');
 
   async function handleFiles(event) {
     const file = event.target.files && event.target.files[0];
@@ -1556,6 +1562,8 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
     try {
       const dataUrl = await fileToDataUrl(file);
       onChange({ ...(value || blankPhoto()), image: dataUrl, cropAspect: matchCropFrame ? ratioToAspectString(cropRatio) : '' });
+      setEditorImageOverride(dataUrl);
+      window.setTimeout(() => setEditorOpen(true), 0);
       setEditorOpen(true);
     } catch (error) {
       alert('Foto gagal dibaca. Coba pilih ulang foto.');
@@ -1581,7 +1589,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
     <div className={cx('photo-input-card surface-card overflow-hidden rounded-[26px]', matchCropFrame && 'match-crop-frame')} style={cardStyle}>
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{label}{required ? <span className="ml-1 text-rose-600">*</span> : null}</p></div>
-        <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => setEditorOpen(true)} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
+        <div className="flex shrink-0 gap-2">{value?.image ? <Button variant="icon" onClick={() => { setEditorImageOverride(''); setEditorOpen(true); }} aria-label="Edit crop dan marker"><Icon name="crop" className="h-4 w-4" /></Button> : null}{value?.image ? <Button variant="icon" onClick={clearPhoto} aria-label="Hapus foto"><Icon name="trash" className="h-4 w-4" /></Button> : null}</div>
       </div>
       <div className={cx('photo-frame relative grid place-items-center overflow-hidden', value?.image ? 'has-image' : '', compact ? 'min-h-[150px]' : 'min-h-[210px]')}>
         {value?.image ? <img src={value.image} alt={label} /> : <div className="flex flex-col items-center px-5 text-center text-slate-500"><div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-white text-audit-primary shadow-sm"><Icon name="image" className="h-7 w-7" /></div><p className="text-sm font-bold text-slate-700">Upload foto</p></div>}
@@ -1590,7 +1598,7 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
       <div className="border-t border-slate-200 p-3">
         {rich ? <RichTextInput value={description} onChange={(nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription })} placeholder="Deskripsi foto..." minHeight={92} /> : <TextArea value={description} onChange={(event) => onChange({ ...(value || blankPhoto()), description: event.target.value })} placeholder="Deskripsi foto..." minRows={2} />}
       </div>
-      <PhotoEditorModal open={editorOpen} image={value?.image || ''} title={label} cropRatio={cropRatio} onClose={() => setEditorOpen(false)} onSave={(editedImage, meta) => onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' })} />
+      <PhotoEditorModal open={editorOpen} image={editorImageOverride || value?.image || ''} title={label} cropRatio={cropRatio} onClose={() => { setEditorOpen(false); setEditorImageOverride(''); }} onSave={(editedImage, meta) => { setEditorImageOverride(''); onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }); }} />
     </div>
   );
 }
@@ -2297,7 +2305,166 @@ function HomeUpdateNotice({ config }) {
   );
 }
 
+function AnalyticsView() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({ totalStores: 0, monthlyBesties: [], monthlyVisits: [] });
+  const chartRef = useRef(null);
+  const chartInstance = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadData() {
+      setLoading(true);
+      try {
+        const rows = await fetchMonitorRowsFromConvex();
+        if (cancelled || !rows) return;
+        
+        const storeCodes = new Set();
+        const bestiesByMonth = {};
+        const visitsByMonth = {};
+
+        rows.forEach(row => {
+          if (row.store_code) storeCodes.add(row.store_code.trim());
+          else if (row.store_name) storeCodes.add(row.store_name.trim());
+          
+          let dateStr = row.visit_date || row.updated_at || '';
+          let monthMatch = dateStr.match(/^(\d{4}-\d{2})/);
+          if (!monthMatch) {
+            try {
+               const d = new Date(dateStr);
+               if (!isNaN(d)) {
+                 monthMatch = [null, `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`];
+               }
+            } catch (e) {}
+          }
+          const month = monthMatch ? monthMatch[1] : 'Unknown';
+          
+          if (!bestiesByMonth[month]) bestiesByMonth[month] = new Set();
+          if (row.bestie_name) bestiesByMonth[month].add(row.bestie_name.trim());
+          
+          if (!visitsByMonth[month]) visitsByMonth[month] = 0;
+          visitsByMonth[month] += 1;
+        });
+
+        const sortedMonths = Object.keys(visitsByMonth).filter(m => m !== 'Unknown').sort();
+        const monthlyBestiesData = sortedMonths.map(m => ({ month: m, count: bestiesByMonth[m] ? bestiesByMonth[m].size : 0 }));
+        const monthlyVisitsData = sortedMonths.map(m => ({ month: m, count: visitsByMonth[m] || 0 }));
+
+        setData({
+          totalStores: storeCodes.size,
+          monthlyBesties: monthlyBestiesData,
+          monthlyVisits: monthlyVisitsData,
+          labels: sortedMonths
+        });
+      } catch (error) {
+        console.warn('Gagal fetch data analytics:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (loading || !chartRef.current || !data.labels || data.labels.length === 0) return;
+    
+    if (chartInstance.current) {
+      chartInstance.current.destroy();
+    }
+    
+    if (typeof window.Chart === 'undefined') {
+      console.warn('Chart.js tidak dimuat. Pastikan ada tag script Chart.js di index.html');
+      return;
+    }
+
+    const ctx = chartRef.current.getContext('2d');
+    chartInstance.current = new window.Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            label: 'Jumlah Kunjungan (Tren)',
+            data: data.monthlyVisits.map(d => d.count),
+            backgroundColor: 'rgba(15, 118, 110, 0.7)',
+            borderColor: 'rgba(15, 118, 110, 1)',
+            borderWidth: 1,
+            borderRadius: 4,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Jumlah Bestie Aktif',
+            type: 'line',
+            data: data.monthlyBesties.map(d => d.count),
+            backgroundColor: 'rgba(234, 179, 8, 1)',
+            borderColor: 'rgba(234, 179, 8, 1)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(255, 255, 255, 1)',
+            pointBorderColor: 'rgba(234, 179, 8, 1)',
+            tension: 0.3,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Visits' } },
+          y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Besties' } }
+        }
+      }
+    });
+    
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
+  }, [loading, data]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <span className="loading-spinner" aria-hidden="true"></span>
+        <p className="ml-3 text-slate-500 font-semibold">Memuat data analitik...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="analytics-view space-y-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm">
+          <p className="text-sm font-semibold text-slate-500 mb-1">Total Store Dikunjungi</p>
+          <p className="text-5xl font-black text-slate-900 tracking-tight">{data.totalStores}</p>
+        </div>
+        <div className="glass-panel p-6 rounded-[24px] flex flex-col justify-center items-center shadow-sm">
+          <p className="text-sm font-semibold text-slate-500 mb-1">Total Kunjungan Keseluruhan</p>
+          <p className="text-5xl font-black text-audit-primary tracking-tight">{data.monthlyVisits.reduce((acc, curr) => acc + curr.count, 0)}</p>
+        </div>
+      </div>
+      
+      <div className="glass-panel p-5 rounded-[24px] shadow-sm">
+        <h3 className="text-lg font-bold text-slate-900 mb-4 px-1">Tren Kunjungan & Aktivitas Bestie (Bulanan)</h3>
+        {data.labels && data.labels.length > 0 ? (
+          <div className="relative w-full overflow-hidden" style={{ height: '320px' }}>
+            <canvas ref={chartRef}></canvas>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-12 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="text-slate-500 font-medium">Belum ada data yang cukup untuk menampilkan grafik.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
+  const [activeTab, setActiveTab] = useState('home');
   const [installOpen, setInstallOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [backupBusy, setBackupBusy] = useState(false);
@@ -2408,7 +2575,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             </button>
           </div>
         </div>
-        <div className="mt-3" data-build="revamp66-home-nav-loading-secret-spark-pdf-spacing">
+        <div className="mt-3" data-build="revamp82-preview-send-email-gmail-api">
           <input ref={restoreInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleRestoreFile} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button type="button" className={cx('flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 px-2 text-[10px] font-extrabold leading-none text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 active:scale-[0.98]', backupBusy && 'pointer-events-none opacity-60')} onClick={handleBackupData} aria-label="Backup data" title="Backup data">
@@ -2444,9 +2611,18 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         </div>
       </section>
 
-      <HomeUpdateNotice config={noticeConfig} />
+      <div className="flex justify-center my-4 w-full px-2">
+        <div className="flex bg-slate-200/70 p-1.5 rounded-[18px] w-full max-w-sm shadow-inner gap-1">
+           <button type="button" onClick={() => setActiveTab('home')} className={cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'home' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700")}>Beranda</button>
+           <button type="button" onClick={() => setActiveTab('analytics')} className={cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'analytics' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700")}>Analitik</button>
+        </div>
+      </div>
 
-      <section className="dashboard-history-section">
+      {activeTab === 'home' ? (
+        <>
+          <HomeUpdateNotice config={noticeConfig} />
+
+          <section className="dashboard-history-section">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-lg font-black tracking-tight text-slate-950 md:text-2xl">History Kunjungan</h2>
         </div>
@@ -2474,28 +2650,35 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
           <EmptyState icon="clipboard" title="Belum ada history" />
         )}
       </section>
-      <button
-        type="button"
-        className="inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]"
-        style={{
-          position: 'fixed',
-          left: '50%',
-          bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
-          transform: 'translateX(-50%)',
-          zIndex: 80,
-          width: 'min(360px, calc(100vw - 32px))',
-          height: '56px',
-          background: '#0f766e',
-          opacity: 1,
-          backdropFilter: 'none',
-          WebkitBackdropFilter: 'none'
-        }}
-        onClick={onNewVisit}
-        aria-label="Buat kunjungan baru"
-      >
-        <Icon name="plus" className="h-5 w-5" />
-        <span>Kunjungan Baru</span>
-      </button>
+      </>
+      ) : (
+        <AnalyticsView />
+      )}
+      
+      {activeTab === 'home' && (
+        <button
+          type="button"
+          className="inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+            transform: 'translateX(-50%)',
+            zIndex: 80,
+            width: 'min(360px, calc(100vw - 32px))',
+            height: '56px',
+            background: '#0f766e',
+            opacity: 1,
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none'
+          }}
+          onClick={onNewVisit}
+          aria-label="Buat kunjungan baru"
+        >
+          <Icon name="plus" className="h-5 w-5" />
+          <span>Kunjungan Baru</span>
+        </button>
+      )}
       <InstallGuideModal open={installOpen} onClose={() => setInstallOpen(false)} deferredPrompt={deferredPrompt} onPromptUsed={() => setDeferredPrompt(null)} />
     </main>
   );
@@ -2621,6 +2804,98 @@ async function downloadBlobManaged(blob, fileName) {
   if (saved === 'cancelled') return false;
   if (!saved) downloadBlob(blob, fileName);
   return true;
+}
+
+
+function getEmailReportConfig() {
+  const config = window.VISIT_EMAIL_CONFIG || {};
+  return {
+    enabled: config.enabled !== false,
+    endpoint: cleanText(config.endpoint, '/api/send-report-email'),
+    sender: cleanText(config.sender, 'Sender belum diset'),
+    defaultTo: cleanText(config.defaultTo),
+    defaultCc: cleanText(config.defaultCc),
+    defaultSubjectTemplate: cleanText(config.defaultSubjectTemplate, 'Visit Report - {store} - {date}'),
+    defaultBodyTemplate: cleanText(config.defaultBodyTemplate, 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.')
+  };
+}
+
+function applyEmailTemplate(template, visit) {
+  const map = {
+    '{store}': cleanText(visit?.store, '-'),
+    '{bestie}': cleanText(visit?.nama, '-'),
+    '{date}': formatDate(visit?.tanggal),
+    '{storeHead}': cleanText(visit?.storeHead || visit?.detail?.storeHead || visit?.storeDetail?.storeHead, '-'),
+    '{siteCode}': cleanText(visit?.siteCode || visit?.storeCode || visit?.detail?.siteCode, '-')
+  };
+  return Object.keys(map).reduce((text, key) => text.split(key).join(map[key]), String(template || ''));
+}
+
+function getVisitStoreEmail(visit) {
+  return cleanText(visit?.emailStore || visit?.storeEmail || visit?.detail?.emailStore || visit?.storeDetail?.emailStore);
+}
+
+function buildInitialEmailForm(visit) {
+  const config = getEmailReportConfig();
+  return {
+    from: config.sender,
+    to: getVisitStoreEmail(visit) || config.defaultTo,
+    cc: config.defaultCc,
+    subject: applyEmailTemplate(config.defaultSubjectTemplate, visit),
+    body: applyEmailTemplate(config.defaultBodyTemplate, visit),
+    passcode: '',
+    attachPdf: true,
+    attachExcel: true
+  };
+}
+
+function blobToBase64Payload(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      resolve(text.includes(',') ? text.split(',').pop() : text);
+    };
+    reader.onerror = () => reject(reader.error || new Error('Gagal membaca file attachment.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, status, visit }) {
+  if (!open) return null;
+  const config = getEmailReportConfig();
+  return (
+    <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6" role="dialog" aria-modal="true">
+      <div className="w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-3xl md:rounded-[32px] md:p-7">
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Send Email</p>
+            <h2 className="mt-2 text-2xl font-black text-slate-950">Kirim Visit Report</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Sender dikunci dari backend: {config.sender}</p>
+          </div>
+          <Button variant="icon" onClick={onClose} disabled={busy} aria-label="Tutup"><Icon name="close" className="h-4 w-4" /></Button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="From / Sender Locked"><TextInput value={form.from || config.sender} readOnly placeholder="Sender backend" /></Field>
+          <Field label="To" required><TextInput type="email" value={form.to} onChange={(e) => onChange({ to: e.target.value })} placeholder="email tujuan" /></Field>
+          <Field label="CC"><TextInput value={form.cc} onChange={(e) => onChange({ cc: e.target.value })} placeholder="cc1@email.com, cc2@email.com" /></Field>
+          <Field label="Kode Kirim" helper="Isi jika EMAIL_SEND_PASSCODE diset di Vercel."><TextInput type="password" value={form.passcode} onChange={(e) => onChange({ passcode: e.target.value })} placeholder="Opsional" /></Field>
+          <div className="md:col-span-2"><Field label="Subject" required><TextInput value={form.subject} onChange={(e) => onChange({ subject: e.target.value })} placeholder="Subject email" /></Field></div>
+          <div className="md:col-span-2"><Field label="Body Email" required><TextArea value={form.body} onChange={(e) => onChange({ body: e.target.value })} placeholder="Tulis isi email..." minRows={7} /></Field></div>
+        </div>
+        <div className="mt-4 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-800 md:grid-cols-2">
+          <label className="flex items-center gap-3"><input type="checkbox" checked={!!form.attachPdf} onChange={(e) => onChange({ attachPdf: e.target.checked })} /> Attach PDF Report</label>
+          <label className="flex items-center gap-3"><input type="checkbox" checked={!!form.attachExcel} onChange={(e) => onChange({ attachExcel: e.target.checked })} /> Attach Excel CA Assignment</label>
+        </div>
+        {status ? <p className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 ring-1 ring-emerald-100">{status}</p> : null}
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={onClose} disabled={busy}>Tutup</Button>
+          <Button variant="secondary" icon="pdf" onClick={() => onSubmit('draft')} disabled={busy || !form.to || !form.subject}>{busy ? 'Memproses...' : 'Create Draft'}</Button>
+          <Button icon="upload" onClick={() => onSubmit('send')} disabled={busy || !form.to || !form.subject}>{busy ? 'Memproses...' : 'Send Now'}</Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function PdfCanvasPreview({ blob, pdfUrl, status }) {
@@ -2815,6 +3090,10 @@ function PreviewPage({ visit, onBack }) {
   const [busy, setBusy] = useState(false);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState('');
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailStatus, setEmailStatus] = useState('');
+  const [emailForm, setEmailForm] = useState(() => buildInitialEmailForm(visit));
 
   useEffect(() => {
     let cancelled = false;
@@ -2838,6 +3117,10 @@ function PreviewPage({ visit, onBack }) {
     render();
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [visit]);
+
+  useEffect(() => {
+    if (!emailOpen) setEmailForm(buildInitialEmailForm(visit));
+  }, [visit, emailOpen]);
 
   async function handleDownloadPdf() {
     if (!visit || busy || downloadBusy) return;
@@ -2863,13 +3146,77 @@ function PreviewPage({ visit, onBack }) {
   }
   async function handleExportExcel() { if (!visit) return; if (!window.__caAssignmentExport?.buildWorkbook) { alert('Mesin export Excel belum siap.'); return; } setBusy(true); try { const blob = await window.__caAssignmentExport.buildWorkbook(visit); const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx'; downloadBlob(blob, fileName); } catch (error) { alert(error?.message || 'Gagal export Excel CA Assignment.'); } finally { setBusy(false); } }
 
+  function openEmailReportModal() {
+    if (!visit || busy || downloadBusy) return;
+    setEmailForm(buildInitialEmailForm(visit));
+    setEmailStatus('');
+    setEmailOpen(true);
+  }
+
+  async function handleSendReportEmail(mode) {
+    if (!visit || emailBusy) return;
+    const config = getEmailReportConfig();
+    if (!config.enabled) {
+      alert('Fitur email belum aktif di email-config.js.');
+      return;
+    }
+    if (!cleanText(emailForm.to) || !cleanText(emailForm.subject)) {
+      alert('To dan Subject wajib diisi.');
+      return;
+    }
+    setEmailBusy(true);
+    setBusy(true);
+    setEmailStatus('Menyiapkan attachment...');
+    try {
+      const attachments = [];
+      if (emailForm.attachPdf) {
+        if (!window.ReportVisitPDF?.createBlob) throw new Error('Mesin PDF belum siap. Refresh halaman lalu coba lagi.');
+        const blob = pdfBlob || await window.ReportVisitPDF.createBlob(visit);
+        const fileName = window.ReportVisitPDF.buildFileName ? window.ReportVisitPDF.buildFileName(visit) : 'Regional_Bestie_Visit_Report.pdf';
+        attachments.push({ filename: fileName, mimeType: 'application/pdf', dataBase64: await blobToBase64Payload(blob) });
+      }
+      if (emailForm.attachExcel) {
+        if (!window.__caAssignmentExport?.buildWorkbook) throw new Error('Mesin export Excel belum siap.');
+        const blob = await window.__caAssignmentExport.buildWorkbook(visit);
+        const fileName = 'CA_Store_Assignment_' + cleanText(visit.store, 'Store').replace(/\s+/g, '_') + '.xlsx';
+        attachments.push({ filename: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', dataBase64: await blobToBase64Payload(blob) });
+      }
+      setEmailStatus(mode === 'send' ? 'Mengirim email...' : 'Membuat draft email...');
+      const response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          to: emailForm.to,
+          cc: emailForm.cc,
+          subject: emailForm.subject,
+          body: emailForm.body,
+          passcode: emailForm.passcode,
+          attachments,
+          visitMeta: { store: visit.store, bestie: visit.nama, tanggal: visit.tanggal }
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.ok === false) throw new Error(result.error || 'Gagal mengirim email.');
+      setEmailStatus(mode === 'send' ? 'Email berhasil dikirim.' : 'Draft Gmail berhasil dibuat.');
+      window.setTimeout(() => setEmailOpen(false), 800);
+    } catch (error) {
+      alert(error?.message || 'Gagal memproses email.');
+      setEmailStatus('');
+    } finally {
+      setEmailBusy(false);
+      setBusy(false);
+    }
+  }
+
   if (!visit) return <main className="preview-page w-full px-4 py-8 md:px-8"><EmptyState icon="pdf" title="Belum ada visit aktif" action={<Button variant="secondary" onClick={onBack}>Kembali</Button>} /></main>;
 
   return (
     <main className="preview-page w-full px-4 py-4 md:px-8 md:py-8">
       {downloadBusy ? <div className="download-pdf-overlay" role="status" aria-live="polite"><div className="download-pdf-loader"><span className="download-pdf-spinner" aria-hidden="true" /><strong>{downloadMessage || 'Menyiapkan PDF...'}</strong><p>Jangan tutup halaman sampai file manager muncul.</p></div></div> : null}
+      <EmailReportModal open={emailOpen} form={emailForm} onChange={(patch) => setEmailForm((state) => ({ ...state, ...patch }))} onClose={() => setEmailOpen(false)} onSubmit={handleSendReportEmail} busy={emailBusy} status={emailStatus} visit={visit} />
       <div className="preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary">Preview PDF</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Review Report</h1></div><div className="preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide">Progress</p><p className="text-sm font-black">{visitProgress(visit)}%</p></div><ProgressBar value={visitProgress(visit)} /><ProgressMissingInfo visit={visit} maxItems={4} compact /></div></div>
-      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon={downloadBusy ? null : "download"} onClick={handleDownloadPdf} disabled={busy || downloadBusy}>{downloadBusy ? 'Memproses...' : 'Download PDF'}</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy || downloadBusy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
+      <div className="preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]"><div className="preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{visit.store || 'Store belum dipilih'}</p><p className="truncate text-xs text-slate-500">{visit.nama || 'Bestie belum dipilih'} • {formatDate(visit.tanggal)}</p></div><div className="preview-actions flex flex-wrap gap-2"><Button variant="secondary" icon="left" onClick={onBack}>Kembali</Button><Button icon={downloadBusy ? null : "download"} onClick={handleDownloadPdf} disabled={busy || downloadBusy}>{downloadBusy ? 'Memproses...' : 'Download PDF'}</Button><Button variant="secondary" icon="excel" onClick={handleExportExcel} disabled={busy || downloadBusy} className="excel-export-button"><span className="text-left leading-tight"><span className="block">Export Excel CA Assigment</span><span className="block text-[11px] font-semibold text-slate-500">file untuk feedback store</span></span></Button><Button icon="upload" onClick={openEmailReportModal} disabled={busy || downloadBusy}>Send Email</Button></div></div><div className="preview-frame-wrap"><PdfCanvasPreview blob={pdfBlob} pdfUrl={pdfUrl} status={status} /></div></div>
     </main>
   );
 }
