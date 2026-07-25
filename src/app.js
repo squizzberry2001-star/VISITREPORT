@@ -6468,10 +6468,19 @@ function PreviewPage({ visit, update, onBack }) {
                 React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'),
                 React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null,
         React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
-        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end" },
-            React.createElement("div", null,
-                React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
-                React.createElement("h1", { className: "mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review Report")),
+        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-30 bg-slate-50 pt-4 pb-2 sm:static sm:bg-transparent sm:pt-0 sm:pb-0" },
+            React.createElement("div", { className: "flex items-center gap-4 sm:block" },
+                React.createElement("button", { 
+                    onClick: onBack, 
+                    className: "sm:hidden w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600 shrink-0" 
+                },
+                    React.createElement(Icon, { name: "left", className: "w-5 h-5" })
+                ),
+                React.createElement("div", null,
+                    React.createElement("p", { className: "text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Preview PDF"),
+                    React.createElement("h1", { className: "mt-0.5 sm:mt-1 text-xl sm:text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Review Report")
+                )
+            ),
             React.createElement("div", { className: "preview-progress-card rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900 ring-1 ring-emerald-100" },
                 React.createElement("div", { className: "mb-2 flex items-center justify-between gap-3" },
                     React.createElement("p", { className: "text-xs font-bold uppercase tracking-wide" }, "Progress"),
@@ -9097,7 +9106,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
         { key: 'audit', label: 'Flow', icon: 'clipboard', action: goAudit, active: screen === 'audit' },
         { key: 'preview', label: 'PDF', icon: 'pdf', action: goPreview, active: screen === 'preview' }
     ];
-    if (screen === 'audit') return null; // Hide on form visit as requested
+    if (screen === 'audit' || screen === 'preview') return null; // Hide on form visit and preview as requested
 
     return (React.createElement("nav", { className: "mobile-floating-nav fixed bottom-4 left-1/2 z-50 flex w-[90%] max-w-sm -translate-x-1/2 items-center justify-around rounded-full bg-slate-900/90 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 lg:hidden", "aria-label": "Mobile system navigation" },
         items.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('relative flex flex-1 flex-col items-center justify-center rounded-full py-2.5 transition-all active:scale-95', item.active ? 'text-white' : 'text-slate-400 hover:text-slate-200'), onClick: item.action },
@@ -9133,20 +9142,20 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
     };
 
     if (viewMode === 'grid') {
-        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-6 lg:px-8 lg:py-8 min-h-screen bg-slate-50 flex flex-col" },
-            React.createElement("div", { className: "mb-8 flex flex-col items-center text-center" },
-                React.createElement("div", { className: "w-20 h-20 bg-audit-primary/10 rounded-full flex items-center justify-center mb-4" },
-                    React.createElement(Icon, { name: "clipboard", className: "w-10 h-10 text-audit-primary" })
+        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 lg:px-8 min-h-screen bg-slate-50 flex flex-col" },
+            React.createElement("div", { className: "mb-6 flex flex-col items-center text-center sticky top-0 z-30 bg-slate-50 pt-6 pb-2 border-b border-slate-200/50 sm:static sm:border-0 sm:pt-6 sm:pb-4" },
+                React.createElement("div", { className: "w-16 h-16 sm:w-20 sm:h-20 bg-audit-primary/10 rounded-full flex items-center justify-center mb-3 sm:mb-4" },
+                    React.createElement(Icon, { name: "clipboard", className: "w-8 h-8 sm:w-10 sm:h-10 text-audit-primary" })
                 ),
-                React.createElement("h2", { className: "text-2xl font-black text-slate-900" }, "Form Kunjungan"),
-                React.createElement("p", { className: "mt-1 text-sm font-bold text-slate-500 max-w-sm px-4" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
-                React.createElement("div", { className: "w-full max-w-xs mt-6 bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner" },
+                React.createElement("h2", { className: "text-xl sm:text-2xl font-black text-slate-900" }, "Form Kunjungan"),
+                React.createElement("p", { className: "mt-1 text-xs sm:text-sm font-bold text-slate-500 max-w-sm px-4" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
+                React.createElement("div", { className: "w-full max-w-xs mt-4 sm:mt-6 bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner" },
                     React.createElement("div", { className: "bg-gradient-to-r from-audit-secondary to-audit-primary h-2.5 rounded-full transition-all duration-500", style: { width: `${overallProgress}%` } })
                 ),
-                React.createElement("p", { className: "mt-2 text-xs font-bold text-slate-400" }, overallProgress, "% Complete")
+                React.createElement("p", { className: "mt-2 text-[10px] sm:text-xs font-bold text-slate-400" }, overallProgress, "% Complete")
             ),
             
-            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-6 flex-1 mb-8" },
+            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-6 flex-1 mb-8 pt-2 sm:pt-0" },
                 SECTION_DEFS.map((section, idx) => {
                     const secProgress = visitProgress(visit, idx);
                     const isComplete = secProgress === 100;
@@ -9174,9 +9183,9 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         ));
     }
 
-    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
+    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-0 sm:py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
         // Simplified Mobile Header (Only visible in section mode)
-        React.createElement("div", { className: "flex items-center justify-center relative mb-6 pt-2" },
+        React.createElement("div", { className: "flex items-center justify-center relative mb-4 sm:mb-6 pt-4 pb-3 sm:pt-2 sticky top-0 z-30 bg-slate-50 sm:static sm:bg-transparent" },
             React.createElement("button", { 
                 onClick: () => setViewMode('grid'),
                 className: "absolute left-0 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600"
@@ -9201,7 +9210,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                 React.createElement("div", { className: "h-full bg-audit-primary transition-all duration-500 ease-out", style: { width: `${progress}%` } }))),
         
         // Wizard Content Card
-        React.createElement("div", { className: "rounded-[32px] bg-white p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100" },
+        React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-6 md:p-8 sm:shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:border sm:border-slate-100 pt-2 sm:pt-0 pb-10 sm:pb-0" },
             React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection]))
             
         ));
