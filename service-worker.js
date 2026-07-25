@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-leaderboard-accordion-history-v21';
-const CACHE_NAME = `bestie-visit-revamp281-leaderboard-accordion-history-v21`;
+const APP_VERSION = 'revamp281-history-all-data-v22';
+const CACHE_NAME = `bestie-visit-revamp281-history-all-data-v22`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',

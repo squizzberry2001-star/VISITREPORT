@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-leaderboard-accordion-history-v21';
+const APP_BUILD_VERSION = 'revamp281-history-all-data-v22';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3792,8 +3792,8 @@ function LeaderboardItem({ lb, idx }) {
         ),
         expanded && React.createElement("div", { className: "px-4 pb-4 sm:px-5 sm:pb-5 border-t border-slate-100 bg-slate-50/50 pt-4" },
             (!lb.visitHistory || lb.visitHistory.length === 0) ? 
-                React.createElement("p", { className: "text-sm text-slate-400 text-center font-medium py-2" }, "Belum ada rincian history bulan ini.") :
-                React.createElement("ul", { className: "space-y-2" },
+                React.createElement("p", { className: "text-sm text-slate-400 text-center font-medium py-2" }, "Belum ada rincian history di Convex.") :
+                React.createElement("ul", { className: "space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar" },
                     lb.visitHistory.map((v, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm" },
                         React.createElement("span", { className: "font-bold text-sm text-slate-700 truncate pr-3" }, v.storeName),
                         React.createElement("span", { className: "text-[11px] font-bold text-slate-400 shrink-0 bg-slate-100 px-2.5 py-1 rounded-md" }, v.dateStr)
@@ -3854,22 +3854,25 @@ function AnalyticsView({ history }) {
                     const bk = normalize(r.bestie_name || r.bestieName || '');
                     if (bk && bestieMap[bk]) {
                         const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
+                        const rawStore = r.store_name || r.storeName || 'Unknown Store';
                         
-                        // Auto refresh setiap bulan
+                        // Selalu masukkan ke history agar semua data dari Convex terlihat
+                        bestieMap[bk].visitHistory.push({
+                            storeName: rawStore,
+                            date: vDate,
+                            dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                        });
+
+                        // Score / Total Visits Leaderboard HANYA dihitung untuk bulan berjalan
+                        // dan difilter unik per toko per minggu.
                         if (vDate.getMonth() === currentMonth && vDate.getFullYear() === currentYear) {
                             const storeName = normalize(r.store_name || r.storeName || '');
-                            const rawStore = r.store_name || r.storeName || 'Unknown Store';
                             const mondayStr = getMonday(vDate);
                             const uniqueKey = `${storeName}_${mondayStr}`;
                             
                             if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
                                 bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
                                 bestieMap[bk].totalVisits++;
-                                bestieMap[bk].visitHistory.push({
-                                    storeName: rawStore,
-                                    date: vDate,
-                                    dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-                                });
                             }
                         }
                     }
