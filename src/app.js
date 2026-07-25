@@ -3646,7 +3646,99 @@ function MasterStoreDetailModal({ open, onClose }) {
                     React.createElement("span", null, "Coba cari dengan kode toko, nama store, Area Manager, atau Regional Manager."))))));
 }
 
+function AnalyticsView() {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadData() {
+            try {
+                setLoading(true);
+                const rows = await fetchMonitorRowsFromConvex();
+                if (cancelled) return;
+                
+                const storeSet = new Set();
+                const visitByMonth = {};
+                const bestieByMonth = {};
+                let totalTemuan = 0;
+                
+                rows.forEach(r => {
+                    if (r.store) storeSet.add(r.store);
+                    const d = new Date(r.updatedAt || Date.now());
+                    const m = d.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+                    
+                    visitByMonth[m] = (visitByMonth[m] || 0) + 1;
+                    
+                    if (!bestieByMonth[m]) bestieByMonth[m] = new Set();
+                    if (r.nama) bestieByMonth[m].add(r.nama);
+                    
+                    if (r.progress < 100) totalTemuan++;
+                });
+                
+                const bestieCountByMonth = {};
+                for (const m in bestieByMonth) {
+                    bestieCountByMonth[m] = bestieByMonth[m].size;
+                }
+                
+                setData({
+                    totalStores: storeSet.size,
+                    visitByMonth,
+                    bestieCountByMonth,
+                    totalTemuan
+                });
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+        loadData();
+        return () => { cancelled = true; };
+    }, []);
+
+    if (loading) {
+        return React.createElement("div", { className: "py-10 text-center text-slate-500 flex flex-col items-center justify-center" },
+            React.createElement("span", { className: "loading-spinner inline-block mb-3" }),
+            React.createElement("p", { className: "font-bold" }, "Mengambil data analitik global...")
+        );
+    }
+
+    return React.createElement("div", { className: "analytics-view-container px-2 py-2" },
+        React.createElement("div", { className: "grid grid-cols-2 gap-3 mb-4" },
+            React.createElement("div", { className: "surface-card p-4 rounded-2xl text-center shadow-sm" },
+                React.createElement("p", { className: "text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "Total Store Dikunjungi"),
+                React.createElement("p", { className: "text-3xl font-black text-audit-primary mt-1" }, data?.totalStores || 0)
+            ),
+            React.createElement("div", { className: "surface-card p-4 rounded-2xl text-center shadow-sm" },
+                React.createElement("p", { className: "text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "Visit dgn Temuan (Open)"),
+                React.createElement("p", { className: "text-3xl font-black text-rose-600 mt-1" }, data?.totalTemuan || 0)
+            )
+        ),
+        React.createElement("div", { className: "surface-card p-5 rounded-[24px] shadow-sm" },
+            React.createElement("h3", { className: "text-sm font-black text-slate-800 mb-4 flex items-center gap-2" }, 
+                React.createElement(Icon, { name: "document", className: "h-4 w-4 text-audit-primary" }),
+                "Tren Kunjungan Bulanan"
+            ),
+            React.createElement("div", { className: "space-y-3" },
+                Object.keys(data?.visitByMonth || {}).length === 0 ? 
+                    React.createElement("p", { className: "text-sm text-slate-400 text-center py-2" }, "Belum ada data") :
+                    Object.entries(data?.visitByMonth || {}).map(([month, count]) => 
+                    React.createElement("div", { key: month, className: "flex justify-between items-center text-sm border-b border-slate-100 pb-2 last:border-0 last:pb-0" },
+                        React.createElement("div", null,
+                            React.createElement("span", { className: "text-slate-700 font-bold block" }, month),
+                            React.createElement("span", { className: "text-[10px] text-slate-400" }, (data?.bestieCountByMonth?.[month] || 0) + " Bestie aktif")
+                        ),
+                        React.createElement("span", { className: "font-black text-audit-primary bg-teal-50 px-3 py-1 rounded-full" }, count + " visit")
+                    )
+                )
+            )
+        )
+    );
+}
+
 function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
+    const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
@@ -3893,7 +3985,22 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement(HomeUpdateNotice, { config: noticeConfig }),
+        React.createElement("div", { className: "flex justify-center my-4 w-full px-2" },
+            React.createElement("div", { className: "flex bg-slate-200/70 p-1.5 rounded-[18px] w-full max-w-sm shadow-inner gap-1" },
+                React.createElement("button", { 
+                    type: "button", 
+                    onClick: () => setActiveTab('home'), 
+                    className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'home' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700") 
+                }, "Beranda"),
+                React.createElement("button", { 
+                    type: "button", 
+                    onClick: () => setActiveTab('analytics'), 
+                    className: cx("flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300", activeTab === 'analytics' ? "bg-white text-audit-primary shadow" : "text-slate-500 hover:text-slate-700") 
+                }, "Analitik")
+            )
+        ),
+        activeTab === 'home' ? React.createElement(React.Fragment, null,
+            React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
             React.createElement("div", { className: "dashboard-history-title mb-2 flex items-center justify-between gap-3" },
                 React.createElement("h2", { className: "history-title-with-count text-lg font-black tracking-tight text-slate-950 md:text-2xl" },
@@ -3918,7 +4025,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
                             React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
                 hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
-                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" }))),
+                React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
+        ) : React.createElement(AnalyticsView, null),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
