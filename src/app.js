@@ -3803,47 +3803,51 @@ function LeaderboardItem({ lb, idx }) {
 
     return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
         React.createElement("div", { 
-            className: "flex flex-col p-4 cursor-pointer text-audit-ink select-none gap-4", 
+            className: "flex flex-col p-4 cursor-pointer text-audit-ink select-none gap-3 sm:gap-4", 
             onClick: () => setExpanded(!expanded) 
         },
-            // Top side: Avatar + Info + Toggle
+            // Top Row: Avatar + Name + Toggle
             React.createElement("div", { className: "flex items-start justify-between w-full" },
-                React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
-                    React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
+                React.createElement("div", { className: "flex items-center gap-3 min-w-0 pr-2" },
+                    React.createElement("div", { className: "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-lg sm:text-xl " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
                     React.createElement("div", { className: "min-w-0 flex-1" },
-                        React.createElement("h4", { className: "font-bold text-sm text-audit-ink truncate flex items-center gap-2" }, lb.name, idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null),
-                        React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
+                        React.createElement("h4", { className: "font-bold text-[13px] sm:text-[15px] text-audit-ink truncate flex items-center gap-2" }, lb.name),
+                        React.createElement("div", { className: "flex items-center gap-1.5 flex-wrap mt-0.5" },
+                            idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] sm:text-[9px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null,
+                            React.createElement("p", { className: "text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-audit-primary truncate" }, narasi)
+                        )
                     )
                 ),
-                React.createElement("button", { className: `w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 shrink-0 ml-2 mt-1 ${expanded ? 'rotate-180' : ''}` },
+                React.createElement("button", { className: `w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}` },
                     React.createElement(Icon, { name: "chevron-down", className: "w-4 h-4" })
                 )
             ),
-            // Bottom side: Badges + Score
-            React.createElement("div", { className: "flex items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100" },
+            // Bottom Row: Badges + Score
+            React.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 gap-3" },
                 // Badges W/M/Y
-                React.createElement("div", { className: "flex items-center gap-2" },
-                    React.createElement("div", { className: "flex flex-col items-center bg-slate-50 rounded-md px-2 py-0.5 border border-slate-100", title: "Kunjungan Minggu Ini" },
+                React.createElement("div", { className: "flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-between sm:justify-start" },
+                    React.createElement("div", { className: "flex flex-col items-center bg-white rounded-md px-2 py-1 border border-slate-200 shadow-sm flex-1 sm:flex-none", title: "Kunjungan Minggu Ini" },
                         React.createElement("span", { className: "text-[8px] font-bold text-slate-400 uppercase" }, "Week"),
                         React.createElement("span", { className: "text-[11px] font-black text-slate-700" }, lb.rawWeekly || 0)
                     ),
-                    React.createElement("div", { className: "flex flex-col items-center bg-indigo-50 rounded-md px-2 py-0.5 border border-indigo-100", title: "Kunjungan Bulan Ini" },
-                        React.createElement("span", { className: "text-[8px] font-bold text-indigo-400 uppercase" }, "Month"),
+                    React.createElement("div", { className: "flex flex-col items-center bg-indigo-50 rounded-md px-2 py-1 border border-indigo-200 shadow-sm flex-1 sm:flex-none", title: "Kunjungan Bulan Ini" },
+                        React.createElement("span", { className: "text-[8px] font-bold text-indigo-500 uppercase" }, "Month"),
                         React.createElement("span", { className: "text-[11px] font-black text-indigo-700" }, lb.rawMonthly || 0)
                     ),
-                    React.createElement("div", { className: "flex flex-col items-center bg-emerald-50 rounded-md px-2 py-0.5 border border-emerald-100", title: "Kunjungan Tahun Ini" },
-                        React.createElement("span", { className: "text-[8px] font-bold text-emerald-400 uppercase" }, "Year"),
+                    React.createElement("div", { className: "flex flex-col items-center bg-emerald-50 rounded-md px-2 py-1 border border-emerald-200 shadow-sm flex-1 sm:flex-none", title: "Kunjungan Tahun Ini" },
+                        React.createElement("span", { className: "text-[8px] font-bold text-emerald-500 uppercase" }, "Year"),
                         React.createElement("span", { className: "text-[11px] font-black text-emerald-700" }, lb.rawAnnually || 0)
                     )
                 ),
                 // Main Score
-                React.createElement("div", { className: "text-right flex-1 flex justify-end items-center" },
+                React.createElement("div", { className: "text-right flex w-full sm:w-auto justify-between sm:justify-end items-center sm:pl-3 sm:border-l border-slate-200" },
+                    React.createElement("p", { className: "text-[9px] font-extrabold uppercase tracking-widest text-slate-400 sm:hidden" }, "Toko/Bulan"),
                     React.createElement("div", { className: "flex flex-col items-end" },
                         React.createElement("div", { className: "flex items-baseline gap-1" },
-                            React.createElement("span", { className: "text-lg font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
-                            React.createElement("span", { className: "text-[10px] font-bold text-slate-400" }, "/", lb.totalAssigned)
+                            React.createElement("span", { className: "text-lg sm:text-xl font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
+                            React.createElement("span", { className: "text-[10px] sm:text-xs font-bold text-slate-400" }, "/", lb.totalAssigned)
                         ),
-                        React.createElement("p", { className: "text-[8px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400" }, "Toko/Bulan")
+                        React.createElement("p", { className: "text-[8px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400 hidden sm:block" }, "Toko/Bulan")
                     )
                 )
             )
@@ -4339,8 +4343,10 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         // Leaderboard
         features?.leaderboard !== false ? React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
             React.createElement("h3", { className: "text-2xl font-black text-slate-800 mb-6" }, "Leaderboard Kinerja Bestie"),
-            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" },
-                data?.leaderboard?.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx }))
+            React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
+                Object.values(bestieMap).sort((a, b) => b.rawMonthly - a.rawMonthly).map((lb, idx) => 
+                    React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx })
+                )
             )
         ) : null
     );
@@ -9104,13 +9110,17 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) 
         { key: 'audit', label: 'Flow', icon: 'clipboard', action: goAudit, active: screen === 'audit' },
         { key: 'preview', label: 'PDF', icon: 'pdf', action: goPreview, active: screen === 'preview' }
     ];
+    if (screen === 'audit') return null; // Hide on form visit as requested
+
     return (React.createElement("nav", { className: "mobile-floating-nav fixed bottom-4 left-1/2 z-50 flex w-[90%] max-w-sm -translate-x-1/2 items-center justify-around rounded-full bg-slate-900/90 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 lg:hidden", "aria-label": "Mobile system navigation" },
         items.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('relative flex flex-1 flex-col items-center justify-center rounded-full py-2.5 transition-all active:scale-95', item.active ? 'text-white' : 'text-slate-400 hover:text-slate-200'), onClick: item.action },
             item.active && React.createElement("div", { className: "absolute inset-0 rounded-full bg-white/10" }),
             React.createElement(Icon, { name: item.icon, className: cx("h-6 w-6 transition-transform duration-300", item.active && "-translate-y-0.5") }),
             React.createElement("span", { className: cx("mt-1 text-[10px] font-bold tracking-wide transition-all duration-300", item.active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 absolute bottom-0") }, item.label)))));
 }
-function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) {
+function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, onDashboard }) {
+    const [viewMode, setViewMode] = useState('grid');
+    
     useEffect(() => {
         function handleKey(event) {
             if (isEditableTarget(event.target))
@@ -9128,10 +9138,69 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
     const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update })];
     const progress = visitProgress(visit, activeSection);
+    const overallProgress = Math.round((SECTION_DEFS.reduce((sum, _, idx) => sum + visitProgress(visit, idx), 0) / (SECTION_DEFS.length * 100)) * 100);
     
-    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-5 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
-        // Wizard Header Card
-        React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100" },
+    const handleGridCardClick = (index) => {
+        goSection(index);
+        setViewMode('section');
+    };
+
+    if (viewMode === 'grid') {
+        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-6 lg:px-8 lg:py-8 min-h-screen bg-slate-50 flex flex-col" },
+            React.createElement("div", { className: "mb-8 flex flex-col items-center text-center" },
+                React.createElement("div", { className: "w-20 h-20 bg-audit-primary/10 rounded-full flex items-center justify-center mb-4" },
+                    React.createElement(Icon, { name: "clipboard", className: "w-10 h-10 text-audit-primary" })
+                ),
+                React.createElement("h2", { className: "text-2xl font-black text-slate-900" }, "Form Kunjungan"),
+                React.createElement("p", { className: "mt-1 text-sm font-bold text-slate-500 max-w-sm px-4" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
+                React.createElement("div", { className: "w-full max-w-xs mt-6 bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner" },
+                    React.createElement("div", { className: "bg-gradient-to-r from-audit-secondary to-audit-primary h-2.5 rounded-full transition-all duration-500", style: { width: `${overallProgress}%` } })
+                ),
+                React.createElement("p", { className: "mt-2 text-xs font-bold text-slate-400" }, overallProgress, "% Complete")
+            ),
+            
+            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-6 flex-1 mb-8" },
+                SECTION_DEFS.map((section, idx) => {
+                    const secProgress = visitProgress(visit, idx);
+                    const isComplete = secProgress === 100;
+                    return (React.createElement("div", { 
+                        key: idx, 
+                        onClick: () => handleGridCardClick(idx),
+                        className: "bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-md hover:border-audit-primary transition-all active:scale-95 relative overflow-hidden" 
+                    },
+                        isComplete && React.createElement("div", { className: "absolute top-3 right-3 w-3 h-3 bg-emerald-500 rounded-full shadow-sm border-2 border-white" }),
+                        React.createElement("div", { className: `w-14 h-14 rounded-2xl flex items-center justify-center mb-3 shadow-inner ${isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}` },
+                            React.createElement(Icon, { name: section.id === 'setup' ? 'settings' : section.id === 'general' ? 'home' : section.id === 'qsc' ? 'star' : section.id === 'observation' ? 'eye' : 'camera', className: "w-7 h-7" })
+                        ),
+                        React.createElement("h3", { className: "font-black text-sm text-slate-800 leading-tight line-clamp-2" }, section.title),
+                        React.createElement("div", { className: "w-full h-1 bg-slate-100 rounded-full mt-3 overflow-hidden" },
+                            React.createElement("div", { className: `h-full rounded-full transition-all ${isComplete ? 'bg-emerald-500' : 'bg-audit-primary'}`, style: { width: `${secProgress}%` } })
+                        )
+                    ));
+                })
+            ),
+            
+            React.createElement("div", { className: "w-full max-w-sm mx-auto flex flex-col gap-3 pb-8" },
+                React.createElement(Button, { className: "w-full !rounded-full !py-4 shadow-xl font-bold text-lg", icon: "pdf", onClick: onPreview }, "Preview & Generate PDF"),
+                React.createElement(Button, { variant: "secondary", className: "w-full !rounded-full !py-3 font-bold bg-white border-2 border-slate-200", icon: "home", onClick: onDashboard }, "Kembali ke Dashboard")
+            )
+        ));
+    }
+
+    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
+        // Simplified Mobile Header (Only visible in section mode)
+        React.createElement("div", { className: "flex items-center justify-center relative mb-6 pt-2" },
+            React.createElement("button", { 
+                onClick: () => setViewMode('grid'),
+                className: "absolute left-0 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600"
+            },
+                React.createElement(Icon, { name: "left", className: "w-5 h-5" })
+            ),
+            React.createElement("h2", { className: "text-lg font-black text-slate-800 max-w-[60%] text-center truncate" }, SECTION_DEFS[activeSection]?.title)
+        ),
+        
+        // Wizard Header Card (Hidden on mobile)
+        React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 hidden sm:block" },
             React.createElement("div", { className: "flex items-center justify-between p-6 md:p-8" },
                 React.createElement("div", { className: "min-w-0 flex-1" },
                     React.createElement("p", { className: "mb-1 text-[10px] font-black uppercase tracking-widest text-emerald-500" }, "Step ", activeSection + 1, " of ", SECTION_DEFS.length),
@@ -9781,7 +9850,7 @@ function App() {
         content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });
     }
     else {
-        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, masterStoreRevision: masterStoreRevision });
+        content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, onDashboard: () => setScreen('dashboard'), masterStoreRevision: masterStoreRevision });
     }
     return (React.createElement("div", { className: "audit-shell min-h-screen lg:flex lg:flex-row bg-slate-50" },
         screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
