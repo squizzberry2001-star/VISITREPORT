@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-fix-leaderboard-color-v18';
-const CACHE_NAME = `bestie-visit-revamp281-fix-leaderboard-color-v18`;
+const APP_VERSION = 'revamp281-leaderboard-unique-weekly-v19';
+const CACHE_NAME = `bestie-visit-revamp281-leaderboard-unique-weekly-v19`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
