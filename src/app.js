@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-schedule-upload-analytics-badge-v24';
+const APP_BUILD_VERSION = 'revamp281-fix-schedule-hooks-crash-v25';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -8318,40 +8318,37 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             reader.readAsArrayBuffer(file);
         });
     }
+    async function handleScheduleUpload(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setSchedBusy(true);
+        setSchedStatus('Membaca file Excel...');
+        try {
+            const parsed = await parseExcelSchedule(file);
+            if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing dari file ini.'); setSchedBusy(false); return; }
+            const saved = saveScheduleConfig(parsed);
+            setScheduleConfig(saved);
+            setSchedStatus(`Berhasil import ${parsed.length} entri jadwal. Menyinkronkan ke Convex...`);
+            const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.schedule, parsed);
+            setSchedStatus(synced
+                ? `✅ ${parsed.length} entri jadwal disimpan & disinkronkan ke Convex.`
+                : `⚠️ ${parsed.length} entri disimpan lokal, tapi Convex sync gagal. Data tetap tersedia.`);
+        } catch(err) {
+            setSchedStatus(`❌ Error: ${err?.message || 'Gagal memproses file.'}`);
+        } finally {
+            setSchedBusy(false);
+            if (schedFileRef.current) schedFileRef.current.value = '';
+        }
+    }
+    function clearSchedule() {
+        if (!window.confirm('Hapus semua data jadwal?')) return;
+        saveScheduleConfig([]);
+        setScheduleConfig([]);
+        setSchedStatus('Data jadwal dihapus.');
+    }
     function renderSchedulePanel() {
-        const fileRef = React.useRef(null);
-        const [schedStatus, setSchedStatus] = React.useState('');
-        const [schedBusy, setSchedBusy] = React.useState(false);
         const todayStr = new Date().toISOString().slice(0, 10);
         const todaySchedules = scheduleConfig.filter(s => s.date === todayStr);
-        async function handleScheduleUpload(event) {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            setSchedBusy(true);
-            setSchedStatus('Membaca file Excel...');
-            try {
-                const parsed = await parseExcelSchedule(file);
-                if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing dari file ini.'); setSchedBusy(false); return; }
-                const saved = saveScheduleConfig(parsed);
-                setScheduleConfig(saved);
-                setSchedStatus(`Berhasil import ${parsed.length} entri jadwal. Menyinkronkan ke Convex...`);
-                const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.schedule, parsed);
-                setSchedStatus(synced
-                    ? `✅ ${parsed.length} entri jadwal disimpan & disinkronkan ke Convex.`
-                    : `⚠️ ${parsed.length} entri disimpan lokal, tapi Convex sync gagal. Data tetap tersedia.`);
-            } catch(err) {
-                setSchedStatus(`❌ Error: ${err?.message || 'Gagal memproses file.'}`);
-            } finally {
-                setSchedBusy(false);
-                if (fileRef.current) fileRef.current.value = '';
-            }
-        }
-        function clearSchedule() {
-            if (!window.confirm('Hapus semua data jadwal?')) return;
-            saveScheduleConfig([]);
-            setScheduleConfig([]);
-            setSchedStatus('Data jadwal dihapus.');
-        }
         return React.createElement('div', { className: 'rounded-3xl border border-violet-200 bg-violet-50 p-5 mb-5' },
             React.createElement('div', { className: 'flex items-center justify-between mb-4' },
                 React.createElement('div', null,
@@ -8373,7 +8370,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement(Icon, { name: 'upload', className: 'h-4 w-4' }),
                     schedBusy ? 'Memproses...' : 'Pilih File Excel (.xlsx)',
                     React.createElement('input', {
-                        ref: fileRef, type: 'file', accept: '.xlsx,.xls',
+                        ref: schedFileRef, type: 'file', accept: '.xlsx,.xls',
                         className: 'hidden', onChange: handleScheduleUpload, disabled: schedBusy
                     })
                 ),

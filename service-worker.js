@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-schedule-upload-analytics-badge-v24';
-const CACHE_NAME = `bestie-visit-revamp281-schedule-upload-analytics-badge-v24`;
+const APP_VERSION = 'revamp281-fix-schedule-hooks-crash-v25';
+const CACHE_NAME = `bestie-visit-revamp281-fix-schedule-hooks-crash-v25`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
