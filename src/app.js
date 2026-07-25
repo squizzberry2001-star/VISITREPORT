@@ -152,7 +152,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-leaderboard-unique-weekly-v19';
+const APP_BUILD_VERSION = 'revamp281-ai-analytics-qsc-opi-v20';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3696,6 +3696,65 @@ function SimpleChart({ type, data, options }) {
     );
 }
 
+const INDONESIAN_STOP_WORDS = new Set([
+    'dan', 'atau', 'di', 'ke', 'dari', 'yang', 'untuk', 'pada', 'dengan', 
+    'ini', 'itu', 'adalah', 'sebagai', 'tidak', 'ya', 'sudah', 'belum',
+    'bisa', 'akan', 'harus', 'dalam', 'atas', 'bawah', 'saat', 'ada',
+    'juga', 'oleh', 'karena', 'seperti', 'kami', 'kita', 'mereka',
+    'saya', 'anda', 'kamu', 'dia', 'nya', 'sangat', 'terlalu', 'kurang',
+    'lebih', 'paling', 'baru', 'lama', 'baik', 'buruk', 'sedang',
+    'masih', 'hanya', 'saja', 'pun', 'lah', 'kah', 'tah', 'dong', 'deh'
+]);
+
+function analyzeFindingTrends(texts) {
+    if (!texts || texts.length === 0) return [];
+    
+    const wordCounts = {};
+    const phraseCounts = {};
+
+    texts.forEach(text => {
+        if (!text) return;
+        const cleanText = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+        const words = cleanText.split(/\s+/).filter(w => w.length > 2 && !INDONESIAN_STOP_WORDS.has(w));
+        
+        words.forEach(w => {
+            wordCounts[w] = (wordCounts[w] || 0) + 1;
+        });
+
+        for (let i = 0; i < words.length - 1; i++) {
+            const phrase = words[i] + ' ' + words[i+1];
+            phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
+        }
+    });
+
+    const topPhrases = Object.entries(phraseCounts)
+        .filter(([_, count]) => count > 1)
+        .sort((a, b) => b[1] - a[1]);
+
+    const usedWords = new Set();
+    const results = [];
+
+    // Prioritize 2-word phrases
+    for (let i = 0; i < topPhrases.length && results.length < 3; i++) {
+        const [phrase, count] = topPhrases[i];
+        results.push({ keyword: phrase, count });
+        phrase.split(' ').forEach(w => usedWords.add(w));
+    }
+
+    // Fallback to single words if needed
+    if (results.length < 3) {
+        const topWords = Object.entries(wordCounts)
+            .filter(([w, count]) => !usedWords.has(w))
+            .sort((a, b) => b[1] - a[1]);
+        
+        for (let i = 0; i < topWords.length && results.length < 3; i++) {
+            results.push({ keyword: topWords[i][0], count: topWords[i][1] });
+        }
+    }
+
+    return results;
+}
+
 function AnalyticsView({ history }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -3720,7 +3779,10 @@ function AnalyticsView({ history }) {
                 // Local history metrics
                 const localVisits = history || [];
                 let localCompleted = 0;
-                const temuanByMonth = {};
+                const qscByMonth = {};
+                const opiByMonth = {};
+                const qscTexts = [];
+                const opiTexts = [];
                 let emailSentCount = 0;
                 let emailFeedbackCount = 0;
                 
@@ -3773,9 +3835,37 @@ function AnalyticsView({ history }) {
                     if (v.visitDate) {
                         const d = new Date(v.visitDate);
                         const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
-                        temuanByMonth[m] = (temuanByMonth[m] || 0) + (v.temuanCount || 0);
+                        
+                        let monthlyOpi = 0;
+                        let monthlyQsc = 0;
+
+                        if (Array.isArray(v.opiData)) {
+                            v.opiData.forEach(row => {
+                                if (isMeaningfulObservation(row)) {
+                                    monthlyOpi++;
+                                    const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
+                                    if (text) opiTexts.push(text);
+                                }
+                            });
+                        }
+                        if (Array.isArray(v.qscData)) {
+                            v.qscData.forEach(row => {
+                                if (isMeaningfulObservation(row)) {
+                                    monthlyQsc++;
+                                    const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
+                                    if (text) qscTexts.push(text);
+                                }
+                            });
+                        }
+
+                        opiByMonth[m] = (opiByMonth[m] || 0) + monthlyOpi;
+                        qscByMonth[m] = (qscByMonth[m] || 0) + monthlyQsc;
                     }
                 });
+                
+                const topOPI = analyzeFindingTrends(opiTexts);
+                const topQSC = analyzeFindingTrends(qscTexts);
+                const allMonths = Array.from(new Set([...Object.keys(opiByMonth), ...Object.keys(qscByMonth)]));
                 
                 const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits);
 
@@ -3785,7 +3875,11 @@ function AnalyticsView({ history }) {
                     localCompleted,
                     emailSentCount,
                     emailFeedbackCount,
-                    temuanByMonth,
+                    allMonths,
+                    qscByMonth,
+                    opiByMonth,
+                    topOPI,
+                    topQSC,
                     leaderboard,
                     localTotalVisits: localVisits.length
                 });
@@ -3855,35 +3949,62 @@ function AnalyticsView({ history }) {
         
         React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8" },
             React.createElement("div", { className: "analytics-card-large-header" },
-                React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (Observasi)"),
-                React.createElement("div", { className: "p-2 bg-emerald-50 rounded-xl text-emerald-600" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
+                React.createElement("h3", { className: "analytics-card-large-title" }, "Tren Temuan (QSC vs OPI)"),
+                React.createElement("div", { className: "p-2 bg-audit-primary/10 rounded-xl text-audit-primary" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
             ),
             React.createElement("div", { className: "w-full h-[250px]" },
-                Object.keys(data?.temuanByMonth || {}).length === 0 ? 
+                (!data?.allMonths || data?.allMonths.length === 0) ? 
                     React.createElement("div", { className: "h-full flex flex-col items-center justify-center text-audit-ink opacity-50" },
                         React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
                     ) :
                     React.createElement(SimpleChart, { 
                         type: 'bar',
                         data: {
-                            labels: Object.keys(data?.temuanByMonth || {}),
-                            datasets: [{
-                                label: 'Total Temuan',
-                                data: Object.values(data?.temuanByMonth || {}),
-                                backgroundColor: 'rgba(16, 185, 129, 0.85)',
-                                borderRadius: 6,
-                                maxBarThickness: 40
-                            }]
+                            labels: data.allMonths,
+                            datasets: [
+                                {
+                                    label: 'QSC',
+                                    data: data.allMonths.map(m => data.qscByMonth[m] || 0),
+                                    backgroundColor: '#10b981',
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'OPI Project',
+                                    data: data.allMonths.map(m => data.opiByMonth[m] || 0),
+                                    backgroundColor: '#0ea5e9',
+                                    borderRadius: 4
+                                }
+                            ]
                         },
                         options: {
-                            scales: {
-                                y: { beginAtZero: true, ticks: { precision: 0 } }
-                            },
+                            responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
-                                legend: { display: false }
-                            }
+                                legend: { position: 'top' }
+                            },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
                         }
                     })
+            ),
+            (data?.topQSC?.length > 0 || data?.topOPI?.length > 0) && React.createElement("div", { className: "mt-6 border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-4" },
+                React.createElement("div", null, 
+                    React.createElement("h4", { className: "text-xs font-black uppercase text-emerald-600 mb-2 flex items-center gap-1.5" }, React.createElement(Icon, { name: "spark", className: "w-3.5 h-3.5" }), "Top QSC Findings"),
+                    React.createElement("ul", { className: "space-y-1.5" },
+                        (data?.topQSC || []).map((item, i) => React.createElement("li", { key: i, className: "text-sm text-slate-700 flex justify-between bg-emerald-50/50 px-2.5 py-1.5 rounded-lg" }, 
+                            React.createElement("span", { className: "capitalize truncate pr-2 font-medium" }, item.keyword), 
+                            React.createElement("strong", { className: "text-emerald-700" }, item.count)
+                        ))
+                    )
+                ),
+                React.createElement("div", null, 
+                    React.createElement("h4", { className: "text-xs font-black uppercase text-sky-600 mb-2 flex items-center gap-1.5" }, React.createElement(Icon, { name: "spark", className: "w-3.5 h-3.5" }), "Top OPI Project Findings"),
+                    React.createElement("ul", { className: "space-y-1.5" },
+                        (data?.topOPI || []).map((item, i) => React.createElement("li", { key: i, className: "text-sm text-slate-700 flex justify-between bg-sky-50/50 px-2.5 py-1.5 rounded-lg" }, 
+                            React.createElement("span", { className: "capitalize truncate pr-2 font-medium" }, item.keyword), 
+                            React.createElement("strong", { className: "text-sky-700" }, item.count)
+                        ))
+                    )
+                )
             )
         ),
         React.createElement("div", { className: "analytics-grid-circular" },
@@ -4201,16 +4322,16 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
         React.createElement("div", { className: "flex justify-center my-6 w-full px-4" },
-            React.createElement("div", { className: "flex bg-slate-200/50 backdrop-blur-md p-1.5 rounded-2xl w-full max-w-sm shadow-inner gap-2" },
+            React.createElement("div", { className: "flex bg-slate-200/50 backdrop-blur-md p-1.5 rounded-full w-full max-w-sm shadow-inner gap-2" },
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('home'), 
-                    className: cx("flex-1 py-3 px-4 rounded-[14px] text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'home' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
+                    className: cx("flex-1 py-3 px-4 rounded-full text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'home' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
                 }, React.createElement(Icon, { name: "home", className: "w-4 h-4" }), "Beranda"),
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('analytics'), 
-                    className: cx("flex-1 py-3 px-4 rounded-[14px] text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'analytics' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
+                    className: cx("flex-1 py-3 px-4 rounded-full text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'analytics' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
                 }, React.createElement(Icon, { name: "spark", className: "w-4 h-4" }), "Analitik")
             )
         ),

@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-leaderboard-unique-weekly-v19';
-const CACHE_NAME = `bestie-visit-revamp281-leaderboard-unique-weekly-v19`;
+const APP_VERSION = 'revamp281-ai-analytics-qsc-opi-v20';
+const CACHE_NAME = `bestie-visit-revamp281-ai-analytics-qsc-opi-v20`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
