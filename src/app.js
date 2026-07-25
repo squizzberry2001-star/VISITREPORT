@@ -154,7 +154,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-enterprise-features-v45';
+const APP_BUILD_VERSION = 'revamp281-enterprise-features-v53';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -3960,9 +3960,24 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         async function loadData() {
             try {
                 setLoading(true);
-                const fetchedRows = await fetchMonitorRowsFromConvex();
+                let rows = await fetchMonitorRowsFromConvex();
                 if (cancelled) return;
-                const rows = fetchedRows || [];
+                
+                // Fallback to local history if remote fetch fails or returns empty
+                if (!rows || rows.length === 0) {
+                    rows = (history || []).map((item) => ({
+                        bestie_name: item.bestieName,
+                        store_name: item.storeName,
+                        store_code: item.storeCode,
+                        visit_date: item.visitDate,
+                        total_visits: 1,
+                        updated_at: item.updatedAt,
+                        session_id: '-',
+                        qsc_score: item.qscScore || 0,
+                        opi_score: item.opiScore || 0,
+                        has_meaningful_data: true
+                    }));
+                }
                 
                 const globalStoreSet = new Set();
                 rows.forEach(r => {
@@ -4472,10 +4487,10 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             setNotificationBusy(false);
         }
     }
-    return (React.createElement("main", { className: "dashboard-page flex w-full max-w-lg mx-auto min-h-screen flex-col bg-slate-50 shadow-2xl relative pb-24 md:border-x md:border-slate-200" },
+    return (React.createElement("main", { className: "dashboard-page flex w-full max-w-4xl mx-auto min-h-screen flex-col bg-slate-50 shadow-2xl relative pb-32 md:border-x md:border-slate-200" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
-        React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full overflow-hidden p-4 md:p-6 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-sm" },
-            React.createElement("div", { className: "flex items-start justify-between gap-3" },
+        React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full overflow-hidden p-4 md:p-8 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-sm" },
+            React.createElement("div", { className: "flex items-start justify-between gap-4 max-w-4xl mx-auto w-full" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("h1", { className: "text-2xl font-black tracking-tight text-slate-900 md:text-3xl" }, "Regional Bestie Visit"),
                     React.createElement("p", { className: "mt-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400" }, "Dashboard")),
@@ -4510,9 +4525,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                 )
             )
         ),
-        activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in space-y-4 px-4 py-6 pb-28 max-w-lg mx-auto w-full" },
-            React.createElement("h2", { className: "text-2xl font-black text-slate-900 mb-6" }, "Utiliti & Pengaturan"),
-            React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact home-utility-panel grid grid-cols-2 gap-3" },
+        activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in space-y-4 px-4 md:px-8 py-8 pb-32 max-w-4xl mx-auto w-full" },
+            React.createElement("h2", { className: "text-2xl font-black text-slate-900 mb-6 tracking-tight" }, "Utiliti & Pengaturan"),
+            React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
                 React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
                     syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
                     React.createElement("span", { className: "home-quick-action-label text-[13px]" }, syncBusy ? 'Sync...' : 'Update App')
