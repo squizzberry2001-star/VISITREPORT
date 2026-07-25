@@ -153,7 +153,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp281-deepfix-schedule-state-v26';
+const APP_BUILD_VERSION = 'revamp281-fix-blank-page-schedule-v27';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -641,20 +641,16 @@ function saveWelcomeConfig(config) {
     return next;
 }
 const SCHEDULE_CONFIG_KEY = 'rbv_schedule_config_v1';
-const DEFAULT_SCHEDULE_CONFIG = [];
 function readScheduleConfig() {
     try {
         const parsed = JSON.parse(localStorage.getItem(SCHEDULE_CONFIG_KEY) || '[]');
         return Array.isArray(parsed) ? parsed : [];
     }
-    catch (error) {
-        return [];
-    }
+    catch (error) { return []; }
 }
-function saveScheduleConfig(config) {
-    const next = Array.isArray(config) ? config : [];
+function saveScheduleConfig(items) {
+    const next = Array.isArray(items) ? items : [];
     localStorage.setItem(SCHEDULE_CONFIG_KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent('rbv-schedule-config-change', { detail: next }));
     return next;
 }
 function normalizeUpdateNoticeIntervalSeconds(value, fallback = DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds) {
@@ -3792,7 +3788,7 @@ function LeaderboardItem({ lb, idx }) {
                 React.createElement("div", { className: "w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-slate-100 text-slate-500 shrink-0" }, idx + 1),
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("h4", { className: "font-bold text-[15px] text-audit-ink truncate" }, lb.name),
-                    lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') + (lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : '') }, "\u{1F4C5} ", (lb.todaySchedule.description || '').replace(/^Agenda\s*:\s*/i, '').split('\n')[0].slice(0, 40) || lb.todaySchedule.location || 'Terjadwal') : null,
+                    lb.todaySchedule ? React.createElement("span", { className: "inline-flex items-center gap-1 mt-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200", title: (lb.todaySchedule.description || '') + (lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : '') }, "📅 ", ((lb.todaySchedule.description || '').replace(/^Agenda\s*:\s*/i, '').split('\n')[0] || lb.todaySchedule.location || 'Terjadwal').slice(0, 35)) : null,
                     React.createElement("p", { className: "text-[11px] font-extrabold uppercase tracking-widest mt-0.5 text-audit-primary truncate" }, narasi)
                 )
             ),
@@ -3952,11 +3948,10 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 });
                 const todayStrLb = new Date().toISOString().slice(0, 10);
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
-                const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits).map(lb => {
-                    // Find today's schedule for this bestie (case-insensitive normalized match)
-                    const todaySched = activeSched.find(s => s.date === todayStrLb && normalize(s.nama) === normalize(lb.name));
-                    return { ...lb, todaySchedule: todaySched || null };
-                });
+                const leaderboard = Object.values(bestieMap).sort((a, b) => b.totalVisits - a.totalVisits).map(lb => ({
+                    ...lb,
+                    todaySchedule: activeSched.find(s => s.date === todayStrLb && normalize(s.nama) === normalize(lb.name)) || null
+                }));
 
                 setData({
                     globalStoreCount: globalStoreSet.size,
@@ -7770,6 +7765,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Convex untuk semua device.');
     const [masterStoreBusy, setMasterStoreBusy] = useState(false);
     const [masterStoreQuery, setMasterStoreQuery] = useState('');
+    // --- Schedule state ---
     const [scheduleConfig, setScheduleConfig] = useState(() => readScheduleConfig());
     const [schedStatus, setSchedStatus] = useState('');
     const [schedBusy, setSchedBusy] = useState(false);
@@ -8278,12 +8274,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setMasterStoreRows(fallbackRows);
         setMasterStoreStatus(`Data lokal direset. Fallback bawaan: ${fallbackRows.length} toko.`);
     }
+    // ---- Schedule Excel Import ----
     function parseExcelSchedule(file) {
         return new Promise((resolve, reject) => {
-            if (typeof window.XLSX === 'undefined') {
-                reject(new Error('Library SheetJS belum dimuat. Coba refresh halaman.'));
-                return;
-            }
+            if (typeof window.XLSX === 'undefined') { reject(new Error('Library SheetJS belum dimuat. Coba refresh halaman.')); return; }
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -8295,9 +8289,9 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     const header = rawRows[0].map(h => String(h || '').trim().toLowerCase());
                     const namaIdx = header.findIndex(h => h.includes('nama'));
                     const dateIdx = header.findIndex(h => h.includes('start date') || h.includes('tanggal'));
-                    const descIdx = header.findIndex(h => h.includes('description') || h.includes('deskripsi') || h.includes('agenda'));
+                    const descIdx = header.findIndex(h => h.includes('description') || h.includes('deskripsi'));
                     const locIdx  = header.findIndex(h => h.includes('location') || h.includes('lokasi'));
-                    if (namaIdx < 0 || dateIdx < 0) { reject(new Error('Kolom Nama atau Start Date tidak ditemukan di baris header Excel.')); return; }
+                    if (namaIdx < 0 || dateIdx < 0) { reject(new Error('Kolom Nama atau Start Date tidak ditemukan.')); return; }
                     const parsed = [];
                     for (let i = 1; i < rawRows.length; i++) {
                         const row = rawRows[i];
@@ -8306,12 +8300,9 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         let rawDate = row[dateIdx];
                         let dateStr = '';
                         if (typeof rawDate === 'number') {
-                            // Excel serial date number
                             const d = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
                             dateStr = d.toISOString().slice(0, 10);
-                        } else if (rawDate) {
-                            dateStr = String(rawDate).slice(0, 10);
-                        }
+                        } else if (rawDate) { dateStr = String(rawDate).slice(0, 10); }
                         const desc = descIdx >= 0 ? String(row[descIdx] || '').trim() : '';
                         const loc  = locIdx  >= 0 ? String(row[locIdx]  || '').trim() : '';
                         parsed.push({ nama: rawNama, date: dateStr, description: desc, location: loc });
@@ -8330,14 +8321,12 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setSchedStatus('Membaca file Excel...');
         try {
             const parsed = await parseExcelSchedule(file);
-            if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing dari file ini.'); setSchedBusy(false); return; }
+            if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing.'); setSchedBusy(false); return; }
             const saved = saveScheduleConfig(parsed);
             setScheduleConfig(saved);
-            setSchedStatus(`Berhasil import ${parsed.length} entri jadwal. Menyinkronkan ke Convex...`);
+            setSchedStatus(`Berhasil import ${parsed.length} entri. Menyinkronkan ke Convex...`);
             const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.schedule, parsed);
-            setSchedStatus(synced
-                ? `✅ ${parsed.length} entri jadwal disimpan & disinkronkan ke Convex.`
-                : `⚠️ ${parsed.length} entri disimpan lokal, tapi Convex sync gagal. Data tetap tersedia.`);
+            setSchedStatus(synced ? `✅ ${parsed.length} entri jadwal tersimpan & tersinkron.` : `⚠️ ${parsed.length} entri disimpan lokal, Convex sync gagal.`);
         } catch(err) {
             setSchedStatus(`❌ Error: ${err?.message || 'Gagal memproses file.'}`);
         } finally {
@@ -8353,50 +8342,33 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     }
     function renderSchedulePanel() {
         const todayStr = new Date().toISOString().slice(0, 10);
-        const todaySchedules = scheduleConfig.filter(s => s.date === todayStr);
+        const todaySchedules = (scheduleConfig || []).filter(s => s.date === todayStr);
         return React.createElement('div', { className: 'rounded-3xl border border-violet-200 bg-violet-50 p-5 mb-5' },
-            React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+            React.createElement('div', { className: 'flex items-center justify-between mb-3' },
                 React.createElement('div', null,
                     React.createElement('p', { className: 'text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700' }, '📅 Upload Jadwal'),
                     React.createElement('h3', { className: 'text-lg font-black text-slate-900' }, 'Import Jadwal Mingguan (Excel)')
                 ),
-                scheduleConfig.length > 0
-                    ? React.createElement('button', { type: 'button', onClick: clearSchedule, className: 'text-xs font-bold text-red-500 hover:text-red-700 underline' }, 'Hapus Semua')
-                    : null
+                (scheduleConfig || []).length > 0 ? React.createElement('button', { type: 'button', onClick: clearSchedule, className: 'text-xs font-bold text-red-500 hover:text-red-700 underline' }, 'Hapus Semua') : null
             ),
-            React.createElement('p', { className: 'text-xs text-slate-600 mb-4' },
-                'Upload file .xlsx yang mengandung kolom Nama, Start Date, dan Description. Data akan tersinkronisasi ke Convex dan tampil sebagai badge di halaman Analitik.'
-            ),
+            React.createElement('p', { className: 'text-xs text-slate-500 mb-4' }, 'Upload file .xlsx (kolom: Nama, Start Date, Description). Data akan tampil sebagai badge jadwal hari ini di Analitik per Bestie.'),
             React.createElement('div', { className: 'flex flex-col gap-3 sm:flex-row sm:items-center' },
-                React.createElement('label', {
-                    className: 'flex cursor-pointer items-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-violet-700 transition-colors',
-                    style: schedBusy ? { opacity: 0.6, pointerEvents: 'none' } : {}
-                },
-                    React.createElement(Icon, { name: 'upload', className: 'h-4 w-4' }),
-                    schedBusy ? 'Memproses...' : 'Pilih File Excel (.xlsx)',
-                    React.createElement('input', {
-                        ref: schedFileRef, type: 'file', accept: '.xlsx,.xls',
-                        className: 'hidden', onChange: handleScheduleUpload, disabled: schedBusy
-                    })
+                React.createElement('label', { className: 'flex cursor-pointer items-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-violet-700 transition-colors', style: schedBusy ? { opacity: 0.6, pointerEvents: 'none' } : {} },
+                    schedBusy ? 'Memproses...' : '📂 Pilih File Excel (.xlsx)',
+                    React.createElement('input', { ref: schedFileRef, type: 'file', accept: '.xlsx,.xls', className: 'hidden', onChange: handleScheduleUpload, disabled: schedBusy })
                 ),
-                scheduleConfig.length > 0
-                    ? React.createElement('p', { className: 'text-xs font-bold text-violet-700 bg-violet-100 px-3 py-1.5 rounded-full' },
-                        `${scheduleConfig.length} entri aktif · ${todaySchedules.length} jadwal hari ini`
-                    )
-                    : React.createElement('p', { className: 'text-xs text-slate-500' }, 'Belum ada data jadwal.')
+                (scheduleConfig || []).length > 0
+                    ? React.createElement('p', { className: 'text-xs font-bold text-violet-700 bg-violet-100 px-3 py-1.5 rounded-full' }, `${scheduleConfig.length} entri aktif · ${todaySchedules.length} hari ini`)
+                    : React.createElement('p', { className: 'text-xs text-slate-400' }, 'Belum ada data jadwal.')
             ),
             schedStatus ? React.createElement('p', { className: 'mt-3 text-xs font-semibold text-slate-700 bg-white rounded-xl px-4 py-3 border border-violet-100' }, schedStatus) : null,
-            todaySchedules.length > 0
-                ? React.createElement('div', { className: 'mt-4' },
-                    React.createElement('p', { className: 'text-xs font-bold text-slate-700 mb-2' }, `Pratinjau jadwal hari ini (${todayStr}):`),
-                    React.createElement('div', { className: 'space-y-2 max-h-40 overflow-y-auto' },
-                        todaySchedules.map((s, i) => React.createElement('div', { key: i, className: 'flex gap-3 bg-white rounded-xl p-3 border border-violet-100 text-xs' },
-                            React.createElement('span', { className: 'font-bold text-violet-800 shrink-0' }, s.nama),
-                            React.createElement('span', { className: 'text-slate-600 truncate' }, s.description || s.location || '-')
-                        ))
-                    )
-                  )
-                : null
+            todaySchedules.length > 0 ? React.createElement('div', { className: 'mt-4 space-y-2' },
+                React.createElement('p', { className: 'text-xs font-bold text-slate-600 mb-1' }, `Jadwal hari ini (${todayStr}):`),
+                todaySchedules.map((s, i) => React.createElement('div', { key: i, className: 'flex gap-3 bg-white rounded-xl p-3 border border-violet-100 text-xs' },
+                    React.createElement('span', { className: 'font-bold text-violet-800 shrink-0 w-32 truncate' }, s.nama),
+                    React.createElement('span', { className: 'text-slate-600 truncate' }, s.description || s.location || '-')
+                ))
+            ) : null
         );
     }
     function renderMasterStorePanel() {
