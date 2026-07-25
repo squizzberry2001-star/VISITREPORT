@@ -4000,6 +4000,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
                 const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
                 const allMonths = [];
                 for (let i = 5; i >= 0; i--) {
                     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
