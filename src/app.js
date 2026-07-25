@@ -4072,7 +4072,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 
                 const topOPI = analyzeFindingTrends(opiTexts);
                 const topQSC = analyzeFindingTrends(qscTexts);
-                const allMonths = Array.from(new Set([...Object.keys(opiByMonth), ...Object.keys(qscByMonth)]));
                 
                 Object.values(bestieMap).forEach(b => {
                     b.visitHistory.sort((a, b) => b.date - a.date);
@@ -4473,9 +4472,9 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
             setNotificationBusy(false);
         }
     }
-    return (React.createElement("main", { className: "dashboard-page mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 pb-28 md:px-8 md:py-8 md:pb-28" },
+    return (React.createElement("main", { className: "dashboard-page flex w-full min-h-screen flex-col bg-slate-50 pb-24" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.28);transform:translateY(0)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0);transform:translateY(-1px)}}`),
-        React.createElement("section", { className: "dashboard-compact glass-panel overflow-hidden rounded-[24px] p-4 md:rounded-[28px] md:p-5" },
+        React.createElement("section", { className: "dashboard-compact w-full overflow-hidden p-4 md:p-6 pb-20 bg-white" },
             React.createElement("div", { className: "flex items-start justify-between gap-3" },
                 React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left" },
                     React.createElement("h1", { className: "text-xl font-black tracking-tight text-slate-950 md:text-3xl" }, "Regional Bestie Visit Report"),
@@ -4487,57 +4486,58 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement("small", { className: "home-notification-status" }, notificationMessage)))),
             React.createElement("div", { className: "mt-3", "data-build": "revamp237-redmi-restore-native-picker" },
                 React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "restore-file-input-fallback", onChange: handleRestoreFile, tabIndex: -1, "aria-hidden": "true" }),
-                React.createElement("details", { className: "home-utility-details home-utility-main" },
-                    React.createElement("summary", { className: "home-utility-main-trigger", "aria-label": "Utilitas" },
-                        React.createElement(Icon, { name: "settings", className: "h-5 w-5" }),
-                        React.createElement("span", null, "Utilitas")),
-                    React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact home-utility-panel", style: {
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: '10px'
-                    } },
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleManualWebsiteSync, disabled: syncBusy, "aria-label": "Sync update website", title: "Sync update website" },
-                        syncBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, syncBusy ? 'Sync...' : 'Sync'),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "Update")),
-                    React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, onClick: handleBackupData, "aria-label": "Backup data", title: "Backup data" },
-                        React.createElement(Icon, { name: "download", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Backup"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "History")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral", style: { minHeight: '42px' }, onClick: () => setMasterStoreModalOpen(true), "aria-label": "Tampilkan semua data master detail store", title: "Data Master Detail Store" },
-                        React.createElement(Icon, { name: "store", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Master"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "Store")),
-                    React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '42px' }, role: "button", tabIndex: restoreBusy ? -1 : 0, "aria-label": "Restore data", title: "Restore data" },
-                        React.createElement(Icon, { name: "upload", className: "h-4 w-4 shrink-0 text-audit-primary" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Restore"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "History"),
-                        React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native", onChange: handleRestoreFile, disabled: restoreBusy, "aria-label": "Pilih file restore history" })),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '42px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true), "aria-label": "Info install apps" },
-                        React.createElement(Icon, { name: "spark", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Install"),
-                        React.createElement("small", { className: "home-quick-action-sub" }, "App")),
-                    React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '42px' }, onClick: onClearHistory, "aria-label": "Hapus history kunjungan", title: "Hapus History" },
-                        React.createElement(Icon, { name: "trash", className: "h-4 w-4 shrink-0" }),
-                        React.createElement("span", { className: "home-quick-action-label" }, "Hapus"),
-                        React.createElement("small", { className: "home-quick-action-sub", style: { color: 'rgba(255,255,255,0.88)' } }, "History")))),
                 syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
                     React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
                     React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement("div", { className: "flex justify-center my-6 w-full px-4" },
-            React.createElement("div", { className: "flex bg-slate-200/50 backdrop-blur-md p-1.5 rounded-full w-full max-w-sm shadow-inner gap-2" },
+        React.createElement("div", { className: "fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-[90] pb-[env(safe-area-inset-bottom,0px)]" },
+            React.createElement("div", { className: "flex items-center justify-around h-[70px] max-w-lg mx-auto px-2" },
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('home'), 
-                    className: cx("flex-1 py-3 px-4 rounded-full text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'home' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
-                }, React.createElement(Icon, { name: "home", className: "w-4 h-4" }), "Beranda"),
+                    className: cx("flex flex-col items-center justify-center w-full h-full space-y-1 transition-all", activeTab === 'home' ? "text-audit-primary" : "text-slate-400 hover:text-slate-600") 
+                }, React.createElement(Icon, { name: "home", className: cx("w-6 h-6 transition-transform", activeTab==='home'&&"scale-110") }), React.createElement("span", { className: cx("text-[10px] font-black", activeTab==='home'?"opacity-100":"opacity-70") }, "Beranda")),
                 React.createElement("button", { 
                     type: "button", 
                     onClick: () => setActiveTab('analytics'), 
-                    className: cx("flex-1 py-3 px-4 rounded-full text-sm font-extrabold transition-all duration-300 flex items-center justify-center gap-2", activeTab === 'analytics' ? "bg-white text-audit-primary shadow-sm" : "text-slate-500 hover:text-slate-700") 
-                }, React.createElement(Icon, { name: "spark", className: "w-4 h-4" }), "Analitik")
+                    className: cx("flex flex-col items-center justify-center w-full h-full space-y-1 transition-all", activeTab === 'analytics' ? "text-audit-primary" : "text-slate-400 hover:text-slate-600") 
+                }, React.createElement(Icon, { name: "spark", className: cx("w-6 h-6 transition-transform", activeTab==='analytics'&&"scale-110") }), React.createElement("span", { className: cx("text-[10px] font-black", activeTab==='analytics'?"opacity-100":"opacity-70") }, "Analitik")),
+                React.createElement("button", { 
+                    type: "button", 
+                    onClick: () => setActiveTab('utility'), 
+                    className: cx("flex flex-col items-center justify-center w-full h-full space-y-1 transition-all", activeTab === 'utility' ? "text-audit-primary" : "text-slate-400 hover:text-slate-600") 
+                }, React.createElement(Icon, { name: "settings", className: cx("w-6 h-6 transition-transform", activeTab==='utility'&&"scale-110") }), React.createElement("span", { className: cx("text-[10px] font-black", activeTab==='utility'?"opacity-100":"opacity-70") }, "Utiliti"))
             )
         ),
+        activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in space-y-4 px-4 py-6 pb-28 max-w-lg mx-auto w-full" },
+            React.createElement("h2", { className: "text-2xl font-black text-slate-900 mb-6" }, "Utiliti & Pengaturan"),
+            React.createElement("div", { className: "home-quick-actions-grid home-quick-actions-grid--compact home-utility-panel grid grid-cols-2 gap-3" },
+                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
+                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, syncBusy ? 'Sync...' : 'Update App')
+                ),
+                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px' }, onClick: handleBackupData },
+                    React.createElement(Icon, { name: "download", className: "h-6 w-6 text-audit-primary mb-1" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Backup Data")
+                ),
+                React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker flex-col items-center justify-center', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '80px', display: 'flex' }, role: "button" },
+                    React.createElement(Icon, { name: "upload", className: "h-6 w-6 text-audit-primary mb-1" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Restore Data"),
+                    React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native hidden", onChange: handleRestoreFile, disabled: restoreBusy })
+                ),
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral", style: { minHeight: '80px' }, onClick: () => setMasterStoreModalOpen(true) },
+                    React.createElement(Icon, { name: "store", className: "h-6 w-6 text-audit-primary mb-1" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Master Store")
+                ),
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '80px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true) },
+                    React.createElement(Icon, { name: "spark", className: "h-6 w-6 mb-1" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Install App")
+                ),
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '80px' }, onClick: onClearHistory },
+                    React.createElement(Icon, { name: "trash", className: "h-6 w-6 mb-1" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[13px]" }, "Hapus History")
+                )
+            )
+        ) : null,
         activeTab === 'home' ? React.createElement(React.Fragment, null,
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-history-section" },
@@ -4574,7 +4574,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
-                bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+                bottom: 'calc(85px + env(safe-area-inset-bottom, 0px))',
                 transform: 'translateX(-50%)',
                 zIndex: 80,
                 width: 'min(360px, calc(100vw - 32px))',
@@ -4621,8 +4621,8 @@ function StoreSearchSelect({ label, value, options, onChange, placeholder, disab
                 )
             )
         ),
-        open ? React.createElement("div", { className: "fixed inset-0 z-[100] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6 fade-in", role: "dialog" },
-            React.createElement("div", { className: "w-full rounded-t-[30px] bg-white shadow-2xl md:max-w-2xl md:rounded-[32px] flex flex-col", style: { maxHeight: 'min(90vh, 700px)', minHeight: '60vh' } },
+        open ? React.createElement("div", { className: "fixed inset-0 z-[100] bg-white flex flex-col fade-in animate-slide-up", role: "dialog", style: { width: '100%', height: '100%' } },
+            React.createElement("div", { className: "w-full h-full flex flex-col bg-white safe-area-pt safe-area-pb" },
                 React.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 px-5 py-4 shrink-0" },
                     React.createElement("h3", { className: "text-lg font-black text-audit-ink" }, "Pilih Store"),
                     React.createElement(Button, { variant: "icon", onClick: () => setOpen(false), "aria-label": "Tutup" },
@@ -4744,16 +4744,16 @@ function NewVisitModal({ open, onClose, onCreate }) {
     if (!open)
         return null;
     const visitStoreName = manualOpen ? cleanText(manualStoreName) : storeName;
-    return (React.createElement("div", { className: "fixed inset-0 z-[80] grid place-items-end bg-slate-950/60 p-0 backdrop-blur-sm md:place-items-center md:p-6", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "new-visit-modal w-full rounded-t-[30px] bg-white p-5 shadow-2xl md:max-w-2xl md:rounded-[32px] md:p-7" },
-            React.createElement("div", { className: "mb-5 flex items-start justify-between gap-3" },
+    return (React.createElement("div", { className: "fixed inset-0 z-[110] bg-white flex flex-col fade-in animate-slide-up", role: "dialog", "aria-modal": "true", style: { width: '100%', height: '100%' } },
+        React.createElement("div", { className: "new-visit-modal w-full h-full flex flex-col bg-slate-50 relative" },
+            React.createElement("div", { className: "flex items-start justify-between gap-3 p-5 border-b border-slate-200 bg-white shadow-sm shrink-0 sticky top-0 z-10" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Kunjungan Baru"),
                     React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, "Pilih Bestie dan Store"),
                     readBestieLogin().name ? React.createElement("p", { className: "mt-1 text-xs font-bold text-emerald-700" }, "Login NIK: ", readBestieLogin().name) : null),
                 React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
                     React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("div", { className: "grid gap-4" },
+            React.createElement("div", { className: "flex-1 overflow-y-auto p-5 pb-32 grid gap-4" },
                 React.createElement(SelectField, { label: "Nama Bestie", value: bestieName, options: BESTIE_NAMES, onChange: setBestieName, placeholder: "Pilih nama bestie", icon: "user", required: true }),
                 React.createElement(StoreSearchSelect, { label: "Store", value: storeName, options: storeOptions, onChange: setStoreName, placeholder: "Pilih store", disabled: manualOpen }),
                 React.createElement("div", { className: "rounded-2xl border border-slate-200 p-3" },
