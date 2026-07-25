@@ -1,5 +1,5 @@
 {
-  "version": "276",
-  "build": "revamp276-analytics-grid-fix-v11",
-  "label": "Revamp 276 - Fix Analytics Circular Grid Layout"
+  "version": "277",
+  "build": "revamp277-analytics-fix-v12",
+  "label": "Revamp 277 - Fix Index HTML Cache Busters"
 }
