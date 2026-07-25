@@ -4027,21 +4027,24 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
 
                     if (bk && bestieMap[bk]) {
                         const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
-                        const rawStore = r.store_name || r.storeName || 'Unknown Store';
                         
-                        bestieMap[bk].visitHistory.push({
-                            storeName: rawStore,
-                            date: vDate,
-                            dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                        });
+                        if (vDate.getMonth() === currentMonth && vDate.getFullYear() === currentYear) {
+                            const rawStore = r.store_name || r.storeName || 'Unknown Store';
+                            
+                            bestieMap[bk].visitHistory.push({
+                                storeName: rawStore,
+                                date: vDate,
+                                dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                            });
 
-                        const storeName = normalize(r.store_name || r.storeName || '');
-                        const mondayStr = getMonday(vDate);
-                        const uniqueKey = `${storeName}_${mondayStr}`;
-                        
-                        if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
-                            bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
-                            bestieMap[bk].totalVisits++;
+                            const storeName = normalize(r.store_name || r.storeName || '');
+                            const mondayStr = getMonday(vDate);
+                            const uniqueKey = `${storeName}_${mondayStr}`;
+                            
+                            if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
+                                bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
+                                bestieMap[bk].totalVisits++;
+                            }
                         }
                     }
                 });
@@ -4148,8 +4151,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     React.createElement(Icon, { name: "bar-chart", className: "w-6 h-6 text-white" })
                 ),
                 React.createElement("div", null,
-                    React.createElement("h2", { className: "text-3xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik"),
-                    React.createElement("p", { className: "mt-1 text-sm font-semibold text-slate-500 uppercase tracking-wider" }, "Monitoring Kinerja & Kepatuhan")
+                    React.createElement("h2", { className: "text-3xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik")
                 )
             ),
             React.createElement("button", { 
@@ -4576,31 +4578,31 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in w-full" },
             React.createElement("div", { className: "w-full px-0 py-6 pb-32 space-y-6" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight px-4 md:px-8" }, "Utiliti & Pengaturan"),
-                React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-6 px-4 md:px-8" },
-                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '130px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
-                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-8 w-8 text-audit-primary mb-2" }),
-                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, syncBusy ? 'Sync...' : 'Update App')
+                React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-8" },
+                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral p-4', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '150px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
+                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-10 w-10 text-audit-primary mb-3" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, syncBusy ? 'Sync...' : 'Update App')
                 ),
-                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '130px' }, onClick: handleBackupData },
-                    React.createElement(Icon, { name: "download", className: "h-8 w-8 text-audit-primary mb-2" }),
-                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Backup Data")
+                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral p-4', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '150px' }, onClick: handleBackupData },
+                    React.createElement(Icon, { name: "download", className: "h-10 w-10 text-audit-primary mb-3" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Backup Data")
                 ),
-                React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker flex-col items-center justify-center', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '130px', display: 'flex' }, role: "button" },
-                    React.createElement(Icon, { name: "upload", className: "h-8 w-8 text-audit-primary mb-2" }),
-                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Restore Data"),
+                React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker flex-col items-center justify-center p-4', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '150px', display: 'flex' }, role: "button" },
+                    React.createElement(Icon, { name: "upload", className: "h-10 w-10 text-audit-primary mb-3" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Restore Data"),
                     React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native hidden", onChange: handleRestoreFile, disabled: restoreBusy })
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral", style: { minHeight: '130px' }, onClick: () => setMasterStoreModalOpen(true) },
-                    React.createElement(Icon, { name: "store", className: "h-8 w-8 text-audit-primary mb-2" }),
-                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Master Store")
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral p-4", style: { minHeight: '150px' }, onClick: () => setMasterStoreModalOpen(true) },
+                    React.createElement(Icon, { name: "store", className: "h-10 w-10 text-audit-primary mb-3" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Master Store")
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install", style: { minHeight: '130px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true) },
-                    React.createElement(Icon, { name: "spark", className: "h-8 w-8 mb-2" }),
-                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Install App")
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install p-4", style: { minHeight: '150px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true) },
+                    React.createElement(Icon, { name: "spark", className: "h-10 w-10 mb-3" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Install App")
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger", style: { minHeight: '130px' }, onClick: onClearHistory },
-                    React.createElement(Icon, { name: "trash", className: "h-8 w-8 mb-2" }),
-                    React.createElement("span", { className: "home-quick-action-label text-sm font-bold" }, "Hapus History")
+                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger p-4", style: { minHeight: '150px' }, onClick: onClearHistory },
+                    React.createElement(Icon, { name: "trash", className: "h-10 w-10 mb-3" }),
+                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Hapus History")
                 )
             )
         )) : null,
@@ -9100,11 +9102,11 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
             React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
             
         // Mobile Wizard Controls (Bottom Fixed)
-        React.createElement("div", { className: "fixed left-4 right-4 z-40 flex gap-3 sm:hidden", style: { bottom: '145px' } },
+        React.createElement("div", { className: "fixed left-4 right-4 z-40 flex gap-3 sm:hidden", style: { bottom: '24px' } },
             React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "flex-1 !rounded-2xl shadow-xl backdrop-blur-md bg-white/90" }, "Back"),
             React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "flex-1 !rounded-2xl shadow-xl" }, activeSection >= SECTION_DEFS.length - 1 ? "Finish" : "Next")),
             
-        React.createElement("div", { className: "lg:hidden", "aria-hidden": "true", style: { height: '120px', flexShrink: 0 } })));
+        React.createElement("div", { className: "lg:hidden", "aria-hidden": "true", style: { height: '140px', flexShrink: 0 } })));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
