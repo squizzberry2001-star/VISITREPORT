@@ -947,15 +947,22 @@ function getStoresForBestie(bestieName) {
         master: item,
         value: cleanText(item.storeName || item.siteDescr)
     })).filter((item) => item.label);
-    const fallback = getEffectiveMasterStores().map((item) => ({
+    const userStores = assigned.length ? assigned : fallback;
+    const otherStores = getEffectiveMasterStores().map((item) => ({
         label: cleanText(item.siteDescr),
         source: 'master',
         master: item,
         value: cleanText(item.siteDescr)
-    })).filter((item) => item.label);
-    const base = assigned.length ? assigned : fallback;
-    return uniqueBy([...base, ...approvedManual], (item) => normalize(item.label))
-        .sort((a, b) => a.label.localeCompare(b.label));
+    })).filter((item) => item.label && !userStores.some(u => normalize(u.label) === normalize(item.label)));
+    
+    const combined = [...userStores, ...approvedManual];
+    const uniqueCombined = uniqueBy(combined, (item) => normalize(item.label)).sort((a, b) => a.label.localeCompare(b.label));
+    
+    if (uniqueCombined.length && otherStores.length) {
+        uniqueCombined.push({ label: '─── Store Lainnya ───', value: '___SEPARATOR___', disabled: true });
+    }
+    
+    return [...uniqueCombined, ...otherStores];
 }
 function findAssignmentStore(storeName, bestieName) {
     const storeKey = normalize(storeName);
@@ -1178,7 +1185,11 @@ function historyMetaFromVisit(visit) {
         visitDate: cleanText(visit.tanggal, ''),
         updatedAt: visit.updatedAt || Date.now(),
         createdAt: visit.createdAt || Date.now(),
-        progress: visitProgress(visit)
+        progress: visitProgress(visit),
+        isPdfDownloaded: !!visit.isPdfDownloaded,
+        isEmailSent: !!visit.isEmailSent,
+        isEmailFeedback: !!visit.isEmailFeedback,
+        temuanCount: Array.isArray(visit.observationData) ? visit.observationData.length : 0
     };
 }
 
@@ -2298,7 +2309,7 @@ function SelectField({ label, value, options, onChange, placeholder = 'Pilih', r
                 React.createElement(Icon, { name: icon, className: "h-5 w-5" })) : null,
             React.createElement(SelectInput, { value: value || '', onChange: (event) => onChange(event.target.value), className: cx('select-control', icon ? 'has-leading-icon' : ''), required: required },
                 React.createElement("option", { value: "" }, placeholder),
-                normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label }, item.label))))));
+                normalizedOptions.map((item) => React.createElement("option", { key: (item.value || '') + '-' + item.label, value: item.value || item.label, disabled: item.disabled }, item.label))))));
 }
 function Toggle({ checked, onChange, label, className = '' }) {
     return (React.createElement("button", { type: "button", role: "switch", "aria-checked": checked, "aria-label": label || (checked ? 'Hide section' : 'Unhide section'), onClick: () => onChange(!checked), className: cx('slide-toggle compact-toggle', checked && 'active', className) },
@@ -3646,7 +3657,7 @@ function MasterStoreDetailModal({ open, onClose }) {
                     React.createElement("span", null, "Coba cari dengan kode toko, nama store, Area Manager, atau Regional Manager."))))));
 }
 
-function AnalyticsView() {
+function AnalyticsView({ history }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -3658,44 +3669,46 @@ function AnalyticsView() {
                 const rows = await fetchMonitorRowsFromConvex();
                 if (cancelled) return;
                 
-                const storeSet = new Set();
-                const visitByMonth = {};
-                const bestieCounts = {};
-                
+                const globalStoreSet = new Set();
                 rows.forEach(r => {
                     const storeName = r.store_name || r.storeName || r.store || '';
-                    if (storeName) storeSet.add(storeName);
+                    if (storeName) globalStoreSet.add(storeName);
+                });
+                const masterStores = getEffectiveMasterStores();
+                const totalMasterStores = masterStores.length;
+                
+                // Local history metrics
+                const localVisits = history || [];
+                let localCompleted = 0;
+                let emailSentCount = 0;
+                let emailFeedbackCount = 0;
+                
+                const temuanByMonth = {};
+                
+                localVisits.forEach(v => {
+                    if (v.isPdfDownloaded || v.isEmailSent) {
+                        localCompleted++;
+                    }
+                    if (v.isEmailSent) {
+                        emailSentCount++;
+                        if (v.isEmailFeedback) emailFeedbackCount++;
+                    }
                     
-                    const d = new Date(r.visit_date || r.visitDate || r.tanggal || Date.now());
-                    const m = d.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
-                    visitByMonth[m] = (visitByMonth[m] || 0) + 1;
-                    
-                    const bestieName = r.bestie_name || r.bestieName || r.nama || '';
-                    if (bestieName) {
-                        bestieCounts[bestieName] = (bestieCounts[bestieName] || 0) + 1;
+                    if (v.visitDate) {
+                        const d = new Date(v.visitDate);
+                        const m = d.toLocaleString('id-ID', { month: 'short', year: '2-digit' });
+                        temuanByMonth[m] = (temuanByMonth[m] || 0) + (v.temuanCount || 0);
                     }
                 });
-                
-                let topBestie = { name: '-', count: 0 };
-                let totalBesties = 0;
-                for (const [name, count] of Object.entries(bestieCounts)) {
-                    totalBesties++;
-                    if (count > topBestie.count) {
-                        topBestie = { name, count };
-                    }
-                }
-                
-                const totalStores = storeSet.size;
-                const totalVisits = rows.length;
-                const avgVisits = totalStores > 0 ? (totalVisits / totalStores).toFixed(1) : 0;
-                
+
                 setData({
-                    totalStores,
-                    totalVisits,
-                    visitByMonth,
-                    topBestie,
-                    totalBesties,
-                    avgVisits
+                    globalStoreCount: globalStoreSet.size,
+                    totalMasterStores,
+                    localCompleted,
+                    emailSentCount,
+                    emailFeedbackCount,
+                    temuanByMonth,
+                    localTotalVisits: localVisits.length
                 });
             } catch (e) {
                 console.error(e);
@@ -3705,106 +3718,111 @@ function AnalyticsView() {
         }
         loadData();
         return () => { cancelled = true; };
-    }, []);
+    }, [history]);
 
     if (loading) {
         return React.createElement("div", { className: "py-24 w-full flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-3xl border border-slate-100" },
             React.createElement("span", { className: "loading-spinner inline-block mb-4 scale-125" }),
-            React.createElement("p", { className: "font-bold tracking-wide text-lg" }, "Menganalisa Data Kunjungan Global...")
+            React.createElement("p", { className: "font-bold tracking-wide text-lg" }, "Menganalisa Data Kunjungan...")
         );
     }
+    
+    // Coverage percentage
+    const coveragePercent = data?.totalMasterStores > 0 ? ((data.globalStoreCount / data.totalMasterStores) * 100).toFixed(1) : 0;
+    const feedbackPercent = data?.emailSentCount > 0 ? ((data.emailFeedbackCount / data.emailSentCount) * 100).toFixed(1) : 0;
 
     return React.createElement("div", { className: "analytics-view-container w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6 flex-1 overflow-y-auto min-h-0 pb-32" },
         React.createElement("div", { className: "mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
             React.createElement("div", null,
                 React.createElement("h2", { className: "text-2xl font-black text-audit-ink tracking-tight" }, "Dashboard Analitik"),
-                React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium mt-1" }, "Overview performa kunjungan di lapangan")
-            ),
-            React.createElement("div", { className: "px-4 py-2 surface-card rounded-full border border-slate-200/50 shadow-sm text-xs font-bold text-audit-ink opacity-80 flex items-center gap-2 w-max" },
-                React.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse" }),
-                "Data Realtime"
+                React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium mt-1" }, "Overview performa dan tracking kunjungan")
             )
         ),
-
+        
         React.createElement("div", { className: "grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8" },
-            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
-                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-audit-primary/10 flex items-center justify-center text-audit-primary mb-4" },
-                    React.createElement(Icon, { name: "store", className: "w-5 h-5" })
+            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 mb-4" },
+                    React.createElement(Icon, { name: "check", className: "w-5 h-5" })
                 ),
-                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Total Store"),
-                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.totalStores || 0)
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Report Selesai (PDF/Email)"),
+                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.localCompleted || 0)
             ),
-            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
-                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600 mb-4" },
+            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-600 mb-4" },
+                    React.createElement(Icon, { name: "send", className: "w-5 h-5" })
+                ),
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Email Terkirim"),
+                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.emailSentCount || 0)
+            ),
+            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 mb-4" },
                     React.createElement(Icon, { name: "history", className: "w-5 h-5" })
                 ),
-                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Total Kunjungan"),
-                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.totalVisits || 0)
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Email Di-Feedback"),
+                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.emailFeedbackCount || 0)
             ),
-            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
-                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 mb-4" },
-                    React.createElement(Icon, { name: "user", className: "w-5 h-5" })
+            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
+                React.createElement("div", { className: "w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 mb-4" },
+                    React.createElement(Icon, { name: "store", className: "w-5 h-5" })
                 ),
-                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Active Besties"),
-                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.totalBesties || 0)
-            ),
-            React.createElement("div", { className: "surface-card p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100/50 relative overflow-hidden group hover:shadow-md transition-all" },
-                React.createElement("div", { className: "w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 mb-4" },
-                    React.createElement(Icon, { name: "spark", className: "w-5 h-5" })
-                ),
-                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Avg. Visit/Store"),
-                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, data?.avgVisits || 0)
+                React.createElement("p", { className: "text-[10px] sm:text-xs text-audit-ink opacity-60 font-bold uppercase tracking-wider mb-1" }, "Coverage Global"),
+                React.createElement("p", { className: "text-3xl font-black text-audit-ink" }, `${coveragePercent}%`)
             )
         ),
-
-        React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8" },
-            React.createElement("div", { className: "lg:col-span-2 surface-card rounded-[24px] shadow-sm border border-slate-100/50 p-6 sm:p-8" },
+        
+        React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8" },
+            React.createElement("div", { className: "surface-card rounded-[32px] shadow-sm border border-slate-100/50 p-6 sm:p-8" },
                 React.createElement("div", { className: "flex items-center justify-between mb-8" },
-                    React.createElement("h3", { className: "text-lg font-black text-audit-ink" }, "Tren Kunjungan Bulanan"),
-                    React.createElement("button", { className: "p-2 hover:bg-slate-500/10 rounded-lg text-audit-ink opacity-50 transition" }, React.createElement(Icon, { name: "calendar", className: "w-5 h-5" }))
+                    React.createElement("h3", { className: "text-lg font-black text-audit-ink" }, "Tren Temuan (Observasi)"),
+                    React.createElement("div", { className: "p-2 bg-emerald-50 rounded-xl text-emerald-600" }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }))
                 ),
-                React.createElement("div", { className: "space-y-4" },
-                    Object.keys(data?.visitByMonth || {}).length === 0 ? 
+                React.createElement("div", { className: "space-y-5" },
+                    Object.keys(data?.temuanByMonth || {}).length === 0 ? 
                         React.createElement("div", { className: "py-12 flex flex-col items-center justify-center text-audit-ink opacity-50" },
-                            React.createElement(Icon, { name: "history", className: "w-12 h-12 mb-3 opacity-20" }),
-                            React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data kunjungan")
+                            React.createElement("p", { className: "text-sm font-medium" }, "Belum ada data temuan")
                         ) :
-                        Object.entries(data?.visitByMonth || {}).map(([month, count]) => {
-                            const maxCount = Math.max(...Object.values(data?.visitByMonth || {}));
-                            const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                        Object.entries(data?.temuanByMonth || {}).map(([month, count]) => {
+                            const maxCount = Math.max(...Object.values(data?.temuanByMonth || {}), 1);
+                            const percentage = (count / maxCount) * 100;
                             return React.createElement("div", { key: month, className: "group" },
                                 React.createElement("div", { className: "flex justify-between items-end mb-2" },
                                     React.createElement("span", { className: "text-sm font-bold text-audit-ink opacity-90" }, month),
-                                    React.createElement("span", { className: "text-sm font-black text-audit-primary" }, count, " ", React.createElement("span", { className: "text-[10px] text-audit-ink opacity-50 font-medium" }, "visit"))
+                                    React.createElement("span", { className: "text-sm font-black text-audit-primary" }, count, " ", React.createElement("span", { className: "text-[10px] text-audit-ink opacity-50 font-medium" }, "temuan"))
                                 ),
-                                React.createElement("div", { className: "h-3 w-full bg-slate-200/50 rounded-full overflow-hidden" },
-                                    React.createElement("div", { className: "h-full bg-audit-primary rounded-full transition-all duration-1000", style: { width: `${percentage}%` } })
+                                React.createElement("div", { className: "h-4 w-full bg-slate-100 rounded-full overflow-hidden" },
+                                    React.createElement("div", { className: "h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000 ease-out", style: { width: `${percentage}%` } })
                                 )
                             );
                         })
                 )
             ),
-            
-            React.createElement("div", { className: "space-y-6 sm:space-y-8" },
-                React.createElement("div", { className: "bg-gradient-to-br from-audit-primary to-emerald-800 rounded-[24px] shadow-lg p-6 sm:p-8 text-white relative overflow-hidden" },
-                    React.createElement("div", { className: "absolute top-0 right-0 p-8 opacity-[0.08] transform rotate-12" }, React.createElement(Icon, { name: "user", className: "w-32 h-32" })),
-                    React.createElement("h3", { className: "text-sm font-bold text-emerald-100 uppercase tracking-widest mb-6" }, "👑 Bestie Teraktif"),
-                    React.createElement("div", { className: "relative z-10" },
-                        React.createElement("p", { className: "font-black text-3xl leading-tight mb-2 truncate" }, data?.topBestie?.name || '-'),
-                        React.createElement("div", { className: "inline-flex items-center gap-2 bg-black/20 rounded-full px-4 py-1.5 backdrop-blur-sm mt-1" },
-                            React.createElement(Icon, { name: "spark", className: "w-4 h-4 text-emerald-300" }),
-                            React.createElement("span", { className: "text-sm font-bold text-emerald-50" }, (data?.topBestie?.count || 0), " Kunjungan")
+            React.createElement("div", { className: "grid grid-rows-2 gap-6 sm:gap-8" },
+                React.createElement("div", { className: "surface-card rounded-[32px] shadow-sm border border-slate-100/50 p-6 sm:p-8 flex flex-col justify-center relative overflow-hidden" },
+                    React.createElement("div", { className: "relative z-10 flex items-center gap-6" },
+                        React.createElement("div", { className: "relative w-24 h-24 shrink-0 flex items-center justify-center rounded-full bg-slate-50 border-8 border-slate-100" },
+                            React.createElement("svg", { viewBox: "0 0 36 36", className: "absolute inset-0 w-full h-full -rotate-90 text-emerald-500", style: { width: '100%', height: '100%' } },
+                                React.createElement("path", { className: "stroke-current", fill: "none", strokeWidth: "3.5", strokeDasharray: `${coveragePercent}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
+                            ),
+                            React.createElement("span", { className: "font-black text-lg text-audit-ink" }, `${Math.round(coveragePercent)}%`)
+                        ),
+                        React.createElement("div", null,
+                            React.createElement("h3", { className: "text-lg font-black text-audit-ink mb-1" }, "Coverage Global (Semua Bestie)"),
+                            React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium" }, `${data?.globalStoreCount || 0} dari ${data?.totalMasterStores || 0} toko dikunjungi`)
                         )
                     )
                 ),
-                
-                React.createElement("div", { className: "surface-card bg-opacity-50 rounded-[24px] border border-slate-200/50 p-6" },
-                    React.createElement("h3", { className: "text-sm font-bold text-audit-ink mb-2 flex items-center gap-2" }, 
-                        React.createElement(Icon, { name: "bell", className: "w-4 h-4 text-audit-ink opacity-50" }),
-                        "Tips Analitik"
-                    ),
-                    React.createElement("p", { className: "text-xs text-audit-ink opacity-60 leading-relaxed font-medium" },
-                        "Data di atas dihitung secara realtime berdasarkan seluruh riwayat kunjungan yang telah disinkronisasi ke server. Pastikan Bestie selalu melakukan sinkronisasi agar laporan ini akurat."
+                React.createElement("div", { className: "surface-card rounded-[32px] shadow-sm border border-slate-100/50 p-6 sm:p-8 flex flex-col justify-center relative overflow-hidden" },
+                    React.createElement("div", { className: "relative z-10 flex items-center gap-6" },
+                        React.createElement("div", { className: "relative w-24 h-24 shrink-0 flex items-center justify-center rounded-full bg-slate-50 border-8 border-slate-100" },
+                            React.createElement("svg", { viewBox: "0 0 36 36", className: "absolute inset-0 w-full h-full -rotate-90 text-sky-500", style: { width: '100%', height: '100%' } },
+                                React.createElement("path", { className: "stroke-current", fill: "none", strokeWidth: "3.5", strokeDasharray: `${feedbackPercent}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" })
+                            ),
+                            React.createElement("span", { className: "font-black text-lg text-audit-ink" }, `${Math.round(feedbackPercent)}%`)
+                        ),
+                        React.createElement("div", null,
+                            React.createElement("h3", { className: "text-lg font-black text-audit-ink mb-1" }, "Email Feedback Rate"),
+                            React.createElement("p", { className: "text-sm text-audit-ink opacity-60 font-medium" }, `${data?.emailFeedbackCount || 0} dari ${data?.emailSentCount || 0} email mendapat balasan`)
+                        )
                     )
                 )
             )
@@ -3812,7 +3830,7 @@ function AnalyticsView() {
     );
 }
 
-function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap }) {
+function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback }) {
     const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -4095,13 +4113,18 @@ function DashboardPage({ history, storageLabel, onNewVisit, onOpenVisit, onDelet
                         React.createElement("span", null, "•"),
                         React.createElement("span", null, formatDate(item.visitDate))),
                     React.createElement(ProgressBar, { value: item.progress || 0 }),
+                    item.isEmailSent && React.createElement("div", { className: "mt-3" },
+                        React.createElement("button", { type: "button", onClick: () => onToggleFeedback(item.id), className: cx("text-xs font-bold py-1 px-3 rounded-full border transition-all", item.isEmailFeedback ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100") },
+                            React.createElement(Icon, { name: "check", className: "h-3 w-3 inline mr-1" }),
+                            item.isEmailFeedback ? 'Sudah di-feedback' : 'Tandai Feedback')
+                    ),
                     React.createElement("div", { className: "mt-4 flex gap-2" },
                         React.createElement(Button, { className: "flex-1", variant: "secondary", icon: "clipboard", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
                         React.createElement(Button, { variant: "icon", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus history" },
                             React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))))),
                 hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " history lagi") : null) :
                 React.createElement("div", { className: "dashboard-history-list dashboard-history-empty" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada history" })))
-        ) : React.createElement(AnalyticsView, null),
+        ) : React.createElement(AnalyticsView, { history: history }),
         React.createElement("button", { type: "button", className: "inline-flex items-center justify-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 left: '50%',
@@ -5560,7 +5583,7 @@ function RbvHtmlReportPreview({ visit }) {
     }
     return React.createElement("div", { className: "rbv-html-preview-stage", "aria-label": "Preview report" }, pages);
 }
-function PreviewPage({ visit, onBack }) {
+function PreviewPage({ visit, update, onBack }) {
     const [pdfUrl, setPdfUrl] = useState('');
     const [pdfBlob, setPdfBlob] = useState(null);
     const [status, setStatus] = useState('Menyiapkan preview PDF...');
@@ -5635,6 +5658,9 @@ function PreviewPage({ visit, onBack }) {
             setDownloadMessage('Pilih lokasi simpan...');
             const didSave = await downloadBlobManaged(blob, fileName);
             setDownloadMessage(didSave ? 'PDF tersimpan.' : 'Download dibatalkan.');
+            if (didSave && update) {
+                update({ isPdfDownloaded: true });
+            }
             await new Promise((resolve) => window.setTimeout(resolve, didSave ? 420 : 260));
         }
         catch (error) {
@@ -5750,6 +5776,9 @@ function PreviewPage({ visit, onBack }) {
             }
             const successMessage = mode === 'send' ? (sendSkipped.length ? 'Email berhasil dikirim. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Email berhasil dikirim.') : (sendSkipped.length ? 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya. Beberapa attachment dilepas karena ukuran terlalu besar.' : 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.');
             setEmailStatus(successMessage);
+            if (update && mode === 'send') {
+                update({ isEmailSent: true });
+            }
             if (mode === 'draft')
                 window.dispatchEvent(new CustomEvent('rbv-email-feedback-popup', { detail: { icon: 'pdf', title: 'Draft tersimpan', message: 'Draft sudah disimpan diemail, Buka menu draft pada Gmail untuk mengeceknya.' } }));
             if (mode === 'send')
@@ -8942,6 +8971,22 @@ function App() {
     function updateVisit(patch) {
         setVisit((current) => current ? { ...current, ...patch, updatedAt: Date.now() } : current);
     }
+    async function toggleVisitFeedback(id) {
+        try {
+            const data = await getVisitRecord(id);
+            if (!data) return;
+            data.isEmailFeedback = !data.isEmailFeedback;
+            data.updatedAt = Date.now();
+            await putVisitRecord(data);
+            const nextMeta = saveHistoryMeta([historyMetaFromVisit(data), ...readHistoryMeta().filter((item) => item.id !== data.id)]);
+            setHistory(nextMeta);
+            if (visit && visit.id === id) {
+                setVisit(data);
+            }
+        } catch (error) {
+            console.warn('Gagal toggle feedback:', error);
+        }
+    }
     async function openPreviewScreen() {
         if (!visit) {
             setScreen('dashboard');
@@ -9048,10 +9093,10 @@ function App() {
     }
     let content;
     if (screen === 'dashboard') {
-        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap });
+        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback });
     }
     else if (screen === 'preview') {
-        content = React.createElement(PreviewPage, { visit: visit, onBack: () => navigateScreen('audit') });
+        content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });
     }
     else {
         content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, masterStoreRevision: masterStoreRevision });
