@@ -3100,7 +3100,6 @@ function paraphraseObservationRow(row) {
 const DEFAULT_GEMINI_API_KEY = (typeof atob === 'function' ? atob : (s => Buffer.from(s, 'base64').toString('utf8')))("QVEuQWI4Uk42Sms2aFk3RlF2Mk9pU2sybXFrMDBLMzhwV1F4MlJoZk1lZmo0NTAxWjdrRHc=");
 
 async function callGeminiObservationParaphrase(row) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
     const prompt = `Kamu adalah AI QA & Audit Manager di industri restoran/F&B.
 Tugasmu memparafrase catatan temuan audit operasional menjadi kalimat laporan Bahasa Indonesia yang formal, profesional, logis, dan komunikatif.
 PENTING: Gunakan bahasa formal yang mudah dipahami (jelas dan lugas, tidak perlu terlalu kaku atau menggunakan kata baku yang sulit dimengerti).
@@ -3123,24 +3122,64 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
   "tindakan": "...",
   "hasil": "..."
 }`;
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 0.25,
-                responseMimeType: "application/json"
+
+    const keys = [
+        { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-1.5-flash' },
+        { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-1.5-flash' },
+        { provider: 'openai', key: atob('c2stcHJvai0zT0NnVEQxVW5qcWpSdDhSSFU0YnotNmh0T2l1OUJEZklkUzM5bHlKaUU3T1VjZUU5RWM4UkJGRmJNVjJjMWpKNmtHT1pfSG9zV1QzQmxia0ZKRHVPVjJiYmhaemhxVTZFU3dpWVpXM0F4S0VMcXpzdHY0dFVnRkZpZmlEcTBHR1RMSlRXNThWUy0yNWVBZGNQQ1JRR21uM0xKY0E='), model: 'gpt-4o-mini' },
+        { provider: 'deepseek', key: atob('YXJrLTM4MTM3NzQyLWQ3ZDQtNDFiNi05YmI3LTZiNjc0ZWRlMWVlMy0xYTE5ZA=='), model: 'deepseek-chat' },
+        { provider: 'groq', key: atob('ODhiZTIzZDhlNWFlNDM2MDlmZTE4NDViNjg4YTk4ZjQ='), model: 'llama-3.1-8b-instant' }
+    ];
+
+    let lastError = null;
+    let parsed = null;
+
+    for (const conf of keys) {
+        try {
+            if (conf.provider === 'gemini') {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.25, responseMimeType: "application/json" }
+                    })
+                });
+                if (!response.ok) throw new Error(`Gemini HTTP ${response.status}`);
+                const data = await response.json();
+                const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                parsed = JSON.parse(text.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim());
+                break;
+            } else if (conf.provider === 'openai' || conf.provider === 'deepseek' || conf.provider === 'groq') {
+                let baseUrl = 'https://api.openai.com/v1/chat/completions';
+                if (conf.provider === 'deepseek') baseUrl = 'https://api.deepseek.com/chat/completions';
+                if (conf.provider === 'groq') baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${conf.key}` },
+                    body: JSON.stringify({
+                        model: conf.model,
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.25,
+                        response_format: (conf.provider === 'openai' || conf.provider === 'deepseek') ? { type: "json_object" } : undefined
+                    })
+                });
+                if (!response.ok) throw new Error(`${conf.provider} HTTP ${response.status}`);
+                const data = await response.json();
+                const text = data?.choices?.[0]?.message?.content || '';
+                parsed = JSON.parse(text.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim());
+                break;
             }
-        })
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        } catch (e) {
+            console.warn(`${conf.provider} paraphrase fallback failed:`, e.message);
+            lastError = e;
+        }
     }
-    const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(cleaned);
+    
+    if (!parsed) throw lastError || new Error("All AI paraphrase providers failed");
+    
     return {
         ...row,
         temuan: parsed.temuan || row.temuan || '',
@@ -3152,13 +3191,13 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
     };
 }
 
+
 async function callGeminiExecutiveSummary({ qscTexts, opiTexts, storeFindings, totalVisits, topQSC, topOPI }) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
     const topStores = (storeFindings || []).slice(0, 8).map(s => `${s.storeName}: ${s.totalFindings} temuan (QSC: ${s.qscCount}, OPI: ${s.opiCount})`).join('\n');
     const qscSample = (qscTexts || []).slice(0, 15).join(' | ');
     const opiSample = (opiTexts || []).slice(0, 15).join(' | ');
-    const topQscKeywords = (topQSC || []).slice(0, 5).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
-    const topOpiKeywords = (topOPI || []).slice(0, 5).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
+    const topQscKeywords = (topQSC || []).slice(0, 10).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
+    const topOpiKeywords = (topOPI || []).slice(0, 10).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
     const prompt = `Kamu adalah AI Executive Analyst untuk tim audit operasional restoran/F&B.
 Buatkan EXECUTIVE SUMMARY dalam Bahasa Indonesia yang profesional, ringkas, dan actionable.
 
@@ -3178,29 +3217,77 @@ ${opiSample || 'Tidak ada'}
 
 Buatkan ringkasan dengan format:
 1. OVERVIEW singkat (1-2 kalimat)
-2. TEMUAN UTAMA (3-4 poin key findings dengan emoji ⚠️ atau ✅)
+2. ANALISA ISU TERBANYAK (Kategorikan isu spesifik berdasarkan frekuensi terbanyak. Misal: ⚠️ Kesalahan Label ROX - 20 temuan)
 3. TOKO KRITIS (sebutkan 2-3 toko paling banyak temuan dan isu utamanya)
 4. REKOMENDASI (2-3 action items konkret dengan emoji 💡)
 
 Gunakan bahasa formal tapi mudah dipahami. Gunakan emoji untuk visual. Jangan terlalu panjang - maksimal 200 kata.
 Kembalikan HANYA teks ringkasan tanpa format JSON atau markdown code block.`;
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 800
+    const keys = [
+        { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-1.5-flash' },
+        { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-1.5-flash' },
+        { provider: 'openai', key: atob('c2stcHJvai0zT0NnVEQxVW5qcWpSdDhSSFU0YnotNmh0T2l1OUJEZklkUzM5bHlKaUU3T1VjZUU5RWM4UkJGRmJNVjJjMWpKNmtHT1pfSG9zV1QzQmxia0ZKRHVPVjJiYmhaemhxVTZFU3dpWVpXM0F4S0VMcXpzdHY0dFVnRkZpZmlEcTBHR1RMSlRXNThWUy0yNWVBZGNQQ1JRR21uM0xKY0E='), model: 'gpt-4o-mini' },
+        { provider: 'deepseek', key: atob('YXJrLTM4MTM3NzQyLWQ3ZDQtNDFiNi05YmI3LTZiNjc0ZWRlMWVlMy0xYTE5ZA=='), model: 'deepseek-chat' },
+        { provider: 'groq', key: atob('ODhiZTIzZDhlNWFlNDM2MDlmZTE4NDViNjg4YTk4ZjQ='), model: 'llama-3.1-8b-instant' }
+    ];
+
+    let lastError = null;
+    
+    for (const conf of keys) {
+        try {
+            if (conf.provider === 'gemini') {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.4, maxOutputTokens: 800 }
+                    })
+                });
+                if (!response.ok) {
+                    const txt = await response.text();
+                    throw new Error(`Gemini API error: ${response.status} - ${txt}`);
+                }
+                const data = await response.json();
+                const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                if (resultText.trim()) return resultText.trim();
+            } else if (conf.provider === 'openai' || conf.provider === 'deepseek' || conf.provider === 'groq') {
+                let baseUrl = 'https://api.openai.com/v1/chat/completions';
+                if (conf.provider === 'deepseek') baseUrl = 'https://api.deepseek.com/chat/completions';
+                if (conf.provider === 'groq') baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${conf.key}`
+                    },
+                    body: JSON.stringify({
+                        model: conf.model,
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.4,
+                        max_tokens: 800
+                    })
+                });
+                if (!response.ok) {
+                    const txt = await response.text();
+                    throw new Error(`${conf.provider} API error: ${response.status} - ${txt}`);
+                }
+                const data = await response.json();
+                const resultText = data?.choices?.[0]?.message?.content || '';
+                if (resultText.trim()) return resultText.trim();
             }
-        })
-    });
-    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-    const data = await response.json();
-    const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return resultText.trim();
+        } catch (e) {
+            console.warn(`${conf.provider} fallback failed:`, e.message);
+            lastError = e;
+        }
+    }
+    
+    throw lastError || new Error("All AI providers failed");
 }
+
 
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = rows?.length ? rows : [blankObservationRow()];
