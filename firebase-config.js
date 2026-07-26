@@ -14,6 +14,7 @@ window.RB_FIREBASE_CONFIG = {
   // Collections mapping
   collections: {
     visits: 'monitor_visits',
+    findings: 'rbv_findings',
     manualRequests: 'monitor_manualRequests',
     presence: 'monitor_presence',
     appSettings: 'appSettings',
