@@ -7189,16 +7189,47 @@ async function runConvexMutation(functionName, args = {}) {
     } catch(err) { console.error('Firestore Mutation Error:', err); return null; }
 }
 async function subscribeConvexQuery(functionName, args, onData, onError) {
-    const client = await getConvexRealtimeClient();
-    if (!client || !functionName || typeof client.onUpdate !== 'function')
-        return null;
-    const unsubscribe = client.onUpdate(functionName, args || {}, onData, onError);
-    return () => {
-        if (typeof unsubscribe === 'function')
-            unsubscribe();
-        else if (typeof unsubscribe?.unsubscribe === 'function')
-            unsubscribe.unsubscribe();
-    };
+    const db = await getConvexRealtimeClient();
+    if (!db || !functionName) return () => {};
+    
+    const cols = getConvexConfig().collections;
+    let query;
+    try {
+        if (functionName.includes('listVisits') || functionName.includes('listAllFindings')) {
+            query = db.collection(cols.visits).orderBy('updatedAt', 'desc');
+            if (args && args.limit) query = query.limit(args.limit);
+        } else if (functionName.includes('listManualStoreRequests')) {
+            query = db.collection(cols.manualRequests).orderBy('updatedAt', 'desc').limit(args?.limit || 200);
+        } else if (functionName.includes('listPresence')) {
+            query = db.collection(cols.presence).orderBy('updatedAt', 'desc').limit(100);
+        } else if (functionName.includes('appSettings:listConfigs')) {
+            query = db.collection(cols.appSettings);
+            if (args && args.keys && args.keys.length > 0) {
+                query = query.where('key', 'in', args.keys);
+            }
+        } else if (functionName.includes('masterStores:listStores')) {
+            query = db.collection(cols.masterStores);
+        }
+        
+        if (!query) {
+            if (onData) onData([]);
+            return () => {};
+        }
+        
+        const unsubscribe = query.onSnapshot((snapshot) => {
+            const docs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            if (onData) onData(docs);
+        }, (err) => {
+            console.error('Firestore Sub Error:', err);
+            if (onError) onError(err);
+        });
+        
+        return () => unsubscribe();
+    } catch(err) {
+        console.error('Firestore Sub Setup Error:', err);
+        if (onData) onData([]);
+        return () => {};
+    }
 }
 function normalizeMonitorRows(rows) {
     const safeRows = Array.isArray(rows) ? rows : (Array.isArray(rows?.rows) ? rows.rows : Array.isArray(rows?.data) ? rows.data : []);
