@@ -3394,7 +3394,7 @@ function ObservationCards({ title, rows, onChange }) {
                             "w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 text-amber-300 hover:text-amber-200 shadow-sm hover:shadow-md hover:bg-slate-800 active:scale-95 transition-all cursor-pointer border border-amber-400/30",
                             aiLoadingIndex === index && "opacity-75 cursor-wait"
                         ),
-                        title: "Auto Paraphrase AI Gemini - Ubah ke bahasa audit profesional"
+                        title: "Auto Paraphrase BESTIE AI - Ubah ke bahasa audit profesional"
                     },
                         React.createElement("span", { className: cx("text-base", aiLoadingIndex === index && "animate-spin inline-block") }, aiLoadingIndex === index ? "⏳" : "✨")
                     ),
@@ -4310,7 +4310,7 @@ function AiInsightsPanel({ data }) {
                         React.createElement("h3", { className: "text-lg font-black text-indigo-900" }, "AI Executive Summary"),
                         React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-widest" }, 
                             aiError ? React.createElement("span", { className: "text-amber-600" }, "Fallback Mode — Local Analysis") :
-                            React.createElement("span", { className: "text-indigo-500" }, "Powered by Gemini AI")
+                            React.createElement("span", { className: "text-indigo-500" }, "Powered by BESTIE AI")
                         )
                     )
                 ),
@@ -4329,12 +4329,12 @@ function AiInsightsPanel({ data }) {
                 React.createElement("div", { className: "h-4 bg-indigo-200/30 rounded-full animate-pulse w-5/6" }),
                 React.createElement("div", { className: "h-4 bg-violet-200/40 rounded-full animate-pulse w-2/3" }),
                 React.createElement("div", { className: "h-4 bg-violet-200/30 rounded-full animate-pulse w-4/5" }),
-                React.createElement("p", { className: "text-xs text-indigo-400 font-semibold mt-2 text-center animate-pulse" }, "✨ Gemini AI sedang menganalisis data...")
+                React.createElement("p", { className: "text-xs text-indigo-400 font-semibold mt-2 text-center animate-pulse" }, "✨ BESTIE AI sedang menganalisis data...")
             ) :
             React.createElement("div", { className: "space-y-2 bg-white/60 backdrop-blur-sm p-4 rounded-2xl text-sm font-medium text-slate-700 leading-relaxed" },
                 paragraphs.length === 0 ?
                     React.createElement("p", { className: "text-slate-400 italic" }, "Belum ada data untuk dianalisis.") :
-                    paragraphs.map((p, i) => React.createElement("p", { key: i, className: "whitespace-pre-line" }, p))
+                    paragraphs.map((p, i) => React.createElement("p", { key: i, className: "whitespace-pre-line break-words" }, p))
             )
         )
     );
