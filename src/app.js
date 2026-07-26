@@ -4891,31 +4891,35 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
     }, []);
     const analytics = useAnalyticsData(history, scheduleConfig);
 
-    // AI Background Generator
+        // AI Background Generator
     useEffect(() => {
         if (!features.ai || !analytics.data) return;
         let cancelled = false;
+        let lastUpdated = 0;
+        
+        // Listen to config to know when it was last updated
+        const unsub = subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
+            if (res && res[0]) {
+                lastUpdated = new Date(res[0].updatedAt).getTime();
+            }
+        });
         
         const checkAndGenerateAI = async () => {
             try {
-                // Fetch current config
-                const res = await callConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] });
-                const config = res && res[0];
-                const lastUpdated = config ? new Date(config.updatedAt).getTime() : 0;
-                
                 // If older than 10 minutes
                 if (Date.now() - lastUpdated > 10 * 60 * 1000) {
                     // Random delay to prevent thundering herd
                     await new Promise(r => setTimeout(r, Math.random() * 15000));
                     if (cancelled) return;
                     
-                    // Double check if someone else updated it during the delay
-                    const res2 = await callConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] });
-                    const config2 = res2 && res2[0];
-                    const lastUpdated2 = config2 ? new Date(config2.updatedAt).getTime() : 0;
-                    
-                    if (Date.now() - lastUpdated2 > 10 * 60 * 1000) {
+                    // Check again after delay
+                    if (Date.now() - lastUpdated > 10 * 60 * 1000) {
                         console.log('Background generating new AI Summary...');
+                        
+                        // Fake set last updated to prevent others from starting
+                        // (we can't easily do distributed locking without a mutation, but this reduces collisions)
+                        lastUpdated = Date.now(); 
+                        
                         const result = await callGeminiExecutiveSummary({
                             qscTexts: analytics.data.qscTexts || [],
                             opiTexts: analytics.data.opiTexts || [],
@@ -4940,11 +4944,17 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
             }
         };
         
-        checkAndGenerateAI();
-        const interval = setInterval(checkAndGenerateAI, 5 * 60 * 1000); // check every 5 mins
+        // Give time for initial fetch before checking
+        const timeout = setTimeout(() => {
+            checkAndGenerateAI();
+        }, 5000);
+        
+        const interval = setInterval(checkAndGenerateAI, 5 * 60 * 1000);
         
         return () => {
             cancelled = true;
+            unsub();
+            clearTimeout(timeout);
             clearInterval(interval);
         };
     }, [features.ai, analytics.data]);
