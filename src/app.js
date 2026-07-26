@@ -3005,14 +3005,14 @@ function CrewEditor({ visit, update }) {
 function paraphraseAuditText(text, fieldType) {
     let t = String(text || '').trim();
     const replacements = [
-        [/kotor|debu|berkerak|kumel/gi, "kurang higienis serta terdapat akumulasi kotoran"],
-        [/rusak|error|jebol|mati/gi, "mengalami malfungsi teknis dan belum berfungsi optimal"],
-        [/habis|kosong|nggak ada|gaada/gi, "mengalami kekosongan stok ketersediaan (out of stock)"],
-        [/bau|aroma jelek/gi, "menimbulkan aroma tidak sedap yang berpotensi menyebabkan kontaminasi"],
-        [/lupa|nggak tau|kurang paham/gi, "terdapat kelalaian dan kurangnya pemahaman prosedur SOP oleh personel"],
-        [/bersihin|cuci|lap/gi, "dilakukan sanitasi serta pembersihan menyeluruh (deep cleaning)"],
-        [/berantakan|acak-acakan/gi, "penataan area kerja kurang teratur dan belum memenuhi prinsip 5R"],
-        [/telat|lambat/gi, "terjadi keterlambatan dalam penyelesaian proses operasional"]
+        [/kotor|debu|berkerak|kumel/gi, "kurang bersih dan terdapat tumpukan kotoran"],
+        [/rusak|error|jebol|mati/gi, "kendala pada alat sehingga belum berfungsi normal"],
+        [/habis|kosong|nggak ada|gaada/gi, "stok barang habis (out of stock)"],
+        [/bau|aroma jelek/gi, "timbul bau kurang sedap yang berisiko mengganggu kebersihan"],
+        [/lupa|nggak tau|kurang paham/gi, "kurang teliti dan perlu sosialisasi ulang prosedur SOP"],
+        [/bersihin|cuci|lap/gi, "dilakukan pembersihan menyeluruh (deep cleaning)"],
+        [/berantakan|acak-acakan/gi, "penataan barang kurang rapi (belum sesuai standar 5R)"],
+        [/telat|lambat/gi, "keterlambatan dalam penyelesaian operasional"]
     ];
     replacements.forEach(([regex, formal]) => {
         t = t.replace(regex, formal);
@@ -3022,42 +3022,42 @@ function paraphraseAuditText(text, fieldType) {
         if (!/[.!?:;]$/.test(t)) t += ".";
     }
     if (fieldType === 'temuan') {
-        if (!t) return "Hasil inspeksi menunjukkan area operasional memerlukan standarisasi dan peningkatan kebersihan sesuai protokol SOP.";
+        if (!t) return "Hasil pengecekan area menunjukkan kebersihan dan kerapian perlu ditingkatkan sesuai standar SOP.";
         if (!/^([Hh]asil|[Bb]erdasarkan|[Tt]erdapat|[Dd]itemukan|[Kk]ondisi|[Ii]nspeksi|[Oo]bservasi)/.test(t)) {
             return "Hasil pemeriksaan menunjukkan bahwa " + t.charAt(0).toLowerCase() + t.slice(1);
         }
         return t;
     }
     else if (fieldType === 'kondisiIdeal') {
-        if (!t) return "Sesuai Standar Operasional Prosedur (SOP), seluruh area kerja dan peralatan wajib dalam kondisi bersih, teratur, dan siap pakai.";
+        if (!t) return "Sesuai standar SOP, seluruh area kerja dan peralatan harus selalu bersih, rapi, dan siap pakai.";
         if (!/^([Ss]esuai|[Bb]erdasarkan|[Mm]engacu|[Kk]ondisi|[Ss]tandar|[Pp]rotokol)/.test(t)) {
-            return "Sesuai dengan SOP dan standar operasional yang berlaku, " + t.charAt(0).toLowerCase() + t.slice(1);
+            return "Sesuai standar SOP yang berlaku, " + t.charAt(0).toLowerCase() + t.slice(1);
         }
         return t;
     }
     else if (fieldType === 'dampak') {
-        if (!t) return "Berpotensi menurunkan standar kualitas pelayanan, menimbulkan risiko sanitasi, serta memicu keluhan dari pelanggan.";
-        if (!/^([Bb]erpotensi|[Dd]apat|[Mm]enimbulkan|[Mm]enyebabkan|[Bb]erdampak|[Mm]emicu)/.test(t)) {
-            return "Berpotensi " + t.charAt(0).toLowerCase() + t.slice(1);
+        if (!t) return "Berisiko menurunkan kenyamanan pelanggan serta standar pelayanan toko.";
+        if (!/^([Bb]erisiko|[Bb]erpotensi|[Dd]apat|[Mm]enimbulkan|[Mm]enyebabkan|[Bb]erdampak|[Mm]emicu)/.test(t)) {
+            return "Berisiko " + t.charAt(0).toLowerCase() + t.slice(1);
         }
         return t;
     }
     else if (fieldType === 'penyebab') {
-        if (!t) return "Hasil analisis akar masalah (root cause): Kurangnya kepatuhan terhadap kontrol rutin dan pengecekan checklist operasional harian.";
-        if (!/^([Hh]asil|[Kk]urangnya|[Bb]elum|[Tt]erdapat|[Rr]oot|[Kk]elalaian)/.test(t)) {
-            return "Hasil analisis akar masalah (root cause): " + t.charAt(0).toLowerCase() + t.slice(1);
+        if (!t) return "Penyebab utama: Kurang kontrol rutin dan pengecekan checklist harian oleh tim di area tersebut.";
+        if (!/^([Pp]enyebab|[Hh]asil|[Kk]urangnya|[Bb]elum|[Tt]erdapat|[Rr]oot|[Kk]elalaian)/.test(t)) {
+            return "Penyebab utama: " + t.charAt(0).toLowerCase() + t.slice(1);
         }
         return t;
     }
     else if (fieldType === 'tindakan') {
-        if (!t) return "Rencana tindakan perbaikan (corrective action): Melakukan tindakan perbaikan segera (immediate action), briefing tim, dan pengawasan ketat oleh manager.";
-        if (!/^([Rr]encana|[Mm]elakukan|[Ss]egera|[Dd]ilakukan|[Kk]oreksi|[Tt]indakan)/.test(t)) {
-            return "Rencana tindakan perbaikan (corrective action): " + t.charAt(0).toLowerCase() + t.slice(1);
+        if (!t) return "Tindakan perbaikan: Melakukan pembersihan/perbaikan segera, briefing tim, serta pengawasan rutin oleh manager.";
+        if (!/^([Tt]indakan|[Rr]encana|[Mm]elakukan|[Ss]egera|[Dd]ilakukan|[Kk]oreksi)/.test(t)) {
+            return "Tindakan perbaikan: " + t.charAt(0).toLowerCase() + t.slice(1);
         }
         return t;
     }
     else if (fieldType === 'hasil') {
-        if (!t) return "Status evaluasi: Tindakan korektif telah dijalankan dan diverifikasi memenuhi standar ketentuan SOP.";
+        if (!t) return "Status evaluasi: Tindakan perbaikan sudah dilakukan dan diverifikasi sesuai standar SOP.";
         if (!/^([Ss]tatus|[Tt]indakan|[Ss]udah|[Tt]elah|[Hh]asil|[Dd]iverifikasi)/.test(t)) {
             return "Status evaluasi: " + t.charAt(0).toLowerCase() + t.slice(1);
         }
@@ -3080,9 +3080,10 @@ const DEFAULT_GEMINI_API_KEY = (typeof atob === 'function' ? atob : (s => Buffer
 
 async function callGeminiObservationParaphrase(row) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
-    const prompt = `Kamu adalah AI Senior QA & Audit Manager di industri restoran dan F&B retail (seperti KFC). 
-Tugasmu memparafrase temuan audit operasional menjadi kalimat laporan SOP Bahasa Indonesia yang formal, baku, jelas, profesional, dan terstruktur. 
-Jangan merubah fakta asli, tetapi tingkatkan kualitas bahasanya sekelas laporan auditor senior. Jika ada kolom yang kosong, isi dengan kalimat standar SOP yang logis sesuai temuan.
+    const prompt = `Kamu adalah AI QA & Audit Manager di industri restoran/F&B.
+Tugasmu memparafrase catatan temuan audit operasional menjadi kalimat laporan Bahasa Indonesia yang formal, profesional, logis, dan komunikatif.
+PENTING: Gunakan bahasa formal yang mudah dipahami (jelas dan lugas, tidak perlu terlalu kaku atau menggunakan kata baku yang sulit dimengerti).
+Jangan merubah fakta asli dari temuan. Jika ada kolom yang kosong, isi dengan kalimat standar SOP yang logis sesuai konteks temuan.
 
 Input data temuan:
 - Temuan: "${row.temuan || ''}"
