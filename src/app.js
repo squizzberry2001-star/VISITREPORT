@@ -1,5 +1,12 @@
 const { useEffect, useMemo, useRef, useState, useCallback } = React;
 // =============================================================
+function convexEnabled() { return Boolean(window.RB_FIREBASE_CONFIG && window.RB_FIREBASE_CONFIG.enabled); }
+function getConvexConfig() { return window.RB_FIREBASE_CONFIG || { collections: {} }; }
+
+function getConvexDeploymentUrl() { return ''; }
+function getConvexHttpUrl() { return ''; }
+function convexUrl(path) { return ''; }
+
 // Data helpers
 // =============================================================
 const BESTIE_ASSIGNMENTS = Array.isArray(window.BESTIE_STORE_DATA) ? window.BESTIE_STORE_DATA : [];
