@@ -8156,21 +8156,29 @@ function WelcomeOverlay({ config, onDone }) {
                 )
             )
         ),
-        React.createElement("a", {
-            href: "https://trakteer.id/HEHBESTIE/tip",
-            target: "_blank",
-            rel: "noopener noreferrer",
+        React.createElement("div", {
             className: cx(
-                "coffee-floating-btn fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 text-white text-xs sm:text-sm font-black border-2 border-white/40 shadow-xl hover:scale-105 active:scale-95 transition-all duration-300",
-                closing ? "opacity-0 translate-y-4 pointer-events-none" : "opacity-100 translate-y-0"
-            )
-        },
-            React.createElement("span", { className: "relative flex h-2.5 w-2.5" },
-                React.createElement("span", { className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" }),
-                React.createElement("span", { className: "relative inline-flex rounded-full h-2.5 w-2.5 bg-white" })
+                "fixed inset-x-0 bottom-6 sm:bottom-8 z-[110] flex justify-center items-center pointer-events-none px-4",
+                closing ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0",
+                "transition-all duration-300"
             ),
-            React.createElement(Icon, { name: "coffee", className: "w-4 h-4 sm:w-5 sm:h-5 text-white" }),
-            React.createElement("span", { className: "tracking-wide whitespace-nowrap" }, "Trakteer Bestie Coffee \u2615")
+            style: {
+                bottom: 'max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px))'
+            }
+        },
+            React.createElement("a", {
+                href: "https://trakteer.id/HEHBESTIE/tip",
+                target: "_blank",
+                rel: "noopener noreferrer",
+                className: "coffee-floating-btn pointer-events-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 text-white text-xs sm:text-sm font-black border-2 border-white/60 shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+            },
+                React.createElement("span", { className: "relative flex h-2.5 w-2.5 shrink-0" },
+                    React.createElement("span", { className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" }),
+                    React.createElement("span", { className: "relative inline-flex rounded-full h-2.5 w-2.5 bg-white" })
+                ),
+                React.createElement(Icon, { name: "coffee", className: "w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" }),
+                React.createElement("span", { className: "tracking-wide whitespace-nowrap" }, "Trakteer Bestie Coffee \u2615")
+            )
         )
         )
     );
