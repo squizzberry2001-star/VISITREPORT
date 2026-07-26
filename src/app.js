@@ -3002,6 +3002,80 @@ function CrewEditor({ visit, update }) {
             React.createElement("div", { className: "mt-4 flex justify-end" },
                 React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addCrew }, "Tambah Crew")))));
 }
+function paraphraseAuditText(text, fieldType) {
+    let t = String(text || '').trim();
+    const replacements = [
+        [/kotor|debu|berkerak|kumel/gi, "kurang higienis serta terdapat akumulasi kotoran"],
+        [/rusak|error|jebol|mati/gi, "mengalami malfungsi teknis dan belum berfungsi optimal"],
+        [/habis|kosong|nggak ada|gaada/gi, "mengalami kekosongan stok ketersediaan (out of stock)"],
+        [/bau|aroma jelek/gi, "menimbulkan aroma tidak sedap yang berpotensi menyebabkan kontaminasi"],
+        [/lupa|nggak tau|kurang paham/gi, "terdapat kelalaian dan kurangnya pemahaman prosedur SOP oleh personel"],
+        [/bersihin|cuci|lap/gi, "dilakukan sanitasi serta pembersihan menyeluruh (deep cleaning)"],
+        [/berantakan|acak-acakan/gi, "penataan area kerja kurang teratur dan belum memenuhi prinsip 5R"],
+        [/telat|lambat/gi, "terjadi keterlambatan dalam penyelesaian proses operasional"]
+    ];
+    replacements.forEach(([regex, formal]) => {
+        t = t.replace(regex, formal);
+    });
+    if (t) {
+        t = t.charAt(0).toUpperCase() + t.slice(1);
+        if (!/[.!?:;]$/.test(t)) t += ".";
+    }
+    if (fieldType === 'temuan') {
+        if (!t) return "Hasil inspeksi menunjukkan area operasional memerlukan standarisasi dan peningkatan kebersihan sesuai protokol SOP.";
+        if (!/^([Hh]asil|[Bb]erdasarkan|[Tt]erdapat|[Dd]itemukan|[Kk]ondisi|[Ii]nspeksi|[Oo]bservasi)/.test(t)) {
+            return "Hasil pemeriksaan menunjukkan bahwa " + t.charAt(0).toLowerCase() + t.slice(1);
+        }
+        return t;
+    }
+    else if (fieldType === 'kondisiIdeal') {
+        if (!t) return "Sesuai Standar Operasional Prosedur (SOP), seluruh area kerja dan peralatan wajib dalam kondisi bersih, teratur, dan siap pakai.";
+        if (!/^([Ss]esuai|[Bb]erdasarkan|[Mm]engacu|[Kk]ondisi|[Ss]tandar|[Pp]rotokol)/.test(t)) {
+            return "Sesuai dengan SOP dan standar operasional yang berlaku, " + t.charAt(0).toLowerCase() + t.slice(1);
+        }
+        return t;
+    }
+    else if (fieldType === 'dampak') {
+        if (!t) return "Berpotensi menurunkan standar kualitas pelayanan, menimbulkan risiko sanitasi, serta memicu keluhan dari pelanggan.";
+        if (!/^([Bb]erpotensi|[Dd]apat|[Mm]enimbulkan|[Mm]enyebabkan|[Bb]erdampak|[Mm]emicu)/.test(t)) {
+            return "Berpotensi " + t.charAt(0).toLowerCase() + t.slice(1);
+        }
+        return t;
+    }
+    else if (fieldType === 'penyebab') {
+        if (!t) return "Hasil analisis akar masalah (root cause): Kurangnya kepatuhan terhadap kontrol rutin dan pengecekan checklist operasional harian.";
+        if (!/^([Hh]asil|[Kk]urangnya|[Bb]elum|[Tt]erdapat|[Rr]oot|[Kk]elalaian)/.test(t)) {
+            return "Hasil analisis akar masalah (root cause): " + t.charAt(0).toLowerCase() + t.slice(1);
+        }
+        return t;
+    }
+    else if (fieldType === 'tindakan') {
+        if (!t) return "Rencana tindakan perbaikan (corrective action): Melakukan tindakan perbaikan segera (immediate action), briefing tim, dan pengawasan ketat oleh manager.";
+        if (!/^([Rr]encana|[Mm]elakukan|[Ss]egera|[Dd]ilakukan|[Kk]oreksi|[Tt]indakan)/.test(t)) {
+            return "Rencana tindakan perbaikan (corrective action): " + t.charAt(0).toLowerCase() + t.slice(1);
+        }
+        return t;
+    }
+    else if (fieldType === 'hasil') {
+        if (!t) return "Status evaluasi: Tindakan korektif telah dijalankan dan diverifikasi memenuhi standar ketentuan SOP.";
+        if (!/^([Ss]tatus|[Tt]indakan|[Ss]udah|[Tt]elah|[Hh]asil|[Dd]iverifikasi)/.test(t)) {
+            return "Status evaluasi: " + t.charAt(0).toLowerCase() + t.slice(1);
+        }
+        return t;
+    }
+    return t;
+}
+function paraphraseObservationRow(row) {
+    return {
+        ...row,
+        temuan: paraphraseAuditText(row.temuan, 'temuan'),
+        kondisiIdeal: paraphraseAuditText(row.kondisiIdeal, 'kondisiIdeal'),
+        dampak: paraphraseAuditText(row.dampak, 'dampak'),
+        penyebab: paraphraseAuditText(row.penyebab, 'penyebab'),
+        tindakan: paraphraseAuditText(row.tindakan, 'tindakan'),
+        hasil: paraphraseAuditText(row.hasil, 'hasil')
+    };
+}
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = rows?.length ? rows : [blankObservationRow()];
     const [activeIndex, setActiveIndex] = useState(0);
@@ -3010,6 +3084,11 @@ function ObservationCards({ title, rows, onChange }) {
         setActiveIndex((current) => Math.max(0, Math.min(current, safeRows.length - 1)));
     }, [safeRows.length]);
     const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
+    const handleAiParaphrase = (index) => {
+        const row = safeRows[index] || {};
+        const paraphrased = paraphraseObservationRow(row);
+        updateRow(index, paraphrased);
+    };
     const addRow = () => {
         onChange([...safeRows, blankObservationRow()]);
         setActiveIndex(safeRows.length);
@@ -3078,8 +3157,19 @@ function ObservationCards({ title, rows, onChange }) {
                 React.createElement(Badge, { tone: isMeaningfulObservation(row) ? 'success' : 'default' },
                     "Temuan ",
                     index + 1),
-                React.createElement(Button, { variant: "icon", onClick: () => removeRow(index), "aria-label": "Hapus row" },
-                    React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))),
+                React.createElement("div", { className: "flex items-center gap-2" },
+                    React.createElement("button", {
+                        type: "button",
+                        onClick: () => handleAiParaphrase(index),
+                        className: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-extrabold text-xs shadow-md hover:shadow-lg hover:from-violet-700 hover:to-indigo-700 active:scale-95 transition-all cursor-pointer",
+                        title: "Auto Paraphrase AI - Ubah ke bahasa audit profesional"
+                    },
+                        React.createElement("span", { className: "text-sm" }, "✨"),
+                        React.createElement("span", { className: "tracking-wide" }, "AI Paraphrase")
+                    ),
+                    React.createElement(Button, { variant: "icon", onClick: () => removeRow(index), "aria-label": "Hapus row" },
+                        React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))
+                )),
             React.createElement("div", { className: "grid gap-4 lg:grid-cols-2" },
                 richField('Temuan', 'temuan', row, index, 'Tuliskan temuan audit...'),
                 richField('Kondisi Ideal', 'kondisiIdeal', row, index, 'Kondisi ideal yang diharapkan...'),
@@ -9202,9 +9292,9 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         ));
     }
 
-    return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 py-0 sm:py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
+    return (React.createElement("main", { className: "workspace-page section-mode no-top-space mx-auto w-full max-w-4xl px-4 !pt-0 pb-0 sm:py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
         // Simplified Mobile Header (Only visible in section mode)
-        React.createElement("div", { className: "flex items-center justify-between mb-4 sm:mb-6 pt-4 pb-3 sm:pt-2 sticky top-0 z-40 bg-slate-50 -mx-4 px-4 sm:static sm:bg-transparent sm:mx-0 sm:px-0" },
+        React.createElement("div", { className: "flex items-center justify-between mb-4 sm:mb-6 pt-2 pb-2 sm:pt-2 sticky top-0 z-40 bg-slate-50 -mx-4 px-4 sm:static sm:bg-transparent sm:mx-0 sm:px-0" },
             React.createElement("button", { 
                 onClick: () => setViewMode('grid'),
                 className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600"

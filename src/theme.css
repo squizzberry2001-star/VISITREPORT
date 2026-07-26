@@ -905,6 +905,8 @@ select.form-control {
   .history-card { border-radius: 20px !important; padding: .9rem !important; }
   .mobile-quick-section + .min-w-0 .workspace-page,
   .workspace-page { padding-top: .9rem !important; }
+  .workspace-page.section-mode,
+  .workspace-page.no-top-space { padding-top: 0 !important; }
   .visit-setup-grid { gap: .85rem !important; }
   .visit-setup-card { padding: .9rem !important; }
   .visit-progress-card { padding: .8rem !important; }
