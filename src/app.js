@@ -3076,18 +3076,82 @@ function paraphraseObservationRow(row) {
         hasil: paraphraseAuditText(row.hasil, 'hasil')
     };
 }
+const DEFAULT_GEMINI_API_KEY = (typeof atob === 'function' ? atob : (s => Buffer.from(s, 'base64').toString('utf8')))("QVEuQWI4Uk42Sms2aFk3RlF2Mk9pU2sybXFrMDBLMzhwV1F4MlJoZk1lZmo0NTAxWjdrRHc=");
+
+async function callGeminiObservationParaphrase(row) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
+    const prompt = `Kamu adalah AI Senior QA & Audit Manager di industri restoran dan F&B retail (seperti KFC). 
+Tugasmu memparafrase temuan audit operasional menjadi kalimat laporan SOP Bahasa Indonesia yang formal, baku, jelas, profesional, dan terstruktur. 
+Jangan merubah fakta asli, tetapi tingkatkan kualitas bahasanya sekelas laporan auditor senior. Jika ada kolom yang kosong, isi dengan kalimat standar SOP yang logis sesuai temuan.
+
+Input data temuan:
+- Temuan: "${row.temuan || ''}"
+- Kondisi Ideal: "${row.kondisiIdeal || ''}"
+- Dampak: "${row.dampak || ''}"
+- Penyebab (Root Cause): "${row.penyebab || ''}"
+- Tindakan Aksi (Corrective Action): "${row.tindakan || ''}"
+- Hasil: "${row.hasil || ''}"
+
+Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
+{
+  "temuan": "...",
+  "kondisiIdeal": "...",
+  "dampak": "...",
+  "penyebab": "...",
+  "tindakan": "...",
+  "hasil": "..."
+}`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.25,
+                responseMimeType: "application/json"
+            }
+        })
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return {
+        ...row,
+        temuan: parsed.temuan || row.temuan || '',
+        kondisiIdeal: parsed.kondisiIdeal || row.kondisiIdeal || '',
+        dampak: parsed.dampak || row.dampak || '',
+        penyebab: parsed.penyebab || row.penyebab || '',
+        tindakan: parsed.tindakan || row.tindakan || '',
+        hasil: parsed.hasil || row.hasil || ''
+    };
+}
+
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = rows?.length ? rows : [blankObservationRow()];
     const [activeIndex, setActiveIndex] = useState(0);
+    const [aiLoadingIndex, setAiLoadingIndex] = useState(null);
     const activeRowNumber = Math.min(activeIndex + 1, safeRows.length);
     useEffect(() => {
         setActiveIndex((current) => Math.max(0, Math.min(current, safeRows.length - 1)));
     }, [safeRows.length]);
     const updateRow = (index, patch) => onChange(safeRows.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
-    const handleAiParaphrase = (index) => {
+    const handleAiParaphrase = async (index) => {
         const row = safeRows[index] || {};
-        const paraphrased = paraphraseObservationRow(row);
-        updateRow(index, paraphrased);
+        setAiLoadingIndex(index);
+        try {
+            const paraphrased = await callGeminiObservationParaphrase(row);
+            updateRow(index, paraphrased);
+        } catch (error) {
+            console.warn('Gemini API fallback to local paraphrase:', error);
+            const fallback = paraphraseObservationRow(row);
+            updateRow(index, fallback);
+        } finally {
+            setAiLoadingIndex(null);
+        }
     };
     const addRow = () => {
         onChange([...safeRows, blankObservationRow()]);
@@ -3161,11 +3225,15 @@ function ObservationCards({ title, rows, onChange }) {
                     React.createElement("button", {
                         type: "button",
                         onClick: () => handleAiParaphrase(index),
-                        className: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-extrabold text-xs shadow-md hover:shadow-lg hover:from-violet-700 hover:to-indigo-700 active:scale-95 transition-all cursor-pointer",
-                        title: "Auto Paraphrase AI - Ubah ke bahasa audit profesional"
+                        disabled: aiLoadingIndex === index,
+                        className: cx(
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-extrabold text-xs shadow-md hover:shadow-lg hover:from-violet-700 hover:to-indigo-700 active:scale-95 transition-all cursor-pointer",
+                            aiLoadingIndex === index && "opacity-75 cursor-wait"
+                        ),
+                        title: "Auto Paraphrase AI Gemini - Ubah ke bahasa audit profesional"
                     },
-                        React.createElement("span", { className: "text-sm" }, "✨"),
-                        React.createElement("span", { className: "tracking-wide" }, "AI Paraphrase")
+                        React.createElement("span", { className: "text-sm" }, aiLoadingIndex === index ? "⏳" : "✨"),
+                        React.createElement("span", { className: "tracking-wide" }, aiLoadingIndex === index ? "Gemini AI..." : "AI Paraphrase")
                     ),
                     React.createElement(Button, { variant: "icon", onClick: () => removeRow(index), "aria-label": "Hapus row" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))
