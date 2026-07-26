@@ -4225,7 +4225,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }
 
                     if (bk && bestieMap[bk]) {
-                        const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || Date.now());
+                        const vDate = new Date(r.visit_date || r.visitDate || r.updated_at || r.updatedAt || Date.now());
                         const isCurrentYear = vDate.getFullYear() === currentYear;
                         const isCurrentMonth = isCurrentYear && vDate.getMonth() === currentMonth;
                         const mondayStr = getMonday(vDate);
@@ -4235,14 +4235,20 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         if (isCurrentMonth) bestieMap[bk].rawMonthly++;
                         if (isCurrentWeek) bestieMap[bk].rawWeekly++;
 
-                        if (isCurrentMonth) {
-                            const rawStore = r.store_name || r.storeName || 'Unknown Store';
+                        const dayOfWeek = vDate.getDay(); // 0 = Minggu, 6 = Sabtu
+                        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5; // Senin - Jumat
+                        const dayKey = vDate.toISOString().slice(0, 10);
+                        const isAfterReset = dayKey >= '2026-07-26'; // Reset per hari ini (26 Juli 2026)
+                        const isCompletedReport = !!(r.isPdfDownloaded || r.is_pdf_downloaded || r.isEmailSent || r.is_email_sent || r.isPdfDownloaded === true || r.isEmailSent === true);
+
+                        if (isCurrentMonth && isWeekday && isAfterReset && isCompletedReport) {
+                            const rawStore = r.store_name || r.storeName || r.store || 'Unknown Store';
                             if (!bestieMap[bk].monthVisits) bestieMap[bk].monthVisits = [];
                             bestieMap[bk].monthVisits.push({
                                 storeName: rawStore,
                                 date: vDate,
                                 dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-                                dayKey: vDate.toISOString().slice(0, 10)
+                                dayKey: dayKey
                             });
                         }
                     }
