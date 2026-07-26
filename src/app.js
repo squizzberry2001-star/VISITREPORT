@@ -647,11 +647,12 @@ function readFeaturesConfig() {
     try {
         const raw = localStorage.getItem('rbv_features_config_v1');
         const parsed = raw ? JSON.parse(raw) : {};
+        const safeParsed = (parsed && typeof parsed === 'object') ? parsed : {};
         return {
-            map: parsed.map !== false,
-            ai: parsed.ai !== false,
-            trend: parsed.trend !== false,
-            leaderboard: parsed.leaderboard !== false
+            map: safeParsed.map !== false,
+            ai: safeParsed.ai !== false,
+            trend: safeParsed.trend !== false,
+            leaderboard: safeParsed.leaderboard !== false
         };
     } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true }; }
 }
@@ -4319,7 +4320,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 // Process remote findings into qscTexts/opiTexts
                 const storeFindingMap = {};
                 remoteFindings.forEach(rf => {
-                    remoteFindingKeys.add(rf.visitKey);
+                    if (!rf) return;
+                    remoteFindingKeys.add(rf.visit_key || rf.visitKey);
                     const storeName = String(rf.store_name || '').trim();
                     if (storeName && !storeFindingMap[storeName]) storeFindingMap[storeName] = { storeName, qscCount: 0, opiCount: 0, totalFindings: 0 };
                     (Array.isArray(rf.findings) ? rf.findings : []).forEach(f => {
@@ -4663,7 +4665,10 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         React.createElement(SimpleChart, {
                             type: 'bar',
                             data: {
-                                labels: data.storeFindings.slice(0, 10).map(s => s.storeName.length > 20 ? s.storeName.slice(0, 18) + '…' : s.storeName),
+                                labels: data.storeFindings.slice(0, 10).map(s => {
+                                    const sn = s?.storeName || 'Unknown';
+                                    return sn.length > 20 ? sn.slice(0, 18) + '…' : sn;
+                                }),
                                 datasets: [
                                     {
                                         label: 'QSC',
