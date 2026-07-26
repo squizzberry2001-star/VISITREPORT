@@ -4366,15 +4366,18 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
-    const [syncTrigger, setSyncTrigger] = useState(0);
 
-    useEffect(() => {
+
+        useEffect(() => {
         let cancelled = false;
-        async function loadData() {
+        let unsubs = [];
+        let currentVisits = null;
+        let currentFindings = null;
+
+        const processData = async () => {
+            if (cancelled) return;
             try {
-                setLoading(true);
-                let rows = await fetchMonitorRowsFromConvex();
-                if (cancelled) return;
+                let rows = currentVisits;
                 
                 // Trigger one-time backfill of local history findings to Convex (silent, background)
                 backfillLocalFindingsToConvex().catch(() => {});
@@ -4413,18 +4416,9 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 let emailSentCount = 0;
                 let emailFeedbackCount = 0;
 
-                // Fetch centralized findings from ALL users via Convex
-                let remoteFindings = [];
-                const remoteFindingKeys = new Set();
-                try {
-                    if (convexEnabled()) {
-                        const rf = await runConvexQuery('monitor:listAllFindings', { limit: 500 });
-                        if (Array.isArray(rf)) remoteFindings = rf;
-                    }
-                } catch (err) {
-                    console.warn('Failed to fetch remote findings (silent):', err);
-                }
                 // Process remote findings into qscTexts/opiTexts
+                const remoteFindings = currentFindings || [];
+                const remoteFindingKeys = new Set();
                 const storeFindingMap = {};
                 remoteFindings.forEach(rf => {
                     if (!rf) return;
@@ -4453,7 +4447,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     uniqueStoresMonthly: 0, 
                     totalAssigned: 0, 
                     uniqueStoresSet: new Set(), 
-                    uniqueWeeklyVisits: new Set(), // Retained if needed for other logic
+                    uniqueWeeklyVisits: new Set(),
                     rawAnnually: 0,
                     rawMonthly: 0,
                     rawWeekly: 0,
@@ -4503,10 +4497,10 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         if (isCurrentMonth) bestieMap[bk].rawMonthly++;
                         if (isCurrentWeek) bestieMap[bk].rawWeekly++;
 
-                        const dayOfWeek = vDate.getDay(); // 0 = Minggu, 6 = Sabtu
-                        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5; // Senin - Jumat
+                        const dayOfWeek = vDate.getDay(); 
+                        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
                         const dayKey = vDate.toISOString().slice(0, 10);
-                        const isAfterReset = dayKey >= '2026-07-26'; // Reset per hari ini (26 Juli 2026)
+                        const isAfterReset = dayKey >= '2026-07-26'; 
                         const isCompletedReport = !!(r.isPdfDownloaded || r.is_pdf_downloaded || r.isEmailSent || r.is_email_sent || r.isPdfDownloaded === true || r.isEmailSent === true);
 
                         if (isCurrentMonth && isWeekday && isAfterReset && isCompletedReport) {
@@ -4522,7 +4516,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }
                 });
                 
-                const isRemoteDb = rows.length > 0;
+                const isRemoteDb = rows && rows.length > 0;
                 datasetToUse.forEach((v, idx) => {
                     if (v.isPdfDownloaded || v.isEmailSent || v.is_pdf_downloaded || v.is_email_sent || isRemoteDb) {
                         localCompleted++;
@@ -4535,13 +4529,12 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }
                 });
 
-                // Add local-only findings from FULL visit records in IndexedDB (history metadata has no opiData/qscData)
                 let fullLocalVisits = [];
                 try { fullLocalVisits = await getAllVisitRecordsForBackup() || []; } catch (e) { console.warn('IndexedDB read for findings:', e); }
                 fullLocalVisits.forEach(v => {
                     if (!v) return;
                     const localVk = buildVisitKey(v);
-                    if (remoteFindingKeys.has(localVk)) return; // already counted from Convex
+                    if (remoteFindingKeys.has(localVk)) return; 
                     const storeName = String(v.store || v.storeName || v.store_name || '').trim();
                     if (!storeFindingMap[storeName] && storeName) storeFindingMap[storeName] = { storeName, qscCount: 0, opiCount: 0, totalFindings: 0 };
                     if (Array.isArray(v.opiData)) {
@@ -4579,7 +4572,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 const topQSC = analyzeFindingTrends(qscTexts);
                 
                 Object.values(bestieMap).forEach(b => {
-                    // 1. Group by calendar day (YYYY-MM-DD), pick only the latest store of that day
                     const dayMap = {};
                     (b.monthVisits || []).forEach(vh => {
                         if (!dayMap[vh.dayKey] || vh.date > dayMap[vh.dayKey].date) {
@@ -4587,14 +4579,12 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         }
                     });
                     
-                    // 2. Sort by newest first and filter out OFF days
                     const dailyLatest = Object.values(dayMap)
                         .sort((a, b) => b.date - a.date)
                         .filter(vh => String(vh.storeName).toUpperCase().trim() !== 'OFF');
                     
                     b.visitHistory = dailyLatest;
                     
-                    // 3. Count unique stores per week among these daily latest visits
                     const seenWeeklyStores = new Set();
                     b.uniqueStoresMonthly = 0;
                     dailyLatest.forEach(vh => {
@@ -4628,7 +4618,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     leaderboard,
                     localTotalVisits: localVisits.length,
                     globalTotalVisits: datasetToUse.length,
-                    rows: rows,
+                    rows: rows || [],
                     storeFindings: storeFindings,
                     qscTexts: qscTexts,
                     opiTexts: opiTexts
@@ -4641,10 +4631,49 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     setTimeout(() => setMounted(true), 100);
                 }
             }
+        };
+
+        async function setupRealtime() {
+            setLoading(true);
+            if (convexEnabled()) {
+                const config = getConvexConfig();
+                const qName = config.monitorQuery || 'monitor:listVisits';
+                
+                try {
+                    const unsubVisits = await subscribeConvexQuery(qName, {}, (data) => {
+                        if (cancelled) return;
+                        currentVisits = normalizeMonitorRows(data);
+                        processData();
+                    }, (err) => console.warn(err));
+                    if (unsubVisits) unsubs.push(unsubVisits);
+
+                    const unsubFindings = await subscribeConvexQuery('monitor:listAllFindings', { limit: 500 }, (data) => {
+                        if (cancelled) return;
+                        currentFindings = Array.isArray(data) ? data : [];
+                        processData();
+                    }, (err) => console.warn(err));
+                    if (unsubFindings) unsubs.push(unsubFindings);
+                } catch(e) {
+                    console.warn("Realtime sub fail", e);
+                    currentVisits = [];
+                    currentFindings = [];
+                    processData();
+                }
+            } else {
+                currentVisits = [];
+                currentFindings = [];
+                processData();
+            }
         }
-        loadData();
-        return () => { cancelled = true; };
-    }, [history, scheduleCfg, syncTrigger]);
+        setupRealtime();
+
+        return () => { 
+            cancelled = true; 
+            unsubs.forEach(fn => {
+                if (typeof fn === 'function') fn();
+            });
+        };
+    }, [history, scheduleCfg]);
 
     if (loading) {
         return React.createElement("div", { className: "py-32 w-full flex flex-col items-center justify-center bg-slate-50/50" },
@@ -4667,14 +4696,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 React.createElement("div", null,
                     React.createElement("h2", { className: "text-3xl font-black text-slate-900 tracking-tight" }, "Dashboard Analitik")
                 )
-            ),
-            React.createElement("button", { 
-                onClick: () => { setMounted(false); setSyncTrigger(t => t + 1); }, 
-                disabled: loading, 
-                className: "flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
-            }, 
-                React.createElement(Icon, { name: "refresh", className: `w-4 h-4 ${loading ? 'animate-spin' : ''}` }), 
-                "Refresh Data"
             )
         ),
         
