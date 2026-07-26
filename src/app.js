@@ -646,7 +646,13 @@ const SCHEDULE_CONFIG_KEY = 'rbv_schedule_config_v1';
 function readFeaturesConfig() {
     try {
         const raw = localStorage.getItem('rbv_features_config_v1');
-        return raw ? JSON.parse(raw) : { map: true, ai: true, trend: true, leaderboard: true };
+        const parsed = raw ? JSON.parse(raw) : {};
+        return {
+            map: parsed.map !== false,
+            ai: parsed.ai !== false,
+            trend: parsed.trend !== false,
+            leaderboard: parsed.leaderboard !== false
+        };
     } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true }; }
 }
 function saveFeaturesConfig(config) {
@@ -1139,6 +1145,9 @@ function rbvProgressFromChecks(checks) {
 }
 function visitProgress(visit, activeSection = null) {
     if (!visit) return 0;
+    if (typeof visit.progress === 'number' && visit.progress > 0 && !visit.qscData && !visit.opiData && !visit.findingEvidencePhotos) {
+        return Math.max(0, Math.min(100, Math.round(visit.progress)));
+    }
     const sectionChecks = visitProgressChecks(visit);
     if (Number.isInteger(activeSection) && typeof SECTION_DEFS !== 'undefined' && SECTION_DEFS && SECTION_DEFS[activeSection]) {
         const sectionId = SECTION_DEFS[activeSection].id;
@@ -1503,7 +1512,12 @@ async function rbvMaybeShowProgressNotification(visit, options = {}) {
 function readHistoryMeta() {
     try {
         const parsed = JSON.parse(localStorage.getItem(HISTORY_META_KEY) || '[]');
-        return filterHistoryMetaForLogin(Array.isArray(parsed) ? parsed : []);
+        return filterHistoryMetaForLogin(Array.isArray(parsed) ? parsed : []).map(item => {
+            let p = item.progress;
+            if (item.isEmailSent || item.isPdfDownloaded) p = Math.max(100, p || 100);
+            else if (typeof p !== 'number' || Number.isNaN(p)) p = 0;
+            return { ...item, progress: Math.max(0, Math.min(100, Math.round(p))) };
+        });
     }
     catch (error) {
         return [];
@@ -3329,9 +3343,14 @@ const SECTION_DEFS = [
     { id: 'evidence', label: 'Evidence', title: 'Evidence', icon: 'image', hint: 'Foto temuan' }
 ];
 function ProgressBar({ value }) {
-    const capped = Math.max(0, Math.min(100, value || 0));
-    return (React.createElement("div", { className: "w-full rounded-full bg-slate-100 h-2.5 overflow-hidden border border-transparent shadow-inner" },
-        React.createElement("div", { className: "bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-300 ease-out", style: { width: `${capped}%` } })));
+    const capped = Math.max(0, Math.min(100, Math.round(value || 0)));
+    const colorClass = capped >= 80 
+        ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
+        : capped >= 40 
+            ? "bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" 
+            : "bg-gradient-to-r from-sky-400 to-blue-600";
+    return (React.createElement("div", { className: "w-full rounded-full bg-slate-100 h-2.5 overflow-hidden border border-slate-200/60 shadow-inner" },
+        React.createElement("div", { className: `${colorClass} h-full rounded-full transition-all duration-500 ease-out`, style: { width: `${capped}%` } })));
 }
 
 function ProgressMissingInfo({ visit, activeSection = null, maxItems = 4, compact = false }) {
@@ -3949,8 +3968,6 @@ function analyzeFindingTrends(texts) {
 }
 
 function LeaderboardItem({ lb, idx }) {
-    const [expanded, setExpanded] = useState(false);
-    
     let narasi = "Belum Ada Kunjungan 🚀";
     if (lb.uniqueStoresMonthly > 0) {
         if (lb.uniqueStoresMonthly >= lb.totalAssigned && lb.totalAssigned > 0) narasi = "Target Achieved! 🎯";
@@ -3960,29 +3977,22 @@ function LeaderboardItem({ lb, idx }) {
     }
 
     return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
-        React.createElement("div", { 
-            className: "flex flex-col p-4 cursor-pointer text-audit-ink select-none gap-3 sm:gap-4", 
-            onClick: () => setExpanded(!expanded) 
-        },
-            // Top Row: Avatar + Name + Toggle
+        React.createElement("div", { className: "flex flex-col p-4 text-audit-ink select-none gap-3 sm:gap-4" },
+            // Top Row: Avatar + Name + MVP badge
             React.createElement("div", { className: "flex items-start justify-between w-full" },
                 React.createElement("div", { className: "flex items-center gap-3 min-w-0 pr-2" },
                     React.createElement("div", { className: "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-lg sm:text-xl " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
                     React.createElement("div", { className: "min-w-0 flex-1" },
-                        React.createElement("h4", { className: "font-bold text-[13px] sm:text-[15px] text-audit-ink truncate flex items-center gap-2" }, lb.name),
-                        React.createElement("div", { className: "flex items-center gap-1.5 flex-wrap mt-0.5" },
-                            idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] sm:text-[9px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null,
-                            React.createElement("p", { className: "text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-audit-primary truncate" }, narasi)
-                        )
+                        React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
+                            React.createElement("h4", { className: "font-bold text-[13px] sm:text-[15px] text-audit-ink truncate" }, lb.name),
+                            idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] sm:text-[9px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null
+                        ),
+                        React.createElement("p", { className: "text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-audit-primary truncate mt-0.5" }, narasi)
                     )
-                ),
-                React.createElement("button", { className: `w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-transform duration-300 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}` },
-                    React.createElement(Icon, { name: "chevron-down", className: "w-4 h-4" })
                 )
             ),
             // Bottom Row: Badges + Score
             React.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 gap-3" },
-                // Badges W/M/Y
                 // Schedule Badge
                 React.createElement("div", { className: "flex items-center w-full sm:w-auto min-w-0 flex-1 pr-2" },
                     React.createElement("div", { 
@@ -4010,16 +4020,6 @@ function LeaderboardItem({ lb, idx }) {
                     )
                 )
             )
-        ),
-        expanded && React.createElement("div", { className: "px-4 pb-4 border-t border-slate-100 bg-slate-50/50 pt-4" },
-            (!lb.visitHistory || lb.visitHistory.length === 0) ? 
-                React.createElement("p", { className: "text-sm text-slate-400 text-center font-medium py-2" }, "Belum ada rincian history bulan ini.") :
-                React.createElement("ul", { className: "space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar" },
-                    lb.visitHistory.map((v, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm gap-2" },
-                        React.createElement("span", { className: "font-bold text-[13px] text-slate-700 truncate" }, v.storeName),
-                        React.createElement("span", { className: "text-[10px] font-bold text-slate-400 shrink-0 bg-slate-50 border border-slate-100 px-2 py-1 rounded-md" }, v.dateStr)
-                    ))
-                )
         )
     );
 }
@@ -4504,15 +4504,15 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
             )
         ),
         
-        // Leaderboard
-        features?.leaderboard !== false ? React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
+        // Leaderboard (selalu tampilkan peringkat & nama Bestie, toggle di Panel Rahasia hanya sembunyikan list toko)
+        React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
             React.createElement("h3", { className: "text-2xl font-black text-slate-800 mb-6" }, "Leaderboard Kinerja Bestie"),
             React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
                 data?.leaderboard?.map((lb, idx) => 
-                    React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx })
+                    React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx, showStores: features?.leaderboard !== false })
                 )
             )
-        ) : null
+        )
     );
 }
 
@@ -9063,7 +9063,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             { key: 'map', label: 'Peta Kunjungan Live (GIS)' },
                             { key: 'ai', label: 'AI Executive Summary' },
                             { key: 'trend', label: 'Tren Temuan (QSC vs OPI)' },
-                            { key: 'leaderboard', label: 'Leaderboard (Peringkat)' }
+                            { key: 'leaderboard', label: 'Leaderboard (List Toko)' }
                         ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
                             React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
                             React.createElement("button", { onClick: () => isSuperUser && handleToggleFeature(f.key), className: cx("relative inline-flex h-8 w-16 items-center rounded-full transition-colors shadow-inner", !isSuperUser && "opacity-50 cursor-not-allowed"), style: { backgroundColor: features[f.key] ? '#10b981' : '#cbd5e1' } },
