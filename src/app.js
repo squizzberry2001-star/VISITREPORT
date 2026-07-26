@@ -4180,7 +4180,7 @@ function AiInsightsPanel({ data }) {
                 qscTexts: data.qscTexts || [],
                 opiTexts: data.opiTexts || [],
                 storeFindings: data.storeFindings || [],
-                totalVisits: data.localTotalVisits || 0,
+                totalVisits: data.globalTotalVisits || 0,
                 topQSC: data.topQSC || [],
                 topOPI: data.topOPI || []
             });
@@ -4535,6 +4535,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     topQSC,
                     leaderboard,
                     localTotalVisits: localVisits.length,
+                    globalTotalVisits: datasetToUse.length,
                     rows: rows,
                     storeFindings: storeFindings,
                     qscTexts: qscTexts,
