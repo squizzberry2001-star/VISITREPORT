@@ -3196,10 +3196,10 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
 
 async function callGeminiExecutiveSummary({ qscTexts, opiTexts, storeFindings, totalVisits, topQSC, topOPI }) {
     const topStores = (storeFindings || []).slice(0, 8).map(s => `${s.storeName}: ${s.totalFindings} temuan (QSC: ${s.qscCount}, OPI: ${s.opiCount})`).join('\n');
-    const qscSample = (qscTexts || []).slice(0, 15).join(' | ');
-    const opiSample = (opiTexts || []).slice(0, 15).join(' | ');
-    const topQscKeywords = (topQSC || []).slice(0, 10).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
-    const topOpiKeywords = (topOPI || []).slice(0, 10).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
+    const qscSample = (qscTexts || []).slice(0, 150).join(' | ');
+    const opiSample = (opiTexts || []).slice(0, 150).join(' | ');
+    const topQscKeywords = (topQSC || []).slice(0, 20).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
+    const topOpiKeywords = (topOPI || []).slice(0, 20).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
     const prompt = `Kamu adalah seorang Area Manager atau Auditor Senior yang sedang mengetik laporan evaluasi operasional restoran.
 Tugasmu adalah membuat EXECUTIVE SUMMARY dalam Bahasa Indonesia berdasarkan data di bawah ini.
 PENTING:
