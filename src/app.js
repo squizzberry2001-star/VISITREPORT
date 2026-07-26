@@ -5308,7 +5308,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
                                 React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' }, item.progress || 0, "%")),
                             React.createElement(ProgressBar, { value: item.progress || 0 }),
                             React.createElement("div", { className: "mt-4 flex gap-2" },
-                                React.createElement(Button, { className: "flex-1 !rounded-xl !py-2", variant: "secondary", onClick: () => onOpenVisit(item.id) }, "Lanjutkan"),
+                                React.createElement(Button, { className: "flex-1 !rounded-xl !py-2", variant: (item.isPdfDownloaded || item.isEmailSent) ? "primary" : "secondary", onClick: () => onOpenVisit(item.id) }, (item.isPdfDownloaded || item.isEmailSent) ? "Lihat Laporan ✓" : "Lanjutkan"),
                                 React.createElement("button", { type: "button", className: "grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus" },
                                     React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))),
                     hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button mt-6", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " aktivitas lagi") : null) :
@@ -7164,6 +7164,11 @@ async function runConvexMutation(functionName, args = {}) {
             await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
             return { ok: true };
         }
+        if (functionName.includes('upsertFindings')) {
+            const docRef = db.collection(cols.findings).doc(args.payload.visit_key || Date.now().toString());
+            await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
+            return { ok: true };
+        }
         if (functionName.includes('upsertManualStoreRequest')) {
             const docRef = db.collection(cols.manualRequests).doc(args.payload.id || args.payload.req_key || Date.now().toString());
             await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
@@ -7202,8 +7207,11 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
     const cols = getConvexConfig().collections;
     let query;
     try {
-        if (functionName.includes('listVisits') || functionName.includes('listAllFindings')) {
+        if (functionName.includes('listVisits')) {
             query = db.collection(cols.visits).orderBy('updatedAt', 'desc');
+            if (args && args.limit) query = query.limit(args.limit);
+        } else if (functionName.includes('listAllFindings')) {
+            query = db.collection(cols.findings).orderBy('updatedAt', 'desc');
             if (args && args.limit) query = query.limit(args.limit);
         } else if (functionName.includes('listManualStoreRequests')) {
             query = db.collection(cols.manualRequests).orderBy('updatedAt', 'desc').limit(args?.limit || 200);
@@ -8053,6 +8061,15 @@ function hasMeaningfulData(visit) {
     const hasShiftLeader = Boolean(cleanText(visit.shiftLeader));
     const hasPhotos = Array.isArray(visit.findingEvidencePhotos) && visit.findingEvidencePhotos.length > 0;
     return hasOpi || hasQsc || hasStoreLeader || hasShiftLeader || hasPhotos;
+}
+function buildVisitKey(visit) {
+    if (!visit) return 'unknown-visit';
+    if (visit.id && String(visit.id).trim() !== '') return String(visit.id).trim();
+    if (visit.visit_key && String(visit.visit_key).trim() !== '') return String(visit.visit_key).trim();
+    const b = cleanText(visit.nama || visit.bestieName || visit.bestie_name, 'bestie');
+    const s = cleanText(visit.store || visit.storeName || visit.store_name, 'store');
+    const d = cleanText(visit.tanggal || visit.visitDate || visit.visit_date, 'date');
+    return `${b}-${s}-${d}`.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 function monitorPayloadFromVisit(visit) {
     const detail = getStoreWebDetail(visit.store);
