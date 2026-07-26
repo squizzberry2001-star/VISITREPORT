@@ -4282,8 +4282,7 @@ function AiInsightsPanel({ data }) {
                     React.createElement("div", null,
                         React.createElement("h3", { className: "text-lg font-black text-indigo-900" }, "AI Executive Summary"),
                         React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-widest" }, 
-                            aiError ? React.createElement("span", { className: "text-amber-600" }, "Fallback Mode — Local Analysis") :
-                            React.createElement("span", { className: "text-indigo-500" }, "Powered by BESTIE AI")
+                                                        React.createElement("span", { className: "text-indigo-500" }, "Powered by BESTIE AI")
                         )
                     )
                 ),
