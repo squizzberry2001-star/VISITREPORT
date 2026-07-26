@@ -4616,6 +4616,13 @@ function useAnalyticsData(history, scheduleCfg) {
 
         async function setupRealtime() {
             setLoading(true);
+            const fallbackTimer = setTimeout(() => {
+                if (!cancelled) {
+                    processData();
+                }
+            }, 1200);
+            unsubs.push(() => clearTimeout(fallbackTimer));
+
             if (convexEnabled()) {
                 const config = getConvexConfig();
                 const qName = config.monitorQuery || 'monitor:listVisits';
@@ -4623,16 +4630,23 @@ function useAnalyticsData(history, scheduleCfg) {
                 try {
                     const unsubVisits = await subscribeConvexQuery(qName, {}, (data) => {
                         if (cancelled) return;
+                        clearTimeout(fallbackTimer);
                         currentVisits = normalizeMonitorRows(data);
                         processData();
-                    }, (err) => console.warn(err));
+                    }, (err) => {
+                        console.warn('Firestore listVisits sub error:', err);
+                        if (!cancelled) processData();
+                    });
                     if (unsubVisits) unsubs.push(unsubVisits);
 
                     const unsubFindings = await subscribeConvexQuery('monitor:listAllFindings', { limit: 500 }, (data) => {
                         if (cancelled) return;
                         currentFindings = Array.isArray(data) ? data : [];
                         processData();
-                    }, (err) => console.warn(err));
+                    }, (err) => {
+                        console.warn('Firestore listAllFindings sub error:', err);
+                        if (!cancelled) processData();
+                    });
                     if (unsubFindings) unsubs.push(unsubFindings);
                 } catch(e) {
                     console.warn("Realtime sub fail", e);
