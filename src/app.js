@@ -8172,12 +8172,8 @@ function WelcomeOverlay({ config, onDone }) {
                 rel: "noopener noreferrer",
                 className: "coffee-floating-btn pointer-events-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 text-white text-xs sm:text-sm font-black border-2 border-white/60 shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
             },
-                React.createElement("span", { className: "relative flex h-2.5 w-2.5 shrink-0" },
-                    React.createElement("span", { className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" }),
-                    React.createElement("span", { className: "relative inline-flex rounded-full h-2.5 w-2.5 bg-white" })
-                ),
                 React.createElement(Icon, { name: "coffee", className: "w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" }),
-                React.createElement("span", { className: "tracking-wide whitespace-nowrap" }, "Trakteer Bestie Coffee \u2615")
+                React.createElement("span", { className: "tracking-wide whitespace-nowrap" }, "Trakteer Bestie Coffee")
             )
         )
         )
