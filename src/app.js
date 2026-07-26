@@ -7113,90 +7113,80 @@ function PreviewPage({ visit, update, onBack }) {
 // =============================================================
 // Secret monitor helpers
 // =============================================================
-let RB_CONVEX_BUNDLE_PROMISE = null;
-let RB_CONVEX_CLIENT = null;
-let RB_CONVEX_CLIENT_URL = '';
-function getConvexConfig() {
-    return window.RB_CONVEX_CONFIG || {};
-}
-function getConvexDeploymentUrl() {
-    const config = getConvexConfig();
-    return cleanText(config.deploymentUrl || config.convexUrl || config.url || config.cloudUrl);
-}
-function getConvexHttpUrl() {
-    const config = getConvexConfig();
-    return cleanText(config.httpUrl || config.siteUrl);
-}
-function buildVisitKey(visit) {
-    return [visit?.nama, visit?.store, visit?.tanggal].map((part) => normalize(part).replace(/\s+/g, '-')).filter(Boolean).join('__') || visit?.id || SESSION_ID;
-}
-function convexUrl(path) {
-    const config = getConvexConfig();
-    const httpUrl = getConvexHttpUrl();
-    if (!config.enabled || !httpUrl)
-        return '';
-    return String(httpUrl).replace(/\/$/, '') + '/' + String(path || '').replace(/^\//, '');
-}
-function convexEnabled() {
-    const config = getConvexConfig();
-    return Boolean(config.enabled && (getConvexDeploymentUrl() || getConvexHttpUrl()));
-}
-function getConvexBundleUrl() {
-    const config = getConvexConfig();
-    return config.bundleUrl || 'https://unpkg.com/convex@latest/dist/browser.bundle.js';
-}
-function loadConvexBundle() {
-    if (window.convex?.ConvexClient)
-        return Promise.resolve(window.convex);
-    if (RB_CONVEX_BUNDLE_PROMISE)
-        return RB_CONVEX_BUNDLE_PROMISE;
-    RB_CONVEX_BUNDLE_PROMISE = new Promise((resolve, reject) => {
-        const existing = document.getElementById('rbv-convex-client-bundle');
-        if (existing) {
-            existing.addEventListener('load', () => resolve(window.convex), { once: true });
-            existing.addEventListener('error', () => reject(new Error('Convex client gagal dimuat.')), { once: true });
-            return;
-        }
-        const script = document.createElement('script');
-        script.id = 'rbv-convex-client-bundle';
-        script.src = getConvexBundleUrl();
-        script.async = true;
-        script.crossOrigin = 'anonymous';
-        script.onload = () => window.convex?.ConvexClient ? resolve(window.convex) : reject(new Error('Convex client tidak tersedia.'));
-        script.onerror = () => reject(new Error('Convex client gagal dimuat.'));
-        document.head.appendChild(script);
-    });
-    return RB_CONVEX_BUNDLE_PROMISE;
-}
+
+let RB_FIREBASE_DB = null;
 async function getConvexRealtimeClient() {
     const config = getConvexConfig();
-    const deploymentUrl = getConvexDeploymentUrl();
-    if (!config.enabled || !deploymentUrl)
-        return null;
-    await loadConvexBundle();
-    if (!window.convex?.ConvexClient)
-        return null;
-    if (!RB_CONVEX_CLIENT || RB_CONVEX_CLIENT_URL !== deploymentUrl) {
-        try {
-            RB_CONVEX_CLIENT?.close?.();
-        }
-        catch (error) { }
-        RB_CONVEX_CLIENT = new window.convex.ConvexClient(deploymentUrl);
-        RB_CONVEX_CLIENT_URL = deploymentUrl;
+    if (!config.enabled) return null;
+    
+    if (RB_FIREBASE_DB) return RB_FIREBASE_DB;
+    
+    // Wait for CDN scripts if not ready
+    if (!window.firebase) {
+        await new Promise(r => setTimeout(r, 500));
+        if (!window.firebase) return null;
     }
-    return RB_CONVEX_CLIENT;
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(config.firebaseConfig);
+    }
+    
+    RB_FIREBASE_DB = firebase.firestore();
+    return RB_FIREBASE_DB;
 }
 async function runConvexQuery(functionName, args = {}) {
-    const client = await getConvexRealtimeClient();
-    if (!client || !functionName)
-        return null;
-    return client.query(functionName, args);
+    const db = await getConvexRealtimeClient();
+    if (!db || !functionName) return null;
+    
+    const cols = getConvexConfig().collections;
+    try {
+        if (functionName.includes('deviceBackups:getLatest')) {
+            const doc = await db.collection(cols.deviceBackups).doc(args.backupKey).get();
+            return doc.exists ? doc.data() : null;
+        }
+    } catch(err) { console.error('Firestore Query Error:', err); return null; }
 }
 async function runConvexMutation(functionName, args = {}) {
-    const client = await getConvexRealtimeClient();
-    if (!client || !functionName)
-        return null;
-    return client.mutation(functionName, args);
+    const db = await getConvexRealtimeClient();
+    if (!db || !functionName) return null;
+    
+    const cols = getConvexConfig().collections;
+    try {
+        if (functionName.includes('upsertVisit')) {
+            const docRef = db.collection(cols.visits).doc(args.payload.id || args.payload.visit_key || Date.now().toString());
+            await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
+            return { ok: true };
+        }
+        if (functionName.includes('upsertManualStoreRequest')) {
+            const docRef = db.collection(cols.manualRequests).doc(args.payload.id || args.payload.req_key || Date.now().toString());
+            await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
+            return { ok: true };
+        }
+        if (functionName.includes('upsertPresence')) {
+            const docRef = db.collection(cols.presence).doc(args.presence.id || args.presence.user_id || Date.now().toString());
+            await docRef.set({ ...args.presence, _id: docRef.id }, { merge: true });
+            return { ok: true };
+        }
+        if (functionName.includes('appSettings:setConfig')) {
+            const docRef = db.collection(cols.appSettings).doc(args.key);
+            await docRef.set({ key: args.key, payload: args.payload, updatedAt: Date.now(), updatedBy: args.updatedBy || 'web', _id: docRef.id }, { merge: true });
+            return { ok: true };
+        }
+        if (functionName.includes('deviceBackups:setLatest')) {
+            const docRef = db.collection(cols.deviceBackups).doc(args.backupKey);
+            await docRef.set({ ...args.payload, updatedAt: Date.now(), _id: docRef.id }, { merge: true });
+            return { ok: true };
+        }
+        if (functionName.includes('masterStores:upsertMany')) {
+            const batch = db.batch();
+            args.stores.forEach(st => {
+                const docRef = db.collection(cols.masterStores).doc(st.code);
+                batch.set(docRef, { ...st, _id: docRef.id }, { merge: true });
+            });
+            await batch.commit();
+            return { ok: true };
+        }
+    } catch(err) { console.error('Firestore Mutation Error:', err); return null; }
 }
 async function subscribeConvexQuery(functionName, args, onData, onError) {
     const client = await getConvexRealtimeClient();
