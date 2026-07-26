@@ -4831,14 +4831,14 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
             React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
                 React.createElement("div", { className: "text-center md:text-left text-white" },
                     React.createElement("h2", { className: "text-2xl font-black tracking-tight lg:text-3xl" }, "Target Harian"),
-                    React.createElement("p", { className: "mt-2 text-sm text-emerald-200 opacity-90" }, "Anda telah menyelesaikan ", todayVisits, " dari target 5 toko hari ini.")),
+                    React.createElement("p", { className: "mt-2 text-sm text-emerald-200 opacity-90" }, "Anda telah menyelesaikan ", todayVisits, " dari target minimal 1 toko hari ini.")),
                 React.createElement("div", { className: "relative flex h-32 w-32 items-center justify-center rounded-full bg-white/10 shadow-inner backdrop-blur-md" },
                     React.createElement("svg", { className: "absolute inset-0 h-full w-full -rotate-90", viewBox: "0 0 100 100" },
                         React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-white/10 stroke-[8]" }),
-                        React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-emerald-400 stroke-[8] transition-all duration-1000 ease-out", strokeDasharray: "264", strokeDashoffset: Math.max(0, 264 - (todayVisits / 5) * 264) })),
+                        React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-emerald-400 stroke-[8] transition-all duration-1000 ease-out", strokeDasharray: "264", strokeDashoffset: Math.max(0, 264 - Math.min(1, todayVisits / 1) * 264) })),
                     React.createElement("div", { className: "text-center" },
                         React.createElement("span", { className: "block text-3xl font-black text-white leading-none" }, todayVisits),
-                        React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-widest text-emerald-200" }, "/ 5")))),
+                        React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-widest text-emerald-200" }, "/ 1")))),
             
             // Section 2: Horizontal Carousel (Quick Access / Priority)
             React.createElement("div", { className: "mb-8" },
