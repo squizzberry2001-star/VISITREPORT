@@ -8114,7 +8114,7 @@ function WelcomeOverlay({ config, onDone }) {
                                     inputMode: "numeric",
                                     maxLength: 12,
                                     placeholder: "Contoh: 123456",
-                                    className: "block w-full rounded-2xl border-2 border-slate-100 bg-slate-50 py-3.5 pl-11 pr-4 text-center text-lg font-black tracking-widest text-slate-900 transition-all focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-500/10"
+                                    className: "block w-full rounded-2xl border-2 border-slate-100 bg-slate-50 py-3.5 px-11 text-center text-lg font-black tracking-widest text-slate-900 transition-all focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-500/10"
                                 })
                             )
                         ),
