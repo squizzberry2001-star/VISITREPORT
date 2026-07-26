@@ -3227,13 +3227,13 @@ function ObservationCards({ title, rows, onChange }) {
                         onClick: () => handleAiParaphrase(index),
                         disabled: aiLoadingIndex === index,
                         className: cx(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-extrabold text-xs shadow-md hover:shadow-lg hover:from-violet-700 hover:to-indigo-700 active:scale-95 transition-all cursor-pointer",
+                            "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 text-amber-300 hover:text-amber-200 font-extrabold text-xs sm:text-sm shadow-md hover:shadow-lg hover:bg-slate-800 active:scale-95 transition-all cursor-pointer border border-amber-400/30",
                             aiLoadingIndex === index && "opacity-75 cursor-wait"
                         ),
                         title: "Auto Paraphrase AI Gemini - Ubah ke bahasa audit profesional"
                     },
                         React.createElement("span", { className: "text-sm" }, aiLoadingIndex === index ? "⏳" : "✨"),
-                        React.createElement("span", { className: "tracking-wide" }, aiLoadingIndex === index ? "Gemini AI..." : "AI Paraphrase")
+                        React.createElement("span", { className: "tracking-wide font-black" }, aiLoadingIndex === index ? "Gemini AI..." : "AI Paraphrase")
                     ),
                     React.createElement(Button, { variant: "icon", onClick: () => removeRow(index), "aria-label": "Hapus row" },
                         React.createElement(Icon, { name: "trash", className: "h-4 w-4" }))
