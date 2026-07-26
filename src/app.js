@@ -1125,7 +1125,7 @@ function createVisit(bestieName = '', storeName = '') {
     };
 }
 function isMeaningfulObservation(row) {
-    return ['temuan', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row?.[key]));
+    return ['temuan', 'finding', 'observation', 'description', 'desc', 'kondisiIdeal', 'dampak', 'penyebab', 'tindakan', 'deadline', 'hasil'].some((key) => cleanText(row?.[key]));
 }
 function isEditableTarget(target) {
     const node = target instanceof Element ? target : null;
@@ -3151,6 +3151,56 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
     };
 }
 
+async function callGeminiExecutiveSummary({ qscTexts, opiTexts, storeFindings, totalVisits, topQSC, topOPI }) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
+    const topStores = (storeFindings || []).slice(0, 8).map(s => `${s.storeName}: ${s.totalFindings} temuan (QSC: ${s.qscCount}, OPI: ${s.opiCount})`).join('\n');
+    const qscSample = (qscTexts || []).slice(0, 15).join(' | ');
+    const opiSample = (opiTexts || []).slice(0, 15).join(' | ');
+    const topQscKeywords = (topQSC || []).slice(0, 5).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
+    const topOpiKeywords = (topOPI || []).slice(0, 5).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
+    const prompt = `Kamu adalah AI Executive Analyst untuk tim audit operasional restoran/F&B.
+Buatkan EXECUTIVE SUMMARY dalam Bahasa Indonesia yang profesional, ringkas, dan actionable.
+
+Data Agregat dari SEMUA user/auditor:
+- Total kunjungan: ${totalVisits}
+- Top keyword temuan QSC: ${topQscKeywords || 'Tidak ada'}
+- Top keyword temuan OPI: ${topOpiKeywords || 'Tidak ada'}
+
+Toko dengan temuan terbanyak:
+${topStores || 'Tidak ada data toko'}
+
+Contoh temuan QSC dari lapangan:
+${qscSample || 'Tidak ada'}
+
+Contoh temuan OPI dari lapangan:
+${opiSample || 'Tidak ada'}
+
+Buatkan ringkasan dengan format:
+1. OVERVIEW singkat (1-2 kalimat)
+2. TEMUAN UTAMA (3-4 poin key findings dengan emoji ⚠️ atau ✅)
+3. TOKO KRITIS (sebutkan 2-3 toko paling banyak temuan dan isu utamanya)
+4. REKOMENDASI (2-3 action items konkret dengan emoji 💡)
+
+Gunakan bahasa formal tapi mudah dipahami. Gunakan emoji untuk visual. Jangan terlalu panjang - maksimal 200 kata.
+Kembalikan HANYA teks ringkasan tanpa format JSON atau markdown code block.`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 800
+            }
+        })
+    });
+    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+    const data = await response.json();
+    const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return resultText.trim();
+}
+
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = rows?.length ? rows : [blankObservationRow()];
     const [activeIndex, setActiveIndex] = useState(0);
@@ -4107,21 +4157,92 @@ function VisitMap({ rows }) {
 
 function AiInsightsPanel({ data }) {
     if (!data) return null;
-    const summaryText = generateAiSummary(data.topQSC || [], data.topOPI || [], data.totalVisits || 0);
-    const paragraphs = summaryText.split('\n').filter(p => p.trim() !== '');
-    
-    return React.createElement("div", { className: "analytics-card-large mb-6 sm:mb-8 bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100 shadow-sm" },
-        React.createElement("div", { className: "flex items-center gap-3 mb-4" },
-            React.createElement("div", { className: "p-2 bg-indigo-600 rounded-xl text-white shadow-md" }, 
-                React.createElement(Icon, { name: "spark", className: "w-5 h-5" })
+    const [aiSummary, setAiSummary] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(false);
+
+    const fetchAiSummary = useCallback(async (force) => {
+        const cacheKey = 'rbv_ai_exec_summary_v2';
+        const cacheTimeKey = 'rbv_ai_exec_summary_time_v2';
+        if (!force) {
+            const cached = sessionStorage.getItem(cacheKey);
+            const cachedTime = parseInt(sessionStorage.getItem(cacheTimeKey) || '0');
+            if (cached && (Date.now() - cachedTime) < 10 * 60 * 1000) {
+                setAiSummary(cached);
+                return;
+            }
+        }
+        setAiLoading(true);
+        setAiError(false);
+        try {
+            const result = await callGeminiExecutiveSummary({
+                qscTexts: data.qscTexts || [],
+                opiTexts: data.opiTexts || [],
+                storeFindings: data.storeFindings || [],
+                totalVisits: data.localTotalVisits || 0,
+                topQSC: data.topQSC || [],
+                topOPI: data.topOPI || []
+            });
+            if (result) {
+                setAiSummary(result);
+                sessionStorage.setItem(cacheKey, result);
+                sessionStorage.setItem(cacheTimeKey, String(Date.now()));
+            } else {
+                throw new Error('Empty result');
+            }
+        } catch (err) {
+            console.warn('Gemini Executive Summary fallback:', err);
+            setAiError(true);
+            const fallback = generateAiSummary(data.topQSC || [], data.topOPI || [], data.localTotalVisits || 0);
+            setAiSummary(fallback);
+        } finally {
+            setAiLoading(false);
+        }
+    }, [data]);
+
+    useEffect(() => { fetchAiSummary(false); }, [fetchAiSummary]);
+
+    const paragraphs = (aiSummary || '').split('\n').filter(p => p.trim() !== '');
+
+    return React.createElement("div", { className: "bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 p-5 sm:p-6 rounded-[32px] border border-indigo-200/60 shadow-sm relative overflow-hidden" },
+        React.createElement("div", { className: "absolute -right-10 -top-10 w-40 h-40 bg-indigo-200/20 rounded-full blur-2xl" }),
+        React.createElement("div", { className: "absolute -left-8 -bottom-8 w-32 h-32 bg-violet-200/20 rounded-full blur-2xl" }),
+        React.createElement("div", { className: "relative z-10" },
+            React.createElement("div", { className: "flex items-center justify-between mb-4" },
+                React.createElement("div", { className: "flex items-center gap-3" },
+                    React.createElement("div", { className: "p-2.5 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30" }, 
+                        React.createElement(Icon, { name: "spark", className: "w-5 h-5" })
+                    ),
+                    React.createElement("div", null,
+                        React.createElement("h3", { className: "text-lg font-black text-indigo-900" }, "AI Executive Summary"),
+                        React.createElement("p", { className: "text-[10px] font-bold uppercase tracking-widest" }, 
+                            aiError ? React.createElement("span", { className: "text-amber-600" }, "Fallback Mode — Local Analysis") :
+                            React.createElement("span", { className: "text-indigo-500" }, "Powered by Gemini AI")
+                        )
+                    )
+                ),
+                React.createElement("button", { 
+                    className: "p-2 rounded-xl hover:bg-indigo-100 text-indigo-500 hover:text-indigo-700 transition-all duration-200 " + (aiLoading ? "animate-spin" : ""),
+                    onClick: () => fetchAiSummary(true),
+                    disabled: aiLoading,
+                    title: "Regenerate Summary"
+                }, React.createElement("svg", { className: "w-4 h-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+                    React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" })
+                ))
             ),
-            React.createElement("div", null,
-                React.createElement("h3", { className: "text-lg font-black text-indigo-900" }, "AI Executive Summary"),
-                React.createElement("p", { className: "text-xs font-bold text-indigo-600 uppercase tracking-widest" }, "Auto-Generated Insights")
+            aiLoading ? React.createElement("div", { className: "space-y-3 bg-white/60 p-4 rounded-2xl" },
+                React.createElement("div", { className: "h-4 bg-indigo-200/50 rounded-full animate-pulse w-3/4" }),
+                React.createElement("div", { className: "h-4 bg-indigo-200/40 rounded-full animate-pulse w-full" }),
+                React.createElement("div", { className: "h-4 bg-indigo-200/30 rounded-full animate-pulse w-5/6" }),
+                React.createElement("div", { className: "h-4 bg-violet-200/40 rounded-full animate-pulse w-2/3" }),
+                React.createElement("div", { className: "h-4 bg-violet-200/30 rounded-full animate-pulse w-4/5" }),
+                React.createElement("p", { className: "text-xs text-indigo-400 font-semibold mt-2 text-center animate-pulse" }, "✨ Gemini AI sedang menganalisis data...")
+            ) :
+            React.createElement("div", { className: "space-y-2 bg-white/60 backdrop-blur-sm p-4 rounded-2xl text-sm font-medium text-slate-700 leading-relaxed" },
+                paragraphs.length === 0 ?
+                    React.createElement("p", { className: "text-slate-400 italic" }, "Belum ada data untuk dianalisis.") :
+                    paragraphs.map((p, i) => React.createElement("p", { key: i, className: "whitespace-pre-line" }, p))
             )
-        ),
-        React.createElement("div", { className: "space-y-3 bg-white/60 p-4 rounded-xl text-sm font-medium text-slate-700 leading-relaxed" },
-            paragraphs.map((p, i) => React.createElement("p", { key: i }, p))
         )
     );
 }
@@ -4147,6 +4268,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 let rows = await fetchMonitorRowsFromConvex();
                 if (cancelled) return;
                 
+                // Trigger one-time backfill of local history findings to Convex (silent, background)
+                backfillLocalFindingsToConvex().catch(() => {});
                 // Fallback to local history if remote fetch fails or returns empty
                 if (!rows || rows.length === 0) {
                     rows = (history || []).map((item) => ({
@@ -4174,9 +4297,6 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     const storeName = r.store_name || r.storeName || r.store || '';
                     if (storeName) globalStoreSet.add(storeName);
                 });
-                const masterStores = getEffectiveMasterStores();
-                const totalMasterStores = masterStores.length;
-                
                 let localCompleted = 0;
                 const qscByMonth = {};
                 const opiByMonth = {};
@@ -4184,6 +4304,39 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 const opiTexts = [];
                 let emailSentCount = 0;
                 let emailFeedbackCount = 0;
+
+                // Fetch centralized findings from ALL users via Convex
+                let remoteFindings = [];
+                const remoteFindingKeys = new Set();
+                try {
+                    if (convexEnabled()) {
+                        const rf = await runConvexQuery('monitor:listAllFindings', { limit: 500 });
+                        if (Array.isArray(rf)) remoteFindings = rf;
+                    }
+                } catch (err) {
+                    console.warn('Failed to fetch remote findings (silent):', err);
+                }
+                // Process remote findings into qscTexts/opiTexts
+                const storeFindingMap = {};
+                remoteFindings.forEach(rf => {
+                    remoteFindingKeys.add(rf.visitKey);
+                    const storeName = String(rf.store_name || '').trim();
+                    if (storeName && !storeFindingMap[storeName]) storeFindingMap[storeName] = { storeName, qscCount: 0, opiCount: 0, totalFindings: 0 };
+                    (Array.isArray(rf.findings) ? rf.findings : []).forEach(f => {
+                        const text = String(f.temuan || '').trim();
+                        if (!text) return;
+                        if (f.type === 'qsc') {
+                            qscTexts.push(text);
+                            if (storeName && storeFindingMap[storeName]) { storeFindingMap[storeName].qscCount++; storeFindingMap[storeName].totalFindings++; }
+                        } else {
+                            opiTexts.push(text);
+                            if (storeName && storeFindingMap[storeName]) { storeFindingMap[storeName].opiCount++; storeFindingMap[storeName].totalFindings++; }
+                        }
+                    });
+                });
+                
+                const masterStores = getEffectiveMasterStores();
+                const totalMasterStores = masterStores.length;
                 
                 const bestieMap = {};
                 BESTIE_NAMES.forEach(name => bestieMap[normalize(name)] = { 
@@ -4273,12 +4426,26 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     }
                 });
 
-                localVisits.forEach(v => {
+                // Add local-only findings from FULL visit records in IndexedDB (history metadata has no opiData/qscData)
+                let fullLocalVisits = [];
+                try { fullLocalVisits = await getAllVisitRecordsForBackup() || []; } catch (e) { console.warn('IndexedDB read for findings:', e); }
+                fullLocalVisits.forEach(v => {
+                    if (!v) return;
+                    const localVk = buildVisitKey(v);
+                    if (remoteFindingKeys.has(localVk)) return; // already counted from Convex
+                    const storeName = String(v.store || v.storeName || v.store_name || '').trim();
+                    if (!storeFindingMap[storeName] && storeName) storeFindingMap[storeName] = { storeName, qscCount: 0, opiCount: 0, totalFindings: 0 };
                     if (Array.isArray(v.opiData)) {
                         v.opiData.forEach(row => {
                             if (isMeaningfulObservation(row)) {
                                 const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
-                                if (text) opiTexts.push(text);
+                                if (text) {
+                                    opiTexts.push(text);
+                                    if (storeName && storeFindingMap[storeName]) {
+                                        storeFindingMap[storeName].opiCount++;
+                                        storeFindingMap[storeName].totalFindings++;
+                                    }
+                                }
                             }
                         });
                     }
@@ -4286,11 +4453,18 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                         v.qscData.forEach(row => {
                             if (isMeaningfulObservation(row)) {
                                 const text = String(row.temuan || row.finding || row.observation || row.description || '').trim();
-                                if (text) qscTexts.push(text);
+                                if (text) {
+                                    qscTexts.push(text);
+                                    if (storeName && storeFindingMap[storeName]) {
+                                        storeFindingMap[storeName].qscCount++;
+                                        storeFindingMap[storeName].totalFindings++;
+                                    }
+                                }
                             }
                         });
                     }
                 });
+                const storeFindings = Object.values(storeFindingMap).filter(s => s.totalFindings > 0).sort((a, b) => b.totalFindings - a.totalFindings);
                 
                 const topOPI = analyzeFindingTrends(opiTexts);
                 const topQSC = analyzeFindingTrends(qscTexts);
@@ -4344,7 +4518,10 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     topQSC,
                     leaderboard,
                     localTotalVisits: localVisits.length,
-                    rows: rows
+                    rows: rows,
+                    storeFindings: storeFindings,
+                    qscTexts: qscTexts,
+                    opiTexts: opiTexts
                 });
             } catch (e) {
                 console.error(e);
@@ -4468,6 +4645,53 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                                     scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
                                 }
                             })
+                    )
+                ),
+
+                // Store Findings Chart - Top 10 Toko Temuan
+                (data?.storeFindings && data.storeFindings.length > 0) && React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+                        React.createElement("div", { className: "flex items-center gap-3" },
+                            React.createElement("div", { className: "p-2 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl text-white shadow-md" },
+                                React.createElement(Icon, { name: "store", className: "w-4 h-4" })
+                            ),
+                            React.createElement("h3", { className: "text-xl font-black text-slate-800" }, "Top Toko Temuan")
+                        ),
+                        React.createElement("div", { className: "px-3 py-1 bg-rose-50 rounded-full text-xs font-bold text-rose-500" }, `${Math.min(data.storeFindings.length, 10)} Toko`)
+                    ),
+                    React.createElement("div", { className: "w-full", style: { height: Math.max(200, Math.min(data.storeFindings.length, 10) * 40 + 40) + 'px' } },
+                        React.createElement(SimpleChart, {
+                            type: 'bar',
+                            data: {
+                                labels: data.storeFindings.slice(0, 10).map(s => s.storeName.length > 20 ? s.storeName.slice(0, 18) + '…' : s.storeName),
+                                datasets: [
+                                    {
+                                        label: 'QSC',
+                                        data: data.storeFindings.slice(0, 10).map(s => s.qscCount),
+                                        backgroundColor: '#10b981',
+                                        borderRadius: 4
+                                    },
+                                    {
+                                        label: 'OPI',
+                                        data: data.storeFindings.slice(0, 10).map(s => s.opiCount),
+                                        backgroundColor: '#0ea5e9',
+                                        borderRadius: 4
+                                    }
+                                ]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11, weight: 'bold' } } }
+                                },
+                                scales: {
+                                    x: { stacked: true, beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } },
+                                    y: { stacked: true, ticks: { font: { size: 11, weight: '600' } }, grid: { display: false } }
+                                }
+                            }
+                        })
                     )
                 ),
                 
@@ -7673,6 +7897,120 @@ async function upsertMonitorVisit(visit) {
         return;
     await upsertMonitorVisitToCloudflare(visit);
 }
+const _findingsSyncThrottle = new Map();
+async function syncFindingsToConvex(visit) {
+    if (!convexEnabled() || !visit) return;
+    const vk = buildVisitKey(visit);
+    const now = Date.now();
+    const lastSync = _findingsSyncThrottle.get(vk) || 0;
+    if (now - lastSync < 30000) return; // throttle 30s per visit
+    _findingsSyncThrottle.set(vk, now);
+    try {
+        const findings = [];
+        if (Array.isArray(visit.opiData)) {
+            visit.opiData.forEach(row => {
+                if (isMeaningfulObservation(row)) {
+                    findings.push({
+                        type: 'opi',
+                        temuan: cleanText(row.temuan),
+                        kondisiIdeal: cleanText(row.kondisiIdeal),
+                        dampak: cleanText(row.dampak),
+                        penyebab: cleanText(row.penyebab),
+                        tindakan: cleanText(row.tindakan),
+                        hasil: cleanText(row.hasil)
+                    });
+                }
+            });
+        }
+        if (Array.isArray(visit.qscData)) {
+            visit.qscData.forEach(row => {
+                if (isMeaningfulObservation(row)) {
+                    findings.push({
+                        type: 'qsc',
+                        temuan: cleanText(row.temuan),
+                        kondisiIdeal: cleanText(row.kondisiIdeal),
+                        dampak: cleanText(row.dampak),
+                        penyebab: cleanText(row.penyebab),
+                        tindakan: cleanText(row.tindakan),
+                        hasil: cleanText(row.hasil)
+                    });
+                }
+            });
+        }
+        if (findings.length === 0) return;
+        await runConvexMutation('monitor:upsertFindings', {
+            payload: {
+                visit_key: vk,
+                bestie_name: cleanText(visit.nama, '-'),
+                store_name: cleanText(visit.store, '-'),
+                visit_date: visit.tanggal || new Date().toISOString().slice(0, 10),
+                findings
+            }
+        });
+    } catch (err) {
+        console.warn('Background findings sync error (silent):', err);
+    }
+}
+let _backfillRunning = false;
+async function backfillLocalFindingsToConvex() {
+    const BACKFILL_FLAG = 'rbv_findings_backfill_v2';
+    if (_backfillRunning || localStorage.getItem(BACKFILL_FLAG)) return;
+    if (!convexEnabled()) return;
+    _backfillRunning = true;
+    try {
+        const allVisits = await getAllVisitRecordsForBackup();
+        if (!allVisits || allVisits.length === 0) { _backfillRunning = false; return; }
+        let synced = 0;
+        for (const visit of allVisits) {
+            if (!visit || !visit.nama || !visit.store) continue;
+            const hasFindings = (Array.isArray(visit.opiData) && visit.opiData.some(isMeaningfulObservation)) ||
+                                (Array.isArray(visit.qscData) && visit.qscData.some(isMeaningfulObservation));
+            if (!hasFindings) continue;
+            const vk = buildVisitKey(visit);
+            const findings = [];
+            if (Array.isArray(visit.opiData)) {
+                visit.opiData.forEach(row => {
+                    if (isMeaningfulObservation(row)) {
+                        const temuan = cleanText(row.temuan || row.finding || row.observation || row.description || '');
+                        if (temuan) findings.push({ type: 'opi', temuan, kondisiIdeal: cleanText(row.kondisiIdeal), dampak: cleanText(row.dampak), penyebab: cleanText(row.penyebab), tindakan: cleanText(row.tindakan), hasil: cleanText(row.hasil) });
+                    }
+                });
+            }
+            if (Array.isArray(visit.qscData)) {
+                visit.qscData.forEach(row => {
+                    if (isMeaningfulObservation(row)) {
+                        const temuan = cleanText(row.temuan || row.finding || row.observation || row.description || '');
+                        if (temuan) findings.push({ type: 'qsc', temuan, kondisiIdeal: cleanText(row.kondisiIdeal), dampak: cleanText(row.dampak), penyebab: cleanText(row.penyebab), tindakan: cleanText(row.tindakan), hasil: cleanText(row.hasil) });
+                    }
+                });
+            }
+
+            if (findings.length === 0) continue;
+            try {
+                await runConvexMutation('monitor:upsertFindings', {
+                    payload: {
+                        visit_key: vk,
+                        bestie_name: cleanText(visit.nama, '-'),
+                        store_name: cleanText(visit.store, '-'),
+                        visit_date: visit.tanggal || '',
+                        findings
+                    }
+                });
+                synced++;
+                // Small delay between upserts to avoid overwhelming Convex
+                if (synced % 5 === 0) await new Promise(r => setTimeout(r, 300));
+            } catch (e) {
+                console.warn('Backfill upsert skip:', e);
+            }
+        }
+        localStorage.setItem(BACKFILL_FLAG, String(Date.now()));
+        console.log(`[Backfill] Synced ${synced} visits findings to Convex`);
+    } catch (err) {
+        console.warn('Backfill findings error (silent):', err);
+    } finally {
+        _backfillRunning = false;
+    }
+}
 async function upsertPresence(payload) {
     if (!payload)
         return;
@@ -9905,6 +10243,7 @@ function App() {
                 setHistory(nextMeta);
                 updateStorageLabel();
                 upsertMonitorVisit(nextVisit);
+                syncFindingsToConvex(nextVisit);
             }
             catch (error) {
                 console.warn('Autosave gagal:', error);
