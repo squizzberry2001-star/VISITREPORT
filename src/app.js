@@ -8098,7 +8098,7 @@ function WelcomeOverlay({ config, onDone }) {
             ),
             
             React.createElement("div", { className: "mt-6 text-center" },
-                React.createElement("h1", { className: "text-2xl font-black text-slate-900 tracking-tight" }, title),
+                React.createElement("h1", { className: "text-2xl font-black text-slate-900 tracking-tight whitespace-pre-line" }, title),
                 React.createElement("p", { className: "mt-2 text-sm font-medium text-slate-500 leading-relaxed whitespace-pre-line" }, subtitle),
                 
                 !introDone ? (
