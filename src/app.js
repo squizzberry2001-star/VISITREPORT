@@ -3248,7 +3248,7 @@ Jangan terlalu panjang - maksimal 200 kata. Kembalikan HANYA teks ringkasan tanp
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.4, maxOutputTokens: 800 }
+                        generationConfig: { temperature: 0.4, maxOutputTokens: 2500 }
                     })
                 });
                 if (!response.ok) {
@@ -3273,7 +3273,7 @@ Jangan terlalu panjang - maksimal 200 kata. Kembalikan HANYA teks ringkasan tanp
                         model: conf.model,
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.4,
-                        max_tokens: 800
+                        max_tokens: 2500
                     })
                 });
                 if (!response.ok) {
@@ -4297,7 +4297,7 @@ function AiInsightsPanel({ data }) {
 
     const paragraphs = (aiSummary || '').split('\n').filter(p => p.trim() !== '');
 
-    return React.createElement("div", { className: "bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 p-5 sm:p-6 rounded-[32px] border border-indigo-200/60 shadow-sm relative overflow-hidden" },
+    return React.createElement("div", { className: "mb-8 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 p-5 sm:p-6 rounded-[32px] border border-indigo-200/60 shadow-sm relative overflow-hidden" },
         React.createElement("div", { className: "absolute -right-10 -top-10 w-40 h-40 bg-indigo-200/20 rounded-full blur-2xl" }),
         React.createElement("div", { className: "absolute -left-8 -bottom-8 w-32 h-32 bg-violet-200/20 rounded-full blur-2xl" }),
         React.createElement("div", { className: "relative z-10" },
@@ -4355,7 +4355,9 @@ class AnalyticsErrorBoundary extends React.Component {
     }
 }
 
-function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
+
+function useAnalyticsData(history, scheduleCfg) {
+    
     const [features, setFeatures] = useState(() => readFeaturesConfig());
     useEffect(() => {
         const handler = () => setFeatures(readFeaturesConfig());
@@ -4675,6 +4677,20 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
         };
     }, [history, scheduleCfg]);
 
+
+    return { data, loading, mounted };
+}
+
+function AnalyticsView({ analytics }) {
+
+    const { data, loading, mounted } = analytics;
+    const [features, setFeatures] = useState(() => readFeaturesConfig());
+    useEffect(() => {
+        const handler = () => setFeatures(readFeaturesConfig());
+        window.addEventListener('rbv-features-config-change', handler);
+        return () => window.removeEventListener('rbv-features-config-change', handler);
+    }, []);
+
     if (loading) {
         return React.createElement("div", { className: "py-32 w-full flex flex-col items-center justify-center bg-slate-50/50" },
             React.createElement("div", { className: "w-12 h-12 border-4 border-audit-primary border-t-transparent rounded-full animate-spin mb-4 shadow-lg shadow-audit-primary/20" }),
@@ -4840,7 +4856,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
             
             // Right Column: Top Findings & AI
             React.createElement("div", { className: "space-y-6" },
-                features.ai && React.createElement(AiInsightsPanel, { data: data }),
+                
                 
                 React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
                     React.createElement("h3", { className: "text-xl font-black text-slate-800 mb-6" }, "Isu Terbanyak"),
@@ -5197,19 +5213,8 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
             React.createElement(HomeUpdateNotice, { config: noticeConfig }),
         React.createElement("section", { className: "dashboard-command-center w-full" },
             React.createElement("div", { className: "w-full px-4 md:px-8 lg:px-12 py-6 pb-32" },
-            // Section 1: Progress Ring & Daily Target
-            React.createElement("div", { className: "mb-8 flex flex-col items-center justify-between gap-6 rounded-[32px] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 shadow-2xl md:flex-row" },
-                React.createElement("div", { className: "text-center md:text-left text-white" },
-                    React.createElement("h2", { className: "text-2xl font-black tracking-tight lg:text-3xl" }, "Target Harian"),
-                    React.createElement("p", { className: "mt-2 text-sm text-emerald-200 opacity-90" }, "Anda telah menyelesaikan ", todayVisits, " dari target minimal 1 toko hari ini.")),
-                React.createElement("div", { className: "relative flex h-32 w-32 items-center justify-center rounded-full bg-white/10 shadow-inner backdrop-blur-md" },
-                    React.createElement("svg", { className: "absolute inset-0 h-full w-full -rotate-90", viewBox: "0 0 100 100" },
-                        React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-white/10 stroke-[8]" }),
-                        React.createElement("circle", { cx: "50", cy: "50", r: "42", className: "fill-none stroke-emerald-400 stroke-[8] transition-all duration-1000 ease-out", strokeDasharray: "264", strokeDashoffset: Math.max(0, 264 - Math.min(1, todayVisits / 1) * 264) })),
-                    React.createElement("div", { className: "text-center" },
-                        React.createElement("span", { className: "block text-3xl font-black text-white leading-none" }, todayVisits),
-                        React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-widest text-emerald-200" }, "/ 1")))),
-            
+            // Section 1: AI Executive Summary
+            (features.ai && analytics.data) ? React.createElement(AiInsightsPanel, { data: analytics.data }) : null,
             // Section 2: Horizontal Carousel (Quick Access / Priority)
             React.createElement("div", { className: "mb-8" },
                 React.createElement("div", { className: "mb-4 flex items-center justify-between px-4 md:px-8" },
@@ -5252,7 +5257,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
                     hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button mt-6", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " aktivitas lagi") : null) :
                     React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))))
         )) : null,
-        activeTab === 'analytics' ? React.createElement(AnalyticsView, { history: history, scheduleConfig: scheduleConfig }) : null,
+        activeTab === 'analytics' ? React.createElement(AnalyticsView, { analytics: analytics }) : null,
         activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center rounded-full text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
                 position: 'fixed',
                 right: '24px',
