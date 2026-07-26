@@ -9325,43 +9325,49 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
     };
 
     if (viewMode === 'grid') {
-        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-4 lg:px-8 min-h-screen bg-slate-50 flex flex-col" },
-            React.createElement("div", { className: "mb-6 flex flex-col items-center text-center sticky top-0 z-40 bg-slate-50 pt-6 pb-3 border-b border-slate-200/50 -mx-4 px-4 sm:static sm:border-0 sm:pt-6 sm:pb-4 sm:mx-0 sm:px-0" },
-                React.createElement("div", { className: "w-16 h-16 sm:w-20 sm:h-20 bg-audit-primary/10 rounded-full flex items-center justify-center mb-3 sm:mb-4" },
-                    React.createElement(Icon, { name: "clipboard", className: "w-8 h-8 sm:w-10 sm:h-10 text-audit-primary" })
+        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-3 sm:px-6 lg:px-8 h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-50 flex flex-col justify-between py-2 sm:py-4" },
+            React.createElement("div", { className: "flex flex-col items-center text-center shrink-0 pt-2 pb-2 border-b border-slate-200/60" },
+                React.createElement("div", { className: "flex items-center justify-center gap-2 mb-1" },
+                    React.createElement("div", { className: "w-7 h-7 sm:w-8 sm:h-8 bg-audit-primary/10 rounded-lg flex items-center justify-center" },
+                        React.createElement(Icon, { name: "clipboard", className: "w-4 h-4 sm:w-5 sm:h-5 text-audit-primary" })
+                    ),
+                    React.createElement("h2", { className: "text-base sm:text-xl font-black text-slate-900" }, "Form Kunjungan")
                 ),
-                React.createElement("h2", { className: "text-xl sm:text-2xl font-black text-slate-900" }, "Form Kunjungan"),
-                React.createElement("p", { className: "mt-1 text-xs sm:text-sm font-bold text-slate-500 max-w-sm px-4" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
-                React.createElement("div", { className: "w-full max-w-xs mt-4 sm:mt-6 bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner" },
-                    React.createElement("div", { className: "bg-gradient-to-r from-audit-secondary to-audit-primary h-2.5 rounded-full transition-all duration-500", style: { width: `${overallProgress}%` } })
+                React.createElement("p", { className: "text-xs font-bold text-slate-500 max-w-sm px-2 truncate" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
+                React.createElement("div", { className: "w-full max-w-[220px] mt-2 bg-slate-200 rounded-full h-2 overflow-hidden shadow-inner" },
+                    React.createElement("div", { className: "bg-gradient-to-r from-audit-secondary to-audit-primary h-2 rounded-full transition-all duration-500", style: { width: `${overallProgress}%` } })
                 ),
-                React.createElement("p", { className: "mt-2 text-[10px] sm:text-xs font-bold text-slate-400" }, overallProgress, "% Complete")
+                React.createElement("p", { className: "mt-1 text-[10px] font-extrabold text-slate-400" }, overallProgress, "% Complete")
             ),
             
-            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-6 flex-1 mb-8 pt-2 sm:pt-0" },
+            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 flex-1 min-h-0 my-2 pt-1 pb-1" },
                 SECTION_DEFS.map((section, idx) => {
                     const secProgress = visitProgress(visit, idx);
                     const isComplete = secProgress === 100;
+                    const isLastOdd = idx === 4;
                     return (React.createElement("div", { 
                         key: idx, 
                         onClick: () => handleGridCardClick(idx),
-                        className: "bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-md hover:border-audit-primary transition-all active:scale-95 relative overflow-hidden" 
+                        className: cx(
+                            "bg-white rounded-2xl p-2.5 sm:p-4 shadow-sm border border-slate-200/90 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow hover:border-audit-primary transition-all active:scale-95 relative overflow-hidden",
+                            isLastOdd ? "col-span-2 sm:col-span-1" : ""
+                        )
                     },
-                        isComplete && React.createElement("div", { className: "absolute top-3 right-3 w-3 h-3 bg-emerald-500 rounded-full shadow-sm border-2 border-white" }),
-                        React.createElement("div", { className: `w-14 h-14 rounded-2xl flex items-center justify-center mb-3 shadow-inner ${isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}` },
-                            React.createElement(Icon, { name: section.id === 'setup' ? 'settings' : section.id === 'general' ? 'home' : section.id === 'qsc' ? 'star' : section.id === 'observation' ? 'eye' : 'camera', className: "w-7 h-7" })
+                        isComplete && React.createElement("div", { className: "absolute top-2 right-2 w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm border-2 border-white" }),
+                        React.createElement("div", { className: `w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-1.5 sm:mb-2 shadow-inner ${isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}` },
+                            React.createElement(Icon, { name: section.id === 'setup' ? 'settings' : section.id === 'general' ? 'home' : section.id === 'qsc' ? 'star' : section.id === 'observation' ? 'eye' : 'camera', className: "w-5 h-5 sm:w-6 sm:h-6" })
                         ),
-                        React.createElement("h3", { className: "font-black text-sm text-slate-800 leading-tight line-clamp-2" }, section.title),
-                        React.createElement("div", { className: "w-full h-1 bg-slate-100 rounded-full mt-3 overflow-hidden" },
+                        React.createElement("h3", { className: "font-black text-xs sm:text-sm text-slate-800 leading-tight line-clamp-1" }, section.title),
+                        React.createElement("div", { className: "w-full h-1.5 bg-slate-100 rounded-full mt-1.5 sm:mt-2 overflow-hidden" },
                             React.createElement("div", { className: `h-full rounded-full transition-all ${isComplete ? 'bg-emerald-500' : 'bg-audit-primary'}`, style: { width: `${secProgress}%` } })
                         )
                     ));
                 })
             ),
             
-            React.createElement("div", { className: "w-full max-w-sm mx-auto flex flex-col gap-3 pb-8" },
-                React.createElement(Button, { className: "w-full !rounded-full !py-4 shadow-xl font-bold text-lg", icon: "pdf", onClick: onPreview }, "Preview & Generate PDF"),
-                React.createElement(Button, { variant: "secondary", className: "w-full !rounded-full !py-3 font-bold bg-white border-2 border-slate-200", icon: "home", onClick: onDashboard }, "Kembali ke Dashboard")
+            React.createElement("div", { className: "w-full max-w-md mx-auto grid grid-cols-2 gap-2 sm:gap-3 shrink-0 pt-1 pb-2" },
+                React.createElement(Button, { variant: "secondary", className: "!rounded-xl !py-2.5 !px-3 font-bold bg-white border border-slate-300 text-xs sm:text-sm truncate shadow-sm", icon: "home", onClick: onDashboard }, "Dashboard"),
+                React.createElement(Button, { className: "!rounded-xl !py-2.5 !px-3 shadow-md font-bold text-xs sm:text-sm truncate", icon: "pdf", onClick: onPreview }, "Preview PDF")
             )
         ));
     }
