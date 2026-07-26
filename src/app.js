@@ -3100,10 +3100,12 @@ function paraphraseObservationRow(row) {
 const DEFAULT_GEMINI_API_KEY = (typeof atob === 'function' ? atob : (s => Buffer.from(s, 'base64').toString('utf8')))("QVEuQWI4Uk42Sms2aFk3RlF2Mk9pU2sybXFrMDBLMzhwV1F4MlJoZk1lZmo0NTAxWjdrRHc=");
 
 async function callGeminiObservationParaphrase(row) {
-    const prompt = `Kamu adalah AI QA & Audit Manager di industri restoran/F&B.
-Tugasmu memparafrase catatan temuan audit operasional menjadi kalimat laporan Bahasa Indonesia yang formal, profesional, logis, dan komunikatif.
-PENTING: Gunakan bahasa formal yang mudah dipahami (jelas dan lugas, tidak perlu terlalu kaku atau menggunakan kata baku yang sulit dimengerti).
-Jangan merubah fakta asli dari temuan. Jika ada kolom yang kosong, isi dengan kalimat standar SOP yang logis sesuai konteks temuan.
+    const prompt = `Kamu adalah seorang auditor operasional senior di industri restoran/F&B.
+Tugasmu adalah memperbaiki kalimat catatan temuan audit dari lapangan menjadi laporan yang lebih rapi, profesional, tapi TUKANG KETIKNYA TETAP MANUSIA (natural).
+PENTING: 
+- Jangan gunakan gaya bahasa kaku ala robot AI, jauhi kata-kata klise AI seperti "Oleh karena itu", "Penting untuk", atau "Memastikan bahwa".
+- Gunakan bahasa Indonesia sehari-hari di dunia kerja/profesional yang lugas, mengalir, dan to-the-point, seperti laporan yang diketik asli oleh manusia.
+- Jangan merubah fakta asli dari temuan. Jika ada kolom yang kosong, isi dengan standar operasional yang wajar (common sense SOP) dengan singkat.
 
 Input data temuan:
 - Temuan: "${row.temuan || ''}"
@@ -3198,8 +3200,12 @@ async function callGeminiExecutiveSummary({ qscTexts, opiTexts, storeFindings, t
     const opiSample = (opiTexts || []).slice(0, 15).join(' | ');
     const topQscKeywords = (topQSC || []).slice(0, 10).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
     const topOpiKeywords = (topOPI || []).slice(0, 10).map(k => `"${k.keyword}" (${k.count}x)`).join(', ');
-    const prompt = `Kamu adalah AI Executive Analyst untuk tim audit operasional restoran/F&B.
-Buatkan EXECUTIVE SUMMARY dalam Bahasa Indonesia yang profesional, ringkas, dan actionable.
+    const prompt = `Kamu adalah seorang Area Manager atau Auditor Senior yang sedang mengetik laporan evaluasi operasional restoran.
+Tugasmu adalah membuat EXECUTIVE SUMMARY dalam Bahasa Indonesia berdasarkan data di bawah ini.
+PENTING:
+- Gunakan gaya bahasa kerja profesional yang NATURAL dan LUGAS, layaknya manusia asli yang mengetik laporan.
+- JANGAN gunakan kata-kata kaku ala robot AI seperti "Penting untuk dicatat", "Kesimpulannya", "Oleh karena itu", atau "Memastikan bahwa".
+- Buat kalimatnya mengalir, to the point, dan langsung fokus ke inti masalah.
 
 Data Agregat dari SEMUA user/auditor:
 - Total kunjungan: ${totalVisits}
@@ -3215,14 +3221,13 @@ ${qscSample || 'Tidak ada'}
 Contoh temuan OPI dari lapangan:
 ${opiSample || 'Tidak ada'}
 
-Buatkan ringkasan dengan format:
+Buatkan ringkasan dengan format (TANPA pendahuluan/penutup basa-basi):
 1. OVERVIEW singkat (1-2 kalimat)
 2. ANALISA ISU TERBANYAK (Kategorikan isu spesifik berdasarkan frekuensi terbanyak. Misal: ⚠️ Kesalahan Label ROX - 20 temuan)
 3. TOKO KRITIS (sebutkan 2-3 toko paling banyak temuan dan isu utamanya)
 4. REKOMENDASI (2-3 action items konkret dengan emoji 💡)
 
-Gunakan bahasa formal tapi mudah dipahami. Gunakan emoji untuk visual. Jangan terlalu panjang - maksimal 200 kata.
-Kembalikan HANYA teks ringkasan tanpa format JSON atau markdown code block.`;
+Jangan terlalu panjang - maksimal 200 kata. Kembalikan HANYA teks ringkasan tanpa format JSON atau markdown code block.`;
 
     const keys = [
         { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-3.5-flash' },
