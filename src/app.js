@@ -4251,51 +4251,21 @@ function VisitMap({ rows }) {
 function AiInsightsPanel({ data }) {
     if (!data) return null;
     const [aiSummary, setAiSummary] = useState(null);
-    const [aiLoading, setAiLoading] = useState(false);
-    const [aiError, setAiError] = useState(false);
-
-    const fetchAiSummary = useCallback(async (force) => {
-        const cacheKey = 'rbv_ai_exec_summary_v2';
-        const cacheTimeKey = 'rbv_ai_exec_summary_time_v2';
-        if (!force) {
-            const cached = sessionStorage.getItem(cacheKey);
-            const cachedTime = parseInt(sessionStorage.getItem(cacheTimeKey) || '0');
-            if (cached && (Date.now() - cachedTime) < 10 * 60 * 1000) {
-                setAiSummary(cached);
-                return;
-            }
-        }
-        setAiLoading(true);
-        setAiError(false);
-        try {
-            const result = await callGeminiExecutiveSummary({
-                qscTexts: data.qscTexts || [],
-                opiTexts: data.opiTexts || [],
-                storeFindings: data.storeFindings || [],
-                totalVisits: data.globalTotalVisits || 0,
-                topQSC: data.topQSC || [],
-                topOPI: data.topOPI || []
-            });
-            if (result) {
-                setAiSummary(result);
-                sessionStorage.setItem(cacheKey, result);
-                sessionStorage.setItem(cacheTimeKey, String(Date.now()));
-            } else {
-                throw new Error('Empty result');
-            }
-        } catch (err) {
-            console.warn('Gemini Executive Summary fallback:', err);
-            setAiError(true);
-            const fallback = generateAiSummary(data.topQSC || [], data.topOPI || [], data.localTotalVisits || 0);
-            setAiSummary(fallback);
-        } finally {
-            setAiLoading(false);
-        }
-    }, [data]);
-
-    useEffect(() => { fetchAiSummary(false); }, [fetchAiSummary]);
-
     const [isExpanded, setIsExpanded] = useState(false);
+    const [aiLoading, setAiLoading] = useState(true);
+    
+    useEffect(() => {
+        let unsubs = [];
+        const sub = subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
+            if (res && res[0] && res[0].payload) {
+                setAiSummary(res[0].payload);
+            }
+            setAiLoading(false);
+        });
+        unsubs.push(sub);
+        return () => unsubs.forEach(u => u());
+    }, []);
+
     const paragraphs = (aiSummary || '').split('\n').filter(p => p.trim() !== '');
     const previewParagraphs = isExpanded ? paragraphs : paragraphs.slice(0, 3);
     const hasMore = paragraphs.length > 3;
@@ -4920,6 +4890,64 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         return () => window.removeEventListener('rbv-features-config-change', handler);
     }, []);
     const analytics = useAnalyticsData(history, scheduleConfig);
+
+    // AI Background Generator
+    useEffect(() => {
+        if (!features.ai || !analytics.data) return;
+        let cancelled = false;
+        
+        const checkAndGenerateAI = async () => {
+            try {
+                // Fetch current config
+                const res = await callConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] });
+                const config = res && res[0];
+                const lastUpdated = config ? new Date(config.updatedAt).getTime() : 0;
+                
+                // If older than 10 minutes
+                if (Date.now() - lastUpdated > 10 * 60 * 1000) {
+                    // Random delay to prevent thundering herd
+                    await new Promise(r => setTimeout(r, Math.random() * 15000));
+                    if (cancelled) return;
+                    
+                    // Double check if someone else updated it during the delay
+                    const res2 = await callConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] });
+                    const config2 = res2 && res2[0];
+                    const lastUpdated2 = config2 ? new Date(config2.updatedAt).getTime() : 0;
+                    
+                    if (Date.now() - lastUpdated2 > 10 * 60 * 1000) {
+                        console.log('Background generating new AI Summary...');
+                        const result = await callGeminiExecutiveSummary({
+                            qscTexts: analytics.data.qscTexts || [],
+                            opiTexts: analytics.data.opiTexts || [],
+                            storeFindings: analytics.data.storeFindings || [],
+                            totalVisits: analytics.data.globalTotalVisits || 0,
+                            topQSC: analytics.data.topQSC || [],
+                            topOPI: analytics.data.topOPI || []
+                        });
+                        
+                        if (result && !cancelled) {
+                            await callConvexMutation('setConfig', {
+                                key: 'aiExecutiveSummary',
+                                payload: result,
+                                updatedBy: readBestieLogin()?.name || 'system'
+                            });
+                            console.log('Background AI Summary saved globally.');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Background AI Sync error:', err);
+            }
+        };
+        
+        checkAndGenerateAI();
+        const interval = setInterval(checkAndGenerateAI, 5 * 60 * 1000); // check every 5 mins
+        
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [features.ai, analytics.data]);
     
     const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
