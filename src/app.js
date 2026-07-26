@@ -3100,7 +3100,7 @@ function paraphraseObservationRow(row) {
 const DEFAULT_GEMINI_API_KEY = (typeof atob === 'function' ? atob : (s => Buffer.from(s, 'base64').toString('utf8')))("QVEuQWI4Uk42Sms2aFk3RlF2Mk9pU2sybXFrMDBLMzhwV1F4MlJoZk1lZmo0NTAxWjdrRHc=");
 
 async function callGeminiObservationParaphrase(row) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
     const prompt = `Kamu adalah AI QA & Audit Manager di industri restoran/F&B.
 Tugasmu memparafrase catatan temuan audit operasional menjadi kalimat laporan Bahasa Indonesia yang formal, profesional, logis, dan komunikatif.
 PENTING: Gunakan bahasa formal yang mudah dipahami (jelas dan lugas, tidak perlu terlalu kaku atau menggunakan kata baku yang sulit dimengerti).
@@ -3153,7 +3153,7 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
 }
 
 async function callGeminiExecutiveSummary({ qscTexts, opiTexts, storeFindings, totalVisits, topQSC, topOPI }) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${DEFAULT_GEMINI_API_KEY}`;
     const topStores = (storeFindings || []).slice(0, 8).map(s => `${s.storeName}: ${s.totalFindings} temuan (QSC: ${s.qscCount}, OPI: ${s.opiCount})`).join('\n');
     const qscSample = (qscTexts || []).slice(0, 15).join(' | ');
     const opiSample = (opiTexts || []).slice(0, 15).join(' | ');
