@@ -3825,18 +3825,19 @@ function LeaderboardItem({ lb, idx }) {
             // Bottom Row: Badges + Score
             React.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 gap-3" },
                 // Badges W/M/Y
-                React.createElement("div", { className: "flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-between sm:justify-start" },
-                    React.createElement("div", { className: "flex flex-col items-center bg-white rounded-md px-2 py-1 border border-slate-200 shadow-sm flex-1 sm:flex-none", title: "Kunjungan Minggu Ini" },
-                        React.createElement("span", { className: "text-[8px] font-bold text-slate-400 uppercase" }, "Week"),
-                        React.createElement("span", { className: "text-[11px] font-black text-slate-700" }, lb.rawWeekly || 0)
-                    ),
-                    React.createElement("div", { className: "flex flex-col items-center bg-indigo-50 rounded-md px-2 py-1 border border-indigo-200 shadow-sm flex-1 sm:flex-none", title: "Kunjungan Bulan Ini" },
-                        React.createElement("span", { className: "text-[8px] font-bold text-indigo-500 uppercase" }, "Month"),
-                        React.createElement("span", { className: "text-[11px] font-black text-indigo-700" }, lb.rawMonthly || 0)
-                    ),
-                    React.createElement("div", { className: "flex flex-col items-center bg-emerald-50 rounded-md px-2 py-1 border border-emerald-200 shadow-sm flex-1 sm:flex-none", title: "Kunjungan Tahun Ini" },
-                        React.createElement("span", { className: "text-[8px] font-bold text-emerald-500 uppercase" }, "Year"),
-                        React.createElement("span", { className: "text-[11px] font-black text-emerald-700" }, lb.rawAnnually || 0)
+                // Schedule Badge
+                React.createElement("div", { className: "flex items-center w-full sm:w-auto min-w-0 flex-1 pr-2" },
+                    React.createElement("div", { 
+                        className: "flex items-center bg-white rounded-lg px-3 py-1.5 border border-slate-200/80 shadow-sm gap-2 w-full sm:w-auto min-w-0", 
+                        title: lb.todaySchedule ? (lb.todaySchedule.description || 'Jadwal Aktif') : 'Tidak ada jadwal hari ini' 
+                    },
+                        React.createElement("div", { className: "flex items-center gap-1.5 shrink-0" },
+                            React.createElement("span", { className: "w-2 h-2 rounded-full " + (lb.todaySchedule ? "bg-emerald-500 animate-pulse" : "bg-slate-300") }),
+                            React.createElement("span", { className: "text-[10px] font-extrabold text-slate-500 uppercase tracking-wider" }, "Schedule :")
+                        ),
+                        React.createElement("span", { className: "text-xs font-black text-slate-800 truncate" }, 
+                            lb.todaySchedule ? (lb.todaySchedule.description || 'Jadwal Aktif') : '-'
+                        )
                     )
                 ),
                 // Main Score
@@ -4030,7 +4031,8 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                     rawAnnually: 0,
                     rawMonthly: 0,
                     rawWeekly: 0,
-                    visitHistory: [] 
+                    visitHistory: [],
+                    monthVisits: [] 
                 });
                 BESTIE_ASSIGNMENTS.forEach(item => { const k = normalize(item.bestieName); if (bestieMap[k]) bestieMap[k].totalAssigned++; });
                 
@@ -4077,20 +4079,13 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
 
                         if (isCurrentMonth) {
                             const rawStore = r.store_name || r.storeName || 'Unknown Store';
-                            const storeName = normalize(r.store_name || r.storeName || '');
-                            
-                            // Weekly unique logic
-                            const uniqueKey = `${storeName}_${mondayStr}`;
-                            if (!bestieMap[bk].uniqueWeeklyVisits.has(uniqueKey)) {
-                                bestieMap[bk].uniqueWeeklyVisits.add(uniqueKey);
-                                bestieMap[bk].uniqueStoresMonthly++; // Counted as 1 per week per store
-                                
-                                bestieMap[bk].visitHistory.push({
-                                    storeName: rawStore,
-                                    date: vDate,
-                                    dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                                });
-                            }
+                            if (!bestieMap[bk].monthVisits) bestieMap[bk].monthVisits = [];
+                            bestieMap[bk].monthVisits.push({
+                                storeName: rawStore,
+                                date: vDate,
+                                dateStr: vDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+                                dayKey: vDate.toISOString().slice(0, 10)
+                            });
                         }
                     }
                 });
@@ -4131,9 +4126,33 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 const topQSC = analyzeFindingTrends(qscTexts);
                 
                 Object.values(bestieMap).forEach(b => {
-                    b.visitHistory.sort((a, b) => b.date - a.date);
-                    // Filter out OFF days but keep all unique weekly visits
-                    b.visitHistory = b.visitHistory.filter(vh => String(vh.storeName).toUpperCase().trim() !== 'OFF');
+                    // 1. Group by calendar day (YYYY-MM-DD), pick only the latest store of that day
+                    const dayMap = {};
+                    (b.monthVisits || []).forEach(vh => {
+                        if (!dayMap[vh.dayKey] || vh.date > dayMap[vh.dayKey].date) {
+                            dayMap[vh.dayKey] = vh;
+                        }
+                    });
+                    
+                    // 2. Sort by newest first and filter out OFF days
+                    const dailyLatest = Object.values(dayMap)
+                        .sort((a, b) => b.date - a.date)
+                        .filter(vh => String(vh.storeName).toUpperCase().trim() !== 'OFF');
+                    
+                    b.visitHistory = dailyLatest;
+                    
+                    // 3. Count unique stores per week among these daily latest visits
+                    const seenWeeklyStores = new Set();
+                    b.uniqueStoresMonthly = 0;
+                    dailyLatest.forEach(vh => {
+                        const sName = normalize(vh.storeName);
+                        const monStr = getMonday(vh.date);
+                        const key = `${sName}_${monStr}`;
+                        if (!seenWeeklyStores.has(key)) {
+                            seenWeeklyStores.add(key);
+                            b.uniqueStoresMonthly++;
+                        }
+                    });
                 });
                 const todayStrLb = new Date().toISOString().slice(0, 10);
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
