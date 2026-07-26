@@ -1902,6 +1902,12 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("path", { d: "M14 14h2v2h-2z" }),
             React.createElement("path", { d: "M18 14h2v6h-6v-2h4z" })),
         check: React.createElement("path", { d: "m5 13 4 4L19 7" }),
+        coffee: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M10 2v2" }),
+            React.createElement("path", { d: "M14 2v2" }),
+            React.createElement("path", { d: "M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h12Z" }),
+            React.createElement("path", { d: "M6 2v2" }),
+            React.createElement("path", { d: "M17 8h1a4 4 0 1 1 0 8h-1" })),
         settings: React.createElement(React.Fragment, null,
             React.createElement("path", { d: "M4 7h10" }),
             React.createElement("path", { d: "M18 7h2" }),
@@ -8149,6 +8155,22 @@ function WelcomeOverlay({ config, onDone }) {
                     )
                 )
             )
+        ),
+        React.createElement("a", {
+            href: "https://trakteer.id/HEHBESTIE/tip",
+            target: "_blank",
+            rel: "noopener noreferrer",
+            className: cx(
+                "coffee-floating-btn fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 text-white text-xs sm:text-sm font-black border-2 border-white/40 shadow-xl hover:scale-105 active:scale-95 transition-all duration-300",
+                closing ? "opacity-0 translate-y-4 pointer-events-none" : "opacity-100 translate-y-0"
+            )
+        },
+            React.createElement("span", { className: "relative flex h-2.5 w-2.5" },
+                React.createElement("span", { className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" }),
+                React.createElement("span", { className: "relative inline-flex rounded-full h-2.5 w-2.5 bg-white" })
+            ),
+            React.createElement(Icon, { name: "coffee", className: "w-4 h-4 sm:w-5 sm:h-5 text-white" }),
+            React.createElement("span", { className: "tracking-wide whitespace-nowrap" }, "Trakteer Bestie Coffee \u2615")
         )
         )
     );
