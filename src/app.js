@@ -3124,8 +3124,8 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
 }`;
 
     const keys = [
-        { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-1.5-flash' },
-        { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-1.5-flash' },
+        { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-3.5-flash' },
+        { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-3.5-flash' },
         { provider: 'openai', key: atob('c2stcHJvai0zT0NnVEQxVW5qcWpSdDhSSFU0YnotNmh0T2l1OUJEZklkUzM5bHlKaUU3T1VjZUU5RWM4UkJGRmJNVjJjMWpKNmtHT1pfSG9zV1QzQmxia0ZKRHVPVjJiYmhaemhxVTZFU3dpWVpXM0F4S0VMcXpzdHY0dFVnRkZpZmlEcTBHR1RMSlRXNThWUy0yNWVBZGNQQ1JRR21uM0xKY0E='), model: 'gpt-4o-mini' },
         { provider: 'deepseek', key: atob('YXJrLTM4MTM3NzQyLWQ3ZDQtNDFiNi05YmI3LTZiNjc0ZWRlMWVlMy0xYTE5ZA=='), model: 'deepseek-chat' },
         { provider: 'groq', key: atob('ODhiZTIzZDhlNWFlNDM2MDlmZTE4NDViNjg4YTk4ZjQ='), model: 'llama-3.1-8b-instant' }
@@ -3152,9 +3152,9 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
                 parsed = JSON.parse(text.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim());
                 break;
             } else if (conf.provider === 'openai' || conf.provider === 'deepseek' || conf.provider === 'groq') {
-                let baseUrl = 'https://api.openai.com/v1/chat/completions';
-                if (conf.provider === 'deepseek') baseUrl = 'https://api.deepseek.com/chat/completions';
-                if (conf.provider === 'groq') baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                let baseUrl = 'https://corsproxy.io/?https://api.openai.com/v1/chat/completions';
+                if (conf.provider === 'deepseek') baseUrl = 'https://corsproxy.io/?https://api.deepseek.com/chat/completions';
+                if (conf.provider === 'groq') baseUrl = 'https://corsproxy.io/?https://api.groq.com/openai/v1/chat/completions';
                 
                 const response = await fetch(baseUrl, {
                     method: 'POST',
@@ -3225,8 +3225,8 @@ Gunakan bahasa formal tapi mudah dipahami. Gunakan emoji untuk visual. Jangan te
 Kembalikan HANYA teks ringkasan tanpa format JSON atau markdown code block.`;
 
     const keys = [
-        { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-1.5-flash' },
-        { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-1.5-flash' },
+        { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-3.5-flash' },
+        { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-3.5-flash' },
         { provider: 'openai', key: atob('c2stcHJvai0zT0NnVEQxVW5qcWpSdDhSSFU0YnotNmh0T2l1OUJEZklkUzM5bHlKaUU3T1VjZUU5RWM4UkJGRmJNVjJjMWpKNmtHT1pfSG9zV1QzQmxia0ZKRHVPVjJiYmhaemhxVTZFU3dpWVpXM0F4S0VMcXpzdHY0dFVnRkZpZmlEcTBHR1RMSlRXNThWUy0yNWVBZGNQQ1JRR21uM0xKY0E='), model: 'gpt-4o-mini' },
         { provider: 'deepseek', key: atob('YXJrLTM4MTM3NzQyLWQ3ZDQtNDFiNi05YmI3LTZiNjc0ZWRlMWVlMy0xYTE5ZA=='), model: 'deepseek-chat' },
         { provider: 'groq', key: atob('ODhiZTIzZDhlNWFlNDM2MDlmZTE4NDViNjg4YTk4ZjQ='), model: 'llama-3.1-8b-instant' }
@@ -3254,9 +3254,9 @@ Kembalikan HANYA teks ringkasan tanpa format JSON atau markdown code block.`;
                 const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 if (resultText.trim()) return resultText.trim();
             } else if (conf.provider === 'openai' || conf.provider === 'deepseek' || conf.provider === 'groq') {
-                let baseUrl = 'https://api.openai.com/v1/chat/completions';
-                if (conf.provider === 'deepseek') baseUrl = 'https://api.deepseek.com/chat/completions';
-                if (conf.provider === 'groq') baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                let baseUrl = 'https://corsproxy.io/?https://api.openai.com/v1/chat/completions';
+                if (conf.provider === 'deepseek') baseUrl = 'https://corsproxy.io/?https://api.deepseek.com/chat/completions';
+                if (conf.provider === 'groq') baseUrl = 'https://corsproxy.io/?https://api.groq.com/openai/v1/chat/completions';
                 
                 const response = await fetch(baseUrl, {
                     method: 'POST',
