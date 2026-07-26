@@ -643,18 +643,7 @@ function saveWelcomeConfig(config) {
 }
 const SCHEDULE_CONFIG_KEY = 'rbv_schedule_config_v1';
 
-function readFeaturesConfig() {
-    try {
-        const raw = localStorage.getItem('rbv_features_config_v1');
-        const parsed = raw ? JSON.parse(raw) : {};
-        const safeParsed = (parsed && typeof parsed === 'object') ? parsed : {};
-        return {
-            map: safeParsed.map !== false,
-            ai: safeParsed.ai !== false,
-            trend: safeParsed.trend !== false,
-            leaderboard: safeParsed.leaderboard !== false
-        };
-    } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true }; }
+function readFeaturesConfig() { return { ai_exec_summary: true, leaderboard: true }; } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true }; }
 }
 function saveFeaturesConfig(config) {
     localStorage.setItem('rbv_features_config_v1', JSON.stringify(config));
@@ -4769,7 +4758,7 @@ function AnalyticsView({ history, scheduleConfig: scheduleCfg }) {
                 )
             )
         )
-    ));
+    );
 }
 
 function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
@@ -10429,5 +10418,5 @@ function App() {
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
         React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig, scheduleConfig: scheduleConfig, onScheduleConfigChange: setScheduleConfig })));
 }
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(App, null));
+
+module.exports = { App, AnalyticsView, AiInsightsPanel, SimpleChart, Icon };

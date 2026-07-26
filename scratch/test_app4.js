@@ -10429,5 +10429,5 @@ function App() {
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
         React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig, scheduleConfig: scheduleConfig, onScheduleConfigChange: setScheduleConfig })));
 }
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(App, null));
+
+module.exports = { App, AnalyticsView, AiInsightsPanel, SimpleChart, Icon };

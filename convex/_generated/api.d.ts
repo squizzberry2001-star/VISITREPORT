@@ -8,13 +8,23 @@
  * @module
  */
 
+import type * as appSettings from "../appSettings.js";
+import type * as deviceBackups from "../deviceBackups.js";
+import type * as masterStores from "../masterStores.js";
+import type * as monitor from "../monitor.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  appSettings: typeof appSettings;
+  deviceBackups: typeof deviceBackups;
+  masterStores: typeof masterStores;
+  monitor: typeof monitor;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

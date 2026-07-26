@@ -101,4 +101,16 @@ export default defineSchema({
   })
     .index("by_backupKey", ["backupKey"])
     .index("by_updatedAt", ["updatedAt"]),
+
+  visitFindings: defineTable({
+    visitKey: v.string(),
+    bestie_name: v.optional(v.string()),
+    store_name: v.optional(v.string()),
+    visit_date: v.optional(v.string()),
+    findings: v.any(),
+    updatedAt: v.number(),
+  })
+    .index("by_visitKey", ["visitKey"])
+    .index("by_updatedAt", ["updatedAt"])
+    .index("by_store_name", ["store_name"]),
 });

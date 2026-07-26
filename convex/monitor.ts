@@ -117,3 +117,47 @@ export const upsertManualStoreRequest = mutation({
     return { ok: true, request_id: requestId };
   },
 });
+
+export const upsertFindings = mutation({
+  args: { payload: v.any() },
+  handler: async (ctx, args) => {
+    const payload = args.payload ?? {};
+    const key = text(payload.visit_key ?? payload.visitKey) || String(Date.now());
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("visitFindings")
+      .withIndex("by_visitKey", (q) => q.eq("visitKey", key))
+      .unique();
+    const row = {
+      visitKey: key,
+      bestie_name: text(payload.bestie_name ?? payload.bestieName),
+      store_name: text(payload.store_name ?? payload.storeName),
+      visit_date: text(payload.visit_date ?? payload.visitDate),
+      findings: payload.findings ?? [],
+      updatedAt: now,
+    };
+    if (existing) await ctx.db.patch(existing._id, row);
+    else await ctx.db.insert("visitFindings", row);
+    return { ok: true, visit_key: key };
+  },
+});
+
+export const listAllFindings = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = Math.max(1, Math.min(1000, Math.round(args.limit ?? 500)));
+    const rows = await ctx.db
+      .query("visitFindings")
+      .withIndex("by_updatedAt")
+      .order("desc")
+      .take(limit);
+    return rows.map((row) => ({
+      visitKey: row.visitKey,
+      bestie_name: row.bestie_name,
+      store_name: row.store_name,
+      visit_date: row.visit_date,
+      findings: row.findings,
+      updatedAt: row.updatedAt,
+    }));
+  },
+});
