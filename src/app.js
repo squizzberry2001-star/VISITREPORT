@@ -161,7 +161,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp325-login-icons-v59';
+const APP_BUILD_VERSION = 'revamp326-watermark-offline-v60';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -502,6 +502,103 @@ function rbvPhotoReadErrorMessage(error) {
     if (/security|permission|denied|notallowed/i.test(message)) return 'Browser menolak akses file/foto. Tutup web lalu buka ulang, kemudian pilih foto lagi.';
     return 'Foto gagal dibaca: ' + message;
 }
+async function rbvGetActiveVisitContext() {
+    try {
+        if (window._rbvActiveVisitContext) return window._rbvActiveVisitContext;
+        const activeId = localStorage.getItem(ACTIVE_VISIT_KEY);
+        if (activeId) {
+            const visit = await getVisitRecord(activeId);
+            if (visit) {
+                return {
+                    storeName: visit.storeName || visit.store || 'FamilyMart',
+                    storeCode: visit.storeCode || 'FMI',
+                    location: visit.location || null
+                };
+            }
+        }
+    } catch(e) {}
+    return { storeName: 'FamilyMart', storeCode: 'FMI', location: null };
+}
+async function rbvApplyPhotoWatermark(dataUrl, options = {}) {
+    if (!dataUrl || typeof document === 'undefined') return dataUrl;
+    try {
+        const ctxMeta = await rbvGetActiveVisitContext();
+        const storeName = options.storeName || ctxMeta.storeName || 'FamilyMart';
+        const storeCode = options.storeCode || ctxMeta.storeCode || 'FMI';
+        let lat = ctxMeta.location?.lat;
+        let lng = ctxMeta.location?.lng;
+        
+        if (typeof lat !== 'number' || typeof lng !== 'number') {
+            try {
+                if ('geolocation' in navigator) {
+                    const pos = await new Promise((res, rej) => {
+                        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: false, timeout: 800 });
+                    });
+                    if (pos && pos.coords) {
+                        lat = pos.coords.latitude;
+                        lng = pos.coords.longitude;
+                    }
+                }
+            } catch (gpsErr) {}
+        }
+
+        const dateStr = new Date().toLocaleString('id-ID', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        }).replace('.', ':') + ' WIB';
+
+        const gpsStr = (typeof lat === 'number' && typeof lng === 'number')
+            ? `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`
+            : 'GPS: (Lokasi Tidak Tersedia)';
+
+        const img = await new Promise((resolve, reject) => {
+            const imageObj = new Image();
+            imageObj.onload = () => resolve(imageObj);
+            imageObj.onerror = () => reject(new Error('Image load error'));
+            imageObj.src = dataUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        const width = img.naturalWidth || img.width || 800;
+        const height = img.naturalHeight || img.height || 600;
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return dataUrl;
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const bannerHeight = Math.max(54, Math.round(height * 0.11));
+        const accentHeight = Math.max(3, Math.round(height * 0.006));
+        const fontSizeTop = Math.max(14, Math.round(bannerHeight * 0.32));
+        const fontSizeBottom = Math.max(12, Math.round(bannerHeight * 0.25));
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+        ctx.fillRect(0, height - bannerHeight, width, bannerHeight);
+
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(0, height - bannerHeight, width, accentHeight);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textBaseline = 'middle';
+        const paddingX = Math.max(14, Math.round(width * 0.03));
+        
+        ctx.font = `bold ${fontSizeTop}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        const topY = height - bannerHeight + (bannerHeight * 0.33);
+        ctx.fillText(`🏢 ${storeName} (${storeCode})`, paddingX, topY);
+
+        ctx.font = `500 ${fontSizeBottom}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        const bottomY = height - bannerHeight + (bannerHeight * 0.73);
+        ctx.fillText(`📅 ${dateStr} • 📍 ${gpsStr}`, paddingX, bottomY);
+
+        const quality = Number(options.quality || 0.85);
+        return canvas.toDataURL('image/jpeg', quality);
+    } catch (e) {
+        console.warn('Watermark error, fallback raw image:', e);
+        return dataUrl;
+    }
+}
 async function rbvReadEvidenceFiles(files, options = {}) {
     const list = Array.from(files || []).filter(Boolean);
     const result = [];
@@ -539,7 +636,8 @@ async function rbvReadEvidenceFiles(files, options = {}) {
     }
     for (const file of selected) {
         try {
-            const { image, objectUrl } = await readAnyPhotoFile(file);
+            const { image: rawImage, objectUrl } = await readAnyPhotoFile(file);
+            const image = await rbvApplyPhotoWatermark(rawImage, options);
             result.push({
                 ...blankPhoto(),
                 image,
@@ -4895,6 +4993,63 @@ function AnalyticsView({ analytics }) {
     ));
 }
 
+function SyncStatusBadge() {
+    const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            setIsSyncing(true);
+            try {
+                backfillLocalFindingsToConvex().finally(() => {
+                    setTimeout(() => setIsSyncing(false), 1200);
+                });
+            } catch (e) {
+                setIsSyncing(false);
+            }
+        };
+        const handleOffline = () => {
+            setIsOnline(false);
+            setIsSyncing(false);
+        };
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    if (!isOnline) {
+        return React.createElement("div", {
+            className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300/80 shadow-sm transition-all",
+            title: "Mode Offline Aktif. Anda dapat terus mengaudit tanpa sinyal, data disimpan di HP & otomatis disinkronkan saat online."
+        },
+            React.createElement("span", { className: "w-2 h-2 rounded-full bg-amber-500" }),
+            React.createElement("span", null, "Offline Mode")
+        );
+    }
+
+    if (isSyncing) {
+        return React.createElement("div", {
+            className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 transition-all",
+            title: "Menyinkronkan data offline ke cloud..."
+        },
+            React.createElement("span", { className: "w-2 h-2 rounded-full bg-blue-500 animate-pulse" }),
+            React.createElement("span", { className: "hidden sm:inline" }, "Sync Cloud...")
+        );
+    }
+
+    return React.createElement("div", {
+        className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 transition-all",
+        title: "Terhubung ke jaringan. Semua data tersinkronisasi ke cloud dan tersimpan offline."
+    },
+        React.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-500" }),
+        React.createElement("span", { className: "hidden sm:inline" }, "Cloud Sync Aktif")
+    );
+}
+
 function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
 
     const [features, setFeatures] = useState(() => readFeaturesConfig());
@@ -5219,6 +5374,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
                     React.createElement("h1", { className: "text-lg font-black tracking-tight text-slate-900 md:text-xl" }, "Regional Bestie Visit"),
                     React.createElement("p", { className: "text-[9px] font-bold uppercase tracking-widest text-slate-400 hidden md:block" }, "Dashboard")),
                 React.createElement("div", { className: "home-header-actions history-sync-wrap flex shrink-0 items-center gap-2" },
+                    React.createElement(SyncStatusBadge, null),
                     React.createElement("button", { type: "button", className: cx("home-notification-top-button", rbvProgressNotificationEnabled() && "is-active", notificationBusy && "is-busy"), onClick: handleEnableProgressNotification, disabled: notificationBusy, title: "Aktifkan Pengingat Otomatis 4 Jam", "aria-label": "Aktifkan pengingat otomatis progress" },
                         notificationBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "bell", className: "h-4 w-4" }),
                         React.createElement("span", { className: "home-notification-dot", "aria-hidden": "true" }),
@@ -7153,6 +7309,11 @@ async function getConvexRealtimeClient() {
     }
     
     RB_FIREBASE_DB = firebase.firestore();
+    try {
+        RB_FIREBASE_DB.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+            console.warn('Firestore offline persistence warn:', err);
+        });
+    } catch (e) {}
     return RB_FIREBASE_DB;
 }
 async function runConvexQuery(functionName, args = {}) {
@@ -9943,7 +10104,8 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                     React.createElement("div", { className: "w-7 h-7 sm:w-8 sm:h-8 bg-audit-primary/10 rounded-lg flex items-center justify-center" },
                         React.createElement(Icon, { name: "clipboard", className: "w-4 h-4 sm:w-5 sm:h-5 text-audit-primary" })
                     ),
-                    React.createElement("h2", { className: "text-base sm:text-xl font-black text-slate-900" }, "Form Kunjungan")
+                    React.createElement("h2", { className: "text-base sm:text-xl font-black text-slate-900" }, "Form Kunjungan"),
+                    React.createElement(SyncStatusBadge, null)
                 ),
                 React.createElement("p", { className: "text-xs font-bold text-slate-500 max-w-sm px-2 truncate" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
                 React.createElement("div", { className: "w-full max-w-[220px] mt-2 bg-slate-200 rounded-full h-2 overflow-hidden shadow-inner" },
@@ -10482,6 +10644,11 @@ function App() {
     useEffect(() => {
         if (!visit?.id)
             return;
+        window._rbvActiveVisitContext = {
+            storeName: visit.storeName || visit.store || 'FamilyMart',
+            storeCode: visit.storeCode || 'FMI',
+            location: visit.location || null
+        };
         const timer = setTimeout(async () => {
             const nextVisit = { ...visit, updatedAt: Date.now() };
             try {

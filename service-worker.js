@@ -1,5 +1,5 @@
-const APP_VERSION = 'revamp281-css-compiled-v56';
-const CACHE_NAME = `bestie-visit-revamp281-css-compiled-v56`;
+const APP_VERSION = 'revamp326-watermark-offline-v60';
+const CACHE_NAME = `bestie-visit-revamp326-watermark-offline-v60`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
