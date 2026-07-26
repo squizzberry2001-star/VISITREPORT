@@ -4256,13 +4256,12 @@ function AiInsightsPanel({ data }) {
     
     useEffect(() => {
         let unsubs = [];
-        const sub = subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
+                subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
             if (res && res[0] && res[0].payload) {
                 setAiSummary(res[0].payload);
             }
             setAiLoading(false);
-        });
-        unsubs.push(sub);
+        }).then(sub => { if (sub) unsubs.push(sub); });
         return () => unsubs.forEach(u => u());
     }, []);
 
@@ -4286,14 +4285,9 @@ function AiInsightsPanel({ data }) {
                         )
                     )
                 ),
-                React.createElement("button", { 
-                    className: "p-2 rounded-xl hover:bg-indigo-100 text-indigo-500 hover:text-indigo-700 transition-all duration-200 " + (aiLoading ? "animate-spin" : ""),
-                    onClick: () => fetchAiSummary(true),
-                    disabled: aiLoading,
-                    title: "Regenerate Summary"
-                }, React.createElement("svg", { className: "w-4 h-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-                    React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" })
-                ))
+                aiLoading && React.createElement("div", { className: "p-2 animate-spin text-indigo-500" }, 
+                    React.createElement(Icon, { name: "refresh", className: "w-4 h-4" })
+                )
             ),
             aiLoading ? React.createElement("div", { className: "space-y-3 bg-white/60 p-4 rounded-2xl" },
                 React.createElement("div", { className: "h-4 bg-indigo-200/50 rounded-full animate-pulse w-3/4" }),
@@ -4897,11 +4891,12 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         let lastUpdated = 0;
         
         // Listen to config to know when it was last updated
-        const unsub = subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
+                let unsub = null;
+        subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
             if (res && res[0]) {
                 lastUpdated = new Date(res[0].updatedAt).getTime();
             }
-        });
+        }).then(fn => { unsub = fn; });
         
         const checkAndGenerateAI = async () => {
             try {
@@ -4952,7 +4947,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         
         return () => {
             cancelled = true;
-            unsub();
+            if (unsub) unsub();
             clearTimeout(timeout);
             clearInterval(interval);
         };
