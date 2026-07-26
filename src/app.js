@@ -4295,7 +4295,10 @@ function AiInsightsPanel({ data }) {
 
     useEffect(() => { fetchAiSummary(false); }, [fetchAiSummary]);
 
+    const [isExpanded, setIsExpanded] = useState(false);
     const paragraphs = (aiSummary || '').split('\n').filter(p => p.trim() !== '');
+    const previewParagraphs = isExpanded ? paragraphs : paragraphs.slice(0, 3);
+    const hasMore = paragraphs.length > 3;
 
     return React.createElement("div", { className: "mb-8 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 p-5 sm:p-6 rounded-[32px] border border-indigo-200/60 shadow-sm relative overflow-hidden" },
         React.createElement("div", { className: "absolute -right-10 -top-10 w-40 h-40 bg-indigo-200/20 rounded-full blur-2xl" }),
@@ -4334,7 +4337,13 @@ function AiInsightsPanel({ data }) {
             React.createElement("div", { className: "space-y-2 bg-white/60 backdrop-blur-sm p-4 rounded-2xl text-sm font-medium text-slate-700 leading-relaxed" },
                 paragraphs.length === 0 ?
                     React.createElement("p", { className: "text-slate-400 italic" }, "Belum ada data untuk dianalisis.") :
-                    paragraphs.map((p, i) => React.createElement("p", { key: i, className: "whitespace-pre-line break-words" }, p))
+                    React.createElement(React.Fragment, null,
+                        previewParagraphs.map((p, i) => React.createElement("p", { key: i, className: "whitespace-pre-line break-words" }, p)),
+                        hasMore && React.createElement("button", {
+                            className: "mt-3 w-full text-center text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 border-t border-indigo-100 border-dashed",
+                            onClick: () => setIsExpanded(!isExpanded)
+                        }, isExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya")
+                    )
             )
         )
     );
