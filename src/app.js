@@ -4903,6 +4903,15 @@ function AnalyticsView({ analytics }) {
 }
 
 function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
+
+    const [features, setFeatures] = useState(() => readFeaturesConfig());
+    useEffect(() => {
+        const handler = () => setFeatures(readFeaturesConfig());
+        window.addEventListener('rbv-features-config-change', handler);
+        return () => window.removeEventListener('rbv-features-config-change', handler);
+    }, []);
+    const analytics = useAnalyticsData(history, scheduleConfig);
+    
     const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
