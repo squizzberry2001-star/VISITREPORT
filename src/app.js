@@ -262,7 +262,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                 React.createElement("div", { className: "h-full bg-brand-teal transition-all duration-500 ease-out", style: { width: `${progress}%` } }))),
         
         // Wizard Content Card
-        React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 px-4 pt-2 pb-24 sm:pb-8" },
+        React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 px-2 sm:px-4 pt-3 pb-24 sm:pb-8" },
             React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
 
         // Sticky Mobile Bottom Wizard Navigation Bar (Eliminates "Keluar Masuk Grid")

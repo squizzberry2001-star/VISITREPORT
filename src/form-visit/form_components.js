@@ -11,9 +11,9 @@ function CrewEditor({ visit, update }) {
         const next = crewList.filter((_, itemIndex) => itemIndex !== index);
         update({ crewList: next.length ? next : [{ name: '', level: '' }] });
     };
-    return (React.createElement("div", { className: "grid gap-5" },
+    return (React.createElement("div", { className: "grid gap-4 sm:gap-4 sm:p-5" },
         React.createElement("div", { className: "grid gap-4 md:grid-cols-2" },
-            React.createElement("div", { className: "surface-card rounded-[28px] p-5" },
+            React.createElement("div", { className: "surface-card rounded-[28px] p-4 sm:p-5" },
                 React.createElement("div", { className: "mb-4 flex items-center gap-3" },
                     React.createElement("div", { className: "grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-audit-primary" },
                         React.createElement(Icon, { name: "user" })),
@@ -24,7 +24,7 @@ function CrewEditor({ visit, update }) {
                         React.createElement(TextInput, { value: visit.storeLeader || '', onChange: (e) => update({ storeLeader: e.target.value }), placeholder: "Nama store leader" })),
                     React.createElement(Field, { label: "Level" },
                         React.createElement(SelectInput, { value: visit.storeLeaderLevel || '', onChange: (e) => update({ storeLeaderLevel: e.target.value }) }, JOB_LEVELS.map((level) => React.createElement("option", { key: level, value: level }, level || 'Pilih')))))),
-            React.createElement("div", { className: "surface-card rounded-[28px] p-5" },
+            React.createElement("div", { className: "surface-card rounded-[28px] p-4 sm:p-5" },
                 React.createElement("div", { className: "mb-4 flex items-center gap-3" },
                     React.createElement("div", { className: "grid h-10 w-10 place-items-center rounded-2xl bg-orange-50 text-audit-accent" },
                         React.createElement(Icon, { name: "user" })),
@@ -35,17 +35,18 @@ function CrewEditor({ visit, update }) {
                         React.createElement(TextInput, { value: visit.shiftLeader || '', onChange: (e) => update({ shiftLeader: e.target.value }), placeholder: "Nama shift leader" })),
                     React.createElement(Field, { label: "Level" },
                         React.createElement(SelectInput, { value: visit.shiftLeaderLevel || '', onChange: (e) => update({ shiftLeaderLevel: e.target.value }) }, JOB_LEVELS.map((level) => React.createElement("option", { key: level, value: level }, level || 'Pilih'))))))),
-        React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
+        React.createElement("div", { className: "surface-card rounded-[28px] p-4 sm:p-4 sm:p-5 md:p-6" },
             React.createElement("div", { className: "mb-5" },
                 React.createElement("h3", { className: "text-lg font-extrabold text-slate-950" }, "Crew Store")),
-            React.createElement("div", { className: "grid gap-3" }, crewList.map((crew, index) => (React.createElement("div", { key: index, className: "grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[44px_1fr_130px_44px] sm:items-end" },
-                React.createElement("div", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-slate-600" }, index + 1),
+            React.createElement("div", { className: "grid gap-3" }, crewList.map((crew, index) => (React.createElement("div", { key: index, className: "grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 grid-cols-[44px_1fr] sm:grid-cols-[44px_1fr_130px_44px] items-end" },
+                React.createElement("div", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-white text-sm font-black text-slate-600 shadow-sm" }, index + 1),
                 React.createElement(Field, { label: "Nama Crew" },
                     React.createElement(TextInput, { value: crew.name || '', onChange: (e) => updateCrew(index, { name: e.target.value }), placeholder: "Nama crew" })),
-                React.createElement(Field, { label: "Level" },
-                    React.createElement(SelectInput, { value: crew.level || '', onChange: (e) => updateCrew(index, { level: e.target.value }) }, JOB_LEVELS.map((level) => React.createElement("option", { key: level, value: level }, level || 'Pilih')))),
-                React.createElement(Button, { variant: "icon", onClick: () => removeCrew(index), "aria-label": "Hapus crew" },
-                    React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))),
+                React.createElement("div", { className: "col-start-2 sm:col-start-3" }, 
+                    React.createElement(Field, { label: "Level" },
+                        React.createElement(SelectInput, { value: crew.level || '', onChange: (e) => updateCrew(index, { level: e.target.value }) }, JOB_LEVELS.map((level) => React.createElement("option", { key: level, value: level }, level || 'Pilih'))))),
+                React.createElement(Button, { variant: "icon", onClick: () => removeCrew(index), className: "h-11 w-11 border border-slate-200 bg-white sm:bg-transparent sm:border-transparent sm:h-10 sm:w-10 !p-0 grid place-items-center rounded-xl", "aria-label": "Hapus crew" },
+                    React.createElement(Icon, { name: "trash", className: "h-4 w-4 text-rose-500" })))))),
             React.createElement("div", { className: "mt-4 flex justify-end" },
                 React.createElement(Button, { variant: "secondary", icon: "plus", onClick: addCrew }, "Tambah Crew")))));
 }
@@ -502,7 +503,7 @@ function ObservationCards({ title, rows, onChange }) {
         : mobileNavContent;
     return (React.createElement("div", { className: "observation-card-system grid gap-4" },
         mobileNav,
-        safeRows.map((row, index) => (React.createElement("article", { key: index, className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-5', index === activeIndex && 'mobile-active') },
+        safeRows.map((row, index) => (React.createElement("article", { key: index, className: cx('observation-item-card surface-card rounded-[28px] p-4 md:p-4 sm:p-5', index === activeIndex && 'mobile-active') },
             React.createElement("div", { className: "mb-4 flex items-center justify-between gap-3" },
                 React.createElement(Badge, { tone: isMeaningfulObservation(row) ? 'success' : 'default' },
                     "Temuan ",
@@ -719,9 +720,9 @@ function VisitSetupSection({ visit, update }) {
         update({ manualStoreDetail: { ...(visit.manualStoreDetail || {}), [key]: value } });
     }
     return (React.createElement(SectionShell, { title: "Mulai visit" },
-        React.createElement("div", { className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-5" },
+        React.createElement("div", { className: "visit-setup-grid grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] md:gap-4 sm:gap-4 sm:p-5" },
             React.createElement("div", { className: "visit-setup-card min-w-0 p-4 md:p-6" },
-                React.createElement("div", { className: "grid gap-4 md:gap-5" },
+                React.createElement("div", { className: "grid gap-4 md:gap-4 sm:gap-4 sm:p-5" },
                     React.createElement(SelectField, { label: "Nama Bestie", required: true, value: visit.nama || '', options: BESTIE_NAMES, onChange: handleBestieChange, placeholder: "Pilih nama bestie", icon: "user" }),
                     React.createElement(SelectField, { label: "Store", required: true, value: visit.store || '', options: storeOptions, onChange: handleStoreChange, placeholder: "Pilih store", icon: "store" }),
                     React.createElement("div", { className: "visit-progress-card rounded-2xl bg-emerald-50 p-4 text-emerald-900 ring-1 ring-emerald-100" },
@@ -751,8 +752,8 @@ function VisitSetupSection({ visit, update }) {
 }
 function GeneralInfoSection({ visit, update }) {
     return (React.createElement(SectionShell, { title: "General Information" },
-        React.createElement("div", { className: "grid gap-5" },
-            React.createElement("div", { className: "date-card surface-card rounded-[28px] p-5 md:p-6" },
+        React.createElement("div", { className: "grid gap-4 sm:gap-4 sm:p-5" },
+            React.createElement("div", { className: "date-card surface-card rounded-[28px] p-4 sm:p-4 sm:p-5 md:p-6" },
                 React.createElement(Field, { label: "Hari, Tanggal", required: true },
                     React.createElement(DateInput, { value: visit.tanggal || '', onChange: (e) => update({ tanggal: e.target.value }) }))),
             React.createElement(CrewEditor, { visit: visit, update: update }))));
@@ -803,7 +804,7 @@ function EvidenceSection({ visit, update }) {
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
-        React.createElement("div", { className: "surface-card rounded-[28px] p-5 md:p-6" },
+        React.createElement("div", { className: "surface-card rounded-[28px] p-4 sm:p-4 sm:p-5 md:p-6" },
             React.createElement(Field, { label: "Assignment Link" },
                 React.createElement(TextInput, { type: "url", value: visit.storeAssignmentLink || '', onChange: (e) => update({ storeAssignmentLink: e.target.value }), placeholder: "https://..." })),
             React.createElement("div", { className: "mt-5 flex flex-wrap gap-2" },
