@@ -4451,32 +4451,29 @@ function LeaderboardItem({ lb, idx }) {
                     )
                 )
             ),
-            // Bottom Row: Badges + Score
-            React.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 gap-3" },
-                // Schedule Badge
-                React.createElement("div", { className: "flex items-center min-w-0 flex-1 pr-2" },
-                    React.createElement("div", { 
-                        className: "flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm gap-2 w-full min-w-0", 
-                        title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Belum ada jadwal terdaftar untuk bestie ini' 
-                    },
-                        React.createElement("div", { className: "flex items-center gap-1.5 shrink-0" },
-                            React.createElement("span", { className: "w-2.5 h-2.5 rounded-full inline-block shrink-0 " + ((lb.todaySchedule && schedText && schedText.trim()) ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
-                            React.createElement("span", { className: "text-[10px] font-black text-slate-500 uppercase tracking-wider shrink-0" }, "Jadwal:")
+            // Bottom Row: Schedule + Score
+            React.createElement("div", { className: "w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100" },
+                // Schedule Badge — full width, text wraps on mobile
+                React.createElement("div", { 
+                    className: "bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm w-full mb-2.5", 
+                    title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Belum ada jadwal terdaftar untuk bestie ini' 
+                },
+                    React.createElement("div", { className: "flex items-start gap-2" },
+                        React.createElement("div", { className: "flex items-center gap-1.5 shrink-0 pt-0.5" },
+                            React.createElement("span", { className: "w-2 h-2 rounded-full inline-block shrink-0 " + ((lb.todaySchedule && schedText && schedText.trim()) ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
+                            React.createElement("span", { className: "text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0" }, "Jadwal:")
                         ),
-                        React.createElement("span", { className: "text-xs font-bold text-slate-800 truncate" }, 
+                        React.createElement("span", { className: "text-[11px] sm:text-xs font-bold text-slate-800 leading-snug break-words" }, 
                             (lb.todaySchedule && schedText && schedText.trim()) ? schedText : "Belum ada jadwal terdaftar"
                         )
                     )
                 ),
-                // Main Score
-                React.createElement("div", { className: "text-right flex w-full sm:w-auto justify-between sm:justify-end items-center sm:pl-3 sm:border-l border-slate-200" },
-                    React.createElement("p", { className: "text-[9px] font-extrabold uppercase tracking-widest text-slate-400 sm:hidden" }, "Toko/Bulan"),
-                    React.createElement("div", { className: "flex flex-col items-end" },
-                        React.createElement("div", { className: "flex items-baseline gap-1" },
-                            React.createElement("span", { className: "text-lg sm:text-xl font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
-                            React.createElement("span", { className: "text-[10px] sm:text-xs font-bold text-slate-400" }, "/", lb.totalAssigned)
-                        ),
-                        React.createElement("p", { className: "text-[8px] font-extrabold uppercase tracking-widest mt-0.5 text-slate-400 hidden sm:block" }, "Toko/Bulan")
+                // Score row
+                React.createElement("div", { className: "flex items-center justify-between w-full" },
+                    React.createElement("p", { className: "text-[9px] font-extrabold uppercase tracking-widest text-slate-400" }, "Toko/Bulan"),
+                    React.createElement("div", { className: "flex items-baseline gap-1" },
+                        React.createElement("span", { className: "text-lg sm:text-xl font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
+                        React.createElement("span", { className: "text-[10px] sm:text-xs font-bold text-slate-400" }, "/", lb.totalAssigned)
                     )
                 )
             )
