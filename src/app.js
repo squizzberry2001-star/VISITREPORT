@@ -269,6 +269,15 @@ function rbvReleaseCameraResources() {
         });
     } catch (error) {}
 }
+function getNativeCameraCaptureAttr() {
+    try {
+        const ua = navigator?.userAgent || '';
+        if (/Android/i.test(ua)) return 'camera';
+        return 'environment';
+    } catch (error) {
+        return 'environment';
+    }
+}
 function rbvPrepareCameraCapture() {
     if (!RBV_ULTRA_LITE_CAMERA_MODE) return;
     try {
@@ -3094,10 +3103,10 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
             React.createElement("p", { className: "text-sm font-bold text-slate-700" }, "Upload foto"))),
         React.createElement("div", { className: cx('photo-actions flex items-center justify-center gap-2 border-t border-slate-200 p-3', hideActions && 'hidden') },
             !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Ambil foto dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-                React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
+                React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", capture: getNativeCameraCaptureAttr(), className: "rbv-native-file-input", onClick: () => { rbvPrepareCameraCapture(); }, onChange: handleFiles }),
                 React.createElement(Icon, { name: "camera", className: "h-4 w-4" })) : null,
             !hideActions ? React.createElement("label", { className: "rbv-native-file-trigger rbv-native-photo-button", "aria-label": "Pilih foto dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-                React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFiles }),
+                React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); }, onChange: handleFiles }),
                 React.createElement(Icon, { name: "gallery", className: "h-4 w-4" })) : null),
         !hideDescription ? React.createElement("div", { className: "border-t border-slate-200 p-3" }, rich ? React.createElement(RichTextInput, { value: description, onChange: (nextDescription) => onChange({ ...(value || blankPhoto()), description: nextDescription }), placeholder: "Deskripsi foto...", minHeight: 92 }) : React.createElement(TextArea, { value: description, onChange: (event) => onChange({ ...(value || blankPhoto()), description: event.target.value }), placeholder: "Deskripsi foto...", minRows: 2 })) : null,
         React.createElement(PhotoEditorModal, { open: editorOpen, image: editorImageOverride || value?.image || '', title: label, cropRatio: cropRatio, onClose: () => { setEditorOpen(false); setEditorImageOverride(''); }, onSave: (editedImage, meta) => { setEditorImageOverride(''); onChange({ ...(value || blankPhoto()), image: editedImage, cropAspect: meta?.aspectRatio || value?.cropAspect || ratioToAspectString(cropRatio) || '' }); } })));
@@ -3750,11 +3759,11 @@ function PhotoGrid({ photos, onChange, prefix }) {
     }
     const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
         React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-camera evidence-floating-icon-button", "aria-label": "Ambil foto evidence dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", className: "rbv-native-file-input", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
+            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", capture: getNativeCameraCaptureAttr(), className: "rbv-native-file-input", onClick: () => { rbvPrepareCameraCapture(); }, onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
         React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", "aria-label": "Pilih foto evidence dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: (event) => { rbvPrepareCameraCapture(); try { event.currentTarget.value = ''; } catch (error) {} }, onChange: handleFloatingFiles }),
+            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: () => { rbvPrepareCameraCapture(); }, onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
     const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
@@ -4451,11 +4460,11 @@ function LeaderboardItem({ lb, idx }) {
                         title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Belum ada jadwal terdaftar untuk bestie ini' 
                     },
                         React.createElement("div", { className: "flex items-center gap-1.5 shrink-0" },
-                            React.createElement("span", { className: "w-2.5 h-2.5 rounded-full inline-block shrink-0 " + (lb.todaySchedule ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
+                            React.createElement("span", { className: "w-2.5 h-2.5 rounded-full inline-block shrink-0 " + ((lb.todaySchedule && schedText && schedText.trim()) ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
                             React.createElement("span", { className: "text-[10px] font-black text-slate-500 uppercase tracking-wider shrink-0" }, "Jadwal:")
                         ),
                         React.createElement("span", { className: "text-xs font-bold text-slate-800 truncate" }, 
-                            lb.todaySchedule ? schedText : "Belum ada jadwal terdaftar"
+                            (lb.todaySchedule && schedText && schedText.trim()) ? schedText : "Belum ada jadwal terdaftar"
                         )
                     )
                 ),
@@ -4779,7 +4788,7 @@ function useAnalyticsData(history, scheduleCfg) {
                         const isAfterReset = dayKey >= '2026-07-26'; 
                         const isCompletedReport = !!(r.isPdfDownloaded || r.is_pdf_downloaded || r.isEmailSent || r.is_email_sent || r.isPdfDownloaded === true || r.isEmailSent === true);
 
-                        if (isCurrentMonth && isWeekday && isAfterReset && isCompletedReport) {
+                        if (isCurrentMonth) {
                             const rawStore = r.store_name || r.storeName || r.store || 'Unknown Store';
                             if (!bestieMap[bk].monthVisits) bestieMap[bk].monthVisits = [];
                             bestieMap[bk].monthVisits.push({
@@ -4794,7 +4803,7 @@ function useAnalyticsData(history, scheduleCfg) {
                 
                 const isRemoteDb = Boolean(currentVisits && currentVisits.length > 0);
                 datasetToUse.forEach((v, idx) => {
-                    if (v.isPdfDownloaded || v.isEmailSent || v.is_pdf_downloaded || v.is_email_sent || isRemoteDb) {
+                    if (v.store_name || v.storeName || v.isPdfDownloaded || v.isEmailSent || v.is_pdf_downloaded || v.is_email_sent || isRemoteDb) {
                         localCompleted++;
                     }
                     if (v.isEmailSent || v.is_email_sent || isRemoteDb) {
@@ -4880,10 +4889,10 @@ function useAnalyticsData(history, scheduleCfg) {
                 const leaderboard = Object.values(bestieMap).sort((a, b) => b.uniqueStoresMonthly - a.uniqueStoresMonthly).map(lb => {
                     const bestieScheds = activeSched.filter(s => matchBestieScheduleName(s.nama || s.bestie || s.auditor || s.name || '', lb.name));
                     const todayMatch = bestieScheds.find(s => String(s.date || '').slice(0, 10) === todayStrLb);
-                    const fallbackMatch = bestieScheds.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0] || null;
+                    const upcomingMatch = bestieScheds.filter(s => String(s.date || '').slice(0, 10) >= todayStrLb).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))[0] || null;
                     return {
                         ...lb,
-                        todaySchedule: todayMatch || fallbackMatch
+                        todaySchedule: todayMatch || upcomingMatch
                     };
                 });
 
@@ -7553,23 +7562,25 @@ async function runConvexQuery(functionName, args = {}) {
             }
             return rows;
         } else if (functionName.includes('listVisits') || functionName.includes('monitor:listVisits')) {
-            let query = db.collection(cols.visits).orderBy('updatedAt', 'desc');
-            if (args && args.limit) query = query.limit(args.limit);
-            const snapshot = await query.get();
-            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            const snapshot = await db.collection(cols.visits).get();
+            let rows = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            rows.sort((a, b) => (b.updatedAt || b.updated_at || b.last_visit_at || b.visit_date || 0) - (a.updatedAt || a.updated_at || a.last_visit_at || a.visit_date || 0));
+            return args && args.limit ? rows.slice(0, args.limit) : rows;
         } else if (functionName.includes('listAllFindings') || functionName.includes('findings')) {
-            let query = db.collection(cols.findings).orderBy('updatedAt', 'desc');
-            if (args && args.limit) query = query.limit(args.limit);
-            const snapshot = await query.get();
-            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            const snapshot = await db.collection(cols.findings).get();
+            let rows = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            rows.sort((a, b) => (b.updatedAt || b.updated_at || b.created_at || 0) - (a.updatedAt || a.updated_at || a.created_at || 0));
+            return args && args.limit ? rows.slice(0, args.limit) : rows;
         } else if (functionName.includes('listPresence') || functionName.includes('presence')) {
-            let query = db.collection(cols.presence).orderBy('updatedAt', 'desc').limit(100);
-            const snapshot = await query.get();
-            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            const snapshot = await db.collection(cols.presence).get();
+            let rows = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            rows.sort((a, b) => (b.updatedAt || b.updated_at || b.last_seen || 0) - (a.updatedAt || a.updated_at || a.last_seen || 0));
+            return rows.slice(0, 100);
         } else if (functionName.includes('listManualStoreRequests') || functionName.includes('manualRequests')) {
-            let query = db.collection(cols.manualRequests).orderBy('updatedAt', 'desc').limit(args?.limit || 200);
-            const snapshot = await query.get();
-            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            const snapshot = await db.collection(cols.manualRequests).get();
+            let rows = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            rows.sort((a, b) => (b.updatedAt || b.updated_at || b.created_at || 0) - (a.updatedAt || a.updated_at || a.created_at || 0));
+            return rows.slice(0, args?.limit || 200);
         } else if (functionName.includes('masterStores:listStores') || functionName.includes('listStores')) {
             let query = db.collection(cols.masterStores);
             if (args && args.limit) query = query.limit(args.limit);
@@ -7639,15 +7650,13 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
     let query;
     try {
         if (functionName.includes('listVisits')) {
-            query = db.collection(cols.visits).orderBy('updatedAt', 'desc');
-            if (args && args.limit) query = query.limit(args.limit);
+            query = db.collection(cols.visits);
         } else if (functionName.includes('listAllFindings')) {
-            query = db.collection(cols.findings).orderBy('updatedAt', 'desc');
-            if (args && args.limit) query = query.limit(args.limit);
+            query = db.collection(cols.findings);
         } else if (functionName.includes('listManualStoreRequests')) {
-            query = db.collection(cols.manualRequests).orderBy('updatedAt', 'desc').limit(args?.limit || 200);
+            query = db.collection(cols.manualRequests);
         } else if (functionName.includes('listPresence')) {
-            query = db.collection(cols.presence).orderBy('updatedAt', 'desc').limit(100);
+            query = db.collection(cols.presence);
         } else if (functionName.includes('appSettings:listConfigs') || functionName.includes('listConfigs')) {
             query = db.collection(cols.appSettings);
         } else if (functionName.includes('masterStores:listStores')) {
@@ -7663,6 +7672,19 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
             let docs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
             if ((functionName.includes('appSettings:listConfigs') || functionName.includes('listConfigs')) && args && args.keys && args.keys.length > 0) {
                 docs = docs.filter(r => args.keys.includes(r.key));
+            }
+            if (functionName.includes('listVisits')) {
+                docs.sort((a, b) => (b.updatedAt || b.updated_at || b.last_visit_at || b.visit_date || 0) - (a.updatedAt || a.updated_at || a.last_visit_at || a.visit_date || 0));
+                if (args && args.limit && docs.length > args.limit) docs = docs.slice(0, args.limit);
+            } else if (functionName.includes('listAllFindings')) {
+                docs.sort((a, b) => (b.updatedAt || b.updated_at || b.created_at || 0) - (a.updatedAt || a.updated_at || a.created_at || 0));
+                if (args && args.limit && docs.length > args.limit) docs = docs.slice(0, args.limit);
+            } else if (functionName.includes('listPresence')) {
+                docs.sort((a, b) => (b.updatedAt || b.updated_at || b.last_seen || 0) - (a.updatedAt || a.updated_at || a.last_seen || 0));
+                if (docs.length > 100) docs = docs.slice(0, 100);
+            } else if (functionName.includes('listManualStoreRequests')) {
+                docs.sort((a, b) => (b.updatedAt || b.updated_at || b.created_at || 0) - (a.updatedAt || a.updated_at || a.created_at || 0));
+                if (docs.length > (args?.limit || 200)) docs = docs.slice(0, args?.limit || 200);
             }
             if (onData) onData(docs);
         }, (err) => {
@@ -9640,11 +9662,16 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             const remoteRows = remoteRowsResult.status === 'fulfilled' ? remoteRowsResult.value : null;
             const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
             const remotePresence = presenceRowsResult.status === 'fulfilled' ? presenceRowsResult.value : null;
-            if (remoteRows !== null) {
+            if (remoteRows !== null && remoteRows.length > 0) {
                 applyRows(remoteRows, cloudflareEnabled() ? 'cloudflare' : (netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : ((source === 'firebase realtime' || source === 'convex realtime') ? 'firebase realtime' : 'firebase'))));
             }
             else {
-                applyRows(localRows(), 'local');
+                const lRows = localRows();
+                const isFbActive = convexEnabled();
+                applyRows(lRows, (isFbActive && remoteRows !== null) ? 'firebase' : 'local');
+                if (isFbActive && remoteRows !== null && lRows.length > 0) {
+                    setTimeout(() => { syncHistoryToConvexPanel(); }, 300);
+                }
             }
             if (remoteRequests !== null) {
                 setManualRequests(remoteRequests);
@@ -9981,9 +10008,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setConnectionState('idle');
         setLastSync('');
         setLoading(false);
-        // Revamp 200: ruang panel rahasia tidak lagi auto polling Cloudflare/Convex saat dibuka.
-        // Monitoring tetap bisa di-refresh manual dari tab Monitoring agar panel setting tidak memicu request berulang.
-        return undefined;
+        // Revamp 207: Aktifkan langsung koneksi realtime Firebase & auto-sync saat panel rahasia dibuka
+        // agar status monitoring langsung merespons "Live Firebase" tanpa perlu klik manual.
         let cancelled = false;
         let unsubscribeRows = null;
         let unsubscribeRequests = null;
