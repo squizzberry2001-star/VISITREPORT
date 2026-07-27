@@ -30,7 +30,7 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
                 React.createElement(Icon, { name: section.icon, className: "h-4 w-4 shrink-0" }),
                 React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap text-sm font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, section.title))))))) : null,
         React.createElement("div", { className: "mt-auto flex w-full flex-col items-center px-4 pt-6 space-y-3" },
-            React.createElement("button", { type: "button", onClick: onNewVisit, className: "flex w-full items-center justify-center rounded-xl bg-brand-orange p-3 text-white transition-colors hover:bg-[#ff985c] group-hover:justify-start group-hover:px-4 shadow-md shadow-brand-orange/20", title: "New Visit" },
+            React.createElement("button", { type: "button", onClick: onNewVisit, className: "flex w-full items-center justify-center rounded-xl bg-brand-orange p-3 text-slate-900 transition-colors hover:bg-[#ff985c] group-hover:justify-start group-hover:px-4 shadow-md shadow-brand-orange/20", title: "New Visit" },
                 React.createElement(Icon, { name: "plus", className: "h-5 w-5 shrink-0" }),
                 React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "New Visit")),
             visit ? React.createElement("button", { type: "button", onClick: onClearData, className: "flex w-full items-center justify-center rounded-xl bg-rose-50 p-3 text-rose-600 transition-colors hover:bg-rose-100 group-hover:justify-start group-hover:px-4", title: "Clear Data" },
@@ -62,7 +62,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
             React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
 
             // Floating FAB
-            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-gradient-to-br from-brand-orange to-[#ff985c] rounded-[20px] text-white shadow-xl shadow-orange-500/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-2 border-white", onClick: onNewVisit },
+            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-gradient-to-br from-brand-orange to-[#ff985c] rounded-[20px] text-slate-900 shadow-xl shadow-orange-500/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-[3px] border-white ring-4 ring-white/50", onClick: onNewVisit },
                 React.createElement(Icon, { name: "plus", className: "h-7 w-7", strokeWidth: 3 })
             ),
 

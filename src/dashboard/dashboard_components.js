@@ -1681,7 +1681,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                         React.createElement("span", { className: "absolute text-sm font-bold" }, progressPercent, "%")
                     )
                 ),
-                React.createElement("button", { onClick: onNewVisit, className: "w-full bg-brand-orange text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform" }, "Mulai Kunjungan")
+                React.createElement("button", { onClick: onNewVisit, className: "w-full bg-brand-orange text-slate-900 font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform" }, "Mulai Kunjungan")
             )
         ),
         
@@ -1807,7 +1807,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         ) : null,
         
         // Old FAB desktop fallback
-        React.createElement("button", { type: "button", className: "hidden lg:inline-flex items-center justify-center rounded-full text-white shadow-2xl transition active:scale-[0.98]", style: {
+        React.createElement("button", { type: "button", className: "hidden lg:inline-flex items-center justify-center rounded-full text-slate-900 shadow-2xl transition active:scale-[0.98]", style: {
                 position: 'fixed', right: '24px', bottom: '24px', zIndex: 80, width: '56px', height: '56px', background: 'var(--brand-orange)',
                 boxShadow: '0 8px 24px -4px rgba(255, 176, 103, 0.4)'
             }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
