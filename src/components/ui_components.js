@@ -1180,10 +1180,9 @@ function PhotoInput({ value, onChange, onRemove, label = 'Foto', compact = false
 }
 function SectionShell({ title, children, actions, preTitle }) {
     return (React.createElement("section", { className: "slide-enter fade-in" },
-        React.createElement("div", { className: "section-heading mb-5 flex flex-col gap-3" },
+        (actions || preTitle) && React.createElement("div", { className: "section-heading mb-4 flex flex-col gap-3" },
             React.createElement("div", { className: "section-title-row flex min-w-0 items-center justify-between gap-3" },
-                React.createElement("h2", { className: "min-w-0 flex-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl" }, title),
-                actions ? React.createElement("div", { className: "section-actions flex shrink-0 items-center justify-end gap-2" }, actions) : null),
+                actions ? React.createElement("div", { className: "section-actions flex shrink-0 items-center justify-end gap-2 ml-auto" }, actions) : null),
             preTitle ? React.createElement("div", { className: "section-pretitle" }, preTitle) : null),
         children));
 }

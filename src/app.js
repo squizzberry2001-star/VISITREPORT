@@ -104,85 +104,122 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
     };
 
     if (viewMode === 'grid') {
-        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl px-3 sm:px-6 lg:px-8 h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-50 flex flex-col justify-between py-2 sm:py-4" },
-            React.createElement("div", { className: "flex flex-col items-center text-center shrink-0 pt-2 pb-2 border-b border-slate-200/60" },
-                React.createElement("div", { className: "flex items-center justify-center gap-2 mb-1" },
-                    React.createElement("div", { className: "w-7 h-7 sm:w-8 sm:h-8 bg-audit-primary/10 rounded-lg flex items-center justify-center" },
-                        React.createElement(Icon, { name: "clipboard", className: "w-4 h-4 sm:w-5 sm:h-5 text-audit-primary" })
+        return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl h-[100dvh] max-h-[100dvh] overflow-hidden bg-brand-bg flex flex-col" },
+            // Hero Header for Form Visit
+            React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-10 pb-6 relative overflow-hidden shadow-xl shrink-0" },
+                React.createElement("div", { className: "absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" }),
+                React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-brand-orange/20 rounded-full blur-xl" }),
+                
+                React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-6" },
+                    React.createElement("div", { className: "flex items-center gap-3" },
+                        React.createElement("button", { onClick: onDashboard, className: "w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 active:scale-95 transition-transform" },
+                            React.createElement(Icon, { name: "left", className: "w-5 h-5 text-white" })
+                        ),
+                        React.createElement("div", null,
+                            React.createElement("p", { className: "text-white/70 text-xs font-medium mb-0.5" }, visit.store || 'Store belum dipilih'),
+                            React.createElement("h1", { className: "text-lg font-black tracking-tight leading-none" }, "Form Kunjungan")
+                        )
                     ),
-                    React.createElement("h2", { className: "text-base sm:text-xl font-black text-slate-900" }, "Form Kunjungan"),
                     React.createElement(SyncStatusBadge, null)
                 ),
-                React.createElement("p", { className: "text-xs font-bold text-slate-500 max-w-sm px-2 truncate" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih'),
-                React.createElement("div", { className: "w-full max-w-[220px] mt-2 bg-slate-200 rounded-full h-2 overflow-hidden shadow-inner" },
-                    React.createElement("div", { className: "bg-gradient-to-r from-audit-secondary to-audit-primary h-2 rounded-full transition-all duration-500", style: { width: `${overallProgress}%` } })
-                ),
-                React.createElement("p", { className: "mt-1 text-[10px] font-extrabold text-slate-400" }, overallProgress, "% Complete")
+                
+                // Progress Card
+                React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-[28px] p-5 relative z-10" },
+                    React.createElement("div", { className: "flex justify-between items-center mb-3" },
+                        React.createElement("div", null,
+                            React.createElement("h2", { className: "text-base font-bold mb-0.5" }, "Progres Audit"),
+                            React.createElement("p", { className: "text-white/70 text-xs" }, visit.nama || 'Bestie belum dipilih')
+                        ),
+                        React.createElement("div", { className: "text-2xl font-black text-brand-orange" }, overallProgress, "%")
+                    ),
+                    React.createElement("div", { className: "w-full bg-white/20 rounded-full h-2 overflow-hidden" },
+                        React.createElement("div", { className: "bg-brand-orange h-2 rounded-full transition-all duration-500", style: { width: `${overallProgress}%` } })
+                    )
+                )
             ),
             
-            React.createElement("div", { className: "my-2 flex justify-center shrink-0" },
+            // Bento Grid for Sections
+            React.createElement("div", { className: "flex-1 overflow-y-auto px-4 pt-6 pb-24" },
+                React.createElement("div", { className: "grid grid-cols-2 gap-3 sm:gap-4" },
+                    SECTION_DEFS.map((section, idx) => {
+                        const secProgress = visitProgress(visit, idx);
+                        const isComplete = secProgress === 100;
+                        const isLastOdd = idx === 4;
+                        
+                        // Icon mapping
+                        const iconMap = { setup: 'settings', general: 'home', qsc: 'star', observation: 'eye', evidence: 'camera' };
+                        const iconName = iconMap[section.id] || 'clipboard';
+                        
+                        return (React.createElement("div", { 
+                            key: idx, 
+                            onClick: () => handleGridCardClick(idx),
+                            className: cx(
+                                "bg-white rounded-[24px] p-4 shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-brand-teal/30 transition-all active:scale-95 relative overflow-hidden",
+                                isLastOdd ? "col-span-2 flex-row items-center sm:col-span-1 sm:flex-col sm:items-start" : "h-[120px]"
+                            )
+                        },
+                            // Checkmark if complete
+                            isComplete && React.createElement("div", { className: "absolute top-3 right-3 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-sm" },
+                                React.createElement(Icon, { name: "check", className: "w-3 h-3" })
+                            ),
+                            
+                            // Top part: Icon
+                            React.createElement("div", { className: cx("w-10 h-10 rounded-2xl flex items-center justify-center mb-2", isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-brand-bg text-brand-teal', isLastOdd && "mb-0 mr-3 sm:mr-0 sm:mb-2") },
+                                React.createElement(Icon, { name: iconName, className: "w-5 h-5" })
+                            ),
+                            
+                            // Bottom part: Title & Progress
+                            React.createElement("div", { className: cx("flex-1", isLastOdd && "flex flex-col justify-center") },
+                                React.createElement("h3", { className: "font-extrabold text-sm text-slate-800 leading-tight mb-2" }, section.title),
+                                React.createElement("div", { className: "w-full flex items-center gap-2" },
+                                    React.createElement("div", { className: "flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" },
+                                        React.createElement("div", { className: cx("h-full rounded-full transition-all", isComplete ? 'bg-emerald-500' : 'bg-brand-teal'), style: { width: `${secProgress}%` } })
+                                    ),
+                                    React.createElement("span", { className: "text-[10px] font-bold text-slate-400" }, secProgress, "%")
+                                )
+                            )
+                        ));
+                    })
+                )
+            ),
+            
+            // Bottom Action Bar
+            React.createElement("div", { className: "fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-100/50 z-50 flex gap-3" },
+                React.createElement(Button, { variant: "secondary", className: "flex-1 !rounded-2xl !py-3.5 !font-extrabold bg-white border border-slate-200 text-slate-700 shadow-sm", icon: "pdf", onClick: onPreview }, "Preview PDF"),
                 React.createElement("button", {
                     type: "button",
                     onClick: () => { goSection(0); setViewMode('section'); },
-                    className: "w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-xs sm:text-sm shadow-md hover:from-emerald-700 hover:to-teal-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className: "flex-[1.5] rounded-2xl bg-brand-teal text-white font-extrabold text-sm shadow-xl shadow-brand-teal/20 hover:bg-[#153640] active:scale-95 transition-all flex items-center justify-center gap-2"
                 },
-                    React.createElement("span", null, "🚀 Mulai Isi Laporan (Wizard Flow)"),
+                    React.createElement("span", null, "Mulai Isi"),
                     React.createElement(Icon, { name: "right", className: "w-4 h-4" })
                 )
-            ),
-
-            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 flex-1 min-h-0 my-1 pt-1 pb-1" },
-                SECTION_DEFS.map((section, idx) => {
-                    const secProgress = visitProgress(visit, idx);
-                    const isComplete = secProgress === 100;
-                    const isLastOdd = idx === 4;
-                    return (React.createElement("div", { 
-                        key: idx, 
-                        onClick: () => handleGridCardClick(idx),
-                        className: cx(
-                            "bg-white rounded-2xl p-2.5 sm:p-4 shadow-sm border border-slate-200/90 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow hover:border-audit-primary transition-all active:scale-95 relative overflow-hidden",
-                            isLastOdd ? "col-span-2 sm:col-span-1" : ""
-                        )
-                    },
-                        isComplete && React.createElement("div", { className: "absolute top-2 right-2 w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm border-2 border-white" }),
-                        React.createElement("div", { className: `w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-1.5 sm:mb-2 shadow-inner ${isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}` },
-                            React.createElement(Icon, { name: section.id === 'setup' ? 'settings' : section.id === 'general' ? 'home' : section.id === 'qsc' ? 'star' : section.id === 'observation' ? 'eye' : 'camera', className: "w-5 h-5 sm:w-6 sm:h-6" })
-                        ),
-                        React.createElement("h3", { className: "font-black text-xs sm:text-sm text-slate-800 leading-tight line-clamp-1" }, section.title),
-                        React.createElement("div", { className: "w-full h-1.5 bg-slate-100 rounded-full mt-1.5 sm:mt-2 overflow-hidden" },
-                            React.createElement("div", { className: `h-full rounded-full transition-all ${isComplete ? 'bg-emerald-500' : 'bg-audit-primary'}`, style: { width: `${secProgress}%` } })
-                        )
-                    ));
-                })
-            ),
-            
-            React.createElement("div", { className: "w-full max-w-md mx-auto grid grid-cols-2 gap-2 sm:gap-3 shrink-0 pt-1 pb-2" },
-                React.createElement(Button, { variant: "secondary", className: "!rounded-xl !py-2.5 !px-3 font-bold bg-white border border-slate-300 text-xs sm:text-sm truncate shadow-sm", icon: "home", onClick: onDashboard }, "Dashboard"),
-                React.createElement(Button, { className: "!rounded-xl !py-2.5 !px-3 shadow-md font-bold text-xs sm:text-sm truncate", icon: "pdf", onClick: onPreview }, "Preview PDF")
             )
         ));
     }
 
-    return (React.createElement("main", { className: "workspace-page section-mode no-top-space mx-auto w-full max-w-4xl px-4 !pt-0 pb-0 sm:py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
-        // Simplified Mobile Header (Only visible in section mode)
-        React.createElement("div", { className: "flex items-center justify-between mb-2 sm:mb-6 pt-2 pb-2 sm:pt-2 sticky top-0 z-40 bg-slate-50 -mx-4 px-4 sm:static sm:bg-transparent sm:mx-0 sm:px-0" },
-            React.createElement("button", { 
-                onClick: () => setViewMode('grid'),
-                className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600",
-                title: "Kembali ke Menu Grid"
-            },
-                React.createElement(Icon, { name: "left", className: "w-5 h-5" })
+    return (React.createElement("main", { className: "workspace-page section-mode no-top-space mx-auto w-full max-w-4xl px-0 pt-0 pb-0 sm:px-8 sm:py-8 sm:pb-8 bg-brand-bg", style: { paddingBottom: '220px' } },
+        
+        // Modern Floating Mobile Header
+        React.createElement("div", { className: "sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100/60 px-4 py-3 sm:hidden shadow-sm" },
+            React.createElement("div", { className: "flex items-center gap-3" },
+                React.createElement("button", { 
+                    onClick: () => setViewMode('grid'),
+                    className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-brand-teal/5 rounded-full text-brand-teal active:scale-95 transition-transform"
+                },
+                    React.createElement(Icon, { name: "left", className: "w-5 h-5" })
+                ),
+                React.createElement("div", { className: "flex-1 min-w-0" },
+                    React.createElement("p", { className: "text-[10px] font-bold text-brand-orange uppercase tracking-wider mb-0.5" }, "Langkah " + (activeSection + 1)),
+                    React.createElement("h2", { className: "text-base font-black text-slate-800 truncate leading-tight" }, SECTION_DEFS[activeSection]?.title)
+                )
             ),
-            React.createElement("h2", { className: "text-base sm:text-lg font-black text-slate-800 text-center flex-1 mx-3 truncate" }, SECTION_DEFS[activeSection]?.title),
-            React.createElement("button", {
-                type: "button",
-                onClick: () => setViewMode('grid'),
-                className: "px-2.5 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-extrabold text-[11px] sm:hidden"
-            }, "Grid")
+            // Progress line
+            React.createElement("div", { className: "absolute bottom-0 left-0 h-0.5 bg-brand-teal transition-all duration-500", style: { width: `${progress}%` } })
         ),
 
         // Horizontal Step Chip Bar (Seamless Navigation Without Going Back to Grid)
-        React.createElement("div", { className: "flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0" },
+        React.createElement("div", { className: "flex items-center gap-2 overflow-x-auto no-scrollbar py-3 px-4 sm:mx-0 sm:px-0 sm:py-0 sm:mb-4 bg-brand-bg" },
             SECTION_DEFS.map((sec, idx) => {
                 const isActive = idx === activeSection;
                 const secProgress = visitProgress(visit, idx);
@@ -192,43 +229,46 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                     type: "button",
                     onClick: () => goSection(idx),
                     className: cx(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all border shrink-0 cursor-pointer",
+                        "flex items-center gap-1.5 px-4 py-2 rounded-2xl font-extrabold text-xs whitespace-nowrap transition-all border shrink-0 cursor-pointer shadow-sm",
                         isActive
-                            ? "bg-audit-primary text-white border-audit-primary shadow-sm scale-105"
+                            ? "bg-brand-teal text-white border-brand-teal scale-105"
                             : isComplete
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                            : "bg-white text-slate-600 border-slate-100 hover:border-brand-teal/30 hover:bg-slate-50"
                     )
                 },
                     React.createElement("span", null, `${idx + 1}. `),
                     React.createElement("span", null, sec.title),
-                    isComplete && !isActive && React.createElement("span", { className: "text-emerald-500 font-black" }, "✓")
+                    isComplete && !isActive && React.createElement("span", { className: "text-emerald-500 font-black ml-1" }, "✓")
                 );
             })
         ),
         
         // Wizard Header Card (Hidden on mobile)
-        React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 hidden sm:block" },
-            React.createElement("div", { className: "flex items-center justify-between p-6 md:p-8" },
+        React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-sm border border-slate-100 hidden sm:block relative" },
+            React.createElement("div", { className: "absolute top-0 right-0 w-64 h-64 bg-brand-teal/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" }),
+            React.createElement("div", { className: "flex items-center justify-between p-6 md:p-8 relative z-10" },
                 React.createElement("div", { className: "min-w-0 flex-1" },
-                    React.createElement("p", { className: "mb-1 text-[10px] font-black uppercase tracking-widest text-emerald-500" }, "Step ", activeSection + 1, " of ", SECTION_DEFS.length),
-                    React.createElement("h2", { className: "truncate text-xl font-black text-slate-900 md:text-2xl" }, SECTION_DEFS[activeSection]?.title),
-                    React.createElement("p", { className: "mt-1 truncate text-sm font-bold text-slate-500" }, visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih')),
-                React.createElement("div", { className: "hidden shrink-0 gap-2 sm:flex ml-4" },
-                    React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "!rounded-full !px-6", icon: "left" }, "Back"),
-                    React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "!rounded-full !px-8", icon: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right" }, activeSection >= SECTION_DEFS.length - 1 ? "Finish" : "Next"))),
+                    React.createElement("p", { className: "mb-2 text-xs font-black uppercase tracking-widest text-brand-orange" }, "Step ", activeSection + 1, " of ", SECTION_DEFS.length),
+                    React.createElement("h2", { className: "truncate text-2xl font-black text-slate-900 md:text-3xl mb-1" }, SECTION_DEFS[activeSection]?.title),
+                    React.createElement("p", { className: "truncate text-sm font-bold text-slate-500 flex items-center gap-2" }, 
+                        React.createElement(Icon, { name: "store", className: "w-4 h-4 text-slate-400" }),
+                        visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih')),
+                React.createElement("div", { className: "hidden shrink-0 gap-3 sm:flex ml-4" },
+                    React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "!rounded-2xl !px-6 !py-3 !font-extrabold shadow-sm border-slate-200 text-slate-600", icon: "left" }, "Kembali"),
+                    React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "!rounded-2xl !px-8 !py-3 !font-extrabold shadow-md bg-brand-teal text-white hover:bg-[#153640]", icon: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right" }, activeSection >= SECTION_DEFS.length - 1 ? "Selesai & Preview" : "Berikutnya"))),
             // Progress Bar
-            React.createElement("div", { className: "h-2 w-full bg-slate-100" },
-                React.createElement("div", { className: "h-full bg-audit-primary transition-all duration-500 ease-out", style: { width: `${progress}%` } }))),
+            React.createElement("div", { className: "h-2 w-full bg-slate-100 relative z-10" },
+                React.createElement("div", { className: "h-full bg-brand-teal transition-all duration-500 ease-out", style: { width: `${progress}%` } }))),
         
         // Wizard Content Card
-        React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-6 md:p-8 sm:shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:border sm:border-slate-100 pt-2 sm:pt-0 pb-10 sm:pb-0" },
+        React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 px-4 pt-2 pb-24 sm:pb-8" },
             React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
 
         // Sticky Mobile Bottom Wizard Navigation Bar (Eliminates "Keluar Masuk Grid")
         React.createElement("div", {
-            className: "fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-[0_-4px_16px_rgb(0,0,0,0.06)] flex items-center justify-between gap-2 sm:hidden",
-            style: { paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))' }
+            className: "fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-4 py-3 shadow-[0_-8px_30px_rgb(0,0,0,0.08)] flex items-center justify-between gap-3 sm:hidden",
+            style: { paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }
         },
             React.createElement("button", {
                 type: "button",
@@ -236,18 +276,9 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                     if (activeSection <= 0) setViewMode('grid');
                     else goSection(activeSection - 1);
                 },
-                className: "flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-extrabold text-xs active:scale-95 transition-all"
+                className: "w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-600 flex items-center justify-center active:scale-95 transition-all shadow-sm shrink-0"
             },
-                React.createElement(Icon, { name: "left", className: "w-4 h-4" }),
-                React.createElement("span", null, activeSection <= 0 ? "Grid" : "Prev")
-            ),
-            React.createElement("div", { className: "flex flex-col items-center justify-center text-center min-w-0" },
-                React.createElement("span", { className: "text-[11px] font-black text-slate-800 truncate" },
-                    `Step ${activeSection + 1}/${SECTION_DEFS.length}`
-                ),
-                React.createElement("span", { className: "text-[9px] font-extrabold uppercase text-audit-primary" },
-                    `${progress}% Selesai`
-                )
+                React.createElement(Icon, { name: activeSection <= 0 ? "home" : "left", className: "w-5 h-5" })
             ),
             React.createElement("button", {
                 type: "button",
@@ -256,16 +287,15 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                     else goSection(activeSection + 1);
                 },
                 className: cx(
-                    "flex items-center gap-1 px-3.5 py-2 rounded-xl font-extrabold text-xs text-white shadow-sm active:scale-95 transition-all",
-                    activeSection >= SECTION_DEFS.length - 1 ? "bg-emerald-600 hover:bg-emerald-700" : "bg-audit-primary hover:bg-audit-primary-hover"
+                    "flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl font-extrabold text-sm text-white shadow-xl active:scale-95 transition-all",
+                    activeSection >= SECTION_DEFS.length - 1 ? "bg-brand-orange shadow-brand-orange/20" : "bg-brand-teal shadow-brand-teal/20"
                 )
             },
-                React.createElement("span", null, activeSection >= SECTION_DEFS.length - 1 ? "Preview PDF" : "Next"),
+                React.createElement("span", null, activeSection >= SECTION_DEFS.length - 1 ? "Selesai" : "Selanjutnya"),
                 React.createElement(Icon, { name: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right", className: "w-4 h-4" })
             )
         )
-            
-        ));
+    ));
 }
 function App() {
     const [screen, setScreen] = useState('dashboard');
