@@ -1,4 +1,14 @@
+.bg-brand-teal { background-color: var(--brand-teal) !important; }
+.text-brand-teal { color: var(--brand-teal) !important; }
+.bg-brand-orange { background-color: var(--brand-orange) !important; }
+.text-brand-orange { color: var(--brand-orange) !important; }
+.bg-brand-bg { background-color: var(--brand-bg) !important; }
+
 :root {
+  --brand-teal: #1a434e;
+  --brand-orange: #ffb067;
+  --brand-orange-light: #ffe8d3;
+  --brand-bg: #f4f6f8;
   color-scheme: light;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --ease: cubic-bezier(.2,.8,.2,1);
