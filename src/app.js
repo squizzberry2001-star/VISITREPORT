@@ -79,6 +79,39 @@ function findBestieByNik(value) {
     const nik = normalizeNik(value);
     return BESTIE_LOGIN_DATA.find((item) => item.nik === nik) || null;
 }
+function matchBestieScheduleName(schedName, bestieName) {
+    if (!schedName || !bestieName) return false;
+    const sn = String(schedName).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    const bn = String(bestieName).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    if (!sn || !bn) return false;
+    if (sn === bn) return true;
+    const sWords = sn.split(/\s+/).filter(w => w.length >= 2);
+    const bWords = bn.split(/\s+/).filter(w => w.length >= 2);
+    if (!sWords.length || !bWords.length) return false;
+    if (sWords[0] === bWords[0] && sWords[0].length >= 3) return true;
+    if (sWords.length >= 2 && sWords.every(sw => bWords.includes(sw))) return true;
+    if (bWords.length >= 2 && bWords.every(bw => sWords.includes(bw))) return true;
+    return false;
+}
+function findRegisteredLeaderboardBestie(schedName) {
+    if (!schedName) return null;
+    return BESTIE_LOGIN_DATA.find((b) => matchBestieScheduleName(schedName, b.name)) || null;
+}
+function filterRegisteredLeaderboardSchedules(items) {
+    if (!Array.isArray(items)) return [];
+    const filtered = [];
+    items.forEach((item) => {
+        if (!item) return;
+        const matched = findRegisteredLeaderboardBestie(item.nama || item.bestie || item.auditor || item.name || '');
+        if (matched) {
+            filtered.push({
+                ...item,
+                nama: matched.name
+            });
+        }
+    });
+    return filtered;
+}
 function readBestieLogin() {
     try {
         const parsed = JSON.parse(localStorage.getItem(BESTIE_LOGIN_KEY) || '{}');
@@ -770,12 +803,12 @@ function saveFeaturesConfig(config) {
 function readScheduleConfig() {
     try {
         const parsed = JSON.parse(localStorage.getItem(SCHEDULE_CONFIG_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
+        return filterRegisteredLeaderboardSchedules(Array.isArray(parsed) ? parsed : []);
     }
     catch (error) { return []; }
 }
 function saveScheduleConfig(items) {
-    const next = Array.isArray(items) ? items : [];
+    const next = filterRegisteredLeaderboardSchedules(items);
     localStorage.setItem(SCHEDULE_CONFIG_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event('rbv-schedule-config-change'));
     return next;
@@ -4368,7 +4401,7 @@ function analyzeFindingTrends(texts) {
 }
 
 function formatScheduleBadgeText(sched) {
-    if (!sched) return '-';
+    if (!sched) return 'Belum ada jadwal hari ini';
     const todayCa = new Date().toLocaleDateString('en-CA');
     const datePrefix = (sched.date && String(sched.date).slice(0, 10) !== todayCa)
         ? `[${String(sched.date).slice(5, 10).replace('-', '/')}] `
@@ -4412,16 +4445,18 @@ function LeaderboardItem({ lb, idx }) {
             // Bottom Row: Badges + Score
             React.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 gap-3" },
                 // Schedule Badge
-                React.createElement("div", { className: "flex items-center w-full sm:w-auto min-w-0 flex-1 pr-2" },
+                React.createElement("div", { className: "flex items-center min-w-0 flex-1 pr-2" },
                     React.createElement("div", { 
-                        className: "flex items-center bg-white rounded-lg px-3 py-1.5 border border-slate-200/80 shadow-sm gap-2 w-full sm:w-auto min-w-0", 
-                        title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Tidak ada jadwal hari ini' 
+                        className: "flex items-center bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm gap-2 w-full min-w-0", 
+                        title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Belum ada jadwal terdaftar untuk bestie ini' 
                     },
                         React.createElement("div", { className: "flex items-center gap-1.5 shrink-0" },
-                            React.createElement("span", { className: "w-2 h-2 rounded-full " + (lb.todaySchedule ? "bg-emerald-500 animate-pulse" : "bg-slate-300") }),
-                            React.createElement("span", { className: "text-[10px] font-extrabold text-slate-500 uppercase tracking-wider" }, "Schedule :")
+                            React.createElement("span", { className: "w-2.5 h-2.5 rounded-full inline-block shrink-0 " + (lb.todaySchedule ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
+                            React.createElement("span", { className: "text-[10px] font-black text-slate-500 uppercase tracking-wider shrink-0" }, "Jadwal:")
                         ),
-                        React.createElement("span", { className: "text-xs font-black text-slate-800 truncate" }, schedText)
+                        React.createElement("span", { className: "text-xs font-bold text-slate-800 truncate" }, 
+                            lb.todaySchedule ? schedText : "Belum ada jadwal terdaftar"
+                        )
                     )
                 ),
                 // Main Score
@@ -4841,22 +4876,6 @@ function useAnalyticsData(history, scheduleCfg) {
                 const nowLocal = new Date();
                 const todayStrLb = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
-
-                const matchBestieScheduleName = (schedName, bestieName) => {
-                    if (!schedName || !bestieName) return false;
-                    const sn = normalize(schedName);
-                    const bn = normalize(bestieName);
-                    if (!sn || !bn) return false;
-                    if (sn === bn) return true;
-                    if (bn.includes(sn) || sn.includes(bn)) return true;
-                    const sWords = sn.split(' ').filter(w => w.length > 1);
-                    const bWords = bn.split(' ').filter(w => w.length > 1);
-                    if (!sWords.length || !bWords.length) return false;
-                    if (sWords[0] === bWords[0]) return true;
-                    if (sWords.every(sw => bWords.includes(sw))) return true;
-                    if (sWords.length === 1 && sWords[0].length >= 3 && bWords.includes(sWords[0])) return true;
-                    return false;
-                };
 
                 const leaderboard = Object.values(bestieMap).sort((a, b) => b.uniqueStoresMonthly - a.uniqueStoresMonthly).map(lb => {
                     const bestieScheds = activeSched.filter(s => matchBestieScheduleName(s.nama || s.bestie || s.auditor || s.name || '', lb.name));
@@ -9820,6 +9839,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             if (!row || !row.length) continue;
                             const rawNama = String(row[namaIdx] || '').trim();
                             if (!rawNama || rawNama.toLowerCase() === 'nama') continue;
+                            const matchedBestie = findRegisteredLeaderboardBestie(rawNama);
+                            if (!matchedBestie) continue;
                             let dateStr = normalizeScheduleDateStr(row[dateIdx]);
                             if (!dateStr) {
                                 const todayD = new Date();
@@ -9828,7 +9849,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                             const desc = descIdx >= 0 ? String(row[descIdx] || '').trim() : 'Jadwal Aktif';
                             const loc = locIdx >= 0 ? String(row[locIdx] || '').trim() : '';
                             parsed.push({
-                                nama: rawNama,
+                                nama: matchedBestie.name,
                                 date: dateStr,
                                 description: desc || 'Jadwal Aktif',
                                 location: loc || '',
@@ -9850,12 +9871,12 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setSchedStatus('Membaca file Excel...');
         try {
             const parsed = await parseExcelSchedule(file);
-            if (!parsed.length) { setSchedStatus('Tidak ada data yang bisa diparsing.'); setSchedBusy(false); return; }
+            if (!parsed.length) { setSchedStatus('Tidak ada data jadwal untuk bestie yang terdaftar di Leaderboard.'); setSchedBusy(false); return; }
             const saved = saveScheduleConfig(parsed);
             onScheduleConfigChange(saved);
-            setSchedStatus(`Berhasil import ${parsed.length} entri. Menyinkronkan ke Convex...`);
+            setSchedStatus(`Berhasil import ${parsed.length} entri khusus Bestie terdaftar. Menyinkronkan ke Firebase...`);
             const synced = await syncAppConfigToConvex(APP_CONFIG_KEYS.schedule, parsed);
-            setSchedStatus(synced ? `✅ ${parsed.length} entri jadwal tersimpan & tersinkron.` : `⚠️ ${parsed.length} entri disimpan lokal, Convex sync gagal.`);
+            setSchedStatus(synced ? `✅ ${parsed.length} entri jadwal tersimpan & tersinkron.` : `⚠️ ${parsed.length} entri disimpan lokal, Firebase sync gagal.`);
         } catch(err) {
             setSchedStatus(`❌ Error: ${err?.message || 'Gagal memproses file.'}`);
         } finally {
@@ -9884,7 +9905,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 ),
                 (scheduleConfig || []).length > 0 ? React.createElement('button', { type: 'button', onClick: clearSchedule, className: 'text-xs font-bold text-red-500 hover:text-red-700 underline' }, 'Hapus Semua') : null
             ),
-            React.createElement('p', { className: 'text-xs text-slate-500 mb-4' }, 'Upload file .xlsx (kolom: Nama, Start Date, Description). Data akan tampil sebagai badge jadwal hari ini di Analitik per Bestie.'),
+            React.createElement('p', { className: 'text-xs text-slate-500 mb-4' }, 'Upload file .xlsx (kolom: Nama, Start Date, Description). Sistem otomatis memfilter khusus nama-nama Regional Bestie yang terdaftar di Leaderboard.'),
             React.createElement('div', { className: 'flex flex-col gap-3 sm:flex-row sm:items-center' },
                 React.createElement('label', { className: 'flex cursor-pointer items-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-violet-700 transition-colors', style: schedBusy ? { opacity: 0.6, pointerEvents: 'none' } : {} },
                     schedBusy ? 'Memproses...' : '📂 Pilih File Excel (.xlsx)',
