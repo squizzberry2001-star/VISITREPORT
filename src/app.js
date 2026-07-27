@@ -777,6 +777,7 @@ function readScheduleConfig() {
 function saveScheduleConfig(items) {
     const next = Array.isArray(items) ? items : [];
     localStorage.setItem(SCHEDULE_CONFIG_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event('rbv-schedule-config-change'));
     return next;
 }
 function normalizeUpdateNoticeIntervalSeconds(value, fallback = DEFAULT_UPDATE_NOTICE_CONFIG.intervalSeconds) {
@@ -3399,10 +3400,83 @@ Jangan terlalu panjang - maksimal 200 kata. Kembalikan HANYA teks ringkasan tanp
 }
 
 
+const RBV_OBSERVATION_PRESETS = [
+    {
+        label: '🔴 Tidak Ada ROX / Expired Date',
+        category: 'QSC',
+        temuan: 'Tidak ada rox pada bahan sisa buka kemasan (cranberry, cashew, coffee jelly, BBQ, sauce, powder, dll)',
+        dampak: 'Potensi penggunaan bahan yang sudah melewati batas layak konsumsi atau kedaluwarsa karena tidak terpantau masa simpannya',
+        kondisiIdeal: 'Semua produk yang sudah dibuka wajib di rox',
+        tindakan: 'Melakukan briefing ulang mengenai pentingnya food safety dan standar rox kepada crew',
+        penyebab: 'Kurangnya kedisiplinan crew dalam melakukan rox segera setelah produk dibuka',
+        hasil: 'Akan di monitoring visit berikutnya'
+    },
+    {
+        label: '🔴 Toilet Kotor / Form Check Tidak Ada',
+        category: 'QSC',
+        temuan: 'Toilet kotor, tidak ada handsoap dan form check toilet',
+        dampak: 'Mengganggu kenyamanan customer',
+        kondisiIdeal: 'Toilet terawat dan dikontrol secara berkala',
+        tindakan: 'Buat form checklist toilet dan monitoring dari store leader',
+        penyebab: 'Form toilet tidak ada dan tidak ada monitoring dari store leader / shift leader',
+        hasil: 'Akan di monitoring visit selanjutnya'
+    },
+    {
+        label: '🔴 Gondola Berantakan & Price Card Kotor',
+        category: 'QSC',
+        temuan: 'Gondola berantakan beserta price card dan area kotor',
+        dampak: 'Menurunkan kenyamanan customer dan potensi kesalahan harga',
+        kondisiIdeal: 'Gondola tertata rapi sesuai planogram, price card dipasang dengan tepat sesuai dengan produknya dan lantai dalam keadaan bersih',
+        tindakan: 'Menetapkan jadwal pembersihan gondola dan pengecekan kerapihan gondola secara berkala',
+        penyebab: 'Kurangnya pengawasan dari store leader',
+        hasil: 'Akan di monitoring visit berikutnya'
+    },
+    {
+        label: '🔴 Logbook Tidak Diisi PIC',
+        category: 'QSC',
+        temuan: 'Logbook tidak diisi dari awal shift / awal go',
+        dampak: 'Data tidak bisa dijadikan acuan',
+        kondisiIdeal: 'Form logbook diisi dengan konsisten dan secara aktual',
+        tindakan: 'Briefing dan monitoring oleh PIC untuk pengisian logbook',
+        penyebab: 'Kurang monitoring dari PIC, logbook hanya tergeletak',
+        hasil: 'Akan di monitoring visit berikutnya'
+    },
+    {
+        label: '🔴 Equipment Berdebu (Grill Sosis/Chiller/Ice Cream)',
+        category: 'QSC',
+        temuan: 'Equipment berdebu (pinggir grill sosis, tutup mesin ice cream, atau chiller)',
+        dampak: 'Estetika toko menurun, risiko kontaminasi debu pada produk',
+        kondisiIdeal: 'Seluruh permukaan dan bagian equipment dalam keadaan bersih bebas dari debu',
+        tindakan: 'Melakukan pembersihan menyeluruh pada area yang berdebu',
+        penyebab: 'Pembersihan ketika closing belum maksimal sehingga area tersebut tidak dibersihkan',
+        hasil: 'Akan di monitoring di visit berikutnya'
+    },
+    {
+        label: '🔴 Timer 30 Minute Cycle Tidak Dipakai',
+        category: 'OPI',
+        temuan: 'Timer 30 minute cycle tidak digunakan',
+        dampak: 'Kualitas pelayanan dan pemantauan area secara berkala tidak terkontrol',
+        kondisiIdeal: 'Timer 30 minute cycle wajib digunakan dan dijalankan oleh kru',
+        tindakan: 'Melakukan coaching langsung kepada kru mengenai kewajiban pemakaian timer 30 menit',
+        penyebab: 'Timer hanya diletakkan di meja kasir tanpa diaktifkan',
+        hasil: 'Akan di monitoring visit berikutnya'
+    },
+    {
+        label: '🔴 Standing Poster Promo Belum Diganti',
+        category: 'OPI',
+        temuan: 'Standing poster promo tidak diganti dengan periode terbaru',
+        dampak: 'Potensi kesalahpahaman promo customer dan selisih harga kasir',
+        kondisiIdeal: 'Seluruh materi promosi dan standing poster terpasang sesuai periode promo aktual',
+        tindakan: 'Segera mengganti poster promo dan briefing PIC marketing toko',
+        penyebab: 'Kru belum mengecek materi promosi baru yang dikirim dari pusat',
+        hasil: 'Akan di monitoring visit berikutnya'
+    }
+];
 function ObservationCards({ title, rows, onChange }) {
     const safeRows = rows?.length ? rows : [blankObservationRow()];
     const [activeIndex, setActiveIndex] = useState(0);
     const [aiLoadingIndex, setAiLoadingIndex] = useState(null);
+    const [presetOpenIndex, setPresetOpenIndex] = useState(null);
     const activeRowNumber = Math.min(activeIndex + 1, safeRows.length);
     useEffect(() => {
         setActiveIndex((current) => Math.max(0, Math.min(current, safeRows.length - 1)));
@@ -3421,6 +3495,29 @@ function ObservationCards({ title, rows, onChange }) {
         } finally {
             setAiLoadingIndex(null);
         }
+    };
+    const applyPresetToRow = (index, preset) => {
+        const deadlineDefault = new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10);
+        updateRow(index, {
+            temuan: preset.temuan,
+            dampak: preset.dampak,
+            kondisiIdeal: preset.kondisiIdeal,
+            tindakan: preset.tindakan,
+            penyebab: preset.penyebab,
+            hasil: preset.hasil,
+            deadline: (safeRows[index]?.deadline || deadlineDefault)
+        });
+        setPresetOpenIndex(null);
+    };
+    const appendActionText = (index, text, hasilText) => {
+        const row = safeRows[index] || {};
+        const current = row.tindakan || '';
+        const updatedTindakan = current ? `${current}. ${text}` : text;
+        const patch = { tindakan: updatedTindakan };
+        if (hasilText && !row.hasil) {
+            patch.hasil = hasilText;
+        }
+        updateRow(index, patch);
     };
     const addRow = () => {
         onChange([...safeRows, blankObservationRow()]);
@@ -3491,6 +3588,35 @@ function ObservationCards({ title, rows, onChange }) {
                     "Temuan ",
                     index + 1),
                 React.createElement("div", { className: "flex items-center gap-2" },
+                    React.createElement("div", { className: "relative inline-block" },
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => setPresetOpenIndex(presetOpenIndex === index ? null : index),
+                            className: "px-2.5 py-1.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm hover:bg-amber-600 active:scale-95 transition-all flex items-center gap-1",
+                            title: "Pilih dari Kamus Temuan (6 Kolom Otomatis)"
+                        },
+                            React.createElement("span", null, "⚡ Kamus Preset")
+                        ),
+                        presetOpenIndex === index ? React.createElement("div", {
+                            className: "absolute right-0 top-full mt-1.5 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 p-2 max-h-72 overflow-y-auto"
+                        },
+                            React.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400 px-2 py-1 flex items-center justify-between" },
+                                React.createElement("span", null, "PILIH PRESET TEMUAN (AUTO-FILL):"),
+                                React.createElement("button", { type: "button", onClick: () => setPresetOpenIndex(null), className: "text-slate-500 hover:text-slate-800" }, "✕")
+                            ),
+                            RBV_OBSERVATION_PRESETS.map((preset, pIdx) => (
+                                React.createElement("button", {
+                                    key: pIdx,
+                                    type: "button",
+                                    onClick: () => applyPresetToRow(index, preset),
+                                    className: "w-full text-left px-2.5 py-2 rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors border-b border-slate-100 last:border-0"
+                                },
+                                    React.createElement("div", { className: "text-xs font-bold text-slate-800" }, preset.label),
+                                    React.createElement("div", { className: "text-[10px] text-slate-500 line-clamp-1" }, preset.temuan)
+                                )
+                            ))
+                        ) : null
+                    ),
                     React.createElement("button", {
                         type: "button",
                         onClick: () => handleAiParaphrase(index),
@@ -3511,7 +3637,27 @@ function ObservationCards({ title, rows, onChange }) {
                 richField('Kondisi Ideal', 'kondisiIdeal', row, index, 'Kondisi ideal yang diharapkan...'),
                 richField('Dampak', 'dampak', row, index, 'Dampak terhadap operasional...'),
                 richField('Penyebab', 'penyebab', row, index, 'Penyebab utama...'),
-                richField('Tindakan Aksi', 'tindakan', row, index, 'Aksi perbaikan yang disepakati...'),
+                React.createElement("div", { className: "flex flex-col gap-2" },
+                    richField('Tindakan Aksi', 'tindakan', row, index, 'Aksi perbaikan yang disepakati...'),
+                    React.createElement("div", { className: "flex flex-wrap items-center gap-1.5 mt-1" },
+                        React.createElement("span", { className: "text-[11px] font-bold text-slate-500 mr-1" }, "Aksi Buddy Trainer:"),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => appendActionText(index, "Melakukan briefing ulang dan pembinaan langsung mengenai SOP kepada crew di toko", "Selesai dibriefing di hari kunjungan"),
+                            className: "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 active:scale-95 transition-all"
+                        }, "🗣️ + Brief Ulang"),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => appendActionText(index, "Rekomendasi TNA (Training Needs Analysis) untuk All Crew Store / PIC terkait pemantapan modul ini", "Akan dijadwalkan refresher training berikutnya"),
+                            className: "px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 active:scale-95 transition-all"
+                        }, "🎓 + TNA (Training)"),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => appendActionText(index, "Eskalasi perbaikan fasilitas/peralatan kepada Store Manager dan tim Maintenance", "Akan di monitoring perbaikan fasilitas"),
+                            className: "px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 active:scale-95 transition-all"
+                        }, "🔧 + Eskalasi Fisik")
+                    )
+                ),
                 React.createElement("div", { className: "observation-deadline-grid grid gap-4 sm:grid-cols-[170px_minmax(0,1fr)]" },
                     React.createElement(Field, { label: "Deadline" },
                         React.createElement(DateInput, { value: row.deadline || '', onChange: (e) => updateRow(index, { deadline: e.target.value }) })),
@@ -4221,6 +4367,23 @@ function analyzeFindingTrends(texts) {
     return results;
 }
 
+function formatScheduleBadgeText(sched) {
+    if (!sched) return '-';
+    const todayCa = new Date().toLocaleDateString('en-CA');
+    const datePrefix = (sched.date && String(sched.date).slice(0, 10) !== todayCa)
+        ? `[${String(sched.date).slice(5, 10).replace('-', '/')}] `
+        : '';
+    const rawDesc = String(sched.description || sched.toko || sched.store || 'Jadwal Aktif').trim();
+    const lines = rawDesc.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+    let descText = lines[0] || 'Jadwal Aktif';
+    descText = descText.replace(/\s*-\s*$/, '').trim();
+    const loc = String(sched.location || '').trim();
+    const mainText = (loc && !descText.toLowerCase().includes(loc.toLowerCase()))
+        ? `${descText} — ${loc}`
+        : descText;
+    return `${datePrefix}${mainText}`;
+}
+
 function LeaderboardItem({ lb, idx }) {
     let narasi = "Belum Ada Kunjungan 🚀";
     if (lb.uniqueStoresMonthly > 0) {
@@ -4229,6 +4392,7 @@ function LeaderboardItem({ lb, idx }) {
         else if (idx <= 2) narasi = "Great Progress ⭐";
         else narasi = "On Progress 💪";
     }
+    const schedText = formatScheduleBadgeText(lb.todaySchedule);
 
     return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
         React.createElement("div", { className: "flex flex-col p-4 text-audit-ink select-none gap-3 sm:gap-4" },
@@ -4251,15 +4415,13 @@ function LeaderboardItem({ lb, idx }) {
                 React.createElement("div", { className: "flex items-center w-full sm:w-auto min-w-0 flex-1 pr-2" },
                     React.createElement("div", { 
                         className: "flex items-center bg-white rounded-lg px-3 py-1.5 border border-slate-200/80 shadow-sm gap-2 w-full sm:w-auto min-w-0", 
-                        title: lb.todaySchedule ? (lb.todaySchedule.description || 'Jadwal Aktif') : 'Tidak ada jadwal hari ini' 
+                        title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Tidak ada jadwal hari ini' 
                     },
                         React.createElement("div", { className: "flex items-center gap-1.5 shrink-0" },
                             React.createElement("span", { className: "w-2 h-2 rounded-full " + (lb.todaySchedule ? "bg-emerald-500 animate-pulse" : "bg-slate-300") }),
                             React.createElement("span", { className: "text-[10px] font-extrabold text-slate-500 uppercase tracking-wider" }, "Schedule :")
                         ),
-                        React.createElement("span", { className: "text-xs font-black text-slate-800 truncate" }, 
-                            lb.todaySchedule ? (lb.todaySchedule.description || 'Jadwal Aktif') : '-'
-                        )
+                        React.createElement("span", { className: "text-xs font-black text-slate-800 truncate" }, schedText)
                     )
                 ),
                 // Main Score
@@ -4595,7 +4757,7 @@ function useAnalyticsData(history, scheduleCfg) {
                     }
                 });
                 
-                const isRemoteDb = rows && rows.length > 0;
+                const isRemoteDb = Boolean(currentVisits && currentVisits.length > 0);
                 datasetToUse.forEach((v, idx) => {
                     if (v.isPdfDownloaded || v.isEmailSent || v.is_pdf_downloaded || v.is_email_sent || isRemoteDb) {
                         localCompleted++;
@@ -4676,12 +4838,35 @@ function useAnalyticsData(history, scheduleCfg) {
                         }
                     });
                 });
-                const todayStrLb = new Date().toISOString().slice(0, 10);
+                const nowLocal = new Date();
+                const todayStrLb = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
                 const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
-                const leaderboard = Object.values(bestieMap).sort((a, b) => b.uniqueStoresMonthly - a.uniqueStoresMonthly).map(lb => ({
-                    ...lb,
-                    todaySchedule: activeSched.find(s => s.date === todayStrLb && normalize(s.nama) === normalize(lb.name)) || null
-                }));
+
+                const matchBestieScheduleName = (schedName, bestieName) => {
+                    if (!schedName || !bestieName) return false;
+                    const sn = normalize(schedName);
+                    const bn = normalize(bestieName);
+                    if (!sn || !bn) return false;
+                    if (sn === bn) return true;
+                    if (bn.includes(sn) || sn.includes(bn)) return true;
+                    const sWords = sn.split(' ').filter(w => w.length > 1);
+                    const bWords = bn.split(' ').filter(w => w.length > 1);
+                    if (!sWords.length || !bWords.length) return false;
+                    if (sWords[0] === bWords[0]) return true;
+                    if (sWords.every(sw => bWords.includes(sw))) return true;
+                    if (sWords.length === 1 && sWords[0].length >= 3 && bWords.includes(sWords[0])) return true;
+                    return false;
+                };
+
+                const leaderboard = Object.values(bestieMap).sort((a, b) => b.uniqueStoresMonthly - a.uniqueStoresMonthly).map(lb => {
+                    const bestieScheds = activeSched.filter(s => matchBestieScheduleName(s.nama || s.bestie || s.auditor || s.name || '', lb.name));
+                    const todayMatch = bestieScheds.find(s => String(s.date || '').slice(0, 10) === todayStrLb);
+                    const fallbackMatch = bestieScheds.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0] || null;
+                    return {
+                        ...lb,
+                        todaySchedule: todayMatch || fallbackMatch
+                    };
+                });
 
                 setData({
                     globalStoreCount: globalStoreSet.size,
@@ -7298,9 +7483,24 @@ async function getConvexRealtimeClient() {
     
     if (RB_FIREBASE_DB) return RB_FIREBASE_DB;
     
-    // Wait for CDN scripts if not ready
+    // Wait for CDN scripts if not ready, with automatic script injection fallback
     if (!window.firebase) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 350));
+        if (!window.firebase) {
+            try {
+                const loadScript = (src) => new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+                await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+                await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+            } catch (e) {
+                console.warn('Dynamic Firebase SDK load failed:', e);
+            }
+        }
         if (!window.firebase) return null;
     }
     
@@ -7325,8 +7525,39 @@ async function runConvexQuery(functionName, args = {}) {
         if (functionName.includes('deviceBackups:getLatest')) {
             const doc = await db.collection(cols.deviceBackups).doc(args.backupKey).get();
             return doc.exists ? doc.data() : null;
+        } else if (functionName.includes('appSettings:listConfigs') || functionName.includes('listConfigs')) {
+            let query = db.collection(cols.appSettings);
+            const snapshot = await query.get();
+            let rows = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            if (args && args.keys && args.keys.length > 0) {
+                rows = rows.filter(r => args.keys.includes(r.key));
+            }
+            return rows;
+        } else if (functionName.includes('listVisits') || functionName.includes('monitor:listVisits')) {
+            let query = db.collection(cols.visits).orderBy('updatedAt', 'desc');
+            if (args && args.limit) query = query.limit(args.limit);
+            const snapshot = await query.get();
+            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+        } else if (functionName.includes('listAllFindings') || functionName.includes('findings')) {
+            let query = db.collection(cols.findings).orderBy('updatedAt', 'desc');
+            if (args && args.limit) query = query.limit(args.limit);
+            const snapshot = await query.get();
+            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+        } else if (functionName.includes('listPresence') || functionName.includes('presence')) {
+            let query = db.collection(cols.presence).orderBy('updatedAt', 'desc').limit(100);
+            const snapshot = await query.get();
+            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+        } else if (functionName.includes('listManualStoreRequests') || functionName.includes('manualRequests')) {
+            let query = db.collection(cols.manualRequests).orderBy('updatedAt', 'desc').limit(args?.limit || 200);
+            const snapshot = await query.get();
+            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+        } else if (functionName.includes('masterStores:listStores') || functionName.includes('listStores')) {
+            let query = db.collection(cols.masterStores);
+            if (args && args.limit) query = query.limit(args.limit);
+            const snapshot = await query.get();
+            return snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
         }
-    } catch(err) { console.error('Firestore Query Error:', err); return null; }
+    } catch(err) { rememberRemoteSyncError(err, 'Firebase Firestore query'); console.error('Firestore Query Error:', err); return null; }
 }
 async function runConvexMutation(functionName, args = {}) {
     const db = await getConvexRealtimeClient();
@@ -7335,23 +7566,27 @@ async function runConvexMutation(functionName, args = {}) {
     const cols = getConvexConfig().collections;
     try {
         if (functionName.includes('upsertVisit')) {
-            const docRef = db.collection(cols.visits).doc(args.payload.id || args.payload.visit_key || Date.now().toString());
-            await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
+            const p = args.payload || args.visit || args;
+            const docRef = db.collection(cols.visits).doc(p.id || p.visit_key || Date.now().toString());
+            await docRef.set({ ...p, _id: docRef.id }, { merge: true });
             return { ok: true };
         }
         if (functionName.includes('upsertFindings')) {
-            const docRef = db.collection(cols.findings).doc(args.payload.visit_key || Date.now().toString());
-            await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
+            const p = args.payload || args.findings || args;
+            const docRef = db.collection(cols.findings).doc(p.visit_key || Date.now().toString());
+            await docRef.set({ ...p, _id: docRef.id }, { merge: true });
             return { ok: true };
         }
         if (functionName.includes('upsertManualStoreRequest')) {
-            const docRef = db.collection(cols.manualRequests).doc(args.payload.id || args.payload.req_key || Date.now().toString());
-            await docRef.set({ ...args.payload, _id: docRef.id }, { merge: true });
+            const p = args.payload || args.request || args;
+            const docRef = db.collection(cols.manualRequests).doc(p.id || p.req_key || Date.now().toString());
+            await docRef.set({ ...p, _id: docRef.id }, { merge: true });
             return { ok: true };
         }
         if (functionName.includes('upsertPresence')) {
-            const docRef = db.collection(cols.presence).doc(args.presence.id || args.presence.user_id || Date.now().toString());
-            await docRef.set({ ...args.presence, _id: docRef.id }, { merge: true });
+            const p = args.payload || args.presence || args;
+            const docRef = db.collection(cols.presence).doc(p.id || p.user_id || Date.now().toString());
+            await docRef.set({ ...p, _id: docRef.id }, { merge: true });
             return { ok: true };
         }
         if (functionName.includes('appSettings:setConfig')) {
@@ -7360,20 +7595,22 @@ async function runConvexMutation(functionName, args = {}) {
             return { ok: true };
         }
         if (functionName.includes('deviceBackups:setLatest')) {
+            const p = args.payload || args;
             const docRef = db.collection(cols.deviceBackups).doc(args.backupKey);
-            await docRef.set({ ...args.payload, updatedAt: Date.now(), _id: docRef.id }, { merge: true });
+            await docRef.set({ ...p, updatedAt: Date.now(), _id: docRef.id }, { merge: true });
             return { ok: true };
         }
         if (functionName.includes('masterStores:upsertMany')) {
+            const stores = args.stores || args.payload || (Array.isArray(args) ? args : []);
             const batch = db.batch();
-            args.stores.forEach(st => {
+            stores.forEach(st => {
                 const docRef = db.collection(cols.masterStores).doc(st.code);
                 batch.set(docRef, { ...st, _id: docRef.id }, { merge: true });
             });
             await batch.commit();
             return { ok: true };
         }
-    } catch(err) { console.error('Firestore Mutation Error:', err); return null; }
+    } catch(err) { rememberRemoteSyncError(err, 'Firebase Firestore mutation'); console.error('Firestore Mutation Error:', err); return null; }
 }
 async function subscribeConvexQuery(functionName, args, onData, onError) {
     const db = await getConvexRealtimeClient();
@@ -7392,11 +7629,8 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
             query = db.collection(cols.manualRequests).orderBy('updatedAt', 'desc').limit(args?.limit || 200);
         } else if (functionName.includes('listPresence')) {
             query = db.collection(cols.presence).orderBy('updatedAt', 'desc').limit(100);
-        } else if (functionName.includes('appSettings:listConfigs')) {
+        } else if (functionName.includes('appSettings:listConfigs') || functionName.includes('listConfigs')) {
             query = db.collection(cols.appSettings);
-            if (args && args.keys && args.keys.length > 0) {
-                query = query.where('key', 'in', args.keys);
-            }
         } else if (functionName.includes('masterStores:listStores')) {
             query = db.collection(cols.masterStores);
         }
@@ -7407,9 +7641,13 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
         }
         
         const unsubscribe = query.onSnapshot((snapshot) => {
-            const docs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            let docs = snapshot.docs.map(doc => ({ ...doc.data(), _id: doc.id }));
+            if ((functionName.includes('appSettings:listConfigs') || functionName.includes('listConfigs')) && args && args.keys && args.keys.length > 0) {
+                docs = docs.filter(r => args.keys.includes(r.key));
+            }
             if (onData) onData(docs);
         }, (err) => {
+            rememberRemoteSyncError(err, 'Firebase Firestore realtime');
             console.error('Firestore Sub Error:', err);
             if (onError) onError(err);
         });
@@ -8656,8 +8894,7 @@ function applyRemoteAppConfigRows(rows) {
             window.dispatchEvent(new Event('rbv-features-config-change'));
         }
         if (row.key === APP_CONFIG_KEYS.schedule) {
-            const saved = saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
-            setScheduleConfig(saved);
+            saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
         }
     });
     return normalized;
@@ -8967,6 +9204,11 @@ function SecretPinModal({ open, onClose, onUnlock }) {
 }
 function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange, scheduleConfig, onScheduleConfigChange }) {
     const [features, setFeatures] = useState(() => readFeaturesConfig());
+    useEffect(() => {
+        const handler = () => setFeatures(readFeaturesConfig());
+        window.addEventListener('rbv-features-config-change', handler);
+        return () => window.removeEventListener('rbv-features-config-change', handler);
+    }, []);
     const [settingsTab, setSettingsTab] = useState('features');
     const isSuperUser = readBestieLogin()?.name === 'Aan Bagus Permana';
     const handleToggleFeature = async (key) => {
@@ -9205,6 +9447,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             const nextEmailTemplate = readEmailTemplateConfig();
             setEmailSubjectTemplate(nextEmailTemplate.subjectTemplate);
             setEmailBodyTemplate(nextEmailTemplate.bodyTemplate);
+            setFeatures(readFeaturesConfig());
+            setScheduleConfig(readScheduleConfig());
             setCloudflareDbStatus(`Tarik setting selesai. ${applied.length} item diterapkan dari Convex ke panel.`);
         }
         catch (error) {
@@ -9378,7 +9622,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
             const remotePresence = presenceRowsResult.status === 'fulfilled' ? presenceRowsResult.value : null;
             if (remoteRows !== null) {
-                applyRows(remoteRows, cloudflareEnabled() ? 'cloudflare' : (netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : (source === 'convex realtime' ? 'convex realtime' : 'convex'))));
+                applyRows(remoteRows, cloudflareEnabled() ? 'cloudflare' : (netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : ((source === 'firebase realtime' || source === 'convex realtime') ? 'firebase realtime' : 'firebase'))));
             }
             else {
                 applyRows(localRows(), 'local');
@@ -9517,6 +9761,22 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setMasterStoreStatus(`Data lokal direset. Fallback bawaan: ${fallbackRows.length} toko.`);
     }
     // ---- Schedule Excel Import ----
+    function normalizeScheduleDateStr(rawDate) {
+        if (!rawDate) return '';
+        if (typeof rawDate === 'number') {
+            const d = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+            return !isNaN(d.getTime()) ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+        }
+        const str = String(rawDate).trim();
+        if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}/.test(str)) return str.slice(0, 10).replace(/\//g, '-');
+        const m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+        return str;
+    }
     function parseExcelSchedule(file) {
         return new Promise((resolve, reject) => {
             if (typeof window.XLSX === 'undefined') { reject(new Error('Library SheetJS belum dimuat. Coba refresh halaman.')); return; }
@@ -9525,28 +9785,57 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 try {
                     const data = new Uint8Array(e.target.result);
                     const wb = window.XLSX.read(data, { type: 'array' });
-                    const ws = wb.Sheets[wb.SheetNames[0]];
-                    const rawRows = window.XLSX.utils.sheet_to_json(ws, { header: 1 });
-                    if (!rawRows.length) { resolve([]); return; }
-                    const header = rawRows[0].map(h => String(h || '').trim().toLowerCase());
-                    const namaIdx = header.findIndex(h => h.includes('nama'));
-                    const dateIdx = header.findIndex(h => h.includes('start date') || h.includes('tanggal'));
-                    const descIdx = header.findIndex(h => h.includes('description') || h.includes('deskripsi'));
-                    if (namaIdx < 0 || dateIdx < 0) { reject(new Error('Kolom Nama atau Start Date tidak ditemukan.')); return; }
                     const parsed = [];
-                    for (let i = 1; i < rawRows.length; i++) {
-                        const row = rawRows[i];
-                        const rawNama = String(row[namaIdx] || '').trim();
-                        if (!rawNama) continue;
-                        let rawDate = row[dateIdx];
-                        let dateStr = '';
-                        if (typeof rawDate === 'number') {
-                            const d = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
-                            dateStr = d.toISOString().slice(0, 10);
-                        } else if (rawDate) { dateStr = String(rawDate).slice(0, 10); }
-                        const desc = descIdx >= 0 ? String(row[descIdx] || '').trim() : '';
-                        parsed.push({ nama: rawNama, date: dateStr, description: desc });
-                    }
+                    (wb.SheetNames || []).forEach(sheetName => {
+                        const ws = wb.Sheets[sheetName];
+                        if (!ws) return;
+                        const rawRows = window.XLSX.utils.sheet_to_json(ws, { header: 1 });
+                        if (!rawRows || !rawRows.length) return;
+                        let headerIdx = -1;
+                        let namaIdx = -1, dateIdx = -1, descIdx = -1, locIdx = -1;
+                        for (let r = 0; r < Math.min(rawRows.length, 15); r++) {
+                            const rowHeader = (rawRows[r] || []).map(h => String(h || '').trim().toLowerCase());
+                            const nIdx = rowHeader.findIndex(h => h.includes('nama') || h.includes('bestie') || h.includes('auditor') || h.includes('name') || h.includes('user') || h.includes('pic') || h.includes('trainer'));
+                            const dIdx = rowHeader.findIndex(h => h.includes('date') || h.includes('tanggal') || h.includes('tgl') || h.includes('jadwal') || h.includes('start') || h.includes('hari') || h.includes('waktu'));
+                            const dsIdx = rowHeader.findIndex(h => h.includes('desc') || h.includes('deskripsi') || h.includes('keterangan') || h.includes('toko') || h.includes('store') || h.includes('aktivitas') || h.includes('activity') || h.includes('notes') || h.includes('kunjungan'));
+                            const lIdx = rowHeader.findIndex(h => h.includes('location') || h.includes('lokasi') || h.includes('tempat') || h.includes('room') || h.includes('ruang') || h.includes('cabang'));
+                            if (nIdx >= 0 && (dIdx >= 0 || dsIdx >= 0 || rowHeader.length > 1)) {
+                                headerIdx = r;
+                                namaIdx = nIdx;
+                                dateIdx = dIdx >= 0 ? dIdx : 1;
+                                descIdx = dsIdx;
+                                locIdx = lIdx;
+                                break;
+                            }
+                        }
+                        if (headerIdx < 0 || namaIdx < 0) {
+                            headerIdx = 0;
+                            namaIdx = 0;
+                            dateIdx = rawRows[0].length > 1 ? 1 : 0;
+                            descIdx = rawRows[0].length > 2 ? 2 : -1;
+                            locIdx = rawRows[0].length > 6 ? 6 : -1;
+                        }
+                        for (let i = headerIdx + 1; i < rawRows.length; i++) {
+                            const row = rawRows[i];
+                            if (!row || !row.length) continue;
+                            const rawNama = String(row[namaIdx] || '').trim();
+                            if (!rawNama || rawNama.toLowerCase() === 'nama') continue;
+                            let dateStr = normalizeScheduleDateStr(row[dateIdx]);
+                            if (!dateStr) {
+                                const todayD = new Date();
+                                dateStr = `${todayD.getFullYear()}-${String(todayD.getMonth() + 1).padStart(2, '0')}-${String(todayD.getDate()).padStart(2, '0')}`;
+                            }
+                            const desc = descIdx >= 0 ? String(row[descIdx] || '').trim() : 'Jadwal Aktif';
+                            const loc = locIdx >= 0 ? String(row[locIdx] || '').trim() : '';
+                            parsed.push({
+                                nama: rawNama,
+                                date: dateStr,
+                                description: desc || 'Jadwal Aktif',
+                                location: loc || '',
+                                sheetName: String(sheetName || '').trim()
+                            });
+                        }
+                    });
                     resolve(parsed);
                 } catch(err) { reject(err); }
             };
@@ -9581,8 +9870,12 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         setSchedStatus('Data jadwal dihapus.');
     }
     function renderSchedulePanel() {
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const todaySchedules = (scheduleConfig || []).filter(s => s.date === todayStr);
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const todaySchedules = (scheduleConfig || []).filter(s => String(s.date || '').slice(0, 10) === todayStr);
+        const displaySchedules = todaySchedules.length > 0 ? todaySchedules : (scheduleConfig || []).slice(0, 15);
+        const listLabel = todaySchedules.length > 0
+            ? `Jadwal hari ini (${todayStr}):`
+            : `Daftar jadwal aktif (${Math.min((scheduleConfig || []).length, 15)} dari ${(scheduleConfig || []).length}):`;
         return React.createElement('div', { className: 'rounded-3xl border border-violet-200 bg-violet-50 p-5 mb-5' },
             React.createElement('div', { className: 'flex items-center justify-between mb-3' },
                 React.createElement('div', null,
@@ -9602,11 +9895,12 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     : React.createElement('p', { className: 'text-xs text-slate-400' }, 'Belum ada data jadwal.')
             ),
             schedStatus ? React.createElement('p', { className: 'mt-3 text-xs font-semibold text-slate-700 bg-white rounded-xl px-4 py-3 border border-violet-100' }, schedStatus) : null,
-            todaySchedules.length > 0 ? React.createElement('div', { className: 'mt-4 space-y-2' },
-                React.createElement('p', { className: 'text-xs font-bold text-slate-600 mb-1' }, `Jadwal hari ini (${todayStr}):`),
-                todaySchedules.map((s, i) => React.createElement('div', { key: i, className: 'flex gap-3 bg-white rounded-xl p-3 border border-violet-100 text-xs' },
+            displaySchedules.length > 0 ? React.createElement('div', { className: 'mt-4 space-y-2' },
+                React.createElement('p', { className: 'text-xs font-bold text-slate-600 mb-1' }, listLabel),
+                displaySchedules.map((s, i) => React.createElement('div', { key: i, className: 'flex gap-3 bg-white rounded-xl p-3 border border-violet-100 text-xs' },
                     React.createElement('span', { className: 'font-bold text-violet-800 shrink-0 w-32 truncate' }, s.nama),
-                    React.createElement('span', { className: 'text-slate-600 truncate' }, s.description || '-')
+                    React.createElement('span', { className: 'text-slate-500 shrink-0' }, s.date ? `[${String(s.date).slice(0, 10)}]` : ''),
+                    React.createElement('span', { className: 'text-slate-700 truncate' }, s.description || s.toko || s.store || '-')
                 ))
             ) : null
         );
@@ -9700,7 +9994,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     unsubscribeRows = await subscribeConvexQuery(getConvexConfig().monitorQuery || 'monitor:listVisits', {}, (nextRows) => {
                         if (cancelled)
                             return;
-                        applyRows(nextRows, 'convex realtime');
+                        applyRows(nextRows, 'firebase realtime');
                         setConnectionState('online');
                         setLoading(false);
                     }, (error) => {
@@ -9793,8 +10087,8 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const uniqueBesties = new Set(rows.map((row) => normalize(row.bestie_name)).filter(Boolean)).size;
     const today = new Date().toISOString().slice(0, 10);
     const todayVisits = rows.filter((row) => String(row.visit_date || '').slice(0, 10) === today).length;
-    const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime';
-    const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : source === 'convex realtime' ? 'Live Convex' : 'Manual refresh';
+    const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime' || source === 'convex' || source === 'firebase' || source === 'firebase realtime';
+    const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : (source === 'convex realtime' || source === 'convex' || source === 'firebase' || source === 'firebase realtime') ? 'Live Firebase' : 'Lokal (Offline/Backup)';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
     return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm lg:p-6", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl lg:p-7" },
@@ -9807,7 +10101,10 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     React.createElement("h2", { className: "mt-2 text-2xl font-black text-slate-950" }, secretTab === 'monitoring' ? 'Monitoring Realtime' : 'Admin Control Center'),
                     secretTab === 'monitoring' && lastSync ? React.createElement("p", { className: "mt-1 text-xs font-semibold text-slate-500" },
                         "Update terakhir: ",
-                        formatDateTime(lastSync)) : null),
+                        formatDateTime(lastSync)) : null,
+                    (!isLive && LAST_REMOTE_SYNC_ERROR) ? React.createElement("div", { className: "mt-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-bold text-amber-800 break-all" },
+                        `⚠️ Info Koneksi Firebase Offline/Lokal: ${LAST_REMOTE_SYNC_ERROR}`
+                    ) : null),
                 React.createElement("div", { className: "flex flex-wrap gap-2" },
                     secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "excel", onClick: downloadMasterStoreTemplateExcel }, "Template Excel") : null,
                     secretTab === 'monitoring' ? React.createElement(Button, { variant: "secondary", icon: "download", onClick: () => exportJson(rows, 'regional-bestie-monitor.json') }, "Export JSON") : null,
@@ -10114,7 +10411,18 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
                 React.createElement("p", { className: "mt-1 text-[10px] font-extrabold text-slate-400" }, overallProgress, "% Complete")
             ),
             
-            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 flex-1 min-h-0 my-2 pt-1 pb-1" },
+            React.createElement("div", { className: "my-2 flex justify-center shrink-0" },
+                React.createElement("button", {
+                    type: "button",
+                    onClick: () => { goSection(0); setViewMode('section'); },
+                    className: "w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-xs sm:text-sm shadow-md hover:from-emerald-700 hover:to-teal-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+                },
+                    React.createElement("span", null, "🚀 Mulai Isi Laporan (Wizard Flow)"),
+                    React.createElement(Icon, { name: "right", className: "w-4 h-4" })
+                )
+            ),
+
+            React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 flex-1 min-h-0 my-1 pt-1 pb-1" },
                 SECTION_DEFS.map((section, idx) => {
                     const secProgress = visitProgress(visit, idx);
                     const isComplete = secProgress === 100;
@@ -10148,15 +10456,46 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
 
     return (React.createElement("main", { className: "workspace-page section-mode no-top-space mx-auto w-full max-w-4xl px-4 !pt-0 pb-0 sm:py-4 lg:px-8 lg:py-8 lg:pb-8", style: { paddingBottom: '220px' } },
         // Simplified Mobile Header (Only visible in section mode)
-        React.createElement("div", { className: "flex items-center justify-between mb-4 sm:mb-6 pt-2 pb-2 sm:pt-2 sticky top-0 z-40 bg-slate-50 -mx-4 px-4 sm:static sm:bg-transparent sm:mx-0 sm:px-0" },
+        React.createElement("div", { className: "flex items-center justify-between mb-2 sm:mb-6 pt-2 pb-2 sm:pt-2 sticky top-0 z-40 bg-slate-50 -mx-4 px-4 sm:static sm:bg-transparent sm:mx-0 sm:px-0" },
             React.createElement("button", { 
                 onClick: () => setViewMode('grid'),
-                className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600"
+                className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600",
+                title: "Kembali ke Menu Grid"
             },
                 React.createElement(Icon, { name: "left", className: "w-5 h-5" })
             ),
-            React.createElement("h2", { className: "text-lg font-black text-slate-800 text-center flex-1 mx-3 truncate" }, SECTION_DEFS[activeSection]?.title),
-            React.createElement("div", { className: "w-10 h-10 flex-shrink-0 sm:hidden" }) // Balance flex centering
+            React.createElement("h2", { className: "text-base sm:text-lg font-black text-slate-800 text-center flex-1 mx-3 truncate" }, SECTION_DEFS[activeSection]?.title),
+            React.createElement("button", {
+                type: "button",
+                onClick: () => setViewMode('grid'),
+                className: "px-2.5 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-extrabold text-[11px] sm:hidden"
+            }, "Grid")
+        ),
+
+        // Horizontal Step Chip Bar (Seamless Navigation Without Going Back to Grid)
+        React.createElement("div", { className: "flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0" },
+            SECTION_DEFS.map((sec, idx) => {
+                const isActive = idx === activeSection;
+                const secProgress = visitProgress(visit, idx);
+                const isComplete = secProgress === 100;
+                return React.createElement("button", {
+                    key: idx,
+                    type: "button",
+                    onClick: () => goSection(idx),
+                    className: cx(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all border shrink-0 cursor-pointer",
+                        isActive
+                            ? "bg-audit-primary text-white border-audit-primary shadow-sm scale-105"
+                            : isComplete
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                    )
+                },
+                    React.createElement("span", null, `${idx + 1}. `),
+                    React.createElement("span", null, sec.title),
+                    isComplete && !isActive && React.createElement("span", { className: "text-emerald-500 font-black" }, "✓")
+                );
+            })
         ),
         
         // Wizard Header Card (Hidden on mobile)
@@ -10175,7 +10514,47 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         
         // Wizard Content Card
         React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-6 md:p-8 sm:shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:border sm:border-slate-100 pt-2 sm:pt-0 pb-10 sm:pb-0" },
-            React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection]))
+            React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
+
+        // Sticky Mobile Bottom Wizard Navigation Bar (Eliminates "Keluar Masuk Grid")
+        React.createElement("div", {
+            className: "fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-[0_-4px_16px_rgb(0,0,0,0.06)] flex items-center justify-between gap-2 sm:hidden",
+            style: { paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))' }
+        },
+            React.createElement("button", {
+                type: "button",
+                onClick: () => {
+                    if (activeSection <= 0) setViewMode('grid');
+                    else goSection(activeSection - 1);
+                },
+                className: "flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-extrabold text-xs active:scale-95 transition-all"
+            },
+                React.createElement(Icon, { name: "left", className: "w-4 h-4" }),
+                React.createElement("span", null, activeSection <= 0 ? "Grid" : "Prev")
+            ),
+            React.createElement("div", { className: "flex flex-col items-center justify-center text-center min-w-0" },
+                React.createElement("span", { className: "text-[11px] font-black text-slate-800 truncate" },
+                    `Step ${activeSection + 1}/${SECTION_DEFS.length}`
+                ),
+                React.createElement("span", { className: "text-[9px] font-extrabold uppercase text-audit-primary" },
+                    `${progress}% Selesai`
+                )
+            ),
+            React.createElement("button", {
+                type: "button",
+                onClick: () => {
+                    if (activeSection >= SECTION_DEFS.length - 1) onPreview();
+                    else goSection(activeSection + 1);
+                },
+                className: cx(
+                    "flex items-center gap-1 px-3.5 py-2 rounded-xl font-extrabold text-xs text-white shadow-sm active:scale-95 transition-all",
+                    activeSection >= SECTION_DEFS.length - 1 ? "bg-emerald-600 hover:bg-emerald-700" : "bg-audit-primary hover:bg-audit-primary-hover"
+                )
+            },
+                React.createElement("span", null, activeSection >= SECTION_DEFS.length - 1 ? "Preview PDF" : "Next"),
+                React.createElement(Icon, { name: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right", className: "w-4 h-4" })
+            )
+        )
             
         ));
 }
@@ -10240,10 +10619,13 @@ function App() {
     }, []);
     useEffect(() => {
         const bump = () => setMasterStoreRevision((value) => value + 1);
+        const syncSched = () => setScheduleConfig(readScheduleConfig());
         window.addEventListener('rbv-master-store-change', bump);
+        window.addEventListener('rbv-schedule-config-change', syncSched);
         window.addEventListener('storage', bump);
         return () => {
             window.removeEventListener('rbv-master-store-change', bump);
+            window.removeEventListener('rbv-schedule-config-change', syncSched);
             window.removeEventListener('storage', bump);
         };
     }, []);
