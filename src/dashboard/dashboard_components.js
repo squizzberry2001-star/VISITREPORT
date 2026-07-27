@@ -1256,16 +1256,6 @@ function AnalyticsView({ analytics }) {
                     )
                 )
             )
-        ),
-        
-        // Leaderboard (selalu tampilkan peringkat & nama Bestie, toggle di Panel Rahasia hanya sembunyikan list toko)
-        React.createElement("div", { className: "bg-white p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm" },
-            React.createElement("h3", { className: "text-2xl font-black text-slate-800 mb-6" }, "Leaderboard Kinerja Bestie"),
-            React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
-                data?.leaderboard?.map((lb, idx) => 
-                    React.createElement(LeaderboardItem, { key: lb.name, lb: lb, idx: idx, showStores: features?.leaderboard !== false })
-                )
-            )
         )
     ));
 }
@@ -1800,8 +1790,12 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-full text-slate-600" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
             ),
             React.createElement("div", { className: "px-6 py-6" },
-                (analytics.leaderboard && analytics.leaderboard.length > 0) ? React.createElement("div", { className: "grid gap-4" },
-                    analytics.leaderboard.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.nik || idx, lb: lb, idx: idx }))
+                analytics.loading ? React.createElement("div", { className: "py-24 w-full flex flex-col items-center justify-center" },
+                    React.createElement("div", { className: "w-10 h-10 border-4 border-brand-teal border-t-transparent rounded-full animate-spin mb-4" }),
+                    React.createElement("p", { className: "font-bold text-slate-400 text-sm" }, "Memuat jadwal...")
+                ) :
+                (analytics.data?.leaderboard && analytics.data.leaderboard.length > 0) ? React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" },
+                    analytics.data.leaderboard.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.name || idx, lb: lb, idx: idx, showStores: features?.leaderboard !== false }))
                 ) : React.createElement("div", { className: "mt-8" }, React.createElement(EmptyState, { icon: "calendar", title: "Belum ada jadwal", description: "Jadwal kunjungan Anda akan muncul di sini." }))
             )
         ) : null,
