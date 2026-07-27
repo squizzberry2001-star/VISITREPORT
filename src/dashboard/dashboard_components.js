@@ -493,7 +493,8 @@ function formatScheduleBadgeText(sched) {
     return `${datePrefix}${mainText}`;
 }
 
-function LeaderboardItem({ lb, idx }) {
+function LeaderboardItem({ lb, idx, showStores = true }) {
+    const [scheduleExpanded, setScheduleExpanded] = useState(false);
     let narasi = "Belum Ada Kunjungan 🚀";
     if (lb.uniqueStoresMonthly > 0) {
         if (lb.uniqueStoresMonthly >= lb.totalAssigned && lb.totalAssigned > 0) narasi = "Target Achieved! 🎯";
@@ -503,40 +504,45 @@ function LeaderboardItem({ lb, idx }) {
     }
     const schedText = formatScheduleBadgeText(lb.todaySchedule);
 
-    return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-audit-primary hover:shadow-md transition-all" },
-        React.createElement("div", { className: "flex flex-col p-4 text-audit-ink select-none gap-3 sm:gap-4" },
+    return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-brand-teal/30 hover:shadow-md transition-all" },
+        React.createElement("div", { className: "flex flex-col p-4 text-slate-800 select-none gap-3 sm:gap-4" },
             // Top Row: Avatar + Name + MVP badge
             React.createElement("div", { className: "flex items-start justify-between w-full" },
                 React.createElement("div", { className: "flex items-center gap-3 min-w-0 pr-2" },
                     React.createElement("div", { className: "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-lg sm:text-xl " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
                     React.createElement("div", { className: "min-w-0 flex-1" },
                         React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
-                            React.createElement("h4", { className: "font-bold text-[13px] sm:text-[15px] text-audit-ink truncate" }, lb.name),
+                            React.createElement("h4", { className: "font-bold text-[13px] sm:text-[15px] text-slate-800 truncate" }, lb.name),
                             idx === 0 ? React.createElement("span", { className: "px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] sm:text-[9px] font-black text-white rounded-sm uppercase tracking-widest shadow-sm shrink-0" }, "MVP") : null
                         ),
-                        React.createElement("p", { className: "text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-audit-primary truncate mt-0.5" }, narasi)
+                        React.createElement("p", { className: "text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-brand-teal truncate mt-0.5" }, narasi)
                     )
                 )
             ),
             // Bottom Row: Schedule + Score
             React.createElement("div", { className: "w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100" },
-                // Schedule Badge — full width, text wraps on mobile
-                React.createElement("div", { 
-                    className: "bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm w-full mb-2.5", 
+                // Schedule Badge — full width, text wraps on mobile, collapsible
+                React.createElement("button", { 
+                    onClick: () => setScheduleExpanded(!scheduleExpanded),
+                    type: "button",
+                    className: "bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm w-full mb-2.5 text-left transition hover:bg-slate-50", 
                     title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Belum ada jadwal terdaftar untuk bestie ini' 
                 },
-                    React.createElement("div", { className: "flex items-start gap-2" },
-                        React.createElement("div", { className: "flex items-center gap-1.5 shrink-0 pt-0.5" },
-                            React.createElement("span", { className: "w-2 h-2 rounded-full inline-block shrink-0 " + ((lb.todaySchedule && schedText && schedText.trim()) ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
-                            React.createElement("span", { className: "text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0" }, "Jadwal:")
+                    React.createElement("div", { className: "flex items-start justify-between gap-2" },
+                        React.createElement("div", { className: "flex items-start gap-2" },
+                            React.createElement("div", { className: "flex items-center gap-1.5 shrink-0 pt-0.5" },
+                                React.createElement("span", { className: "w-2 h-2 rounded-full inline-block shrink-0 " + ((lb.todaySchedule && schedText && schedText.trim()) ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
+                                React.createElement("span", { className: "text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0" }, "Jadwal")
+                            ),
+                            scheduleExpanded && React.createElement("span", { className: "text-[11px] sm:text-xs font-bold text-slate-800 leading-snug break-words" }, 
+                                (lb.todaySchedule && schedText && schedText.trim()) ? schedText : "Belum ada jadwal terdaftar"
+                            )
                         ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-bold text-slate-800 leading-snug break-words" }, 
-                            (lb.todaySchedule && schedText && schedText.trim()) ? schedText : "Belum ada jadwal terdaftar"
-                        )
+                        React.createElement(Icon, { name: scheduleExpanded ? "chevron-up" : "chevron-down", className: "w-3 h-3 text-slate-400 shrink-0 mt-0.5" })
                     )
                 ),
                 // Score row
-                React.createElement("div", { className: "flex items-center justify-between w-full" },
+                showStores && React.createElement("div", { className: "flex items-center justify-between w-full" },
                     React.createElement("p", { className: "text-[9px] font-extrabold uppercase tracking-widest text-slate-400" }, "Toko/Bulan"),
                     React.createElement("div", { className: "flex items-baseline gap-1" },
                         React.createElement("span", { className: "text-lg sm:text-xl font-black leading-none text-slate-800" }, lb.uniqueStoresMonthly),
