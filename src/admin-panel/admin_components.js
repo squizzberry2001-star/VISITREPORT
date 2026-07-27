@@ -3332,19 +3332,26 @@ function SecretPinModal({ open, onClose, onUnlock }) {
     }, [pin]);
     if (!open)
         return null;
-    return (React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-sm", role: "dialog", "aria-modal": "true" },
-        React.createElement("div", { className: "secret-pin-card w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl" },
-            React.createElement("div", { className: "mb-5 flex items-center justify-between" },
-                React.createElement("div", { className: "flex items-center gap-3" },
-                    React.createElement("span", { className: "grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white" },
-                        React.createElement(Icon, { name: "shield" })),
-                    React.createElement("div", null,
-                        React.createElement("p", { className: "text-xs font-extrabold uppercase tracking-[0.22em] text-audit-primary" }, "Panel Rahasia"),
-                        React.createElement("h2", { className: "text-xl font-black text-slate-950" }, "Masukkan PIN"))),
-                React.createElement(Button, { variant: "icon", onClick: onClose, "aria-label": "Tutup" },
-                    React.createElement(Icon, { name: "close", className: "h-4 w-4" }))),
-            React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "form-control secret-pin-input text-center text-3xl font-black tracking-[0.5em]", placeholder: "------", "aria-label": "PIN panel rahasia" }),
-            error ? React.createElement("p", { className: "mt-3 text-center text-sm font-bold text-rose-600" }, error) : null)));
+    return (React.createElement("div", { className: "fixed inset-0 z-[120] grid place-items-center bg-brand-teal/80 p-5 backdrop-blur-xl fade-in", role: "dialog", "aria-modal": "true" },
+        React.createElement("div", { className: "secret-pin-card w-full max-w-sm rounded-[40px] bg-white p-8 shadow-2xl relative overflow-hidden" },
+            React.createElement("div", { className: "absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-teal to-brand-orange" }),
+            React.createElement("div", { className: "mb-8 flex flex-col items-center text-center" },
+                React.createElement("div", { className: "mb-4 grid h-16 w-16 place-items-center rounded-[24px] bg-brand-teal/10 text-brand-teal" },
+                    React.createElement(Icon, { name: "shield", className: "w-8 h-8" })
+                ),
+                React.createElement("h2", { className: "text-2xl font-black text-slate-900 tracking-tight" }, "Panel Rahasia"),
+                React.createElement("p", { className: "text-sm font-medium text-slate-500 mt-1" }, "Masukkan PIN untuk melanjutkan")
+            ),
+            React.createElement("div", { className: "relative mb-6" },
+                React.createElement("input", { ref: inputRef, value: pin, onChange: (event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6)), type: "password", inputMode: "numeric", maxLength: "6", className: "w-full bg-slate-50 border-2 border-slate-100 focus:border-brand-teal focus:bg-white text-center text-4xl font-black tracking-[0.5em] rounded-[24px] py-4 transition-all outline-none", placeholder: "------", "aria-label": "PIN panel rahasia" }),
+            ),
+            error ? React.createElement("div", { className: "mb-4 p-3 rounded-2xl bg-rose-50 text-rose-600 text-center text-sm font-bold flex items-center justify-center gap-2" },
+                React.createElement(Icon, { name: "info", className: "w-4 h-4" }),
+                error
+            ) : null,
+            React.createElement("button", { onClick: onClose, className: "w-full py-4 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors" }, "Batal")
+        )
+    ));
 }
 function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeConfigChange, scheduleConfig, onScheduleConfigChange }) {
     const [features, setFeatures] = useState(() => readFeaturesConfig());

@@ -1,36 +1,36 @@
 function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, onNewVisit, onClearData, onTitleTap }) {
-    return (React.createElement("aside", { className: "group relative hidden min-h-screen w-20 flex-col items-center border-r border-slate-200/60 bg-white py-6 transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] hover:w-72 lg:flex" },
+    return (React.createElement("aside", { className: "group relative hidden min-h-screen w-20 flex-col items-center border-r border-slate-100 bg-white py-6 transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] hover:w-72 lg:flex shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-40" },
         React.createElement("div", { className: "flex w-full flex-col items-center px-4" },
-            React.createElement("button", { type: "button", onClick: onTitleTap, className: "mb-8 flex w-full items-center justify-center rounded-2xl bg-slate-950 p-3 text-white transition-all hover:scale-105 group-hover:justify-start group-hover:px-4" },
-                React.createElement("div", { className: "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10" },
+            React.createElement("button", { type: "button", onClick: onTitleTap, className: "mb-8 flex w-full items-center justify-center rounded-2xl bg-brand-teal p-3 text-white transition-all hover:scale-105 hover:bg-[#153640] hover:shadow-lg hover:shadow-brand-teal/20 group-hover:justify-start group-hover:px-4" },
+                React.createElement("div", { className: "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20" },
                     React.createElement(Icon, { name: "spark", className: "h-5 w-5" })),
                 React.createElement("div", { className: "ml-3 overflow-hidden whitespace-nowrap opacity-0 transition-opacity duration-300 group-hover:opacity-100" },
-                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest text-emerald-200" }, "Bestie Audit"),
+                    React.createElement("p", { className: "text-[10px] font-extrabold uppercase tracking-widest text-brand-orange" }, "Bestie Audit"),
                     React.createElement("h2", { className: "text-sm font-black leading-tight" }, "Command Center"))),
             React.createElement("nav", { className: "w-full space-y-3", "aria-label": "System menu" },
-                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'dashboard' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'dashboard' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => { onTitleTap?.(); setScreen('dashboard'); } },
                     React.createElement(Icon, { name: "home", className: "h-5 w-5 shrink-0" }),
                     React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Dashboard")),
-                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'audit' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('audit') : onNewVisit() },
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'audit' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('audit') : onNewVisit() },
                     React.createElement(Icon, { name: "clipboard", className: "h-5 w-5 shrink-0" }),
                     React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Audit Flow")),
-                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'preview' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('preview') : onNewVisit() },
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'preview' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('preview') : onNewVisit() },
                     React.createElement(Icon, { name: "pdf", className: "h-5 w-5 shrink-0" }),
                     React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Preview PDF")),
-                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'analytics' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => setScreen('analytics') },
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'analytics' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => setScreen('analytics') },
                     React.createElement(Icon, { name: "chart", className: "h-5 w-5 shrink-0" }),
                     React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Analitik")),
-                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'utility' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => setScreen('utility') },
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'utility' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => setScreen('utility') },
                     React.createElement(Icon, { name: "user", className: "h-5 w-5 shrink-0" }),
                     React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Utiliti & Profil")))),
         visit ? (React.createElement("div", { className: "mt-8 flex w-full flex-col px-4" },
             React.createElement("div", { className: "mb-3 h-px w-full bg-slate-100" }),
-            React.createElement("p", { className: "mb-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-400 group-hover:text-left group-hover:px-2" }, "Flow Sections"),
-            React.createElement("div", { className: "w-full space-y-1" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('relative flex w-full items-center justify-center rounded-xl p-2.5 transition-colors group-hover:justify-start group-hover:px-3', screen === 'audit' && activeSection === index ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => { setScreen('audit'); goSection(index); }, title: section.title },
+            React.createElement("p", { className: "mb-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-brand-teal group-hover:text-left group-hover:px-2" }, "Flow Sections"),
+            React.createElement("div", { className: "w-full space-y-1" }, SECTION_DEFS.map((section, index) => (React.createElement("button", { key: section.id, type: "button", className: cx('relative flex w-full items-center justify-center rounded-xl p-2.5 transition-colors group-hover:justify-start group-hover:px-3', screen === 'audit' && activeSection === index ? 'bg-brand-orange/10 text-brand-orange' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => { setScreen('audit'); goSection(index); }, title: section.title },
                 React.createElement(Icon, { name: section.icon, className: "h-4 w-4 shrink-0" }),
                 React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap text-sm font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, section.title))))))) : null,
         React.createElement("div", { className: "mt-auto flex w-full flex-col items-center px-4 pt-6 space-y-3" },
-            React.createElement("button", { type: "button", onClick: onNewVisit, className: "flex w-full items-center justify-center rounded-xl bg-slate-900 p-3 text-white transition-colors hover:bg-slate-800 group-hover:justify-start group-hover:px-4", title: "New Visit" },
+            React.createElement("button", { type: "button", onClick: onNewVisit, className: "flex w-full items-center justify-center rounded-xl bg-brand-orange p-3 text-white transition-colors hover:bg-[#ff985c] group-hover:justify-start group-hover:px-4 shadow-md shadow-brand-orange/20", title: "New Visit" },
                 React.createElement(Icon, { name: "plus", className: "h-5 w-5 shrink-0" }),
                 React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "New Visit")),
             visit ? React.createElement("button", { type: "button", onClick: onClearData, className: "flex w-full items-center justify-center rounded-xl bg-rose-50 p-3 text-rose-600 transition-colors hover:bg-rose-100 group-hover:justify-start group-hover:px-4", title: "Clear Data" },
@@ -48,13 +48,13 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
     // Hide entirely when actively doing an audit to maximize screen space
     if (screen === 'audit') return null; 
 
-    return React.createElement("nav", { className: "fixed bottom-0 left-0 w-full z-50 bg-white border-t border-slate-100 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.04)] lg:hidden", "aria-label": "Mobile system navigation" },
-        React.createElement("div", { className: "flex justify-between items-center h-16 px-6 relative" },
+    return React.createElement("nav", { className: "fixed bottom-0 left-0 w-full z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100/50 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.06)] lg:hidden", "aria-label": "Mobile system navigation" },
+        React.createElement("div", { className: "flex justify-between items-center h-[72px] px-6 relative" },
             // Left side
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'dashboard' ? 'text-brand-teal' : 'text-slate-600'), onClick: () => setScreen('dashboard') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all', screen === 'dashboard' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:text-slate-800'), onClick: () => setScreen('dashboard') },
                 React.createElement(Icon, { name: "home", className: "h-6 w-6", strokeWidth: screen === 'dashboard' ? 2.5 : 2 })
             ),
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'preview' ? 'text-brand-teal' : 'text-slate-600'), onClick: goPreview },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all', screen === 'preview' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:text-slate-800'), onClick: goPreview },
                 React.createElement(Icon, { name: "pdf", className: "h-6 w-6", strokeWidth: screen === 'preview' ? 2.5 : 2 })
             ),
 
@@ -62,15 +62,15 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
             React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
 
             // Floating FAB
-            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-brand-orange rounded-full text-white shadow-lg shadow-orange-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all", onClick: onNewVisit },
+            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-gradient-to-br from-brand-orange to-[#ff985c] rounded-[20px] text-white shadow-xl shadow-orange-500/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-2 border-white", onClick: onNewVisit },
                 React.createElement(Icon, { name: "plus", className: "h-7 w-7", strokeWidth: 3 })
             ),
 
             // Right side
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'analytics' ? 'text-brand-teal' : 'text-slate-600'), onClick: () => setScreen('analytics') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all', screen === 'analytics' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:text-slate-800'), onClick: () => setScreen('analytics') },
                 React.createElement(Icon, { name: "chart", className: "h-6 w-6", strokeWidth: screen === 'analytics' ? 2.5 : 2 })
             ),
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'utility' ? 'text-brand-teal' : 'text-slate-600'), onClick: () => setScreen('utility') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all', screen === 'utility' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:text-slate-800'), onClick: () => setScreen('utility') },
                 React.createElement(Icon, { name: "user", className: "h-6 w-6", strokeWidth: screen === 'utility' ? 2.5 : 2 })
             )
         )

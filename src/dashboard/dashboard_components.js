@@ -1725,24 +1725,24 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             React.createElement("div", { className: "mb-8" },
                 React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight mb-4" }, "Histori Aktivitas"),
                 history.length ? React.createElement("div", { className: "space-y-4" },
-                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm flex items-center justify-between" },
+                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex items-center justify-between cursor-pointer", onClick: () => onOpenVisit(item.id) },
                         React.createElement("div", { className: "flex items-center gap-3" },
-                            React.createElement("div", { className: "w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400" },
+                            React.createElement("div", { className: cx("w-12 h-12 rounded-[16px] flex items-center justify-center transition-colors", item.progress >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-brand-teal/5 text-brand-teal group-hover:bg-brand-teal/10") },
                                 React.createElement(Icon, { name: item.progress >= 100 ? "check" : "clipboard", className: "w-6 h-6" })
                             ),
                             React.createElement("div", null,
-                                React.createElement("h4", { className: "font-bold text-slate-900 text-sm max-w-[160px] truncate" }, item.storeName),
-                                React.createElement("p", { className: "text-xs text-slate-500" }, formatDate(item.visitDate))
+                                React.createElement("h4", { className: "font-black text-slate-900 text-sm max-w-[160px] truncate group-hover:text-brand-teal transition-colors" }, item.storeName),
+                                React.createElement("p", { className: "text-[11px] font-medium text-slate-400 mt-0.5" }, formatDate(item.visitDate))
                             )
                         ),
                         React.createElement("div", { className: "flex items-center gap-3" },
-                            React.createElement("span", { className: cx("text-xs font-bold px-2.5 py-1 rounded-full", item.progress >= 80 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700") }, item.progress || 0, "%"),
-                            React.createElement("button", { onClick: () => onOpenVisit(item.id), className: "w-8 h-8 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100 transition-colors" },
+                            React.createElement("span", { className: cx("text-xs font-black px-2.5 py-1 rounded-full", item.progress >= 100 ? "bg-emerald-100 text-emerald-700" : item.progress >= 50 ? "bg-brand-teal/10 text-brand-teal" : "bg-brand-orange/10 text-brand-orange") }, item.progress || 0, "%"),
+                            React.createElement("div", { className: "w-8 h-8 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all" },
                                 React.createElement(Icon, { name: "arrow-right", className: "w-4 h-4" })
                             )
                         )
                     )),
-                    hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "w-full py-3 text-sm font-bold text-brand-teal text-center", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan Lebih Banyak") : null
+                    hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "w-full py-4 rounded-[20px] bg-slate-50 text-sm font-bold text-brand-teal text-center hover:bg-slate-100 transition-colors", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan Lebih Banyak") : null
                 ) : React.createElement("div", { className: "py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))
             )
         ),
