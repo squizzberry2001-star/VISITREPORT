@@ -5,6 +5,7 @@
   "dependencies": {
     "@netlify/blobs": "^10.7.4",
     "convex": "^1.37.0",
+    "jsdom": "^30.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

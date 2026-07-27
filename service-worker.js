@@ -1,8 +1,13 @@
-const APP_VERSION = 'revamp326-watermark-offline-v60';
-const CACHE_NAME = `bestie-visit-revamp326-watermark-offline-v60`;
+const APP_VERSION = 'revamp327-modular-v61';
+const CACHE_NAME = `bestie-visit-revamp327-modular-v61`;
 const LOCAL_ASSETS = [
   './src/theme.css',
   './src/tailwind.generated.css',
+  './src/core/constants_and_helpers.js',
+  './src/components/ui_components.js',
+  './src/form-visit/form_components.js',
+  './src/dashboard/dashboard_components.js',
+  './src/admin-panel/admin_components.js',
   './src/app.js',
   './data.js',
   './store-master-data.js',
