@@ -1,3 +1,9 @@
+.bg-brand-teal { background-color: var(--brand-teal); }
+.text-brand-teal { color: var(--brand-teal) !important; }
+.bg-brand-orange { background-color: var(--brand-orange); }
+.text-brand-orange { color: var(--brand-orange) !important; }
+.bg-brand-bg { background-color: var(--brand-bg); }
+
 :root {
   --brand-teal: #1a434e;
   --brand-orange: #ffb067;

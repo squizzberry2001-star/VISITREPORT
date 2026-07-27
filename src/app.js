@@ -51,10 +51,10 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
     return React.createElement("nav", { className: "fixed bottom-0 left-0 w-full z-50 bg-white border-t border-slate-100 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.04)] lg:hidden", "aria-label": "Mobile system navigation" },
         React.createElement("div", { className: "flex justify-between items-center h-16 px-6 relative" },
             // Left side
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'dashboard' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: () => setScreen('dashboard') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'dashboard' ? 'text-brand-teal' : 'text-slate-600'), onClick: () => setScreen('dashboard') },
                 React.createElement(Icon, { name: "home", className: "h-6 w-6", strokeWidth: screen === 'dashboard' ? 2.5 : 2 })
             ),
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'preview' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: goPreview },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'preview' ? 'text-brand-teal' : 'text-slate-600'), onClick: goPreview },
                 React.createElement(Icon, { name: "pdf", className: "h-6 w-6", strokeWidth: screen === 'preview' ? 2.5 : 2 })
             ),
 
@@ -62,15 +62,15 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
             React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
 
             // Floating FAB
-            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-[var(--brand-orange)] rounded-full text-white shadow-lg shadow-orange-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all", onClick: onNewVisit },
+            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-brand-orange rounded-full text-white shadow-lg shadow-orange-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all", onClick: onNewVisit },
                 React.createElement(Icon, { name: "plus", className: "h-7 w-7", strokeWidth: 3 })
             ),
 
             // Right side
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'analytics' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: () => setScreen('analytics') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'analytics' ? 'text-brand-teal' : 'text-slate-600'), onClick: () => setScreen('analytics') },
                 React.createElement(Icon, { name: "chart", className: "h-6 w-6", strokeWidth: screen === 'analytics' ? 2.5 : 2 })
             ),
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'utility' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: () => setScreen('utility') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'utility' ? 'text-brand-teal' : 'text-slate-600'), onClick: () => setScreen('utility') },
                 React.createElement(Icon, { name: "user", className: "h-6 w-6", strokeWidth: screen === 'utility' ? 2.5 : 2 })
             )
         )
