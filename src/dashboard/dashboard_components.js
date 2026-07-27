@@ -1650,6 +1650,8 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
     return (React.createElement("main", { className: "dashboard-page w-full min-h-screen flex flex-col bg-brand-bg relative pb-20" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.2);transform:translateY(0)}50%{box-shadow:0 0 0 10px rgba(37,99,235,0);transform:translateY(-2px)}}`),
         
+        // Home View
+        activeTab === 'home' ? React.createElement(React.Fragment, null,
         // Brand New Header & Hero (Dark Teal)
         React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-10 pb-8 relative overflow-hidden shadow-xl" },
             // Decoration circles
@@ -1745,8 +1747,10 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             )
         ),
         
+        ) : null,
+        
         // Settings/Utility view if tab is active
-        activeTab === 'utility' ? React.createElement("div", { className: "fixed inset-0 z-[60] bg-white overflow-y-auto pb-24 fade-in" },
+        activeTab === 'utility' ? React.createElement("div", { className: "w-full bg-white pb-24 fade-in min-h-screen" },
             React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti"),
                 React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
@@ -1781,7 +1785,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         ) : null,
         
         // Analytics view if tab is active
-        activeTab === 'analytics' ? React.createElement("div", { className: "fixed inset-0 z-[60] bg-white overflow-y-auto fade-in" },
+        activeTab === 'analytics' ? React.createElement("div", { className: "w-full bg-white pb-24 fade-in min-h-screen" },
             React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Analitik"),
                 React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
