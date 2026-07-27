@@ -16,7 +16,13 @@ function DesktopSidebar({ screen, setScreen, visit, activeSection, goSection, on
                     React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Audit Flow")),
                 React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'preview' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => visit ? setScreen('preview') : onNewVisit() },
                     React.createElement(Icon, { name: "pdf", className: "h-5 w-5 shrink-0" }),
-                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Preview PDF")))),
+                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Preview PDF")),
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'analytics' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => setScreen('analytics') },
+                    React.createElement(Icon, { name: "chart", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Analitik")),
+                React.createElement("button", { type: "button", className: cx('nav-item relative flex w-full items-center justify-center rounded-xl p-3 transition-colors group-hover:justify-start group-hover:px-4', screen === 'utility' ? 'bg-slate-100 text-slate-950' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'), onClick: () => setScreen('utility') },
+                    React.createElement(Icon, { name: "user", className: "h-5 w-5 shrink-0" }),
+                    React.createElement("span", { className: "ml-3 overflow-hidden whitespace-nowrap font-bold opacity-0 transition-opacity duration-300 group-hover:opacity-100" }, "Utiliti & Profil")))),
         visit ? (React.createElement("div", { className: "mt-8 flex w-full flex-col px-4" },
             React.createElement("div", { className: "mb-3 h-px w-full bg-slate-100" }),
             React.createElement("p", { className: "mb-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-400 group-hover:text-left group-hover:px-2" }, "Flow Sections"),
@@ -45,10 +51,10 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
     return React.createElement("nav", { className: "fixed bottom-0 left-0 w-full z-50 bg-white border-t border-slate-100 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.04)] lg:hidden", "aria-label": "Mobile system navigation" },
         React.createElement("div", { className: "flex justify-between items-center h-16 px-6 relative" },
             // Left side
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'dashboard' ? 'text-[var(--brand-teal)]' : 'text-slate-400'), onClick: () => setScreen('dashboard') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'dashboard' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: () => setScreen('dashboard') },
                 React.createElement(Icon, { name: "home", className: "h-6 w-6", strokeWidth: screen === 'dashboard' ? 2.5 : 2 })
             ),
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'preview' ? 'text-[var(--brand-teal)]' : 'text-slate-400'), onClick: goPreview },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'preview' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: goPreview },
                 React.createElement(Icon, { name: "pdf", className: "h-6 w-6", strokeWidth: screen === 'preview' ? 2.5 : 2 })
             ),
 
@@ -61,11 +67,11 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
             ),
 
             // Right side
-            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'analytics' ? 'text-[var(--brand-teal)]' : 'text-slate-400'), onClick: () => setScreen('analytics') },
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'analytics' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: () => setScreen('analytics') },
                 React.createElement(Icon, { name: "chart", className: "h-6 w-6", strokeWidth: screen === 'analytics' ? 2.5 : 2 })
             ),
-            React.createElement("button", { type: "button", className: "flex flex-col items-center justify-center w-12 text-slate-400", onClick: () => onTitleTap && onTitleTap() },
-                React.createElement(Icon, { name: "user", className: "h-6 w-6", strokeWidth: 2 })
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'utility' ? 'text-[var(--brand-teal)]' : 'text-slate-600'), onClick: () => setScreen('utility') },
+                React.createElement(Icon, { name: "user", className: "h-6 w-6", strokeWidth: screen === 'utility' ? 2.5 : 2 })
             )
         )
     );
@@ -889,8 +895,8 @@ function App() {
         setScreen('audit');
     }
     let content;
-    if (screen === 'dashboard') {
-        content = React.createElement(DashboardPage, { history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onQuickVisit: (storeName) => createNewVisit(readBestieLogin()?.name || '', storeName), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
+    if (['dashboard', 'analytics', 'utility'].includes(screen)) {
+        content = React.createElement(DashboardPage, { activeTab: screen === "dashboard" ? "home" : screen, onTabChange: navigateScreen, history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onQuickVisit: (storeName) => createNewVisit(readBestieLogin()?.name || '', storeName), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
     }
     else if (screen === 'preview') {
         content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });
@@ -899,11 +905,11 @@ function App() {
         content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, onDashboard: () => setScreen('dashboard'), masterStoreRevision: masterStoreRevision });
     }
     return (React.createElement("div", { className: "audit-shell min-h-screen lg:flex lg:flex-row bg-slate-50" },
-        screen !== 'dashboard' ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
+        !['audit', 'preview'].includes(screen) ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-1 flex-col" },
-            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
+            !['audit', 'preview'].includes(screen) && !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
-            screen !== 'dashboard' && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
+            !['audit', 'preview'].includes(screen) && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
         React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),

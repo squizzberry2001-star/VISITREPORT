@@ -1327,7 +1327,7 @@ function SyncStatusBadge() {
     );
 }
 
-function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
+function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
 
     const [features, setFeatures] = useState(() => readFeaturesConfig());
     useEffect(() => {
@@ -1406,7 +1406,6 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         };
     }, [features.ai, analytics.data]);
     
-    const [activeTab, setActiveTab] = useState('home');
     const [installOpen, setInstallOpen] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
@@ -1750,7 +1749,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         activeTab === 'utility' ? React.createElement("div", { className: "fixed inset-0 z-[60] bg-white overflow-y-auto pb-24 fade-in" },
             React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti"),
-                React.createElement("button", { onClick: () => setActiveTab('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
+                React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
             ),
             React.createElement("div", { className: "px-6 py-6 grid grid-cols-2 gap-4" },
                 React.createElement("button", { type: "button", className: cx('bg-slate-50 border border-slate-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3', syncBusy && 'pointer-events-none opacity-60'), onClick: handleManualWebsiteSync },
@@ -1785,7 +1784,7 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
         activeTab === 'analytics' ? React.createElement("div", { className: "fixed inset-0 z-[60] bg-white overflow-y-auto fade-in" },
             React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
                 React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Analitik"),
-                React.createElement("button", { onClick: () => setActiveTab('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
+                React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
             ),
             React.createElement(AnalyticsView, { analytics: analytics })
         ) : null,
