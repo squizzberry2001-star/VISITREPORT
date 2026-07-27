@@ -81,17 +81,9 @@ function findBestieByNik(value) {
 }
 function matchBestieScheduleName(schedName, bestieName) {
     if (!schedName || !bestieName) return false;
-    const sn = String(schedName).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-    const bn = String(bestieName).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-    if (!sn || !bn) return false;
-    if (sn === bn) return true;
-    const sWords = sn.split(/\s+/).filter(w => w.length >= 2);
-    const bWords = bn.split(/\s+/).filter(w => w.length >= 2);
-    if (!sWords.length || !bWords.length) return false;
-    if (sWords[0] === bWords[0] && sWords[0].length >= 3) return true;
-    if (sWords.length >= 2 && sWords.every(sw => bWords.includes(sw))) return true;
-    if (bWords.length >= 2 && bWords.every(bw => sWords.includes(bw))) return true;
-    return false;
+    const sn = String(schedName).toLowerCase().trim();
+    const bn = String(bestieName).toLowerCase().trim();
+    return sn === bn;
 }
 function findRegisteredLeaderboardBestie(schedName) {
     if (!schedName) return null;
@@ -194,7 +186,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v71';
+const APP_BUILD_VERSION = 'revamp327-modular-v72';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';

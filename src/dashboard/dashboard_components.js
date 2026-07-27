@@ -1800,23 +1800,8 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-full text-slate-600" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
             ),
             React.createElement("div", { className: "px-6 py-6" },
-                (Array.isArray(scheduleConfig) && scheduleConfig.length > 0) ? React.createElement("div", { className: "grid gap-4" },
-                    scheduleConfig.map((s, i) => React.createElement("div", { key: i, className: "bg-white border border-slate-100 hover:border-brand-teal/30 hover:shadow-md transition-all rounded-[24px] p-5 shadow-sm" },
-                        React.createElement("div", { className: "flex items-start justify-between mb-3 gap-2" },
-                            React.createElement("div", { className: "flex items-center gap-4" },
-                                React.createElement("div", { className: "w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-brand-teal to-[#116278] text-white flex items-center justify-center shadow-lg shadow-brand-teal/20" }, React.createElement(Icon, { name: "calendar", className: "w-6 h-6" })),
-                                React.createElement("div", null,
-                                    React.createElement("h4", { className: "font-black text-slate-900 text-base leading-tight mb-1" }, s.toko || s.store || s.description || 'Jadwal ' + (i+1)),
-                                    React.createElement("p", { className: "text-xs font-bold text-slate-500" }, s.date || 'Tanpa Tanggal')
-                                )
-                            ),
-                            s.location && React.createElement("span", { className: "text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-xl whitespace-nowrap" }, s.location)
-                        ),
-                        React.createElement("div", { className: "flex items-center gap-2 mt-4 pt-4 border-t border-slate-50" },
-                            React.createElement("div", { className: "w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400" }, React.createElement(Icon, { name: "user", className: "w-3 h-3" })),
-                            React.createElement("span", { className: "text-xs font-bold text-slate-600" }, s.nama || s.bestie || s.auditor || 'Semua Bestie')
-                        )
-                    ))
+                (analytics.leaderboard && analytics.leaderboard.length > 0) ? React.createElement("div", { className: "grid gap-4" },
+                    analytics.leaderboard.map((lb, idx) => React.createElement(LeaderboardItem, { key: lb.nik || idx, lb: lb, idx: idx }))
                 ) : React.createElement("div", { className: "mt-8" }, React.createElement(EmptyState, { icon: "calendar", title: "Belum ada jadwal", description: "Jadwal kunjungan Anda akan muncul di sini." }))
             )
         ) : null,
