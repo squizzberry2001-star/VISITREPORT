@@ -35,21 +35,40 @@ function MobileTopBar({ screen, visit, activeSection, goSection }) {
     // Top bar is now replaced by the inline Wizard Header in VisitWorkspace
     return null;
 }
-function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData }) {
+function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, onTitleTap }) {
     const goAudit = () => visit ? setScreen('audit') : onNewVisit();
     const goPreview = () => visit ? setScreen('preview') : onNewVisit();
-    const items = [
-        { key: 'dashboard', label: 'Home', icon: 'home', action: () => setScreen('dashboard'), active: screen === 'dashboard' },
-        { key: 'audit', label: 'Flow', icon: 'clipboard', action: goAudit, active: screen === 'audit' },
-        { key: 'preview', label: 'PDF', icon: 'pdf', action: goPreview, active: screen === 'preview' }
-    ];
-    if (screen === 'audit' || screen === 'preview') return null; // Hide on form visit and preview as requested
+    
+    // Hide entirely when actively doing an audit to maximize screen space
+    if (screen === 'audit') return null; 
 
-    return (React.createElement("nav", { className: "mobile-floating-nav fixed bottom-4 left-1/2 z-50 flex w-[90%] max-w-sm -translate-x-1/2 items-center justify-around rounded-full bg-slate-900/90 p-2 shadow-2xl backdrop-blur-xl transition-all duration-300 lg:hidden", "aria-label": "Mobile system navigation" },
-        items.map((item) => React.createElement("button", { key: item.key, type: "button", className: cx('relative flex flex-1 flex-col items-center justify-center rounded-full py-2.5 transition-all active:scale-95', item.active ? 'text-white' : 'text-slate-400 hover:text-slate-200'), onClick: item.action },
-            item.active && React.createElement("div", { className: "absolute inset-0 rounded-full bg-white/10" }),
-            React.createElement(Icon, { name: item.icon, className: cx("h-6 w-6 transition-transform duration-300", item.active && "-translate-y-0.5") }),
-            React.createElement("span", { className: cx("mt-1 text-[10px] font-bold tracking-wide transition-all duration-300", item.active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 absolute bottom-0") }, item.label)))));
+    return React.createElement("nav", { className: "fixed bottom-0 left-0 w-full z-50 bg-white border-t border-slate-100 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.04)] lg:hidden", "aria-label": "Mobile system navigation" },
+        React.createElement("div", { className: "flex justify-between items-center h-16 px-6 relative" },
+            // Left side
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'dashboard' ? 'text-[var(--brand-teal)]' : 'text-slate-400'), onClick: () => setScreen('dashboard') },
+                React.createElement(Icon, { name: "home", className: "h-6 w-6", strokeWidth: screen === 'dashboard' ? 2.5 : 2 })
+            ),
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'preview' ? 'text-[var(--brand-teal)]' : 'text-slate-400'), onClick: goPreview },
+                React.createElement(Icon, { name: "pdf", className: "h-6 w-6", strokeWidth: screen === 'preview' ? 2.5 : 2 })
+            ),
+
+            // Center FAB space
+            React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
+
+            // Floating FAB
+            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-[var(--brand-orange)] rounded-full text-white shadow-lg shadow-orange-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all", onClick: onNewVisit },
+                React.createElement(Icon, { name: "plus", className: "h-7 w-7", strokeWidth: 3 })
+            ),
+
+            // Right side
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-12', screen === 'analytics' ? 'text-[var(--brand-teal)]' : 'text-slate-400'), onClick: () => setScreen('analytics') },
+                React.createElement(Icon, { name: "chart", className: "h-6 w-6", strokeWidth: screen === 'analytics' ? 2.5 : 2 })
+            ),
+            React.createElement("button", { type: "button", className: "flex flex-col items-center justify-center w-12 text-slate-400", onClick: () => onTitleTap && onTitleTap() },
+                React.createElement(Icon, { name: "user", className: "h-6 w-6", strokeWidth: 2 })
+            )
+        )
+    );
 }
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, onDashboard }) {
     const [viewMode, setViewMode] = useState('grid');

@@ -1,5 +1,11 @@
 function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
     const paths = {
+        user: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+            React.createElement("circle", { cx: "12", cy: "7", r: "4" })),
+        chart: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M3 3v18h18" }),
+            React.createElement("path", { d: "m19 9-5 5-4-4-3 3" })),
         home: React.createElement(React.Fragment, null,
             React.createElement("path", { d: "M3 10.5 12 3l9 7.5" }),
             React.createElement("path", { d: "M5 9.5V21h14V9.5" }),

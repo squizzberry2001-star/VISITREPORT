@@ -1,4 +1,9 @@
 :root {
+  --brand-teal: #1a434e;
+  --brand-orange: #ffb067;
+  --brand-orange-light: #ffe8d3;
+  --brand-bg: #f4f6f8;
+
   color-scheme: light;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --ease: cubic-bezier(.2,.8,.2,1);

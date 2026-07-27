@@ -1643,143 +1643,164 @@ function DashboardPage({ history, storageLabel, onNewVisit, onQuickVisit, onOpen
             setNotificationBusy(false);
         }
     }
-    return (React.createElement("main", { className: "dashboard-page w-full min-h-screen flex flex-col bg-slate-50 relative" },
+
+    const bestieName = readBestieLogin()?.name || 'Bestie';
+    const scheduleCount = 5; // Default target
+    const progressPercent = Math.min(100, Math.round((todayVisits / scheduleCount) * 100));
+
+    return (React.createElement("main", { className: "dashboard-page w-full min-h-screen flex flex-col bg-[var(--brand-bg)] relative pb-20" },
         React.createElement("style", null, `@keyframes rbvInstallPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.2);transform:translateY(0)}50%{box-shadow:0 0 0 10px rgba(37,99,235,0);transform:translateY(-2px)}}`),
-        React.createElement("section", { className: "dashboard-compact sticky top-0 z-40 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-200/50" },
-            React.createElement("div", { className: "flex items-center justify-between gap-4 w-full px-3 py-2 md:px-8 md:py-3" },
-                React.createElement("button", { type: "button", onClick: onTitleTap, className: "min-w-0 text-left", title: "Refresh Dashboard" },
-                    React.createElement("h1", { className: "text-lg font-black tracking-tight text-slate-900 md:text-xl" }, "Regional Bestie Visit"),
-                    React.createElement("p", { className: "text-[9px] font-bold uppercase tracking-widest text-slate-400 hidden md:block" }, "Dashboard")),
-                React.createElement("div", { className: "home-header-actions history-sync-wrap flex shrink-0 items-center gap-2" },
-                    React.createElement(SyncStatusBadge, null),
-                    React.createElement("button", { type: "button", className: cx("home-notification-top-button", rbvProgressNotificationEnabled() && "is-active", notificationBusy && "is-busy"), onClick: handleEnableProgressNotification, disabled: notificationBusy, title: "Aktifkan Pengingat Otomatis 4 Jam", "aria-label": "Aktifkan pengingat otomatis progress" },
-                        notificationBusy ? React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }) : React.createElement(Icon, { name: "bell", className: "h-4 w-4" }),
-                        React.createElement("span", { className: "home-notification-dot", "aria-hidden": "true" }),
-                        React.createElement("small", { className: "home-notification-status hidden sm:block" }, notificationMessage)))),
-            React.createElement("div", { className: "mt-3", "data-build": "revamp237-redmi-restore-native-picker" },
-                React.createElement("input", { ref: restoreInputRef, type: "file", accept: "application/json,.json", className: "restore-file-input-fallback", onChange: handleRestoreFile, tabIndex: -1, "aria-hidden": "true" }),
-                syncBusy ? React.createElement("div", { className: "sync-loading-bar mt-3" },
-                    React.createElement("span", { className: "loading-spinner mini", "aria-hidden": "true" }),
-                    React.createElement("strong", null, syncMessage || 'Sync update...')) : null)),
-        React.createElement("div", { className: "dashboard-tab-bar w-full" },
-            React.createElement("div", { className: "dashboard-tab-bar-inner w-full px-0" },
-                React.createElement("div", { className: "flex items-center justify-around h-[56px]" },
-                React.createElement("button", { 
-                    type: "button", 
-                    onClick: () => setActiveTab('home'), 
-                    className: cx("dashboard-tab-btn", activeTab === 'home' && "active") 
-                }, React.createElement(Icon, { name: "home", className: "w-5 h-5" }), React.createElement("span", null, "Beranda")),
-                React.createElement("button", { 
-                    type: "button", 
-                    onClick: () => setActiveTab('analytics'), 
-                    className: cx("dashboard-tab-btn", activeTab === 'analytics' && "active") 
-                }, React.createElement(Icon, { name: "spark", className: "w-5 h-5" }), React.createElement("span", null, "Analitik")),
-                React.createElement("button", { 
-                    type: "button", 
-                    onClick: () => setActiveTab('utility'), 
-                    className: cx("dashboard-tab-btn", activeTab === 'utility' && "active") 
-                }, React.createElement(Icon, { name: "settings", className: "w-5 h-5" }), React.createElement("span", null, "Utiliti"))
+        
+        // Brand New Header & Hero (Dark Teal)
+        React.createElement("div", { className: "bg-[var(--brand-teal)] text-white rounded-b-[40px] px-6 pt-10 pb-8 relative overflow-hidden shadow-xl" },
+            // Decoration circles
+            React.createElement("div", { className: "absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" }),
+            React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-[var(--brand-orange)]/20 rounded-full blur-xl" }),
+            
+            // Header Top
+            React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-8" },
+                React.createElement("div", null,
+                    React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1" }, "Selamat Pagi,"),
+                    React.createElement("h1", { className: "text-2xl font-black tracking-tight" }, bestieName)
+                ),
+                React.createElement("button", { onClick: onTitleTap, className: "w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20" },
+                    React.createElement(Icon, { name: "user", className: "w-6 h-6 text-white" })
                 )
+            ),
+            
+            // Progress Hero Card
+            React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-[28px] p-6 relative z-10" },
+                React.createElement("div", { className: "flex justify-between items-center mb-6" },
+                    React.createElement("div", null,
+                        React.createElement("h2", { className: "text-lg font-bold mb-1" }, "Target Hari Ini"),
+                        React.createElement("p", { className: "text-white/70 text-sm" }, todayVisits, " dari ", scheduleCount, " Kunjungan")
+                    ),
+                    // Progress Ring
+                    React.createElement("div", { className: "relative w-16 h-16 flex items-center justify-center" },
+                        React.createElement("svg", { className: "w-full h-full -rotate-90", viewBox: "0 0 36 36" },
+                            React.createElement("path", { className: "text-white/20", d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "3" }),
+                            React.createElement("path", { className: "text-[var(--brand-orange)]", strokeDasharray: `${progressPercent}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "3", strokeLinecap: "round" })
+                        ),
+                        React.createElement("span", { className: "absolute text-sm font-bold" }, progressPercent, "%")
+                    )
+                ),
+                React.createElement("button", { onClick: onNewVisit, className: "w-full bg-[var(--brand-orange)] text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform" }, "Mulai Kunjungan")
             )
         ),
-        activeTab === 'utility' ? React.createElement("div", { className: "utility-tab-view fade-in w-full" },
-            React.createElement("div", { className: "w-full px-0 py-6 pb-32 space-y-6" },
-                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight px-4 md:px-8" }, "Utiliti & Pengaturan"),
-                React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-8" },
-                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral p-4', syncBusy && 'pointer-events-none opacity-60'), style: { minHeight: '150px' }, onClick: handleManualWebsiteSync, disabled: syncBusy },
-                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-10 w-10 text-audit-primary mb-3" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, syncBusy ? 'Sync...' : 'Update App')
+        
+        // Content Area
+        React.createElement("div", { className: "px-6 py-6" },
+            React.createElement(HomeUpdateNotice, { config: noticeConfig }),
+            (features.ai && analytics.data) ? React.createElement(AiInsightsPanel, { data: analytics.data }) : null,
+            
+            // Jadwal Hari Ini
+            React.createElement("div", { className: "mb-8" },
+                React.createElement("div", { className: "flex justify-between items-center mb-4" },
+                    React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight" }, "Jadwal Hari Ini"),
+                    React.createElement("button", { className: "text-sm text-[var(--brand-teal)] font-bold", onClick: () => setMasterStoreModalOpen(true) }, "Lihat Semua")
                 ),
-                React.createElement("button", { type: "button", className: cx('home-quick-action-button home-quick-action-button--neutral p-4', backupBusy && 'pointer-events-none opacity-60'), style: { minHeight: '150px' }, onClick: handleBackupData },
-                    React.createElement(Icon, { name: "download", className: "h-10 w-10 text-audit-primary mb-3" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Backup Data")
+                React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-6 px-6" },
+                    priorityStores.length > 0 ? priorityStores.map((store, i) => (
+                        React.createElement("div", { key: store.siteCode || i, className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all" },
+                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-[var(--brand-orange)] flex items-center justify-center mb-3" },
+                                React.createElement(Icon, { name: "store", className: "w-5 h-5" })
+                            ),
+                            React.createElement("h4", { className: "font-black text-slate-900 text-sm line-clamp-2 leading-tight mb-1" }, store.storeName || store.siteDescr || `Toko ${i + 1}`),
+                            React.createElement("p", { className: "text-xs text-slate-500" }, store.distance !== undefined ? `${store.distance.toFixed(1)} km` : 'Lokasi...')
+                        )
+                    )) : [1, 2, 3].map((_, i) => (
+                        React.createElement("div", { key: i, className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all" },
+                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-[var(--brand-orange)] flex items-center justify-center mb-3" },
+                                React.createElement(Icon, { name: "store", className: "w-5 h-5" })
+                            ),
+                            React.createElement("h4", { className: "font-black text-slate-900 text-sm leading-tight mb-1" }, "Toko Prioritas ", i + 1),
+                            React.createElement("p", { className: "text-xs text-slate-500" }, "Memuat...")
+                        )
+                    ))
+                )
+            ),
+            
+            // Histori Aktivitas
+            React.createElement("div", { className: "mb-8" },
+                React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight mb-4" }, "Histori Aktivitas"),
+                history.length ? React.createElement("div", { className: "space-y-4" },
+                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm flex items-center justify-between" },
+                        React.createElement("div", { className: "flex items-center gap-3" },
+                            React.createElement("div", { className: "w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400" },
+                                React.createElement(Icon, { name: item.progress >= 100 ? "check" : "clipboard", className: "w-6 h-6" })
+                            ),
+                            React.createElement("div", null,
+                                React.createElement("h4", { className: "font-bold text-slate-900 text-sm max-w-[160px] truncate" }, item.storeName),
+                                React.createElement("p", { className: "text-xs text-slate-500" }, formatDate(item.visitDate))
+                            )
+                        ),
+                        React.createElement("div", { className: "flex items-center gap-3" },
+                            React.createElement("span", { className: cx("text-xs font-bold px-2.5 py-1 rounded-full", item.progress >= 80 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700") }, item.progress || 0, "%"),
+                            React.createElement("button", { onClick: () => onOpenVisit(item.id), className: "w-8 h-8 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100 transition-colors" },
+                                React.createElement(Icon, { name: "arrow-right", className: "w-4 h-4" })
+                            )
+                        )
+                    )),
+                    hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "w-full py-3 text-sm font-bold text-[var(--brand-teal)] text-center", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan Lebih Banyak") : null
+                ) : React.createElement("div", { className: "py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))
+            )
+        ),
+        
+        // Settings/Utility view if tab is active
+        activeTab === 'utility' ? React.createElement("div", { className: "fixed inset-0 z-[60] bg-white overflow-y-auto pb-24 fade-in" },
+            React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
+                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Utiliti"),
+                React.createElement("button", { onClick: () => setActiveTab('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
+            ),
+            React.createElement("div", { className: "px-6 py-6 grid grid-cols-2 gap-4" },
+                React.createElement("button", { type: "button", className: cx('bg-slate-50 border border-slate-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3', syncBusy && 'pointer-events-none opacity-60'), onClick: handleManualWebsiteSync },
+                    syncBusy ? React.createElement("span", { className: "loading-spinner mini" }) : React.createElement(Icon, { name: "download", className: "h-8 w-8 text-[var(--brand-teal)]" }),
+                    React.createElement("span", { className: "text-sm font-bold" }, syncBusy ? 'Sync...' : 'Update App')
                 ),
-                React.createElement("label", { className: cx('home-quick-action-button home-quick-action-button--neutral home-restore-native-picker flex-col items-center justify-center p-4', restoreBusy && 'pointer-events-none opacity-60'), style: { minHeight: '150px', display: 'flex' }, role: "button" },
-                    React.createElement(Icon, { name: "upload", className: "h-10 w-10 text-audit-primary mb-3" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Restore Data"),
-                    React.createElement("input", { type: "file", accept: "application/json,.json", className: "restore-file-input-native hidden", onChange: handleRestoreFile, disabled: restoreBusy })
+                React.createElement("button", { type: "button", className: cx('bg-slate-50 border border-slate-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3', backupBusy && 'pointer-events-none opacity-60'), onClick: handleBackupData },
+                    React.createElement(Icon, { name: "download", className: "h-8 w-8 text-[var(--brand-teal)]" }),
+                    React.createElement("span", { className: "text-sm font-bold" }, "Backup")
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--neutral p-4", style: { minHeight: '150px' }, onClick: () => setMasterStoreModalOpen(true) },
-                    React.createElement(Icon, { name: "store", className: "h-10 w-10 text-audit-primary mb-3" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Master Store")
+                React.createElement("label", { className: cx('bg-slate-50 border border-slate-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3', restoreBusy && 'pointer-events-none opacity-60'), role: "button" },
+                    React.createElement(Icon, { name: "upload", className: "h-8 w-8 text-[var(--brand-teal)]" }),
+                    React.createElement("span", { className: "text-sm font-bold" }, "Restore"),
+                    React.createElement("input", { type: "file", accept: "application/json,.json", className: "hidden", onChange: handleRestoreFile, disabled: restoreBusy })
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--install p-4", style: { minHeight: '150px', animation: 'rbvInstallPulse 1.8s ease-in-out infinite' }, onClick: () => setInstallOpen(true) },
-                    React.createElement(Icon, { name: "spark", className: "h-10 w-10 mb-3" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Install App")
+                React.createElement("button", { type: "button", className: "bg-slate-50 border border-slate-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3", onClick: () => setMasterStoreModalOpen(true) },
+                    React.createElement(Icon, { name: "store", className: "h-8 w-8 text-[var(--brand-teal)]" }),
+                    React.createElement("span", { className: "text-sm font-bold" }, "Master Store")
                 ),
-                React.createElement("button", { type: "button", className: "home-quick-action-button home-quick-action-button--danger p-4", style: { minHeight: '150px' }, onClick: onClearHistory },
-                    React.createElement(Icon, { name: "trash", className: "h-10 w-10 mb-3" }),
-                    React.createElement("span", { className: "home-quick-action-label text-[15px] font-black leading-tight" }, "Hapus History")
+                React.createElement("button", { type: "button", className: "bg-[var(--brand-orange-light)] border border-orange-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3 text-[var(--brand-orange)]", onClick: () => setInstallOpen(true) },
+                    React.createElement(Icon, { name: "spark", className: "h-8 w-8" }),
+                    React.createElement("span", { className: "text-sm font-bold" }, "Install App")
+                ),
+                React.createElement("button", { type: "button", className: "bg-rose-50 border border-rose-100 rounded-[24px] p-5 flex flex-col items-center justify-center gap-3 text-rose-600", onClick: onClearHistory },
+                    React.createElement(Icon, { name: "trash", className: "h-8 w-8" }),
+                    React.createElement("span", { className: "text-sm font-bold" }, "Hapus Histori")
                 )
             )
-        )) : null,
-        activeTab === 'home' ? React.createElement(React.Fragment, null,
-            React.createElement(HomeUpdateNotice, { config: noticeConfig }),
-        React.createElement("section", { className: "dashboard-command-center w-full" },
-            React.createElement("div", { className: "w-full px-4 md:px-8 lg:px-12 py-6 pb-32" },
-            // Section 1: AI Executive Summary
-            (features.ai && analytics.data) ? React.createElement(AiInsightsPanel, { data: analytics.data }) : null,
-            // Section 2: Horizontal Carousel (Quick Access / Priority)
-            React.createElement("div", { className: "mb-8" },
-                React.createElement("div", { className: "mb-4 flex items-center justify-between px-4 md:px-8" },
-                    React.createElement("h3", { className: "text-lg font-black tracking-tight text-slate-800" }, "Akses Cepat"),
-                    React.createElement("button", { type: "button", className: "text-xs font-bold text-audit-primary hover:underline", onClick: onNewVisit }, "Lihat Semua")),
-                React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar px-4 md:px-8" },
-                    priorityStores.length > 0 ? priorityStores.map((store, i) => (
-                        React.createElement("div", { key: store.siteCode || i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
-                            React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
-                                React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
-                            React.createElement("h4", { className: "font-black text-slate-900 line-clamp-1" }, store.storeName || store.siteDescr || `Toko Prioritas ${i + 1}`),
-                            React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, store.distance !== undefined ? `Radius ${store.distance.toFixed(1)} km dari Anda` : 'Sedang mengambil lokasi...'),
-                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: () => (onQuickVisit || onNewVisit)(store.storeName || store.siteDescr || '') }, "Kunjungi"))
-                    )) : [1, 2, 3].map((_, i) => (
-                        React.createElement("div", { key: i, className: "min-w-[240px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all hover:scale-[1.02]" },
-                            React.createElement("div", { className: "mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600" },
-                                React.createElement(Icon, { name: "store", className: "h-5 w-5" })),
-                            React.createElement("h4", { className: "font-black text-slate-900" }, "Toko Prioritas ", i + 1),
-                            React.createElement("p", { className: "mt-1 text-xs text-slate-500" }, "Sedang mengambil lokasi..."),
-                            React.createElement(Button, { className: "mt-4 w-full !rounded-xl", variant: "secondary", onClick: () => (onQuickVisit || onNewVisit)(`Toko Prioritas ${i + 1}`) }, "Kunjungi"))
-                    )))),
-            
-            // Section 3: Activity Timeline
-            React.createElement("div", { className: "px-4 md:px-8" },
-                React.createElement("h3", { className: "mb-6 text-lg font-black tracking-tight text-slate-800" }, "Histori Aktivitas"),
-                history.length ? React.createElement("div", { className: "relative space-y-6 before:absolute before:inset-y-0 before:left-[21px] before:w-0.5 before:bg-slate-200" },
-                    visibleHistory.map((item, index) => React.createElement("article", { key: item.id, className: "relative flex items-start gap-4 pl-12 transition-all hover:translate-x-1" },
-                        React.createElement("div", { className: "absolute left-2.5 top-1 h-3 w-3 rounded-full border-2 border-white bg-audit-primary shadow-[0_0_0_4px_#f8fafc]" }),
-                        React.createElement("div", { className: "flex-1 rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100" },
-                            React.createElement("div", { className: "mb-2 flex items-start justify-between gap-2" },
-                                React.createElement("div", null,
-                                    React.createElement("p", { className: "text-base font-extrabold text-slate-950" }, item.storeName),
-                                    React.createElement("p", { className: "text-xs font-bold text-slate-500" }, formatDate(item.visitDate))),
-                                React.createElement(Badge, { tone: item.progress >= 80 ? 'success' : item.progress >= 40 ? 'warning' : 'default' }, item.progress || 0, "%")),
-                            React.createElement(ProgressBar, { value: item.progress || 0 }),
-                            React.createElement("div", { className: "mt-4 flex gap-2" },
-                                React.createElement(Button, { className: "flex-1 !rounded-xl !py-2", variant: (item.isPdfDownloaded || item.isEmailSent) ? "primary" : "secondary", onClick: () => onOpenVisit(item.id) }, (item.isPdfDownloaded || item.isEmailSent) ? "Lihat Laporan ✓" : "Lanjutkan"),
-                                React.createElement("button", { type: "button", className: "grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors", onClick: () => onDeleteVisit(item.id), "aria-label": "Hapus" },
-                                    React.createElement(Icon, { name: "trash", className: "h-4 w-4" })))))),
-                    hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "history-load-more-button mt-6", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan ", Math.min(12, hiddenHistoryCount), " aktivitas lagi") : null) :
-                    React.createElement("div", { className: "dashboard-history-empty py-8 text-center" }, React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada histori aktivitas" }))))
-        )) : null,
-        activeTab === 'analytics' ? React.createElement(AnalyticsView, { analytics: analytics }) : null,
-        activeTab === 'home' && React.createElement("button", { type: "button", className: "inline-flex items-center justify-center rounded-full text-white shadow-2xl ring-1 ring-emerald-200 transition active:scale-[0.98]", style: {
-                position: 'fixed',
-                right: '24px',
-                bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
-                transform: 'none',
-                left: 'auto',
-                zIndex: 80,
-                width: '56px',
-                height: '56px',
-                background: '#2563eb',
-                opacity: 1,
-                backdropFilter: 'none',
-                WebkitBackdropFilter: 'none',
-                boxShadow: '0 8px 24px -4px rgba(37, 99, 235, 0.4)'
+        ) : null,
+        
+        // Analytics view if tab is active
+        activeTab === 'analytics' ? React.createElement("div", { className: "fixed inset-0 z-[60] bg-white overflow-y-auto fade-in" },
+            React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
+                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Analitik"),
+                React.createElement("button", { onClick: () => setActiveTab('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
+            ),
+            React.createElement(AnalyticsView, { analytics: analytics })
+        ) : null,
+        
+        // Old FAB desktop fallback
+        React.createElement("button", { type: "button", className: "hidden lg:inline-flex items-center justify-center rounded-full text-white shadow-2xl transition active:scale-[0.98]", style: {
+                position: 'fixed', right: '24px', bottom: '24px', zIndex: 80, width: '56px', height: '56px', background: 'var(--brand-orange)',
+                boxShadow: '0 8px 24px -4px rgba(255, 176, 103, 0.4)'
             }, onClick: onNewVisit, "aria-label": "Buat kunjungan baru" },
-            React.createElement(Icon, { name: "plus", className: "h-6 w-6" })),
+            React.createElement(Icon, { name: "plus", className: "h-6 w-6" })
+        ),
+        
         React.createElement(MasterStoreDetailModal, { open: masterStoreModalOpen, onClose: () => setMasterStoreModalOpen(false) }),
-        React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })));
+        React.createElement(InstallGuideModal, { open: installOpen, onClose: () => setInstallOpen(false), deferredPrompt: deferredPrompt, onPromptUsed: () => setDeferredPrompt(null) })
+    ));
 }
 
 function StoreSearchSelect({ label, value, options, onChange, placeholder, disabled }) {
