@@ -1,4 +1,4 @@
-.bg-brand-teal { background-color: var(--brand-teal); }
+.bg-brand-teal { background-color: var(--brand-teal) !important; }
 .text-brand-teal { color: var(--brand-teal) !important; }
 .bg-brand-orange { background-color: var(--brand-orange); }
 .text-brand-orange { color: var(--brand-orange) !important; }
