@@ -1699,19 +1699,18 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 React.createElement("h1", { className: "text-3xl font-black tracking-tight mb-8" }, bestieName),
                 
                 // Target Harian Center Banner
-                // Simple Target Banner
-                React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-[28px] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 w-full text-left mt-2" },
-                    React.createElement("div", { className: "flex-1 w-full" },
-                        React.createElement("div", { className: "flex justify-between items-end mb-3" },
-                            React.createElement("h2", { className: "text-base font-bold" }, "Target Hari Ini"),
-                            React.createElement("span", { className: "text-sm font-bold text-white/90" }, progressPercent, "% (", todayVisits, "/", scheduleCount, ")")
-                        ),
-                        // Linear progress bar
-                        React.createElement("div", { className: "h-2.5 w-full bg-black/20 rounded-full overflow-hidden" },
-                            React.createElement("div", { className: "h-full bg-brand-orange rounded-full transition-all duration-1000", style: { width: `${progressPercent}%` } })
-                        )
-                    ),
-                    React.createElement("button", { onClick: onNewVisit, className: "w-full sm:w-auto bg-brand-orange text-slate-900 font-extrabold py-3.5 px-8 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform whitespace-nowrap text-sm" }, "Mulai Kunjungan")
+                React.createElement("div", { className: "bg-white/30 backdrop-blur-md border border-white/40 rounded-[28px] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 w-full text-left mt-4 shadow-sm", style: { marginBottom: '1rem' } },
+                      React.createElement("div", { className: "flex-1 w-full" },
+                          React.createElement("div", { className: "flex justify-between items-end mb-3" },
+                              React.createElement("h2", { className: "text-base font-bold text-slate-900" }, "Target Hari Ini"),
+                              React.createElement("span", { className: "text-sm font-bold text-slate-900" }, progressPercent, "% (", todayVisits, "/", scheduleCount, ")")
+                          ),
+                          // Linear progress bar (Made very visible even at 0%)
+                          React.createElement("div", { className: "h-3 w-full bg-white/40 border border-white/50 rounded-full overflow-hidden shadow-inner" },
+                              React.createElement("div", { className: "h-full bg-brand-orange rounded-full transition-all duration-1000 shadow-sm", style: { width: `${progressPercent}%` } })
+                          )
+                      ),
+                      React.createElement("button", { onClick: onNewVisit, className: "w-full sm:w-auto mt-2 sm:mt-0 bg-brand-orange text-white font-extrabold py-3.5 px-8 rounded-2xl shadow-lg shadow-orange-500/40 hover:shadow-orange-500/60 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap text-sm" }, "Mulai Kunjungan")
                 )
             )
         ),
@@ -1728,18 +1727,27 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                     React.createElement("button", { className: "text-sm text-brand-teal font-bold", onClick: () => setMasterStoreModalOpen(true) }, "Lihat Semua")
                 ),
                 React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-6 px-6" },
-                    priorityStores.length > 0 ? priorityStores.map((store, i) => (
-                        React.createElement("div", { key: store.siteCode || i, onClick: () => onQuickVisit?.(store.storeName || store.siteDescr || ''), className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all cursor-pointer hover:border-brand-teal/30 hover:shadow-md active:scale-95 flex flex-col" },
-                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3 shrink-0" },
-                                React.createElement(Icon, { name: "store", className: "w-5 h-5" })
-                            ),
-                            React.createElement("div", { className: "flex-1 mb-3" },
-                                React.createElement("h4", { className: "font-black text-slate-900 text-sm line-clamp-2 leading-tight mb-1" }, store.storeName || store.siteDescr || `Toko ${i + 1}`),
-                                React.createElement("p", { className: "text-xs text-slate-500" }, store.distance !== undefined ? `${store.distance.toFixed(1)} km` : 'Lokasi...')
-                            ),
-                            React.createElement("div", { className: "w-full py-2 rounded-xl bg-brand-teal text-white text-[10px] font-black text-center tracking-wider shadow-sm group-hover:bg-[#153640] transition-colors mt-auto" }, "VISIT")
-                        )
-                    )) : [1, 2, 3].map((_, i) => (
+                    priorityStores.length > 0 ? priorityStores.map((store, i) => {
+                          const storeHistory = (history || []).filter(h => h.storeName === store.storeName || h.siteCode === store.siteCode);
+                          const latestProgress = storeHistory.length > 0 ? Math.max(...storeHistory.map(h => Number(h.progress || 0))) : 0;
+                          return React.createElement("div", { key: store.siteCode || i, onClick: () => onQuickVisit?.(store.storeName || store.siteDescr || ''), className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all cursor-pointer hover:border-brand-teal/30 hover:shadow-md active:scale-95 flex flex-col" },
+                              React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3 shrink-0" },
+                                  React.createElement(Icon, { name: "store", className: "w-5 h-5" })
+                              ),
+                              React.createElement("div", { className: "flex-1 mb-3" },
+                                  React.createElement("h4", { className: "font-black text-slate-900 text-sm line-clamp-2 leading-tight mb-1" }, store.storeName || store.siteDescr || `Toko ${i + 1}`),
+                                  React.createElement("p", { className: "text-xs text-slate-500 mb-2" }, store.distance !== undefined ? `${store.distance.toFixed(1)} km` : 'Lokasi...'),
+                                  React.createElement("div", { className: "flex items-center justify-between mb-1.5" },
+                                      React.createElement("span", { className: "text-[9px] font-bold text-slate-400 uppercase tracking-widest" }, "Progress"),
+                                      React.createElement("span", { className: cx("text-[10px] font-black", latestProgress >= 100 ? "text-emerald-500" : latestProgress > 0 ? "text-brand-orange" : "text-slate-400") }, latestProgress, "%")
+                                  ),
+                                  React.createElement("div", { className: "h-1.5 w-full bg-slate-100 rounded-full overflow-hidden" },
+                                      React.createElement("div", { className: cx("h-full transition-all duration-500", latestProgress >= 100 ? "bg-emerald-500" : "bg-brand-orange"), style: { width: `${latestProgress}%` } })
+                                  )
+                              ),
+                              React.createElement("div", { className: cx("w-full py-2 rounded-xl text-[10px] font-black text-center tracking-wider shadow-sm transition-colors mt-auto", latestProgress >= 100 ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-brand-teal text-white group-hover:bg-[#153640]") }, latestProgress >= 100 ? "SELESAI" : "VISIT")
+                          );
+                      }) : [1, 2, 3].map((_, i) => (
                         React.createElement("div", { key: i, className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all flex flex-col" },
                             React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3 shrink-0" },
                                 React.createElement(Icon, { name: "store", className: "w-5 h-5" })
