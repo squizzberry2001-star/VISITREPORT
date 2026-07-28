@@ -329,6 +329,23 @@ function App() {
             return true;
         }
     });
+
+    async function forceUpdateApp() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (let reg of regs) { await reg.unregister(); }
+            } catch (e) {}
+        }
+        if ('caches' in window) {
+            try {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+            } catch (e) {}
+        }
+        window.location.reload(true);
+    }
+
     const secretTapRef = useRef({ count: 0, timer: null });
     useEffect(() => {
         let cancelled = false;
@@ -511,21 +528,6 @@ function App() {
         refreshHistory();
         let cancelled = false;
         let versionTimer = null;
-        async function forceUpdateApp() {
-            if ('serviceWorker' in navigator) {
-                try {
-                    const regs = await navigator.serviceWorker.getRegistrations();
-                    for (let reg of regs) { await reg.unregister(); }
-                } catch (e) {}
-            }
-            if ('caches' in window) {
-                try {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => caches.delete(key)));
-                } catch (e) {}
-            }
-            window.location.reload(true);
-        }
         async function clearAppCachesForNewBuild(latest) {
             if (!('caches' in window) || !latest || latest === APP_BUILD_VERSION)
                 return;
