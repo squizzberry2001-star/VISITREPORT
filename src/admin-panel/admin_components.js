@@ -1556,14 +1556,14 @@ function PreviewPage({ visit, update, onBack }) {
     if (!visit)
         return React.createElement("main", { className: "preview-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif" }));
-    return (React.createElement("main", { className: "preview-page w-full px-4 py-4 md:px-8 md:py-8" },
+    return (React.createElement("main", { className: "preview-page w-full px-4 pt-1 pb-6 md:px-8 md:pt-4 md:pb-8" },
         downloadBusy ? React.createElement("div", { className: "download-pdf-overlay", role: "status", "aria-live": "polite" },
             React.createElement("div", { className: "download-pdf-loader" },
                 React.createElement("span", { className: "download-pdf-spinner", "aria-hidden": "true" }),
                 React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'),
                 React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null,
         React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
-        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-40 bg-slate-50 pt-4 pb-3 -mx-4 px-4 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0" },
+        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-40 bg-slate-50 pt-2 pb-3 -mx-4 px-4 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0" },
             React.createElement("div", { className: "flex items-center gap-4 sm:block" },
                 React.createElement("button", { 
                     onClick: onBack, 

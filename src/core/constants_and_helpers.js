@@ -87,7 +87,8 @@ function matchBestieScheduleName(schedName, bestieName) {
 }
 function findRegisteredLeaderboardBestie(schedName) {
     if (!schedName) return null;
-    return BESTIE_LOGIN_DATA.find((b) => matchBestieScheduleName(schedName, b.name)) || null;
+    const foundName = BESTIE_NAMES.find((name) => matchBestieScheduleName(schedName, name));
+    return foundName ? { name: foundName } : null;
 }
 function filterRegisteredLeaderboardSchedules(items) {
     if (!Array.isArray(items)) return [];

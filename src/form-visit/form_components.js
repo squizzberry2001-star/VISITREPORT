@@ -775,16 +775,19 @@ function ObservationSection({ visit, update }) {
     const tab = visit.activeObservationTab === 'qsc' ? 'qsc' : 'opi';
     const setTab = (nextTab) => update({ activeObservationTab: nextTab });
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
-    const toggleLabel = tab === 'opi' ? (enabled ? 'Hide OPI' : 'Unhide OPI') : (enabled ? 'Hide QSC' : 'Unhide QSC');
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
-    const preTitle = React.createElement("div", { className: "section-switcher flex min-w-0 gap-2 overflow-x-auto pb-1" },
+    const preTitle = React.createElement("div", { className: "section-switcher flex min-w-0 gap-2 overflow-x-auto pb-1 items-center" },
         React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
             React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-            " OPI Project"),
+            " OPI"),
         React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'qsc' && 'active'), onClick: () => setTab('qsc') },
             React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-            " QSC Observation"));
-    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle, actions: React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }) }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
+            " QSC"),
+        React.createElement("div", { className: "ml-auto flex shrink-0 items-center pl-2" },
+            React.createElement(Toggle, { checked: enabled, onChange: setEnabled })
+        )
+    );
+    return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
 }
 function EvidenceSection({ visit, update }) {
     const tab = visit.activeEvidenceTab === 'corrective' ? 'corrective' : 'finding';

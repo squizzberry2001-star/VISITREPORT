@@ -1698,21 +1698,28 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 ),
                 React.createElement("div", { className: "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-6 px-6" },
                     priorityStores.length > 0 ? priorityStores.map((store, i) => (
-                        React.createElement("div", { key: store.siteCode || i, className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all" },
-                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3" },
+                        React.createElement("div", { key: store.siteCode || i, onClick: () => onQuickVisit?.(store.storeName || store.siteDescr || ''), className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all cursor-pointer hover:border-brand-teal/30 hover:shadow-md active:scale-95 flex flex-col" },
+                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3 shrink-0" },
                                 React.createElement(Icon, { name: "store", className: "w-5 h-5" })
                             ),
-                            React.createElement("h4", { className: "font-black text-slate-900 text-sm line-clamp-2 leading-tight mb-1" }, store.storeName || store.siteDescr || `Toko ${i + 1}`),
-                            React.createElement("p", { className: "text-xs text-slate-500" }, store.distance !== undefined ? `${store.distance.toFixed(1)} km` : 'Lokasi...')
+                            React.createElement("div", { className: "flex-1 mb-3" },
+                                React.createElement("h4", { className: "font-black text-slate-900 text-sm line-clamp-2 leading-tight mb-1" }, store.storeName || store.siteDescr || `Toko ${i + 1}`),
+                                React.createElement("p", { className: "text-xs text-slate-500" }, store.distance !== undefined ? `${store.distance.toFixed(1)} km` : 'Lokasi...')
+                            ),
+                            React.createElement("div", { className: "w-full py-2 rounded-xl bg-brand-teal text-white text-[10px] font-black text-center tracking-wider shadow-sm group-hover:bg-[#153640] transition-colors mt-auto" }, "VISIT")
                         )
                     )) : [1, 2, 3].map((_, i) => (
-                        React.createElement("div", { key: i, className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all" },
-                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3" },
+                        React.createElement("div", { key: i, className: "min-w-[160px] flex-shrink-0 snap-start snap-always rounded-[24px] bg-white p-4 shadow-sm border border-slate-100 transition-all flex flex-col" },
+                            React.createElement("div", { className: "w-10 h-10 rounded-full bg-[var(--brand-orange-light)] text-brand-orange flex items-center justify-center mb-3 shrink-0" },
                                 React.createElement(Icon, { name: "store", className: "w-5 h-5" })
                             ),
-                            React.createElement("h4", { className: "font-black text-slate-900 text-sm leading-tight mb-1" }, "Toko Prioritas ", i + 1),
-                            React.createElement("p", { className: "text-xs text-slate-500" }, "Memuat...")
+                            React.createElement("div", { className: "flex-1 mb-3" },
+                                React.createElement("h4", { className: "font-black text-slate-900 text-sm leading-tight mb-1" }, "Toko Prioritas ", i + 1),
+                                React.createElement("p", { className: "text-xs text-slate-500" }, "Memuat...")
+                            ),
+                            React.createElement("div", { className: "w-full py-2 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black text-center tracking-wider mt-auto" }, "...")
                         )
+
                     ))
                 )
             ),
@@ -1722,19 +1729,19 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight mb-4" }, "Histori Aktivitas"),
                 history.length ? React.createElement("div", { className: "space-y-4" },
                     visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex items-center justify-between cursor-pointer", onClick: () => onOpenVisit(item.id) },
-                        React.createElement("div", { className: "flex items-center gap-3" },
-                            React.createElement("div", { className: cx("w-12 h-12 rounded-[16px] flex items-center justify-center transition-colors", item.progress >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-brand-teal/5 text-brand-teal group-hover:bg-brand-teal/10") },
+                        React.createElement("div", { className: "flex items-center gap-3 flex-1 min-w-0" },
+                            React.createElement("div", { className: cx("w-12 h-12 shrink-0 rounded-[16px] flex items-center justify-center transition-colors", item.progress >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-brand-teal/5 text-brand-teal group-hover:bg-brand-teal/10") },
                                 React.createElement(Icon, { name: item.progress >= 100 ? "check" : "clipboard", className: "w-6 h-6" })
                             ),
-                            React.createElement("div", null,
-                                React.createElement("h4", { className: "font-black text-slate-900 text-sm max-w-[160px] truncate group-hover:text-brand-teal transition-colors" }, item.storeName),
-                                React.createElement("p", { className: "text-[11px] font-medium text-slate-400 mt-0.5" }, formatDate(item.visitDate))
+                            React.createElement("div", { className: "flex-1 min-w-0" },
+                                React.createElement("h4", { className: "font-black text-slate-900 text-[13px] sm:text-sm truncate group-hover:text-brand-teal transition-colors" }, item.storeName),
+                                React.createElement("p", { className: "text-[11px] font-bold text-slate-500 mt-0.5" }, formatDate(item.visitDate))
                             )
                         ),
-                        React.createElement("div", { className: "flex items-center gap-3" },
-                            React.createElement("span", { className: cx("text-xs font-black px-2.5 py-1 rounded-full", item.progress >= 100 ? "bg-emerald-100 text-emerald-700" : item.progress >= 50 ? "bg-brand-teal/10 text-brand-teal" : "bg-brand-orange/10 text-brand-orange") }, item.progress || 0, "%"),
-                            React.createElement("div", { className: "w-8 h-8 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all" },
-                                React.createElement(Icon, { name: "arrow-right", className: "w-4 h-4" })
+                        React.createElement("div", { className: "flex shrink-0 items-center gap-2 pl-3" },
+                            React.createElement("span", { className: cx("text-[10px] sm:text-xs font-black px-2 py-1 rounded-full", item.progress >= 100 ? "bg-emerald-100 text-emerald-700" : item.progress >= 50 ? "bg-brand-teal/10 text-brand-teal" : "bg-brand-orange/10 text-brand-orange") }, item.progress || 0, "%"),
+                            React.createElement("div", { className: "px-3 py-1.5 rounded-[12px] bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-sm" },
+                                React.createElement("span", { className: "text-[10px] font-extrabold tracking-wider" }, "OPEN")
                             )
                         )
                     )),

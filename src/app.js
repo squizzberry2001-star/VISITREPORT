@@ -139,7 +139,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
             ),
             
             // Bento Grid for Sections
-            React.createElement("div", { className: "flex-1 overflow-y-auto px-4 pt-6 pb-24" },
+            React.createElement("div", { className: "flex-1 overflow-y-auto px-4 pt-2 pb-32" },
                 React.createElement("div", { className: "grid grid-cols-2 gap-3 sm:gap-4" },
                     SECTION_DEFS.map((section, idx) => {
                         const secProgress = visitProgress(visit, idx);
