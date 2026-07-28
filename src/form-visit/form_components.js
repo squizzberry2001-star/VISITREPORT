@@ -154,6 +154,7 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
 
     const keys = [
         { provider: 'gemini', key: DEFAULT_GEMINI_API_KEY, model: 'gemini-3.5-flash' },
+        { provider: 'gemini', key: atob('QVEuQWI4Uk42Sm9uY1NoQTlzNnYtREJNRWJ5dU03U2IySTRheS03cEVWaDRTQmhKck5ReVE='), model: 'gemini-3.5-flash' },
         { provider: 'gemini', key: atob('QVEuQWI4Uk42SUh4MlhZek9lZnA1UGltU3YydWtoRzBsV3RzWk5nNFBYZmtaMklrbC03c1E='), model: 'gemini-3.5-flash' },
         { provider: 'openai', key: atob('c2stcHJvai0zT0NnVEQxVW5qcWpSdDhSSFU0YnotNmh0T2l1OUJEZklkUzM5bHlKaUU3T1VjZUU5RWM4UkJGRmJNVjJjMWpKNmtHT1pfSG9zV1QzQmxia0ZKRHVPVjJiYmhaemhxVTZFU3dpWVpXM0F4S0VMcXpzdHY0dFVnRkZpZmlEcTBHR1RMSlRXNThWUy0yNWVBZGNQQ1JRR21uM0xKY0E='), model: 'gpt-4o-mini' },
         { provider: 'deepseek', key: atob('YXJrLTM4MTM3NzQyLWQ3ZDQtNDFiNi05YmI3LTZiNjc0ZWRlMWVlMy0xYTE5ZA=='), model: 'deepseek-chat' },
