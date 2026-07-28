@@ -47,16 +47,16 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
 
     return React.createElement("nav", { className: "fixed bottom-0 left-0 w-full z-50 bg-white/80 backdrop-blur-2xl border-t border-slate-100/50 pb-safe shadow-[0_-12px_40px_rgba(0,0,0,0.04)] lg:hidden", "aria-label": "Mobile system navigation" },
         React.createElement("div", { className: "flex justify-between items-center h-[72px] px-6 relative" },
-            // Left side — Kunjungan Baru (di samping Jadwal)
-            React.createElement("button", { type: "button", "aria-label": "Kunjungan Baru", className: 'flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all text-brand-teal hover:bg-brand-teal/10', onClick: onNewVisit },
-                React.createElement(Icon, { name: "clipboard", className: "h-6 w-6", strokeWidth: 2 })
+            // Left side
+            React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all', screen === 'dashboard' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:text-slate-800'), onClick: () => setScreen('dashboard') },
+                React.createElement(Icon, { name: "home", className: "h-6 w-6", strokeWidth: screen === 'dashboard' ? 2.5 : 2 })
             ),
             React.createElement("button", { type: "button", className: cx('flex flex-col items-center justify-center w-14 h-12 rounded-2xl transition-all', screen === 'schedule' ? 'bg-brand-teal/10 text-brand-teal' : 'text-slate-500 hover:text-slate-800'), onClick: () => setScreen('schedule') },
                 React.createElement(Icon, { name: "calendar", className: "h-6 w-6", strokeWidth: screen === 'schedule' ? 2.5 : 2 })
             ),
 
-            // Center FAB space placeholder
-            React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
+            // Center FAB space placeholder - also functions as new visit if tapped
+            React.createElement("button", { type: "button", "aria-label": "Kunjungan Baru", className: "w-16 h-16 rounded-full", onClick: onNewVisit }),
 
             // Floating FAB — selalu buka Kunjungan Baru
             React.createElement("button", { type: "button", "aria-label": "Kunjungan Baru", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-brand-teal text-white rounded-full shadow-xl shadow-brand-teal/30 flex items-center justify-center border-[3px] border-white active:scale-95 transition-transform", onClick: onNewVisit },
