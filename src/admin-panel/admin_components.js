@@ -2764,7 +2764,7 @@ async function syncFindingsToConvex(visit) {
 }
 let _backfillRunning = false;
 async function backfillLocalFindingsToConvex() {
-    const BACKFILL_FLAG = 'rbv_findings_backfill_v2';
+    const BACKFILL_FLAG = 'rbv_findings_backfill_v3';
     if (_backfillRunning || localStorage.getItem(BACKFILL_FLAG)) return;
     if (!convexEnabled()) return;
     _backfillRunning = true;
