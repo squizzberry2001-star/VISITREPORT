@@ -1412,7 +1412,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                         });
                         
                         if (result && !cancelled) {
-                            await callConvexMutation('setConfig', {
+                            await runConvexMutation('appSettings:setConfig', {
                                 key: 'aiExecutiveSummary',
                                 payload: result,
                                 updatedBy: readBestieLogin()?.name || 'system'
