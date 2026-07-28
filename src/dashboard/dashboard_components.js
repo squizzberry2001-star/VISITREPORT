@@ -1334,12 +1334,14 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
     const [secretTap, setSecretTap] = useState(0);
 
     const handleSecretTap = () => {
-        const next = secretTap + 1;
-        setSecretTap(next);
-        if (next >= 10) {
-            setSecretTap(0);
-            onTitleTap?.();
-        }
+        setSecretTap(prev => {
+            const next = prev + 1;
+            if (next >= 10) {
+                onTitleTap?.();
+                return 0;
+            }
+            return next;
+        });
     };
 
     const [features, setFeatures] = useState(() => readFeaturesConfig());
@@ -1672,34 +1674,34 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             React.createElement("div", { className: "absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" }),
             React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-brand-orange/20 rounded-full blur-xl" }),
             
-            // Header Top
-            React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-4" },
-                React.createElement("div", null,
-                    React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1" }, "Selamat Pagi,"),
-                    React.createElement("h1", { className: "text-2xl font-black tracking-tight" }, bestieName)
-                ),
-                React.createElement("button", { onClick: onTitleTap, className: "w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20" },
-                    React.createElement(Icon, { name: "user", className: "w-6 h-6 text-white" })
-                )
-            ),
-            
-            // Progress Hero Card
-            React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-[28px] p-6 relative z-10" },
-                React.createElement("div", { className: "flex justify-between items-center mb-6" },
-                    React.createElement("div", null,
-                        React.createElement("h2", { className: "text-lg font-bold mb-1" }, "Target Hari Ini"),
-                        React.createElement("p", { className: "text-white/70 text-sm" }, todayVisits, " dari ", scheduleCount, " Kunjungan")
-                    ),
-                    // Progress Ring
-                    React.createElement("div", { className: "relative w-16 h-16 flex items-center justify-center" },
-                        React.createElement("svg", { className: "w-full h-full -rotate-90", viewBox: "0 0 36 36" },
-                            React.createElement("path", { className: "text-white/20", d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "3" }),
-                            React.createElement("path", { className: "text-brand-orange", strokeDasharray: `${progressPercent}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "3", strokeLinecap: "round" })
-                        ),
-                        React.createElement("span", { className: "absolute text-sm font-bold" }, progressPercent, "%")
+            // Centered Header & Target Banner
+            React.createElement("div", { className: "flex flex-col items-center text-center relative z-10" },
+                // User Button (Top Right)
+                React.createElement("div", { className: "w-full flex justify-end mb-2" },
+                    React.createElement("button", { onClick: onTitleTap, className: "w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 active:scale-95 transition-transform" },
+                        React.createElement(Icon, { name: "user", className: "w-5 h-5 text-white" })
                     )
                 ),
-                React.createElement("button", { onClick: onNewVisit, className: "w-full bg-brand-orange text-slate-900 font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform" }, "Mulai Kunjungan")
+                // Greeting
+                React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1 -mt-6" }, "Selamat Pagi,"),
+                React.createElement("h1", { className: "text-3xl font-black tracking-tight mb-8" }, bestieName),
+                
+                // Target Harian Center Banner
+                React.createElement("div", { className: "flex flex-col items-center w-full" },
+                    React.createElement("div", { className: "relative w-24 h-24 flex items-center justify-center mb-4" },
+                        React.createElement("svg", { className: "w-full h-full -rotate-90", viewBox: "0 0 36 36" },
+                            React.createElement("path", { className: "text-white/20", d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "2.5" }),
+                            React.createElement("path", { className: "text-brand-orange", strokeDasharray: `${progressPercent}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round" })
+                        ),
+                        React.createElement("div", { className: "absolute flex flex-col items-center justify-center mt-1" },
+                            React.createElement("span", { className: "text-xl font-black leading-none" }, progressPercent, "%")
+                        )
+                    ),
+                    React.createElement("h2", { className: "text-lg font-bold mb-1" }, "Target Hari Ini"),
+                    React.createElement("p", { className: "text-white/70 text-sm mb-6" }, todayVisits, " dari ", scheduleCount, " Kunjungan"),
+                    
+                    React.createElement("button", { onClick: onNewVisit, className: "w-full max-w-[280px] bg-brand-orange text-slate-900 font-bold py-3.5 px-6 rounded-full shadow-lg shadow-orange-500/30 active:scale-95 transition-transform" }, "Mulai Kunjungan")
+                )
             )
         ),
         

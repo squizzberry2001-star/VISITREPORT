@@ -62,8 +62,8 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
             React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
 
             // Floating FAB
-            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-brand-teal text-white rounded-[20px] shadow-xl shadow-brand-teal/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-[3px] border-white ring-4 ring-white/50", onClick: onNewVisit },
-                React.createElement(Icon, { name: "plus", className: "h-7 w-7", strokeWidth: 3 })
+            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-brand-teal text-white rounded-full shadow-xl shadow-brand-teal/30 flex items-center justify-center border-[3px] border-white active:scale-95 transition-transform", onClick: goAudit },
+                React.createElement(Icon, { name: visit ? "play" : "plus", className: "h-6 w-6 stroke-[2.5px]" })
             ),
 
             // Right side
@@ -77,7 +77,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
     );
 }
 function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, onDashboard }) {
-    const [viewMode, setViewMode] = useState('grid');
+    const [viewMode, setViewMode] = useState('section');
     
     useEffect(() => {
         function handleKey(event) {
@@ -204,7 +204,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         React.createElement("div", { className: "sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100/60 px-4 py-3 sm:hidden shadow-sm" },
             React.createElement("div", { className: "flex items-center gap-3" },
                 React.createElement("button", { 
-                    onClick: () => setViewMode('grid'),
+                    onClick: onDashboard,
                     className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-brand-teal/5 rounded-full text-brand-teal active:scale-95 transition-transform"
                 },
                     React.createElement(Icon, { name: "left", className: "w-5 h-5" })
@@ -273,7 +273,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
             React.createElement("button", {
                 type: "button",
                 onClick: () => {
-                    if (activeSection <= 0) setViewMode('grid');
+                    if (activeSection <= 0) onDashboard();
                     else goSection(activeSection - 1);
                 },
                 className: "w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-600 flex items-center justify-center active:scale-95 transition-all shadow-sm shrink-0"

@@ -776,7 +776,7 @@ function ObservationSection({ visit, update }) {
     const setTab = (nextTab) => update({ activeObservationTab: nextTab });
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
-    const preTitle = React.createElement("div", { className: "section-switcher flex min-w-0 gap-2 overflow-x-auto pb-1 items-center" },
+    const preTitle = React.createElement("div", { className: "section-switcher grid grid-cols-2 gap-2 w-full min-w-0 overflow-x-auto pb-1 items-center" },
         React.createElement("button", { type: "button", className: cx('subnav-chip prominent relative transition-all duration-300 flex items-center justify-center gap-1.5', tab === 'opi' ? 'active !pr-2 !py-1.5' : ''), onClick: () => setTab('opi') },
             React.createElement(Icon, { name: "clipboard", className: "h-4 w-4 shrink-0" }),
             React.createElement("span", { className: "font-bold tracking-wide" }, "OPI"),
