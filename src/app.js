@@ -62,7 +62,7 @@ function MobileBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, on
             React.createElement("div", { className: "w-16 h-16 pointer-events-none" }),
 
             // Floating FAB
-            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-gradient-to-br from-brand-orange to-[#ff985c] rounded-[20px] text-slate-900 shadow-xl shadow-orange-500/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-[3px] border-white ring-4 ring-white/50", onClick: onNewVisit },
+            React.createElement("button", { type: "button", className: "absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 bg-brand-teal text-white rounded-[20px] shadow-xl shadow-brand-teal/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-[3px] border-white ring-4 ring-white/50", onClick: onNewVisit },
                 React.createElement(Icon, { name: "plus", className: "h-7 w-7", strokeWidth: 3 })
             ),
 
