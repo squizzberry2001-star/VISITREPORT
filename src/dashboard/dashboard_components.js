@@ -1700,18 +1700,18 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 
                 // Target Harian Center Banner
                 // Simple Target Banner
-                React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 w-full text-left" },
+                React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-[28px] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 w-full text-left mt-2" },
                     React.createElement("div", { className: "flex-1 w-full" },
-                        React.createElement("div", { className: "flex justify-between items-end mb-2" },
-                            React.createElement("h2", { className: "text-sm font-bold" }, "Target Hari Ini"),
-                            React.createElement("span", { className: "text-xs font-medium text-white/80" }, progressPercent, "% (", todayVisits, "/", scheduleCount, ")")
+                        React.createElement("div", { className: "flex justify-between items-end mb-3" },
+                            React.createElement("h2", { className: "text-base font-bold" }, "Target Hari Ini"),
+                            React.createElement("span", { className: "text-sm font-bold text-white/90" }, progressPercent, "% (", todayVisits, "/", scheduleCount, ")")
                         ),
                         // Linear progress bar
-                        React.createElement("div", { className: "h-2 w-full bg-black/20 rounded-full overflow-hidden" },
+                        React.createElement("div", { className: "h-2.5 w-full bg-black/20 rounded-full overflow-hidden" },
                             React.createElement("div", { className: "h-full bg-brand-orange rounded-full transition-all duration-1000", style: { width: `${progressPercent}%` } })
                         )
                     ),
-                    React.createElement("button", { onClick: onNewVisit, className: "w-full sm:w-auto bg-brand-orange text-slate-900 font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform whitespace-nowrap text-sm" }, "Mulai Kunjungan")
+                    React.createElement("button", { onClick: onNewVisit, className: "w-full sm:w-auto bg-brand-orange text-slate-900 font-extrabold py-3.5 px-8 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform whitespace-nowrap text-sm" }, "Mulai Kunjungan")
                 )
             )
         ),
