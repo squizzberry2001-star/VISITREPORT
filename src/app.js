@@ -106,11 +106,11 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
     if (viewMode === 'grid') {
         return (React.createElement("main", { className: "workspace-page mx-auto w-full max-w-4xl h-[100dvh] max-h-[100dvh] overflow-hidden bg-brand-bg flex flex-col" },
             // Hero Header for Form Visit
-            React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-10 pb-6 relative overflow-hidden shadow-xl shrink-0" },
+            React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-4 pb-6 relative overflow-hidden shadow-xl shrink-0" },
                 React.createElement("div", { className: "absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" }),
                 React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-brand-orange/20 rounded-full blur-xl" }),
                 
-                React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-6" },
+                React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-3" },
                     React.createElement("div", { className: "flex items-center gap-3" },
                         React.createElement("button", { onClick: onDashboard, className: "w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 active:scale-95 transition-transform" },
                             React.createElement(Icon, { name: "left", className: "w-5 h-5 text-white" })
