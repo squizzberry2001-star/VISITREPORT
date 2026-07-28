@@ -650,7 +650,7 @@ function AiInsightsPanel({ data }) {
             if (res && res[0] && res[0].payload) {
                 setAiSummary(res[0].payload);
             } else {
-                setAiSummary(generateAiSummary(data.topQSC || [], data.topOPI || [], data.kpi?.totalVisits || 0));
+                setAiSummary(generateAiSummary(data.topQSC || [], data.topOPI || [], data.globalTotalVisits || 0));
             }
             setAiLoading(false);
         }).then(sub => { if (sub) unsubs.push(sub); });
