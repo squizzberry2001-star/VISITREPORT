@@ -187,7 +187,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v80';
+const APP_BUILD_VERSION = 'revamp327-modular-v81';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1102,7 +1102,7 @@ async function parseMasterStoreExcelFile(file) {
     });
 }
 
-const BESTIE_NAMES = uniqueBy([...BESTIE_LOGIN_DATA.map((item) => item.name), ...BESTIE_ASSIGNMENTS.map((item) => cleanText(item.bestieName))].filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
+const BESTIE_NAMES = uniqueBy([...BESTIE_LOGIN_DATA.map((item) => item.name)].filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
 function getStoreLabel(item) {
     return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
 }
