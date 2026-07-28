@@ -212,22 +212,28 @@ function rbvScrollEditableIntoKeyboardSafeView(target, options = {}) {
             const inset = rbvApplyKeyboardInset();
             if (inset < 72 && !options.force) return;
             const now = Date.now();
-            if (!options.force && now - rbvLastKeyboardScrollAt < 700) return;
+            if (!options.force && now - rbvLastKeyboardScrollAt < 400) return;
             const viewport = window.visualViewport;
             const viewportTop = viewport ? viewport.offsetTop : 0;
             const viewportHeight = viewport ? viewport.height : window.innerHeight;
             const rect = target.getBoundingClientRect();
-            const topLimit = viewportTop + 78;
-            const bottomLimit = viewportTop + viewportHeight - 92;
+            // Clearance dari atas (sticky header) dan bawah (keyboard + buffer)
+            const topLimit = viewportTop + 72;
+            const bottomLimit = viewportTop + viewportHeight - 32;
             const tooLow = rect.bottom > bottomLimit;
             const tooHigh = rect.top < topLimit;
             if (tooLow || tooHigh || options.force) {
                 rbvLastKeyboardScrollAt = now;
-                const scrollRoot = document.scrollingElement || document.documentElement;
-                const currentY = scrollRoot.scrollTop || window.scrollY || 0;
-                const desiredDelta = tooLow ? (rect.bottom - bottomLimit + 18) : (rect.top - topLimit - 18);
-                const nextY = Math.max(0, Math.round(currentY + desiredDelta));
-                if (Math.abs(nextY - currentY) > 24) window.scrollTo({ top: nextY, behavior: 'auto' });
+                // Prefer native scrollIntoView untuk Android compatibility
+                try {
+                    target.scrollIntoView({ block: 'center', behavior: 'auto' });
+                } catch (_) {
+                    const scrollRoot = document.scrollingElement || document.documentElement;
+                    const currentY = scrollRoot.scrollTop || window.scrollY || 0;
+                    const desiredDelta = tooLow ? (rect.bottom - bottomLimit + 24) : (rect.top - topLimit - 24);
+                    const nextY = Math.max(0, Math.round(currentY + desiredDelta));
+                    if (Math.abs(nextY - currentY) > 16) window.scrollTo({ top: nextY, behavior: 'auto' });
+                }
             }
         }
         catch (error) { }

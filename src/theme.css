@@ -7360,3 +7360,78 @@ body.rbv-keyboard-visible .evidence-floating-capture {
 }
 /* ======================================================================== */
 
+/* ========================================================================
+   KEYBOARD UX MASTER FIX (v109) - Overrides semua blok sebelumnya
+   Memastikan elemen yang diketik selalu terlihat di atas keyboard mobile.
+   ======================================================================== */
+
+/* Saat keyboard virtual muncul → sembunyikan bottom navbar dan floating buttons */
+body.rbv-keyboard-visible .app-tab-bar,
+body.rbv-keyboard-visible .bottom-nav,
+body.rbv-keyboard-visible [class*="tab-bar"],
+body.rbv-keyboard-visible [class*="bottom-nav"],
+body.rbv-keyboard-visible .visit-quick-dock-v54,
+body.rbv-keyboard-visible .observation-inline-nav,
+body.rbv-keyboard-visible .evidence-floating-capture {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  transform: translateY(20px) !important;
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+/* Padding bawah halaman = tinggi keyboard, agar konten tidak tertutup */
+body.rbv-keyboard-visible .workspace-page,
+body.rbv-keyboard-visible .preview-page,
+body.rbv-keyboard-visible .dashboard-page,
+body.rbv-keyboard-visible .audit-shell,
+body.rbv-keyboard-visible main,
+body.rbv-keyboard-visible #root > div {
+  padding-bottom: calc(var(--rbv-keyboard-inset, 0px) + 24px) !important;
+  transition: padding-bottom 0.12s ease !important;
+}
+
+/* Scroll margin: field yang diketik akan selalu scroll ke posisi terlihat */
+body.rbv-keyboard-visible .rbv-mobile-editable,
+body.rbv-keyboard-visible .form-control,
+body.rbv-keyboard-visible .rich-editor-input,
+body.rbv-keyboard-visible textarea,
+body.rbv-keyboard-visible input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="date"]):not([type="time"]) {
+  scroll-margin-top: 72px !important;
+  scroll-margin-bottom: calc(var(--rbv-keyboard-inset, 0px) + 32px) !important;
+}
+
+/* Non-keyboard state: semua kembali normal dengan smooth transition */
+body:not(.rbv-keyboard-visible) .app-tab-bar,
+body:not(.rbv-keyboard-visible) .bottom-nav,
+body:not(.rbv-keyboard-visible) [class*="tab-bar"],
+body:not(.rbv-keyboard-visible) [class*="bottom-nav"] {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+/* Matikan semua animasi & transisi saat keyboard aktif → mencegah layout jump */
+body.rbv-keyboard-visible * {
+  animation-duration: 0.001s !important;
+}
+body.rbv-keyboard-visible .slide-enter,
+body.rbv-keyboard-visible .fade-in,
+body.rbv-keyboard-visible .section-shell,
+body.rbv-keyboard-visible .surface-card,
+body.rbv-keyboard-visible .panel-card,
+body.rbv-keyboard-visible .rich-editor,
+body.rbv-keyboard-visible .form-control {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* scroll-behavior: auto saat keyboard aktif → mencegah scroll loncat-loncat */
+html.rbv-keyboard-visible,
+body.rbv-keyboard-visible {
+  scroll-behavior: auto !important;
+  scroll-padding-bottom: calc(var(--rbv-keyboard-inset, 0px) + 40px) !important;
+}
