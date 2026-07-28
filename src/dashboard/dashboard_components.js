@@ -1697,20 +1697,19 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 React.createElement("h1", { className: "text-3xl font-black tracking-tight mb-8" }, bestieName),
                 
                 // Target Harian Center Banner
-                React.createElement("div", { className: "flex flex-col items-center w-full" },
-                    React.createElement("div", { className: "relative w-24 h-24 flex items-center justify-center mb-4" },
-                        React.createElement("svg", { className: "w-full h-full -rotate-90", viewBox: "0 0 36 36" },
-                            React.createElement("path", { className: "text-white/20", d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "2.5" }),
-                            React.createElement("path", { className: "text-brand-orange", strokeDasharray: `${progressPercent}, 100`, d: "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round" })
+                // Simple Target Banner
+                React.createElement("div", { className: "bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 w-full text-left" },
+                    React.createElement("div", { className: "flex-1 w-full" },
+                        React.createElement("div", { className: "flex justify-between items-end mb-2" },
+                            React.createElement("h2", { className: "text-sm font-bold" }, "Target Hari Ini"),
+                            React.createElement("span", { className: "text-xs font-medium text-white/80" }, progressPercent, "% (", todayVisits, "/", scheduleCount, ")")
                         ),
-                        React.createElement("div", { className: "absolute flex flex-col items-center justify-center mt-1" },
-                            React.createElement("span", { className: "text-xl font-black leading-none" }, progressPercent, "%")
+                        // Linear progress bar
+                        React.createElement("div", { className: "h-2 w-full bg-black/20 rounded-full overflow-hidden" },
+                            React.createElement("div", { className: "h-full bg-brand-orange rounded-full transition-all duration-1000", style: { width: `${progressPercent}%` } })
                         )
                     ),
-                    React.createElement("h2", { className: "text-lg font-bold mb-1" }, "Target Hari Ini"),
-                    React.createElement("p", { className: "text-white/70 text-sm mb-6" }, todayVisits, " dari ", scheduleCount, " Kunjungan"),
-                    
-                    React.createElement("button", { onClick: onNewVisit, className: "w-full max-w-[280px] bg-brand-orange text-slate-900 font-bold py-3.5 px-6 rounded-full shadow-lg shadow-orange-500/30 active:scale-95 transition-transform" }, "Mulai Kunjungan")
+                    React.createElement("button", { onClick: onNewVisit, className: "w-full sm:w-auto bg-brand-orange text-slate-900 font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-orange-500/30 active:scale-95 transition-transform whitespace-nowrap text-sm" }, "Mulai Kunjungan")
                 )
             )
         ),
