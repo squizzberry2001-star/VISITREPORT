@@ -3332,7 +3332,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
     }, [pin]);
     if (!open)
         return null;
-    return (React.createElement("div", { className: "fixed inset-0 z-[99999] grid place-items-center bg-brand-teal/80 p-5 backdrop-blur-xl fade-in", role: "dialog", "aria-modal": "true" },
+    return (React.createElement("div", { className: "fixed inset-0 grid place-items-center bg-brand-teal/80 p-5 backdrop-blur-xl fade-in", style: { zIndex: 99999 }, role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "secret-pin-card w-full max-w-sm rounded-[40px] bg-white p-8 shadow-2xl relative overflow-hidden" },
             React.createElement("div", { className: "absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-teal to-brand-orange" }),
             React.createElement("div", { className: "mb-8 flex flex-col items-center text-center" },
@@ -4247,7 +4247,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime' || source === 'convex' || source === 'firebase' || source === 'firebase realtime';
     const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : (source === 'convex realtime' || source === 'convex' || source === 'firebase' || source === 'firebase realtime') ? 'Live Firebase' : 'Lokal (Offline/Backup)';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
-    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[99990] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm lg:p-6", role: "dialog", "aria-modal": "true" },
+    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm lg:p-6", style: { zIndex: 99999 }, role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl lg:p-7" },
             React.createElement("div", { className: "mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                 React.createElement("div", null,
