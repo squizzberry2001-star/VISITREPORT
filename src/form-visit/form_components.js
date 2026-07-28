@@ -777,14 +777,15 @@ function ObservationSection({ visit, update }) {
     const enabled = tab === 'opi' ? visit.showOPITable === true : visit.showQSCTable === true;
     const setEnabled = (value) => tab === 'opi' ? update({ showOPITable: value }) : update({ showQSCTable: value });
     const preTitle = React.createElement("div", { className: "section-switcher flex min-w-0 gap-2 overflow-x-auto pb-1 items-center" },
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'opi' && 'active'), onClick: () => setTab('opi') },
-            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-            " OPI"),
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'qsc' && 'active'), onClick: () => setTab('qsc') },
-            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4" }),
-            " QSC"),
-        React.createElement("div", { className: "ml-auto flex shrink-0 items-center pl-2" },
-            React.createElement(Toggle, { checked: enabled, onChange: setEnabled })
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent relative transition-all duration-300 flex items-center justify-center gap-1.5', tab === 'opi' ? 'active !pr-2 !py-1.5' : ''), onClick: () => setTab('opi') },
+            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4 shrink-0" }),
+            React.createElement("span", { className: "font-bold tracking-wide" }, "OPI"),
+            tab === 'opi' && React.createElement("div", { className: "ml-1 pl-2 border-l border-brand-teal/20 flex items-center shrink-0 scale-75 origin-left", onClick: (e) => e.stopPropagation() }, React.createElement(Toggle, { checked: enabled, onChange: setEnabled }))
+        ),
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent relative transition-all duration-300 flex items-center justify-center gap-1.5', tab === 'qsc' ? 'active !pr-2 !py-1.5' : ''), onClick: () => setTab('qsc') },
+            React.createElement(Icon, { name: "clipboard", className: "h-4 w-4 shrink-0" }),
+            React.createElement("span", { className: "font-bold tracking-wide" }, "QSC"),
+            tab === 'qsc' && React.createElement("div", { className: "ml-1 pl-2 border-l border-brand-teal/20 flex items-center shrink-0 scale-75 origin-left", onClick: (e) => e.stopPropagation() }, React.createElement(Toggle, { checked: enabled, onChange: setEnabled }))
         )
     );
     return (React.createElement(SectionShell, { title: "Observation & Root Cause Analysis", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'opi' ? 'OPI Project' : 'QSC Observation') + ' disembunyikan' }) : tab === 'opi' ? React.createElement(ObservationCards, { key: "opi", title: "OPI Project Observation", rows: visit.opiData, onChange: (opiData) => update({ opiData }) }) : React.createElement(ObservationCards, { key: "qsc", title: "QSC Observation", rows: visit.qscData, onChange: (qscData) => update({ qscData }) })));
@@ -796,14 +797,19 @@ function EvidenceSection({ visit, update }) {
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
     const evidenceTabStyle = { minWidth: 0, width: '100%', justifyContent: 'center', paddingLeft: '8px', paddingRight: '8px', whiteSpace: 'nowrap' };
-    const preTitle = React.createElement("div", { className: "section-switcher grid w-full min-w-0 grid-cols-2 gap-2 md:max-w-[460px]" },
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'finding' && 'active'), style: evidenceTabStyle, onClick: () => setTab('finding') },
+    const preTitle = React.createElement("div", { className: "section-switcher flex w-full min-w-0 gap-2 overflow-x-auto pb-1 md:max-w-[460px]" },
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent relative transition-all duration-300 flex items-center justify-center gap-1.5', tab === 'finding' ? 'active !pr-2 !py-1.5' : ''), style: evidenceTabStyle, onClick: () => setTab('finding') },
             React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
-            React.createElement("span", { className: "min-w-0 truncate" }, "Finding Evidence")),
-        React.createElement("button", { type: "button", className: cx('subnav-chip prominent', tab === 'corrective' && 'active'), style: evidenceTabStyle, onClick: () => setTab('corrective') },
+            React.createElement("span", { className: "min-w-0 truncate font-bold tracking-wide" }, "FINDING"),
+            tab === 'finding' && React.createElement("div", { className: "ml-1 pl-2 border-l border-brand-teal/20 flex items-center shrink-0 scale-75 origin-left", onClick: (e) => e.stopPropagation() }, React.createElement(Toggle, { checked: enabled, onChange: setEnabled }))
+        ),
+        React.createElement("button", { type: "button", className: cx('subnav-chip prominent relative transition-all duration-300 flex items-center justify-center gap-1.5', tab === 'corrective' ? 'active !pr-2 !py-1.5' : ''), style: evidenceTabStyle, onClick: () => setTab('corrective') },
             React.createElement(Icon, { name: "image", className: "h-4 w-4 shrink-0" }),
-            React.createElement("span", { className: "min-w-0 truncate" }, "Corrective Action")));
-    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle, actions: React.createElement(Toggle, { checked: enabled, onChange: setEnabled, label: toggleLabel }) }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
+            React.createElement("span", { className: "min-w-0 truncate font-bold tracking-wide" }, "CORRECTIVE"),
+            tab === 'corrective' && React.createElement("div", { className: "ml-1 pl-2 border-l border-brand-teal/20 flex items-center shrink-0 scale-75 origin-left", onClick: (e) => e.stopPropagation() }, React.createElement(Toggle, { checked: enabled, onChange: setEnabled }))
+        )
+    );
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },

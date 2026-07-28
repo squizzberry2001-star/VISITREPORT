@@ -952,9 +952,16 @@ function useAnalyticsData(history, scheduleCfg) {
                         }
                     });
                 });
-                const nowLocal = new Date();
-                const todayStrLb = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
-                const activeSched = Array.isArray(scheduleCfg) ? scheduleCfg : [];
+                const todayStrLb = new Date().toLocaleDateString('en-CA');
+                
+                let activeSched = Array.isArray(scheduleCfg) && scheduleCfg.length > 0 ? scheduleCfg : [];
+                if (activeSched.length === 0 && typeof BESTIE_ASSIGNMENTS !== 'undefined') {
+                    activeSched = BESTIE_ASSIGNMENTS.map(a => ({
+                        nama: a.bestieName,
+                        date: todayStrLb,
+                        toko: a.storeName
+                    }));
+                }
 
                 const leaderboard = Object.values(bestieMap).sort((a, b) => b.uniqueStoresMonthly - a.uniqueStoresMonthly).map(lb => {
                     const bestieScheds = activeSched.filter(s => matchBestieScheduleName(s.nama || s.bestie || s.auditor || s.name || '', lb.name));
@@ -1324,6 +1331,16 @@ function SyncStatusBadge() {
 }
 
 function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
+    const [secretTap, setSecretTap] = useState(0);
+
+    const handleSecretTap = () => {
+        const next = secretTap + 1;
+        setSecretTap(next);
+        if (next >= 10) {
+            setSecretTap(0);
+            onTitleTap?.();
+        }
+    };
 
     const [features, setFeatures] = useState(() => readFeaturesConfig());
     useEffect(() => {
@@ -1640,7 +1657,8 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
     }
 
     const bestieName = readBestieLogin()?.name || 'Bestie';
-    const scheduleCount = 5; // Default target
+    // Default target harian = minimal 1 Kunjungan
+    const scheduleCount = 1; 
     const progressPercent = Math.min(100, Math.round((todayVisits / scheduleCount) * 100));
 
     return (React.createElement("main", { className: "dashboard-page w-full min-h-screen flex flex-col bg-brand-bg relative pb-20" },
@@ -1655,7 +1673,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-brand-orange/20 rounded-full blur-xl" }),
             
             // Header Top
-            React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-8" },
+            React.createElement("div", { className: "flex justify-between items-center relative z-10 mb-4" },
                 React.createElement("div", null,
                     React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1" }, "Selamat Pagi,"),
                     React.createElement("h1", { className: "text-2xl font-black tracking-tight" }, bestieName)
@@ -1790,7 +1808,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         // Analytics view if tab is active
         activeTab === 'analytics' ? React.createElement("div", { className: "w-full bg-white pb-24 fade-in min-h-screen" },
             React.createElement("div", { className: "sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10 border-b border-slate-100" },
-                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight" }, "Analitik"),
+                React.createElement("h2", { className: "text-xl font-black text-slate-900 tracking-tight cursor-pointer select-none", onClick: handleSecretTap }, "Analitik & Performa"),
                 React.createElement("button", { onClick: () => onTabChange?.('home'), className: "w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full" }, React.createElement(Icon, { name: "x", className: "w-5 h-5" }))
             ),
             React.createElement(AnalyticsView, { analytics: analytics })
