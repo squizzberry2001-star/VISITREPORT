@@ -1705,40 +1705,121 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         
         // Home View
         activeTab === 'home' ? React.createElement(React.Fragment, null,
-        // Brand New Header & Hero (Dark Teal)
-        React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-10 pb-16 relative overflow-hidden shadow-xl" },
-            // Decoration circles
-            React.createElement("div", { className: "absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" }),
-            React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-brand-orange/20 rounded-full blur-xl" }),
-            
-            // Centered Header & Target Banner
-            React.createElement("div", { className: "flex flex-col items-center text-center relative z-10" },
-                // User Button (Top Right)
-                React.createElement("div", { className: "w-full flex justify-end mb-2" },
-                    React.createElement("button", { onClick: onTitleTap, className: "w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform" },
-                        React.createElement(Icon, { name: "user", className: "w-5 h-5 text-brand-teal" })
+        // === PREMIUM HERO HEADER ===
+        React.createElement("div", { className: "rbv-hero-header relative overflow-hidden", style: {
+            background: "linear-gradient(145deg, #0d2137 0%, #0f3460 40%, #1a4a6b 70%, #0d3347 100%)",
+            borderRadius: "0 0 36px 36px",
+            paddingBottom: "24px",
+            boxShadow: "0 12px 48px rgba(13,33,55,0.55)"
+        }},
+            // Decorative blobs
+            React.createElement("div", { style: { position:"absolute", top:"-40px", right:"-30px", width:"180px", height:"180px", background:"radial-gradient(circle, rgba(20,184,166,0.25) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" } }),
+            React.createElement("div", { style: { position:"absolute", bottom:"-20px", left:"-20px", width:"140px", height:"140px", background:"radial-gradient(circle, rgba(251,146,60,0.18) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" } }),
+            React.createElement("div", { style: { position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"300px", height:"300px", background:"radial-gradient(circle, rgba(20,184,166,0.06) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" } }),
+
+            // Top Row: App label + user button
+            React.createElement("div", { className:"flex items-center justify-between px-5 pt-12 pb-4" },
+                React.createElement("div", null,
+                    React.createElement("p", { style: { color:"rgba(255,255,255,0.55)", fontSize:"11px", fontWeight:"800", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:"2px" } }, "VISIT REPORT"),
+                    React.createElement("p", { style: { color:"rgba(255,255,255,0.65)", fontSize:"13px", fontWeight:"500" } }, greeting)
+                ),
+                React.createElement("button", { onClick: onTitleTap,
+                    style: {
+                        width:"42px", height:"42px", borderRadius:"50%",
+                        background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.2)",
+                        backdropFilter:"blur(12px)", display:"flex", alignItems:"center", justifyContent:"center",
+                        cursor:"pointer", transition:"transform 0.2s"
+                    },
+                    onPointerDown: e => { e.currentTarget.style.transform = "scale(0.93)"; },
+                    onPointerUp: e => { e.currentTarget.style.transform = "scale(1)"; }
+                },
+                    React.createElement(Icon, { name:"user", className:"w-5 h-5", style:{ color:"#fff" } })
+                )
+            ),
+
+            // Name + greeting
+            React.createElement("div", { className:"px-5 mb-5" },
+                React.createElement("h1", { style: {
+                    fontSize: "clamp(26px, 7vw, 34px)",
+                    fontWeight: "900",
+                    color: "#ffffff",
+                    lineHeight: "1.15",
+                    letterSpacing: "-0.02em",
+                    marginBottom: "4px"
+                }}, bestieName),
+                React.createElement("p", { style: { color:"rgba(255,255,255,0.55)", fontSize:"13px", fontWeight:"500" } },
+                    new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+                )
+            ),
+
+            // Stat chips row
+            React.createElement("div", { className:"flex gap-3 px-5 mb-5 overflow-x-auto hide-scrollbar" },
+                // Today Visits
+                React.createElement("div", { style: {
+                    flex:"0 0 auto", background:"rgba(255,255,255,0.10)", backdropFilter:"blur(12px)",
+                    border:"1px solid rgba(255,255,255,0.16)", borderRadius:"18px",
+                    padding:"12px 16px", minWidth:"110px"
+                }},
+                    React.createElement("p", { style:{ color:"rgba(255,255,255,0.55)", fontSize:"10px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"4px" }}, "Hari Ini"),
+                    React.createElement("p", { style:{ color:"#fff", fontSize:"24px", fontWeight:"900", lineHeight:"1" }}, todayVisits),
+                    React.createElement("p", { style:{ color:"rgba(255,255,255,0.5)", fontSize:"11px", fontWeight:"600", marginTop:"2px" }}, "kunjungan")
+                ),
+                // Total History
+                React.createElement("div", { style: {
+                    flex:"0 0 auto", background:"rgba(20,184,166,0.18)", backdropFilter:"blur(12px)",
+                    border:"1px solid rgba(20,184,166,0.3)", borderRadius:"18px",
+                    padding:"12px 16px", minWidth:"110px"
+                }},
+                    React.createElement("p", { style:{ color:"rgba(167,243,208,0.85)", fontSize:"10px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"4px" }}, "Total"),
+                    React.createElement("p", { style:{ color:"#fff", fontSize:"24px", fontWeight:"900", lineHeight:"1" }}, history.length),
+                    React.createElement("p", { style:{ color:"rgba(167,243,208,0.7)", fontSize:"11px", fontWeight:"600", marginTop:"2px" }}, "riwayat")
+                ),
+                // Selesai count
+                React.createElement("div", { style: {
+                    flex:"0 0 auto", background:"rgba(251,146,60,0.18)", backdropFilter:"blur(12px)",
+                    border:"1px solid rgba(251,146,60,0.3)", borderRadius:"18px",
+                    padding:"12px 16px", minWidth:"110px"
+                }},
+                    React.createElement("p", { style:{ color:"rgba(254,215,170,0.85)", fontSize:"10px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"4px" }}, "Selesai"),
+                    React.createElement("p", { style:{ color:"#fff", fontSize:"24px", fontWeight:"900", lineHeight:"1" }}, history.filter(h => Number(h.progress||0) >= 100).length),
+                    React.createElement("p", { style:{ color:"rgba(254,215,170,0.7)", fontSize:"11px", fontWeight:"600", marginTop:"2px" }}, "laporan")
+                )
+            ),
+
+            // Progress bar + CTA
+            React.createElement("div", { className:"mx-5", style: {
+                background:"rgba(255,255,255,0.09)", backdropFilter:"blur(16px)",
+                border:"1px solid rgba(255,255,255,0.15)", borderRadius:"24px", padding:"16px"
+            }},
+                React.createElement("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"10px" }},
+                    React.createElement("span", { style:{ color:"rgba(255,255,255,0.7)", fontSize:"12px", fontWeight:"700" }}, "Target Hari Ini"),
+                    React.createElement("span", { style:{ color: progressPercent >= 100 ? "#34d399" : "#fb923c", fontSize:"13px", fontWeight:"900" }},
+                        todayVisits, " / ", scheduleCount, " visit"
                     )
                 ),
-                // Greeting
-                React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1 -mt-6" }, greeting),
-                React.createElement("h1", { className: "text-3xl font-black tracking-tight mb-8" }, bestieName),
-                
-                // Target Harian Center Banner
-                React.createElement("div", { className: "bg-white/30 backdrop-blur-md border border-white/40 rounded-[28px] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 w-full text-left mt-4 shadow-sm", style: { marginBottom: '1rem' } },
-                      React.createElement("div", { className: "flex-1 w-full" },
-                          React.createElement("div", { className: "flex justify-between items-end mb-3" },
-                              React.createElement("h2", { className: "text-base font-bold text-slate-900" }, "Target Hari Ini"),
-                              React.createElement("span", { className: "text-sm font-bold text-slate-900" }, progressPercent, "% (", todayVisits, "/", scheduleCount, ")")
-                          ),
-                          // Linear progress bar (Made very visible even at 0%)
-                          React.createElement("div", { className: "h-3 w-full bg-white/40 border border-white/50 rounded-full overflow-hidden shadow-inner" },
-                              React.createElement("div", { className: "h-full bg-brand-orange rounded-full transition-all duration-1000 shadow-sm", style: { width: `${progressPercent}%` } })
-                          )
-                      ),
-                      React.createElement("button", { onClick: onNewVisit, className: "w-full sm:w-auto mt-2 sm:mt-0 bg-brand-orange text-white font-extrabold py-3.5 px-8 rounded-2xl shadow-lg shadow-orange-500/40 hover:shadow-orange-500/60 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap text-sm" }, "Mulai Kunjungan")
-                )
+                React.createElement("div", { style:{ height:"8px", background:"rgba(255,255,255,0.12)", borderRadius:"999px", overflow:"hidden", marginBottom:"14px" }},
+                    React.createElement("div", { style:{
+                        height:"100%", borderRadius:"999px",
+                        width: `${progressPercent}%`,
+                        background: progressPercent >= 100 ? "linear-gradient(90deg,#34d399,#10b981)" : "linear-gradient(90deg,#fb923c,#f97316)",
+                        boxShadow: progressPercent >= 100 ? "0 0 12px rgba(52,211,153,0.6)" : "0 0 12px rgba(251,146,60,0.6)",
+                        transition:"width 1s ease"
+                    }})
+                ),
+                React.createElement("button", { onClick: onNewVisit, style:{
+                    width:"100%", padding:"13px 0", borderRadius:"16px",
+                    background:"linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)",
+                    border:"none", color:"#fff", fontSize:"14px", fontWeight:"900",
+                    letterSpacing:"0.04em", cursor:"pointer",
+                    boxShadow:"0 4px 20px rgba(20,184,166,0.45)",
+                    transition:"transform 0.15s, box-shadow 0.15s"
+                },
+                    onPointerDown: e => { e.currentTarget.style.transform="scale(0.97)"; e.currentTarget.style.boxShadow="0 2px 10px rgba(20,184,166,0.3)"; },
+                    onPointerUp: e => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.boxShadow="0 4px 20px rgba(20,184,166,0.45)"; }
+                }, "✦  Mulai Kunjungan Baru")
             )
         ),
+
         
         // Content Area
         React.createElement("div", { className: "px-6 py-6" },

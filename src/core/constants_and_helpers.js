@@ -14,7 +14,7 @@ const MASTER_STORES = Array.isArray(window.DEFAULT_STORE_MASTER_DATA) ? window.D
 const JOB_LEVELS = ['', '1A', 'NS3', 'NS1', 'MG3', 'MG1'];
 const HISTORY_META_KEY = 'rbv_react_history_meta_v3';
 const ACTIVE_VISIT_KEY = 'rbv_react_active_visit_v3';
-const SESSION_SCREEN_KEY = 'rbv_session_screen_v110';
+const SESSION_SCREEN_KEY = 'rbv_session_screen_v111';
 const MANUAL_STORE_REQUEST_KEY = 'rbv_manual_store_requests_v6';
 const MANUAL_STORE_APPROVED_KEY = 'rbv_manual_store_approved_v6';
 const REPORT_DB_NAME = 'regional_bestie_visit_react_db';
@@ -135,7 +135,7 @@ const DEFAULT_UPDATE_NOTICE_CONFIG = {
     ],
     intervalSeconds: 4
 };
-const EMAIL_TEMPLATE_ADMIN_KEY = 'rbv_email_template_admin_v110';
+const EMAIL_TEMPLATE_ADMIN_KEY = 'rbv_email_template_admin_v111';
 const DEFAULT_EMAIL_SUBJECT_TEMPLATE = 'Visit Report - {store} - {date}';
 const DEFAULT_EMAIL_BODY_TEMPLATE = 'Dear Team,\n\nBerikut kami lampirkan Visit Report untuk store {store} pada tanggal kunjungan {date}.\n\nAttachment:\n1. PDF Visit Report\n2. Excel CA Assignment\n\nTerima kasih.\n\nBest Regards,\n{bestie}';
 const ASSIGNMENT_CONFIG_KEY = 'rbv_assignment_link_config_v1';
@@ -187,7 +187,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v110';
+const APP_BUILD_VERSION = 'revamp327-modular-v111';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
