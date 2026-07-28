@@ -1803,8 +1803,19 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                                     React.createElement("p", { className: "text-[11px] font-bold text-slate-500 mt-0.5" }, formatDate(item.visitDate))
                                 )
                             ),
-                            React.createElement("div", { className: "px-3 py-1.5 rounded-[12px] bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-sm shrink-0 ml-3" },
-                                React.createElement("span", { className: "text-[10px] font-extrabold tracking-wider" }, "OPEN")
+                            React.createElement("div", { className: "flex items-center gap-2 shrink-0 ml-3" },
+                                React.createElement("div", { className: "px-3 py-1.5 rounded-[12px] bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-sm" },
+                                    React.createElement("span", { className: "text-[10px] font-extrabold tracking-wider" }, "OPEN")
+                                ),
+                                React.createElement("button", {
+                                    type: "button",
+                                    title: "Hapus kunjungan",
+                                    className: "w-8 h-8 rounded-[12px] bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm shrink-0",
+                                    onClick: (e) => {
+                                        e.stopPropagation();
+                                        onDeleteVisit?.(item.id);
+                                    }
+                                }, React.createElement(Icon, { name: "trash", className: "w-4 h-4" }))
                             )
                         ),
                         React.createElement("div", { className: "mt-1" },
