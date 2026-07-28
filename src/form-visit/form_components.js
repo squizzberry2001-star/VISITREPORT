@@ -640,11 +640,11 @@ function PhotoGrid({ photos, onChange, prefix }) {
     }
     const floatingCapture = (React.createElement("div", { className: "evidence-floating-capture evidence-floating-capture-compact", role: "group", "aria-label": "Upload foto evidence" },
         React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-camera evidence-floating-icon-button", "aria-label": "Ambil foto evidence dari kamera", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", capture: getNativeCameraCaptureAttr(), className: "rbv-native-file-input", onClick: () => { rbvPrepareCameraCapture(); }, onChange: handleFloatingFiles }),
+            React.createElement("input", { ref: cameraRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", capture: getNativeCameraCaptureAttr() || undefined, className: "rbv-native-file-input", onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "camera", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Kamera")),
         React.createElement("label", { className: "rbv-native-file-trigger evidence-floating-button evidence-floating-gallery evidence-floating-icon-button", "aria-label": "Pilih foto evidence dari galeri", onPointerDown: rbvPrepareCameraCapture, onTouchStart: rbvPrepareCameraCapture },
-            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onClick: () => { rbvPrepareCameraCapture(); }, onChange: handleFloatingFiles }),
+            React.createElement("input", { ref: galleryRef, type: "file", accept: "image/*,image/jpeg,image/png,image/heic,image/webp", multiple: true, className: "rbv-native-file-input", "data-gallery-multiple": "true", onChange: handleFloatingFiles }),
             React.createElement(Icon, { name: "gallery", className: "h-5 w-5" }),
             React.createElement("span", { className: "evidence-floating-label" }, "Galeri"))));
     const floatingPortal = (typeof document !== 'undefined' && ReactDOM?.createPortal)
