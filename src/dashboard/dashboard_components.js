@@ -646,14 +646,16 @@ function AiInsightsPanel({ data }) {
     
     useEffect(() => {
         let unsubs = [];
-                subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
+        subscribeConvexQuery('listConfigs', { keys: ['aiExecutiveSummary'] }, (res) => {
             if (res && res[0] && res[0].payload) {
                 setAiSummary(res[0].payload);
+            } else {
+                setAiSummary(generateAiSummary(data.topQSC || [], data.topOPI || [], data.kpi?.totalVisits || 0));
             }
             setAiLoading(false);
         }).then(sub => { if (sub) unsubs.push(sub); });
         return () => unsubs.forEach(u => u());
-    }, []);
+    }, [data]);
 
     const paragraphs = (aiSummary || '').split('\n').filter(p => p.trim() !== '');
     const previewParagraphs = isExpanded ? paragraphs : paragraphs.slice(0, 3);
@@ -1679,7 +1681,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         // Home View
         activeTab === 'home' ? React.createElement(React.Fragment, null,
         // Brand New Header & Hero (Dark Teal)
-        React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-10 pb-8 relative overflow-hidden shadow-xl" },
+        React.createElement("div", { className: "bg-brand-teal text-white rounded-b-[40px] px-6 pt-10 pb-16 relative overflow-hidden shadow-xl" },
             // Decoration circles
             React.createElement("div", { className: "absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" }),
             React.createElement("div", { className: "absolute -bottom-10 -left-10 w-32 h-32 bg-brand-orange/20 rounded-full blur-xl" }),
