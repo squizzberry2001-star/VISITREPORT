@@ -1690,8 +1690,8 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             React.createElement("div", { className: "flex flex-col items-center text-center relative z-10" },
                 // User Button (Top Right)
                 React.createElement("div", { className: "w-full flex justify-end mb-2" },
-                    React.createElement("button", { onClick: onTitleTap, className: "w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 active:scale-95 transition-transform" },
-                        React.createElement(Icon, { name: "user", className: "w-5 h-5 text-white" })
+                    React.createElement("button", { onClick: onTitleTap, className: "w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform" },
+                        React.createElement(Icon, { name: "user", className: "w-5 h-5 text-brand-teal" })
                     )
                 ),
                 // Greeting
@@ -1759,7 +1759,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             React.createElement("div", { className: "mb-8" },
                 React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight mb-4" }, "Histori Aktivitas"),
                 history.length ? React.createElement("div", { className: "space-y-4" },
-                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex items-center justify-between cursor-pointer", onClick: () => onOpenVisit(item.id) },
+                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex items-center justify-between cursor-pointer overflow-hidden", onClick: () => onOpenVisit(item.id) },
                         React.createElement("div", { className: "flex items-center gap-3 flex-1 min-w-0" },
                             React.createElement("div", { className: cx("w-12 h-12 shrink-0 rounded-[16px] flex items-center justify-center transition-colors", item.progress >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-brand-teal/5 text-brand-teal group-hover:bg-brand-teal/10") },
                                 React.createElement(Icon, { name: item.progress >= 100 ? "check" : "clipboard", className: "w-6 h-6" })
@@ -1774,6 +1774,9 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                             React.createElement("div", { className: "px-3 py-1.5 rounded-[12px] bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-sm" },
                                 React.createElement("span", { className: "text-[10px] font-extrabold tracking-wider" }, "OPEN")
                             )
+                        ),
+                        React.createElement("div", { className: "absolute bottom-0 left-0 h-[3px] bg-slate-100 w-full overflow-hidden" },
+                            React.createElement("div", { className: cx("h-full transition-all duration-500", item.progress >= 100 ? "bg-emerald-500" : item.progress >= 50 ? "bg-brand-teal" : "bg-brand-orange"), style: { width: `${item.progress || 0}%` } })
                         )
                     )),
                     hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "w-full py-4 rounded-[20px] bg-slate-50 text-sm font-bold text-brand-teal text-center hover:bg-slate-100 transition-colors", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan Lebih Banyak") : null

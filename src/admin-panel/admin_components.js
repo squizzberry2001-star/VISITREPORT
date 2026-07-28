@@ -3332,7 +3332,7 @@ function SecretPinModal({ open, onClose, onUnlock }) {
     }, [pin]);
     if (!open)
         return null;
-    return (React.createElement("div", { className: "fixed inset-0 z-[120] grid place-items-center bg-brand-teal/80 p-5 backdrop-blur-xl fade-in", role: "dialog", "aria-modal": "true" },
+    return (React.createElement("div", { className: "fixed inset-0 z-[99999] grid place-items-center bg-brand-teal/80 p-5 backdrop-blur-xl fade-in", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "secret-pin-card w-full max-w-sm rounded-[40px] bg-white p-8 shadow-2xl relative overflow-hidden" },
             React.createElement("div", { className: "absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-teal to-brand-orange" }),
             React.createElement("div", { className: "mb-8 flex flex-col items-center text-center" },
@@ -3398,7 +3398,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [cloudflareDbBusy, setCloudflareDbBusy] = useState(false);
     const masterUploadInputRef = useRef(null);
     const [masterStoreRows, setMasterStoreRows] = useState(() => readLocalMasterStores());
-    const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Convex untuk semua device.');
+    const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Firebase (Live) untuk semua device.');
     const [masterStoreBusy, setMasterStoreBusy] = useState(false);
     const [masterStoreQuery, setMasterStoreQuery] = useState('');
     // --- Schedule state ---
@@ -3410,7 +3410,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
         if (typeof onWelcomeConfigChange === 'function')
             onWelcomeConfigChange(saved);
         const synced = await syncWelcomeConfigToConvex(saved);
-        alert(synced ? remoteSaveSuccessText('Text welcome') : remoteSaveFailText('Text welcome'));
+        alert(synced ? 'Teks welcome berhasil dipublish ke Firebase.' : 'Gagal publish teks welcome.');
     }
     function saveAssignmentSettings() {
         const saved = saveAssignmentLinkConfig(assignmentLink);
@@ -3771,7 +3771,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             ]);
             const remoteRows = remoteRowsResult.status === 'fulfilled' ? remoteRowsResult.value : null;
             const remoteRequests = remoteRequestsResult.status === 'fulfilled' ? remoteRequestsResult.value : null;
-            const remotePresence = presenceRowsResult.status === 'fulfilled' ? presenceRowsResult.value : null;
+            const remotePresence = presenceRowsResult.status === 'fulfilled' ? remotePresenceResult.value : null;
             if (remoteRows !== null && remoteRows.length > 0) {
                 applyRows(remoteRows, cloudflareEnabled() ? 'cloudflare' : (netlifyEnabled() ? 'netlify' : (supabaseEnabled() ? 'supabase' : ((source === 'firebase realtime' || source === 'convex realtime') ? 'firebase realtime' : 'firebase'))));
             }
@@ -3857,7 +3857,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 if (remoteRows && remoteRows.length) {
                     const confirmed = saveLocalMasterStores(remoteRows);
                     setMasterStoreRows(confirmed);
-                    setMasterStoreStatus(`Sync Convex berhasil: ${confirmed.length} toko tersimpan dan siap untuk semua device.`);
+                    setMasterStoreStatus(`Tarik data (Sync) dari Firebase berhasil. Ditemukan ${settingsRows.length} konfigurasi dan ${masterStores.length} master data.`);
                 }
                 else {
                     setMasterStoreStatus(`Sync Convex berhasil: ${rowsToSync.length} toko terkirim.`);
@@ -4247,7 +4247,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const isLive = source === 'cloudflare' || source === 'netlify' || source === 'supabase' || source === 'convex realtime' || source === 'convex' || source === 'firebase' || source === 'firebase realtime';
     const sourceBadgeLabel = source === 'cloudflare' ? 'Cloudflare D1' : source === 'netlify' ? 'Netlify Sync' : source === 'supabase' ? 'Supabase Sync' : (source === 'convex realtime' || source === 'convex' || source === 'firebase' || source === 'firebase realtime') ? 'Live Firebase' : 'Lokal (Offline/Backup)';
     const connectionTone = connectionState === 'online' ? 'success' : connectionState === 'error' || connectionState === 'fallback' ? 'warning' : 'default';
-    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[85] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm lg:p-6", role: "dialog", "aria-modal": "true" },
+    return (React.createElement("div", { className: "secret-admin-backdrop fixed inset-0 z-[99990] overflow-auto bg-slate-950/65 p-3 backdrop-blur-sm lg:p-6", role: "dialog", "aria-modal": "true" },
         React.createElement("div", { className: "secret-admin-panel mx-auto max-w-6xl rounded-[32px] bg-white p-5 shadow-2xl lg:p-7" },
             React.createElement("div", { className: "mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" },
                 React.createElement("div", null,
