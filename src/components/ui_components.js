@@ -198,8 +198,8 @@ function rbvApplyKeyboardInset() {
     const inset = rbvKeyboardInsetPx();
     try {
         document.documentElement.style.setProperty('--rbv-keyboard-inset', `${inset}px`);
-        document.documentElement.classList.toggle('rbv-keyboard-visible', inset > 72);
-        document.body?.classList.toggle('rbv-keyboard-visible', inset > 72);
+        document.documentElement.classList.toggle('rbv-keyboard-visible', inset > 150);
+        document.body?.classList.toggle('rbv-keyboard-visible', inset > 150);
     }
     catch (error) { }
     return inset;
