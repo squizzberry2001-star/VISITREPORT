@@ -221,7 +221,8 @@ Kembalikan HANYA format JSON murni TANPA markdown backtick/code block:
 }
 
 
-async function callGeminiExecutiveSummary({ qscTexts, opiTexts, storeFindings, totalVisits, topQSC, topOPI }) {
+async function callGeminiExecutiveSummary({ qscTexts, opiTexts, evidenceTexts, storeFindings, totalVisits, topQSC, topOPI }) {
+    const evidenceSample = (evidenceTexts || []).slice(0, 150).join(' | ');
     const topStores = (storeFindings || []).slice(0, 8).map(s => `${s.storeName}: ${s.totalFindings} temuan (QSC: ${s.qscCount}, OPI: ${s.opiCount})`).join('\n');
     const qscSample = (qscTexts || []).slice(0, 150).join(' | ');
     const opiSample = (opiTexts || []).slice(0, 150).join(' | ');

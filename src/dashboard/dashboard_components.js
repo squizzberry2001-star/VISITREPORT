@@ -779,6 +779,7 @@ function useAnalyticsData(history, scheduleCfg) {
                 const opiByMonth = {};
                 const qscTexts = [];
                 const opiTexts = [];
+                const evidenceTexts = [];
                 let emailSentCount = 0;
                 let emailFeedbackCount = 0;
 
@@ -797,6 +798,8 @@ function useAnalyticsData(history, scheduleCfg) {
                         if (f.type === 'qsc') {
                             qscTexts.push(text);
                             if (storeName && storeFindingMap[storeName]) { storeFindingMap[storeName].qscCount++; storeFindingMap[storeName].totalFindings++; }
+                        } else if (f.type === 'evidence') {
+                            evidenceTexts.push(text);
                         } else {
                             opiTexts.push(text);
                             if (storeName && storeFindingMap[storeName]) { storeFindingMap[storeName].opiCount++; storeFindingMap[storeName].totalFindings++; }
@@ -931,6 +934,18 @@ function useAnalyticsData(history, scheduleCfg) {
                             }
                         });
                     }
+                    if (Array.isArray(v.findingEvidencePhotos)) {
+                        v.findingEvidencePhotos.forEach(photo => {
+                            const desc = String(photo.description || '').trim();
+                            if (desc && desc.length >= 5) evidenceTexts.push(desc);
+                        });
+                    }
+                    if (Array.isArray(v.correctiveActionPhotos)) {
+                        v.correctiveActionPhotos.forEach(photo => {
+                            const desc = String(photo.description || '').trim();
+                            if (desc && desc.length >= 5) evidenceTexts.push(desc);
+                        });
+                    }
                 });
                 const storeFindings = Object.values(storeFindingMap).filter(s => s.totalFindings > 0).sort((a, b) => b.totalFindings - a.totalFindings);
                 
@@ -1002,7 +1017,8 @@ function useAnalyticsData(history, scheduleCfg) {
                     rows: rows || [],
                     storeFindings: storeFindings,
                     qscTexts: qscTexts,
-                    opiTexts: opiTexts
+                    opiTexts: opiTexts,
+                    evidenceTexts: evidenceTexts
                 });
             } catch (e) {
                 console.error(e);
@@ -1405,6 +1421,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                         const result = await callGeminiExecutiveSummary({
                             qscTexts: analytics.data.qscTexts || [],
                             opiTexts: analytics.data.opiTexts || [],
+                            evidenceTexts: analytics.data.evidenceTexts || [],
                             storeFindings: analytics.data.storeFindings || [],
                             totalVisits: analytics.data.globalTotalVisits || 0,
                             topQSC: analytics.data.topQSC || [],

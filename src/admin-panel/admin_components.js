@@ -2728,6 +2728,26 @@ async function syncFindingsToConvex(visit) {
                 }
             });
         }
+        if (Array.isArray(visit.findingEvidencePhotos)) {
+            visit.findingEvidencePhotos.forEach(photo => {
+                const desc = cleanText(photo.description);
+                if (desc && desc.length >= 5) {
+                    findings.push({
+                        type: 'evidence', temuan: desc, kondisiIdeal: '', dampak: '', penyebab: '', tindakan: '', hasil: ''
+                    });
+                }
+            });
+        }
+        if (Array.isArray(visit.correctiveActionPhotos)) {
+            visit.correctiveActionPhotos.forEach(photo => {
+                const desc = cleanText(photo.description);
+                if (desc && desc.length >= 5) {
+                    findings.push({
+                        type: 'evidence', temuan: desc, kondisiIdeal: '', dampak: '', penyebab: '', tindakan: '', hasil: ''
+                    });
+                }
+            });
+        }
         if (findings.length === 0) return;
         await runConvexMutation('monitor:upsertFindings', {
             payload: {
@@ -2772,6 +2792,27 @@ async function backfillLocalFindingsToConvex() {
                     if (isMeaningfulObservation(row)) {
                         const temuan = cleanText(row.temuan || row.finding || row.observation || row.description || '');
                         if (temuan) findings.push({ type: 'qsc', temuan, kondisiIdeal: cleanText(row.kondisiIdeal), dampak: cleanText(row.dampak), penyebab: cleanText(row.penyebab), tindakan: cleanText(row.tindakan), hasil: cleanText(row.hasil) });
+                    }
+                });
+            }
+
+            if (Array.isArray(visit.findingEvidencePhotos)) {
+                visit.findingEvidencePhotos.forEach(photo => {
+                    const desc = cleanText(photo.description);
+                    if (desc && desc.length >= 5) {
+                        findings.push({
+                            type: 'evidence', temuan: desc, kondisiIdeal: '', dampak: '', penyebab: '', tindakan: '', hasil: ''
+                        });
+                    }
+                });
+            }
+            if (Array.isArray(visit.correctiveActionPhotos)) {
+                visit.correctiveActionPhotos.forEach(photo => {
+                    const desc = cleanText(photo.description);
+                    if (desc && desc.length >= 5) {
+                        findings.push({
+                            type: 'evidence', temuan: desc, kondisiIdeal: '', dampak: '', penyebab: '', tindakan: '', hasil: ''
+                        });
                     }
                 });
             }
