@@ -1332,6 +1332,201 @@ function SyncStatusBadge() {
             React.createElement("span", { className: "hidden sm:inline" }, "Sync Cloud...")
         );
     }
+                    React.createElement("div", { className: "w-10 h-10 bg-white/10 text-emerald-400 rounded-xl flex items-center justify-center mb-4 backdrop-blur-sm" }, React.createElement(Icon, { name: "store", className: "w-5 h-5" })),
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-3xl font-black text-white mb-1" }, `${coveragePercent}%`),
+                        React.createElement("p", { className: "text-[11px] font-bold text-slate-400 uppercase tracking-wider" }, "Coverage Global")
+                    )
+                )
+            )
+        ),
+        
+        // Main Content Grid
+        React.createElement("div", { className: "grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8" },
+            
+            // Left Column: Trends & Map
+            React.createElement("div", { className: "xl:col-span-2 space-y-6" },
+                features.trend && React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+                        React.createElement("h3", { className: "text-xl font-black text-slate-800" }, "Tren Temuan Historis"),
+                        React.createElement("div", { className: "px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500" }, "6 Bulan Terakhir")
+                    ),
+                    React.createElement("div", { className: "w-full h-[280px]" },
+                        (!data?.allMonths || data?.allMonths.length === 0) ? 
+                            React.createElement("div", { className: "h-full flex items-center justify-center text-slate-400 font-medium" }, "Tidak ada data tren") :
+                            React.createElement(SimpleChart, { 
+                                type: 'bar',
+                                data: {
+                                    labels: data.allMonths,
+                                    datasets: [
+                                        {
+                                            label: 'QSC Findings',
+                                            data: data.allMonths.map(m => data.qscByMonth[m] || 0),
+                                            backgroundColor: '#10b981',
+                                            borderRadius: 6
+                                        },
+                                        {
+                                            label: 'OPI Findings',
+                                            data: data.allMonths.map(m => data.opiByMonth[m] || 0),
+                                            backgroundColor: '#0ea5e9',
+                                            borderRadius: 6
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { position: 'top' } },
+                                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                                }
+                            })
+                    )
+                ),
+
+                // Store Findings Chart - Top 10 Toko Temuan
+                (data?.storeFindings && data.storeFindings.length > 0) && React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+                        React.createElement("div", { className: "flex items-center gap-3" },
+                            React.createElement("div", { className: "p-2 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl text-white shadow-md" },
+                                React.createElement(Icon, { name: "store", className: "w-4 h-4" })
+                            ),
+                            React.createElement("h3", { className: "text-xl font-black text-slate-800" }, "Top Toko Temuan")
+                        ),
+                        React.createElement("div", { className: "px-3 py-1 bg-rose-50 rounded-full text-xs font-bold text-rose-500" }, `${Math.min(data.storeFindings.length, 10)} Toko`)
+                    ),
+                    React.createElement("div", { className: "w-full", style: { height: Math.max(200, Math.min(data.storeFindings.length, 10) * 40 + 40) + 'px' } },
+                        React.createElement(SimpleChart, {
+                            type: 'bar',
+                            data: {
+                                labels: data.storeFindings.slice(0, 10).map(s => {
+                                    const sn = s?.storeName || 'Unknown';
+                                    return sn.length > 20 ? sn.slice(0, 18) + '…' : sn;
+                                }),
+                                datasets: [
+                                    {
+                                        label: 'QSC',
+                                        data: data.storeFindings.slice(0, 10).map(s => s.qscCount),
+                                        backgroundColor: '#10b981',
+                                        borderRadius: 4
+                                    },
+                                    {
+                                        label: 'OPI',
+                                        data: data.storeFindings.slice(0, 10).map(s => s.opiCount),
+                                        backgroundColor: '#0ea5e9',
+                                        borderRadius: 4
+                                    }
+                                ]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11, weight: 'bold' } } }
+                                },
+                                scales: {
+                                    x: { stacked: true, beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } },
+                                    y: { stacked: true, ticks: { font: { size: 11, weight: '600' } }, grid: { display: false } }
+                                }
+                            }
+                        })
+                    )
+                ),
+                
+                features.map && React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+                        React.createElement("h3", { className: "text-xl font-black text-slate-800" }, "Distribusi Lokasi (GIS)"),
+                        React.createElement("div", { className: "w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center" }, React.createElement(Icon, { name: "map", className: "w-5 h-5" }))
+                    ),
+                    React.createElement(VisitMap, { rows: data?.rows || [] })
+                )
+            ),
+            
+            // Right Column: Top Findings & AI
+            React.createElement("div", { className: "space-y-6" },
+                
+                
+                React.createElement("div", { className: "bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm" },
+                    React.createElement("h3", { className: "text-xl font-black text-slate-800 mb-6" }, "Isu Terbanyak"),
+                    
+                    React.createElement("div", { className: "mb-6" },
+                        React.createElement("h4", { className: "text-xs font-black uppercase text-emerald-600 mb-3 tracking-widest flex items-center gap-2" }, 
+                            React.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-500" }), "QSC Issues"
+                        ),
+                        React.createElement("ul", { className: "space-y-2" },
+                            (!data?.topQSC || data.topQSC.length === 0) ? React.createElement("li", { className: "text-sm text-slate-400 italic" }, "Belum ada temuan.") :
+                            data.topQSC.map((item, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100" },
+                                React.createElement("span", { className: "text-sm font-semibold text-slate-700 capitalize truncate pr-4" }, item.keyword),
+                                React.createElement("span", { className: "w-7 h-7 bg-emerald-200 text-emerald-800 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm" }, item.count)
+                            ))
+                        )
+                    ),
+                    
+                    React.createElement("div", null,
+                        React.createElement("h4", { className: "text-xs font-black uppercase text-sky-600 mb-3 tracking-widest flex items-center gap-2" }, 
+                            React.createElement("span", { className: "w-2 h-2 rounded-full bg-sky-500" }), "OPI Issues"
+                        ),
+                        React.createElement("ul", { className: "space-y-2" },
+                            (!data?.topOPI || data.topOPI.length === 0) ? React.createElement("li", { className: "text-sm text-slate-400 italic" }, "Belum ada temuan.") :
+                            data.topOPI.map((item, i) => React.createElement("li", { key: i, className: "flex justify-between items-center bg-sky-50/50 p-3 rounded-2xl border border-sky-100" },
+                                React.createElement("span", { className: "text-sm font-semibold text-slate-700 capitalize truncate pr-4" }, item.keyword),
+                                React.createElement("span", { className: "w-7 h-7 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm" }, item.count)
+                            ))
+                        )
+                    )
+                )
+            )
+        )
+    ));
+}
+
+function SyncStatusBadge() {
+    const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            setIsSyncing(true);
+            try {
+                backfillLocalFindingsToConvex().finally(() => {
+                    setTimeout(() => setIsSyncing(false), 1200);
+                });
+            } catch (e) {
+                setIsSyncing(false);
+            }
+        };
+        const handleOffline = () => {
+            setIsOnline(false);
+            setIsSyncing(false);
+        };
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    if (!isOnline) {
+        return React.createElement("div", {
+            className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300/80 shadow-sm transition-all",
+            title: "Mode Offline Aktif. Anda dapat terus mengaudit tanpa sinyal, data disimpan di HP & otomatis disinkronkan saat online."
+        },
+            React.createElement("span", { className: "w-2 h-2 rounded-full bg-amber-500" }),
+            React.createElement("span", null, "Offline Mode")
+        );
+    }
+
+    if (isSyncing) {
+        return React.createElement("div", {
+            className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80 transition-all",
+            title: "Menyinkronkan data offline ke cloud..."
+        },
+            React.createElement("span", { className: "w-2 h-2 rounded-full bg-blue-500 animate-pulse" }),
+            React.createElement("span", { className: "hidden sm:inline" }, "Sync Cloud...")
+        );
+    }
 
     return React.createElement("div", {
         className: "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 transition-all",
@@ -1344,6 +1539,16 @@ function SyncStatusBadge() {
 
 function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel, onNewVisit, onQuickVisit, onOpenVisit, onDeleteVisit, onClearHistory, onTitleTap, onToggleFeedback, scheduleConfig }) {
     const [secretTap, setSecretTap] = useState(0);
+    const [historyRenderLimit, setHistoryRenderLimit] = useState(6);
+    const [masterStoreModalOpen, setMasterStoreModalOpen] = useState(false);
+
+    const greeting = useMemo(() => {
+        const hour = new Date().getHours();
+        if (hour >= 3 && hour < 11) return 'Selamat Pagi,';
+        if (hour >= 11 && hour < 15) return 'Selamat Siang,';
+        if (hour >= 15 && hour < 18) return 'Selamat Sore,';
+        return 'Selamat Malam,';
+    }, []);
 
     const handleSecretTap = () => {
         setSecretTap(prev => {
@@ -1437,13 +1642,11 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [backupBusy, setBackupBusy] = useState(false);
     const [restoreBusy, setRestoreBusy] = useState(false);
-    const [masterStoreModalOpen, setMasterStoreModalOpen] = useState(false);
     const [notificationBusy, setNotificationBusy] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState(() => rbvProgressNotificationEnabled() ? 'Auto 4 jam' : 'Reminder');
     const [syncBusy, setSyncBusy] = useState(false);
     const [syncMessage, setSyncMessage] = useState('');
     const [noticeConfig, setNoticeConfig] = useState(() => readUpdateNoticeConfig());
-    const [historyRenderLimit, setHistoryRenderLimit] = useState(() => RBV_ULTRA_LITE_CAMERA_MODE ? 12 : 9999);
     const [userLocation, setUserLocation] = useState(null);
     
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -1695,7 +1898,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                     )
                 ),
                 // Greeting
-                React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1 -mt-6" }, "Selamat Pagi,"),
+                React.createElement("p", { className: "text-white/70 text-sm font-medium mb-1 -mt-6" }, greeting),
                 React.createElement("h1", { className: "text-3xl font-black tracking-tight mb-8" }, bestieName),
                 
                 // Target Harian Center Banner
@@ -1767,24 +1970,29 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
             React.createElement("div", { className: "mb-8" },
                 React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight mb-4" }, "Histori Aktivitas"),
                 history.length ? React.createElement("div", { className: "space-y-4" },
-                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex items-center justify-between cursor-pointer overflow-hidden", onClick: () => onOpenVisit(item.id) },
-                        React.createElement("div", { className: "flex items-center gap-3 flex-1 min-w-0" },
-                            React.createElement("div", { className: cx("w-12 h-12 shrink-0 rounded-[16px] flex items-center justify-center transition-colors", item.progress >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-brand-teal/5 text-brand-teal group-hover:bg-brand-teal/10") },
-                                React.createElement(Icon, { name: item.progress >= 100 ? "check" : "clipboard", className: "w-6 h-6" })
+                    visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex flex-col gap-3 cursor-pointer overflow-hidden", onClick: () => onOpenVisit(item.id) },
+                        React.createElement("div", { className: "flex items-center justify-between" },
+                            React.createElement("div", { className: "flex items-center gap-3 flex-1 min-w-0" },
+                                React.createElement("div", { className: cx("w-12 h-12 shrink-0 rounded-[16px] flex items-center justify-center transition-colors", item.progress >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-brand-teal/5 text-brand-teal group-hover:bg-brand-teal/10") },
+                                    React.createElement(Icon, { name: item.progress >= 100 ? "check" : "clipboard", className: "w-6 h-6" })
+                                ),
+                                React.createElement("div", { className: "flex-1 min-w-0" },
+                                    React.createElement("h4", { className: "font-black text-slate-900 text-[13px] sm:text-sm truncate group-hover:text-brand-teal transition-colors" }, item.storeName),
+                                    React.createElement("p", { className: "text-[11px] font-bold text-slate-500 mt-0.5" }, formatDate(item.visitDate))
+                                )
                             ),
-                            React.createElement("div", { className: "flex-1 min-w-0" },
-                                React.createElement("h4", { className: "font-black text-slate-900 text-[13px] sm:text-sm truncate group-hover:text-brand-teal transition-colors" }, item.storeName),
-                                React.createElement("p", { className: "text-[11px] font-bold text-slate-500 mt-0.5" }, formatDate(item.visitDate))
-                            )
-                        ),
-                        React.createElement("div", { className: "flex shrink-0 items-center gap-2 pl-3" },
-                            React.createElement("span", { className: cx("text-[10px] sm:text-xs font-black px-2 py-1 rounded-full", item.progress >= 100 ? "bg-emerald-100 text-emerald-700" : item.progress >= 50 ? "bg-brand-teal/10 text-brand-teal" : "bg-brand-orange/10 text-brand-orange") }, item.progress || 0, "%"),
-                            React.createElement("div", { className: "px-3 py-1.5 rounded-[12px] bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-sm" },
+                            React.createElement("div", { className: "px-3 py-1.5 rounded-[12px] bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-sm shrink-0 ml-3" },
                                 React.createElement("span", { className: "text-[10px] font-extrabold tracking-wider" }, "OPEN")
                             )
                         ),
-                        React.createElement("div", { className: "absolute bottom-0 left-0 h-[3px] bg-slate-100 w-full overflow-hidden" },
-                            React.createElement("div", { className: cx("h-full transition-all duration-500", item.progress >= 100 ? "bg-emerald-500" : item.progress >= 50 ? "bg-brand-teal" : "bg-brand-orange"), style: { width: `${item.progress || 0}%` } })
+                        React.createElement("div", { className: "mt-1" },
+                            React.createElement("div", { className: "flex items-center justify-between mb-1.5" },
+                                React.createElement("span", { className: "text-[10px] font-bold text-slate-400 uppercase tracking-widest" }, "Progress Kunjungan"),
+                                React.createElement("span", { className: cx("text-[11px] font-black", item.progress >= 100 ? "text-emerald-500" : "text-brand-orange") }, item.progress || 0, "%")
+                            ),
+                            React.createElement("div", { className: "h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner" },
+                                React.createElement("div", { className: cx("h-full transition-all duration-500", item.progress >= 100 ? "bg-emerald-500" : "bg-brand-orange"), style: { width: `${item.progress || 0}%` } })
+                            )
                         )
                     )),
                     hiddenHistoryCount > 0 ? React.createElement("button", { type: "button", className: "w-full py-4 rounded-[20px] bg-slate-50 text-sm font-bold text-brand-teal text-center hover:bg-slate-100 transition-colors", onClick: () => setHistoryRenderLimit((value) => value + 12) }, "Tampilkan Lebih Banyak") : null

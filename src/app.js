@@ -295,18 +295,6 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
     ));
 }
 
-function UpdateBanner({ onUpdate }) {
-    return React.createElement("div", { className: "sticky top-0 left-0 w-full bg-brand-orange text-slate-950 p-4 z-[99999] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl animate-slide-down border-b-4 border-slate-900" },
-        React.createElement("div", { className: "flex items-center gap-3" },
-            React.createElement(Icon, { name: "refresh", className: "w-6 h-6 animate-spin-slow shrink-0" }),
-            React.createElement("div", null,
-                React.createElement("h3", { className: "text-sm font-black uppercase tracking-widest" }, "Update Tersedia"),
-                React.createElement("p", { className: "text-xs font-bold opacity-80" }, "Versi terbaru aplikasi telah siap. Update untuk memuat fitur baru.")
-            )
-        ),
-        React.createElement("button", { onClick: onUpdate, className: "bg-slate-950 text-white px-6 py-2.5 rounded-xl text-sm font-extrabold hover:bg-slate-800 active:scale-95 transition-all shadow-lg whitespace-nowrap w-full sm:w-auto" }, "Update Sekarang")
-    );
-}
 
 function App() {
     const [screen, setScreen] = useState('dashboard');
@@ -963,7 +951,6 @@ function App() {
         content = React.createElement(VisitWorkspace, { visit: visit, update: updateVisit, activeSection: activeSection, goSection: goSection, onPreview: openPreviewScreen, onDashboard: () => setScreen('dashboard'), masterStoreRevision: masterStoreRevision });
     }
     return (React.createElement("div", { className: "audit-shell min-h-screen lg:flex lg:flex-row bg-slate-50" },
-        updateAvailable ? React.createElement(UpdateBanner, { onUpdate: forceUpdateApp }) : null,
         !['audit', 'preview'].includes(screen) ? React.createElement(DesktopSidebar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null,
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-1 flex-col" },
             !['audit', 'preview'].includes(screen) && !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
