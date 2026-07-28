@@ -507,7 +507,7 @@ function LeaderboardItem({ lb, idx, showStores = true }) {
     return React.createElement("div", { className: "bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-brand-teal/30 hover:shadow-md transition-all" },
         React.createElement("div", { className: "flex flex-col p-4 text-slate-800 select-none gap-3 sm:gap-4" },
             // Top Row: Avatar + Name + MVP badge
-            React.createElement("div", { className: "flex items-start justify-between w-full" },
+            React.createElement("div", { className: "flex items-start justify-between w-full cursor-pointer", onClick: () => setScheduleExpanded(!scheduleExpanded) },
                 React.createElement("div", { className: "flex items-center gap-3 min-w-0 pr-2" },
                     React.createElement("div", { className: "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-lg sm:text-xl " + (idx === 0 ? "bg-amber-100 text-amber-600 shadow-inner" : idx === 1 ? "bg-slate-200 text-slate-500 shadow-inner" : idx === 2 ? "bg-orange-100 text-orange-700 shadow-inner" : "bg-slate-50 text-slate-400 border border-slate-100") + " shrink-0" }, idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : (idx + 1)),
                     React.createElement("div", { className: "min-w-0 flex-1" },
@@ -517,28 +517,37 @@ function LeaderboardItem({ lb, idx, showStores = true }) {
                         ),
                         React.createElement("p", { className: "text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-brand-teal truncate mt-0.5" }, narasi)
                     )
-                )
+                ),
+                React.createElement(Icon, { name: scheduleExpanded ? "chevron-up" : "chevron-down", className: "w-4 h-4 text-slate-400 shrink-0 mt-2" })
             ),
             // Bottom Row: Schedule + Score
             React.createElement("div", { className: "w-full bg-slate-50/50 p-2.5 rounded-xl border border-slate-100" },
                 // Schedule Badge — full width, text wraps on mobile, collapsible
-                React.createElement("button", { 
-                    onClick: () => setScheduleExpanded(!scheduleExpanded),
-                    type: "button",
-                    className: "bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm w-full mb-2.5 text-left transition hover:bg-slate-50", 
-                    title: lb.todaySchedule ? (`${lb.todaySchedule.date ? '[' + lb.todaySchedule.date + '] ' : ''}${lb.todaySchedule.description || 'Jadwal Aktif'}${lb.todaySchedule.location ? ' — ' + lb.todaySchedule.location : ''}`) : 'Belum ada jadwal terdaftar untuk bestie ini' 
+                React.createElement("div", { 
+                    className: "bg-white rounded-xl px-3 py-2 border border-slate-200 shadow-sm w-full mb-2.5 text-left", 
                 },
-                    React.createElement("div", { className: "flex items-start justify-between gap-2" },
+                    React.createElement("div", { className: "flex flex-col gap-2 cursor-pointer", onClick: () => setScheduleExpanded(!scheduleExpanded) },
+                        // Always show today's schedule
                         React.createElement("div", { className: "flex items-start gap-2" },
                             React.createElement("div", { className: "flex items-center gap-1.5 shrink-0 pt-0.5" },
                                 React.createElement("span", { className: "w-2 h-2 rounded-full inline-block shrink-0 " + ((lb.todaySchedule && schedText && schedText.trim()) ? "bg-emerald-500 shadow-sm animate-pulse" : "bg-slate-300") }),
-                                React.createElement("span", { className: "text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0" }, "Jadwal")
+                                React.createElement("span", { className: "text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0" }, "Hari Ini")
                             ),
-                            scheduleExpanded && React.createElement("span", { className: "text-[11px] sm:text-xs font-bold text-slate-800 leading-snug break-words" }, 
-                                (lb.todaySchedule && schedText && schedText.trim()) ? schedText : "Belum ada jadwal terdaftar"
+                            React.createElement("span", { className: "text-[11px] sm:text-xs font-bold text-slate-800 leading-snug break-words" }, 
+                                (lb.todaySchedule && schedText && schedText.trim()) ? schedText : "Belum ada jadwal hari ini"
                             )
                         ),
-                        React.createElement(Icon, { name: scheduleExpanded ? "chevron-up" : "chevron-down", className: "w-3 h-3 text-slate-400 shrink-0 mt-0.5" })
+                        // Expanded view: Weekly Schedule
+                        scheduleExpanded && React.createElement("div", { className: "mt-1 pt-2 border-t border-slate-100 flex flex-col gap-2" },
+                            React.createElement("span", { className: "text-[9px] font-black text-slate-400 uppercase tracking-wider" }, "Jadwal Lengkap"),
+                            lb.allSchedules && lb.allSchedules.length > 0 ? lb.allSchedules.map((s, i) => {
+                                const st = formatScheduleBadgeText(s);
+                                return React.createElement("div", { key: i, className: "flex items-start gap-2 text-[11px] sm:text-xs text-slate-600" },
+                                    React.createElement("span", { className: "text-brand-teal shrink-0 mt-0.5" }, "•"),
+                                    React.createElement("span", { className: "break-words font-medium" }, st)
+                                );
+                            }) : React.createElement("span", { className: "text-[11px] sm:text-xs text-slate-500 italic" }, "Belum ada master data jadwal")
+                        )
                     )
                 ),
                 // Score row
@@ -969,7 +978,8 @@ function useAnalyticsData(history, scheduleCfg) {
                     const upcomingMatch = bestieScheds.filter(s => String(s.date || '').slice(0, 10) >= todayStrLb).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))[0] || null;
                     return {
                         ...lb,
-                        todaySchedule: todayMatch || upcomingMatch
+                        todaySchedule: todayMatch || upcomingMatch,
+                        allSchedules: bestieScheds
                     };
                 });
 
