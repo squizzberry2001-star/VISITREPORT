@@ -294,7 +294,6 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         )
     ));
 }
-const APP_RELOAD_LOCK_KEY = 'visit_app_reload_lock';
 
 function UpdateBanner({ onUpdate }) {
     return React.createElement("div", { className: "fixed top-0 left-0 w-full bg-brand-orange text-slate-950 p-4 z-[99999] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl animate-slide-down border-b-4 border-slate-900" },
