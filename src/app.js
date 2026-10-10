@@ -296,6 +296,20 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
 }
 
 
+function CoffeePopup({ open, onClose }) {
+  if (!open) return null;
+  return React.createElement("div", { className: "fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-sm", role: "dialog", "aria-modal": "true" },
+    React.createElement("div", { className: "w-full max-w-sm rounded-[32px] bg-white p-6 shadow-2xl text-center", style: { animation: 'rbvWelcomeTextIn .4s ease-out' } },
+      React.createElement("div", { className: "mb-4 text-6xl" }, "\u2615"),
+      React.createElement("h2", { className: "text-2xl font-black text-slate-950 mb-2" }, "Traktir Kopi Dulu?"),
+      React.createElement("p", { className: "text-slate-600 mb-6 text-sm font-medium leading-relaxed" }, "Dukung pengembangan aplikasi ini dengan traktir saya segelas kopi. Bantuan Anda sangat berarti!"),
+      React.createElement("div", { className: "flex flex-col gap-3" },
+        React.createElement("a", { href: "https://trakteer.id/", target: "_blank", rel: "noopener noreferrer", onClick: onClose, className: "btn btn-primary w-full text-center" }, "Traktir Sekarang"),
+        React.createElement("button", { type: "button", onClick: onClose, className: "font-bold text-slate-500 py-3 hover:text-slate-800 transition-colors" }, "Nanti")
+      )
+    )
+  );
+}
 function App() {
     const [screen, setScreen] = useState('dashboard');
     const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -335,6 +349,22 @@ function App() {
     }
 
     const secretTapRef = useRef({ count: 0, timer: null });
+  const [coffeeOpen, setCoffeeOpen] = useState(false);
+  useEffect(() => {
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem('coffee_dismissed') === '1'; } catch (e) {}
+    if (!welcomeOpen && !dismissed) {
+      if (screen === 'dashboard' || screen === 'preview') {
+        const timer = setTimeout(() => setCoffeeOpen(true), 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [welcomeOpen, screen]);
+  function closeCoffee() {
+    try { sessionStorage.setItem('coffee_dismissed', '1'); } catch (error) {}
+    setCoffeeOpen(false);
+  }
+
     useEffect(() => {
         let cancelled = false;
         async function restoreActiveVisit() {
@@ -957,7 +987,8 @@ function App() {
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
             !['audit', 'preview'].includes(screen) && !welcomeOpen ? React.createElement(MobileBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
-        React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
+                React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
+        React.createElement(CoffeePopup, { open: coffeeOpen, onClose: closeCoffee }),
         React.createElement(SecretPinModal, { open: pinOpen, onClose: () => setPinOpen(false), onUnlock: () => { setPinOpen(false); setSecretOpen(true); } }),
         React.createElement(SecretMonitorPanel, { open: secretOpen, onClose: () => setSecretOpen(false), history: history, welcomeConfig: welcomeConfig, onWelcomeConfigChange: applyWelcomeConfig, scheduleConfig: scheduleConfig, onScheduleConfigChange: setScheduleConfig })));
 }
