@@ -4985,6 +4985,28 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview }) 
   );
 }
 
+function CoffeePopup({ open, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-5 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-[32px] bg-white p-6 shadow-2xl text-center" style={{ animation: 'rbvWelcomeTextIn .4s ease-out' }}>
+        <div className="mb-4 text-6xl">&#9749;</div>
+        <h2 className="text-2xl font-black text-slate-950 mb-2">Traktir Kopi Dulu?</h2>
+        <p className="text-slate-600 mb-6 text-sm font-medium leading-relaxed">
+          Dukung pengembangan aplikasi ini dengan traktir saya segelas kopi. Bantuan Anda sangat berarti!
+        </p>
+        <div className="flex flex-col gap-3">
+          <a href="https://trakteer.id/" target="_blank" rel="noopener noreferrer" onClick={onClose} className="btn btn-primary w-full text-center">
+            Traktir Sekarang
+          </a>
+          <button type="button" onClick={onClose} className="font-bold text-slate-500 py-3 hover:text-slate-800 transition-colors">
+            Nanti
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 function App() {
   const [screen, setScreen] = useState('dashboard');
   const [visit, setVisit] = useState(null);
@@ -4999,6 +5021,22 @@ function App() {
     try { return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1'; } catch (error) { return true; }
   });
   const secretTapRef = useRef({ count: 0, timer: null });
+  const [coffeeOpen, setCoffeeOpen] = useState(false);
+
+  useEffect(() => {
+    if (!welcomeOpen && !sessionStorage.getItem('coffee_dismissed')) {
+      if (screen === 'dashboard' || screen === 'preview') {
+        const timer = setTimeout(() => setCoffeeOpen(true), 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [welcomeOpen, screen]);
+
+  function closeCoffee() {
+    try { sessionStorage.setItem('coffee_dismissed', '1'); } catch (error) {}
+    setCoffeeOpen(false);
+  }
+
 
   useEffect(() => {
     let cancelled = false;
@@ -5361,6 +5399,7 @@ function App() {
       </div>
       {welcomeOpen ? <WelcomeOverlay config={welcomeConfig} onDone={closeWelcome} /> : null}
       <NewVisitModal open={newVisitOpen} onClose={() => setNewVisitOpen(false)} onCreate={createNewVisit} />
+      <CoffeePopup open={coffeeOpen} onClose={closeCoffee} />
       <SecretPinModal open={pinOpen} onClose={() => setPinOpen(false)} onUnlock={() => { setPinOpen(false); setSecretOpen(true); }} />
       <SecretMonitorPanel open={secretOpen} onClose={() => setSecretOpen(false)} history={history} welcomeConfig={welcomeConfig} onWelcomeConfigChange={applyWelcomeConfig} />
     </div>
