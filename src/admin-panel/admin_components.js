@@ -3403,8 +3403,14 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     }, []);
     const [settingsTab, setSettingsTab] = useState('features');
     const isSuperUser = readBestieLogin()?.name === 'Aan Bagus Permana';
+    const canManageFeatures = true;
     const handleToggleFeature = async (key) => {
-        const next = { ...features, [key]: !features[key] };
+        const nextVal = !features[key];
+        const next = { ...features, [key]: nextVal };
+        if (key === 'evidenceTimestamp' || key === 'timestamp') {
+            next.evidenceTimestamp = nextVal;
+            next.timestamp = nextVal;
+        }
         setFeatures(next);
         await saveFeaturesConfig(next);
     };
@@ -4330,21 +4336,64 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                         className: cx("flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all", settingsTab === st.id ? "bg-slate-800 text-white shadow-md" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
                     }, React.createElement(Icon, { name: st.icon, className: "w-3.5 h-3.5" }), st.label))
                 ),
-                settingsTab === 'features' && React.createElement("div", { className: "mb-5 rounded-3xl border border-slate-200 bg-white p-5 space-y-4 fade-in" },
-                    React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-3" }, "Tampilan Fitur Analitik"),
-                    React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
-                        [
-                            { key: 'map', label: 'Peta Kunjungan Live (GIS)' },
-                            { key: 'ai', label: 'AI Executive Summary' },
-                            { key: 'trend', label: 'Tren Temuan (QSC vs OPI)' },
-                            { key: 'leaderboard', label: 'Leaderboard (List Toko)' }
-                        ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
-                            React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
-                            React.createElement("button", { onClick: () => isSuperUser && handleToggleFeature(f.key), className: cx("relative inline-flex h-8 w-16 items-center rounded-full transition-colors shadow-inner", !isSuperUser && "opacity-50 cursor-not-allowed"), style: { backgroundColor: features[f.key] ? '#10b981' : '#cbd5e1' } },
-                                React.createElement("span", { className: "inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform", style: { transform: features[f.key] ? 'translateX(34px)' : 'translateX(4px)' } }),
-                                React.createElement("span", { className: "absolute text-[10px] font-black text-white pointer-events-none", style: { left: features[f.key] ? '10px' : 'auto', right: features[f.key] ? 'auto' : '10px' } }, features[f.key] ? 'ON' : 'OFF')
+                settingsTab === 'features' && React.createElement("div", { className: "mb-5 space-y-4 fade-in" },
+                    React.createElement("div", { className: "rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/70 via-white to-slate-50 p-5 shadow-sm space-y-4" },
+                        React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
+                            React.createElement("div", { className: "space-y-1.5" },
+                                React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
+                                    React.createElement(Icon, { name: "camera", className: "w-5 h-5 text-emerald-600" }),
+                                    React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Time Stamp Foto Evidence"),
+                                    React.createElement("span", { className: "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/60" },
+                                        React.createElement("span", { className: "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" }),
+                                        "Realtime Online Sync"
+                                    )
+                                ),
+                                React.createElement("p", { className: "text-xs text-slate-600 max-w-xl leading-relaxed" },
+                                    "Otomatis sematkan banner watermark (nama store, waktu & tanggal pengambilan, serta koordinat GPS) pada setiap foto evidence baru. Perubahan tombol ini langsung terupdate ke semua device online secara realtime."
+                                )
+                            ),
+                            React.createElement("div", { className: "flex items-center gap-3 shrink-0" },
+                                React.createElement("button", {
+                                    type: "button",
+                                    onClick: () => handleToggleFeature('evidenceTimestamp'),
+                                    className: "relative inline-flex h-9 w-20 items-center rounded-full transition-colors shadow-inner cursor-pointer focus:outline-none",
+                                    style: { backgroundColor: features.evidenceTimestamp !== false ? '#10b981' : '#cbd5e1' }
+                                },
+                                    React.createElement("span", {
+                                        className: "inline-block h-7 w-7 transform rounded-full bg-white shadow-md transition-transform",
+                                        style: { transform: features.evidenceTimestamp !== false ? 'translateX(46px)' : 'translateX(6px)' }
+                                    }),
+                                    React.createElement("span", {
+                                        className: "absolute text-[11px] font-black text-white pointer-events-none select-none",
+                                        style: { left: features.evidenceTimestamp !== false ? '12px' : 'auto', right: features.evidenceTimestamp !== false ? 'auto' : '12px' }
+                                    }, features.evidenceTimestamp !== false ? 'ON' : 'OFF')
+                                )
                             )
-                        ))
+                        ),
+                        React.createElement("div", { className: "flex items-center gap-2 pt-2.5 border-t border-slate-200/70 text-xs font-semibold" },
+                            React.createElement("span", { className: cx("inline-block w-2 h-2 rounded-full", features.evidenceTimestamp !== false ? "bg-emerald-500 animate-pulse" : "bg-slate-400") }),
+                            React.createElement("span", { className: features.evidenceTimestamp !== false ? "text-emerald-800" : "text-slate-500" },
+                                features.evidenceTimestamp !== false ? "Status: AKTIF (Watermark waktu & GPS dicetak pada setiap foto evidence)" : "Status: NONAKTIF (Foto evidence disimpan asli/polos tanpa watermark)"
+                            )
+                        )
+                    ),
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-3" }, "Tampilan Fitur Analitik"),
+                        React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
+                            [
+                                { key: 'map', label: 'Peta Kunjungan Live (GIS)' },
+                                { key: 'ai', label: 'AI Executive Summary' },
+                                { key: 'trend', label: 'Tren Temuan (QSC vs OPI)' },
+                                { key: 'leaderboard', label: 'Leaderboard (List Toko)' },
+                                { key: 'evidenceTimestamp', label: 'Time Stamp Foto Evidence' }
+                            ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
+                                React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
+                                React.createElement("button", { onClick: () => handleToggleFeature(f.key), className: "relative inline-flex h-8 w-16 items-center rounded-full transition-colors shadow-inner cursor-pointer", style: { backgroundColor: features[f.key] !== false ? '#10b981' : '#cbd5e1' } },
+                                    React.createElement("span", { className: "inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform", style: { transform: features[f.key] !== false ? 'translateX(34px)' : 'translateX(4px)' } }),
+                                    React.createElement("span", { className: "absolute text-[10px] font-black text-white pointer-events-none select-none", style: { left: features[f.key] !== false ? '10px' : 'auto', right: features[f.key] !== false ? 'auto' : '10px' } }, features[f.key] !== false ? 'ON' : 'OFF')
+                                )
+                            ))
+                        )
                     )
                 ),
                 settingsTab === 'sync' && React.createElement("div", { className: "mb-5 grid gap-4 md:grid-cols-2 fade-in" },

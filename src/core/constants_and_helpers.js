@@ -564,6 +564,9 @@ async function rbvGetActiveVisitContext() {
 }
 async function rbvApplyPhotoWatermark(dataUrl, options = {}) {
     if (!dataUrl || typeof document === 'undefined') return dataUrl;
+    if (!isEvidenceTimestampEnabled()) {
+        return dataUrl;
+    }
     try {
         const ctxMeta = await rbvGetActiveVisitContext();
         const storeName = options.storeName || ctxMeta.storeName || 'FamilyMart';
@@ -629,11 +632,11 @@ async function rbvApplyPhotoWatermark(dataUrl, options = {}) {
         
         ctx.font = `bold ${fontSizeTop}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         const topY = height - bannerHeight + (bannerHeight * 0.33);
-        ctx.fillText(`🏢 ${storeName} (${storeCode})`, paddingX, topY);
+        ctx.fillText(`\u{1F3EA} ${storeName} (${storeCode})`, paddingX, topY);
 
         ctx.font = `500 ${fontSizeBottom}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         const bottomY = height - bannerHeight + (bannerHeight * 0.73);
-        ctx.fillText(`📅 ${dateStr} • 📍 ${gpsStr}`, paddingX, bottomY);
+        ctx.fillText(`\u{1F4C5} ${dateStr} \u2022 \u{1F4CD} ${gpsStr}`, paddingX, bottomY);
 
         const quality = Number(options.quality || 0.85);
         return canvas.toDataURL('image/jpeg', quality);
@@ -791,18 +794,31 @@ function saveWelcomeConfig(config) {
 }
 const SCHEDULE_CONFIG_KEY = 'rbv_schedule_config_v1';
 
+function isEvidenceTimestampEnabled() {
+    try {
+        const features = readFeaturesConfig();
+        if (typeof features.evidenceTimestamp === 'boolean') return features.evidenceTimestamp;
+        if (typeof features.timestamp === 'boolean') return features.timestamp;
+    } catch (e) {}
+    return true;
+}
 function readFeaturesConfig() {
     try {
         const raw = localStorage.getItem('rbv_features_config_v1');
         const parsed = raw ? JSON.parse(raw) : {};
         const safeParsed = (parsed && typeof parsed === 'object') ? parsed : {};
+        const timestampVal = safeParsed.evidenceTimestamp !== undefined 
+            ? safeParsed.evidenceTimestamp !== false 
+            : (safeParsed.timestamp !== undefined ? safeParsed.timestamp !== false : true);
         return {
             map: safeParsed.map !== false,
             ai: safeParsed.ai !== false,
             trend: safeParsed.trend !== false,
-            leaderboard: safeParsed.leaderboard !== false
+            leaderboard: safeParsed.leaderboard !== false,
+            evidenceTimestamp: timestampVal,
+            timestamp: timestampVal
         };
-    } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true }; }
+    } catch (e) { return { map: true, ai: true, trend: true, leaderboard: true, evidenceTimestamp: true, timestamp: true }; }
 }
 function saveFeaturesConfig(config) {
     localStorage.setItem('rbv_features_config_v1', JSON.stringify(config));

@@ -798,6 +798,24 @@ function EvidenceSection({ visit, update }) {
     const enabled = tab === 'finding' ? visit.showFindingEvidence === true : visit.showCorrectiveAction === true;
     const setEnabled = (value) => tab === 'finding' ? update({ showFindingEvidence: value }) : update({ showCorrectiveAction: value });
     const toggleLabel = tab === 'finding' ? (enabled ? 'Hide Finding' : 'Unhide Finding') : (enabled ? 'Hide Corrective' : 'Unhide Corrective');
+    const [timestampEnabled, setTimestampEnabled] = useState(() => isEvidenceTimestampEnabled());
+    useEffect(() => {
+        const handler = () => setTimestampEnabled(isEvidenceTimestampEnabled());
+        window.addEventListener('rbv-features-config-change', handler);
+        return () => window.removeEventListener('rbv-features-config-change', handler);
+    }, []);
+    const timestampBadge = React.createElement("div", {
+        className: cx(
+            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm",
+            timestampEnabled ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500 border border-slate-200"
+        ),
+        title: "Status timestamp foto evidence (diatur realtime dari Panel Rahasia)"
+    },
+        React.createElement("span", {
+            className: cx("inline-block w-2 h-2 rounded-full", timestampEnabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400")
+        }),
+        React.createElement("span", null, timestampEnabled ? "Time Stamp: ON" : "Time Stamp: OFF")
+    );
     const evidenceTabStyle = { minWidth: 0, width: '100%', justifyContent: 'center', paddingLeft: '8px', paddingRight: '8px', whiteSpace: 'nowrap' };
     const preTitle = React.createElement("div", { className: "section-switcher flex w-full min-w-0 gap-2 overflow-x-auto pb-1 md:max-w-[460px]" },
         React.createElement("button", { type: "button", className: cx('subnav-chip prominent relative transition-all duration-300 flex items-center justify-center gap-1.5', tab === 'finding' ? 'active !pr-2 !py-1.5' : ''), style: evidenceTabStyle, onClick: () => setTab('finding') },
@@ -811,7 +829,7 @@ function EvidenceSection({ visit, update }) {
             tab === 'corrective' && React.createElement("div", { className: "ml-1 pl-2 border-l border-brand-teal/20 flex items-center shrink-0 scale-75 origin-left", onClick: (e) => e.stopPropagation() }, React.createElement(Toggle, { checked: enabled, onChange: setEnabled }))
         )
     );
-    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
+    return (React.createElement(SectionShell, { title: "Evidence Photos", preTitle: preTitle, actions: timestampBadge }, !enabled ? React.createElement(InactiveSection, { title: (tab === 'finding' ? 'Finding Evidence' : 'Corrective Action') + ' disembunyikan' }) : tab === 'finding' ? React.createElement(PhotoGrid, { prefix: "Finding", photos: visit.findingEvidencePhotos, onChange: (findingEvidencePhotos) => update({ findingEvidencePhotos }) }) : React.createElement(PhotoGrid, { prefix: "Corrective", photos: visit.correctiveActionPhotos, onChange: (correctiveActionPhotos) => update({ correctiveActionPhotos }) })));
 }
 function AssignmentSection({ visit, update, onPreview }) {
     return (React.createElement(SectionShell, { title: "Store Assignment" },
