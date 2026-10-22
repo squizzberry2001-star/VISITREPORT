@@ -33,7 +33,8 @@ const APP_CONFIG_KEYS = {
     emailTemplate: 'email_report_template',
     webSync: 'web_update_signal',
     schedule: 'rbv_schedule_config_v1',
-    features: 'rbv_features_config_v1'
+    features: 'rbv_features_config_v1',
+    besties: 'rbv_bestie_directory_v1'
 };
 const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
 const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
@@ -72,12 +73,85 @@ const BESTIE_LOGIN_DATA = [
     { nik: '230523599', name: 'Tia Fitri' },
     { nik: '230823803', name: 'Yuyun Yuliyanti' }
 ];
+const CUSTOM_BESTIE_KEY = 'rbv_custom_besties_v1';
+
+function readCustomBesties() {
+    try {
+        const raw = localStorage.getItem(CUSTOM_BESTIE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.map((item) => ({
+            nik: normalizeNik(item?.nik),
+            name: cleanText(item?.name)
+        })).filter((item) => item.nik && item.name) : [];
+    }
+    catch (e) {
+        return [];
+    }
+}
+
+function getAllBesties() {
+    const custom = readCustomBesties();
+    const map = new Map();
+    BESTIE_LOGIN_DATA.forEach((b) => {
+        const n = normalizeNik(b.nik);
+        if (n) map.set(n, { nik: n, name: cleanText(b.name), isDefault: true });
+    });
+    custom.forEach((b) => {
+        const n = normalizeNik(b.nik);
+        if (n && b.name) {
+            const existing = map.get(n);
+            map.set(n, {
+                nik: n,
+                name: cleanText(b.name),
+                isDefault: existing ? existing.isDefault : false
+            });
+        }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function refreshBestieNames() {
+    try {
+        const names = uniqueBy(getAllBesties().map((item) => item.name).filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
+        if (typeof BESTIE_NAMES !== 'undefined' && Array.isArray(BESTIE_NAMES)) {
+            BESTIE_NAMES.splice(0, BESTIE_NAMES.length, ...names);
+        }
+        return names;
+    }
+    catch (e) {
+        return [];
+    }
+}
+
+function saveCustomBesties(customList) {
+    const cleanList = (Array.isArray(customList) ? customList : []).map((item) => ({
+        nik: normalizeNik(item?.nik),
+        name: cleanText(item?.name)
+    })).filter((item) => item.nik && item.name);
+    localStorage.setItem(CUSTOM_BESTIE_KEY, JSON.stringify(cleanList));
+    refreshBestieNames();
+    window.dispatchEvent(new CustomEvent('rbv-bestie-directory-change', { detail: cleanList }));
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.besties, cleanList);
+}
+
+function saveCustomBestiesFromRemote(remoteList) {
+    const cleanList = (Array.isArray(remoteList) ? remoteList : []).map((item) => ({
+        nik: normalizeNik(item?.nik),
+        name: cleanText(item?.name)
+    })).filter((item) => item.nik && item.name);
+    localStorage.setItem(CUSTOM_BESTIE_KEY, JSON.stringify(cleanList));
+    refreshBestieNames();
+    window.dispatchEvent(new CustomEvent('rbv-bestie-directory-change', { detail: cleanList }));
+    return cleanList;
+}
+
 function normalizeNik(value) {
     return String(value || '').replace(/\D/g, '').slice(0, 12);
 }
 function findBestieByNik(value) {
     const nik = normalizeNik(value);
-    return BESTIE_LOGIN_DATA.find((item) => item.nik === nik) || null;
+    if (!nik) return null;
+    return getAllBesties().find((item) => item.nik === nik) || null;
 }
 function matchBestieScheduleName(schedName, bestieName) {
     if (!schedName || !bestieName) return false;
@@ -1127,6 +1201,7 @@ async function parseMasterStoreExcelFile(file) {
 }
 
 const BESTIE_NAMES = uniqueBy([...BESTIE_LOGIN_DATA.map((item) => item.name)].filter(Boolean).sort((a, b) => a.localeCompare(b)), (item) => item);
+try { refreshBestieNames(); } catch (e) {}
 function getStoreLabel(item) {
     return cleanText(item?.storeName || item?.assignmentStoreName || item?.siteDescr || item?.store);
 }

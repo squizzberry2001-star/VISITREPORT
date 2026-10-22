@@ -2082,7 +2082,7 @@ async function fetchAppConfigsFromCloudflare() {
     if (!cloudflareEnabled())
         return null;
     try {
-        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features].join(',') } });
+        const payload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features, APP_CONFIG_KEYS.besties].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -2323,7 +2323,7 @@ async function fetchAppConfigsFromNetlify() {
     if (!netlifyEnabled())
         return null;
     try {
-        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features].join(',') } });
+        const payload = await netlifyRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features, APP_CONFIG_KEYS.besties].join(',') } });
         return normalizeRemoteAppConfigRows(payload?.rows || payload?.data || []);
     }
     catch (error) {
@@ -3081,6 +3081,9 @@ function applyRemoteAppConfigRows(rows) {
         if (row.key === APP_CONFIG_KEYS.schedule) {
             saveScheduleConfig(Array.isArray(row.payload) ? row.payload : []);
         }
+        if (row.key === APP_CONFIG_KEYS.besties) {
+            saveCustomBestiesFromRemote(row.payload);
+        }
     });
     return normalized;
 }
@@ -3089,7 +3092,7 @@ async function fetchAppConfigsFromConvex() {
     if (convexEnabled()) {
         try {
             const queryName = config.appConfigListQuery || 'appSettings:listConfigs';
-            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features] });
+            const rows = await runConvexQuery(queryName, { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features, APP_CONFIG_KEYS.besties] });
             if (rows !== null)
                 return normalizeRemoteAppConfigRows(rows);
         }
@@ -3203,6 +3206,17 @@ function WelcomeOverlay({ config, onDone }) {
     const [introDone, setIntroDone] = useState(false);
     const [closing, setClosing] = useState(false);
     const nikInputRef = useRef(null);
+
+    useEffect(() => {
+        const handler = () => {
+            if (nikInput) {
+                const found = findBestieByNik(nikInput);
+                setLoginName(found ? found.name : '');
+            }
+        };
+        window.addEventListener('rbv-bestie-directory-change', handler);
+        return () => window.removeEventListener('rbv-bestie-directory-change', handler);
+    }, [nikInput]);
 
     useEffect(() => {
         onDoneRef.current = onDone;
@@ -3443,6 +3457,77 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [emailBodyTemplate, setEmailBodyTemplate] = useState(() => readEmailTemplateConfig().bodyTemplate);
     const [cloudflareDbStatus, setCloudflareDbStatus] = useState('');
     const [cloudflareDbBusy, setCloudflareDbBusy] = useState(false);
+
+    const [bestieList, setBestieList] = useState(() => getAllBesties());
+    const [customBesties, setCustomBesties] = useState(() => readCustomBesties());
+    const [newNik, setNewNik] = useState('');
+    const [newName, setNewName] = useState('');
+    const [bestieSearch, setBestieSearch] = useState('');
+    const [bestieMsg, setBestieMsg] = useState('');
+    const [bestieBusy, setBestieBusy] = useState(false);
+
+    useEffect(() => {
+        const handler = () => {
+            setBestieList(getAllBesties());
+            setCustomBesties(readCustomBesties());
+        };
+        window.addEventListener('rbv-bestie-directory-change', handler);
+        return () => window.removeEventListener('rbv-bestie-directory-change', handler);
+    }, []);
+
+    const handleAddBestie = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        const cleanNik = normalizeNik(newNik);
+        const cleanN = cleanText(newName);
+        if (!cleanNik || cleanNik.length < 3) {
+            setBestieMsg('⚠️ NIK minimal 3 digit angka.');
+            return;
+        }
+        if (!cleanN) {
+            setBestieMsg('⚠️ Nama Regional Bestie wajib diisi.');
+            return;
+        }
+        setBestieBusy(true);
+        setBestieMsg('Menyimpan ke Firebase & menyinkronkan...');
+        try {
+            const currentCustom = readCustomBesties();
+            const filtered = currentCustom.filter((b) => b.nik !== cleanNik);
+            const nextCustom = [...filtered, { nik: cleanNik, name: cleanN }];
+            const synced = await saveCustomBesties(nextCustom);
+            setCustomBesties(nextCustom);
+            setBestieList(getAllBesties());
+            setNewNik('');
+            setNewName('');
+            setBestieMsg(synced ? `✅ Berhasil! NIK ${cleanNik} (${cleanN}) telah diberikan otoritas login & tersinkron ke semua device.` : `✅ Tersimpan lokal. Firebase sync sedang diproses.`);
+        } catch (err) {
+            setBestieMsg('⚠️ Gagal menyimpan: ' + (err?.message || err));
+        } finally {
+            setBestieBusy(false);
+        }
+    };
+
+    const handleDeleteBestie = async (nik) => {
+        const target = customBesties.find((b) => b.nik === nik);
+        if (!confirmAction(`Hapus otoritas login untuk ${target?.name || nik} (NIK: ${nik})?`)) return;
+        setBestieBusy(true);
+        try {
+            const nextCustom = customBesties.filter((b) => b.nik !== nik);
+            await saveCustomBesties(nextCustom);
+            setCustomBesties(nextCustom);
+            setBestieList(getAllBesties());
+            setBestieMsg(`✅ NIK ${nik} berhasil dihapus dari otoritas login.`);
+        } catch (err) {
+            setBestieMsg('⚠️ Gagal menghapus: ' + (err?.message || err));
+        } finally {
+            setBestieBusy(false);
+        }
+    };
+
+    const filteredBesties = bestieList.filter((b) => {
+        if (!bestieSearch) return true;
+        const q = bestieSearch.toLowerCase().trim();
+        return (b.name && b.name.toLowerCase().includes(q)) || (b.nik && b.nik.includes(q));
+    });
     const masterUploadInputRef = useRef(null);
     const [masterStoreRows, setMasterStoreRows] = useState(() => readLocalMasterStores());
     const [masterStoreStatus, setMasterStoreStatus] = useState('Master data detail toko siap. Upload Excel akan disimpan lokal lalu dipublish ke Firebase (Live) untuk semua device.');
@@ -3534,7 +3619,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             healthUrl.searchParams.set('_panelCheck', String(Date.now()));
             const healthPayload = await cloudflarePanelFetchJson(healthUrl.toString());
             const d1Payload = await cloudflareRequest('testD1');
-            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features].join(',') } });
+            const settingsPayload = await cloudflareRequest('listAppSettings', { params: { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features, APP_CONFIG_KEYS.besties].join(',') } });
             const rows = settingsPayload?.rows || settingsPayload?.data || [];
             const count = Array.isArray(rows) ? rows.length : 0;
             setCloudflareDbStatus(`READY: Worker aktif (${healthPayload?.provider || 'cloudflare-d1'}), D1 aktif, app settings terbaca ${count} item. Endpoint: ${endpoint}`);
@@ -3610,7 +3695,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
             if (!convexEnabled())
                 throw new Error('Convex belum aktif. Isi enabled:true dan deploymentUrl di convex-config.js.');
             const config = getConvexConfig();
-            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features] });
+            const settingsRows = await runConvexQuery(config.appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features, APP_CONFIG_KEYS.besties] });
             const masterRows = await runConvexQuery(config.masterStoreListQuery || 'masterStores:listStores', { limit: 10 });
             const settingCount = normalizeRemoteAppConfigRows(settingsRows).length;
             const masterCount = normalizeMasterStoreRows(masterRows?.rows || masterRows?.data || masterRows).length;
@@ -4326,6 +4411,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 React.createElement("div", { className: "flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar" },
                     [
                         { id: 'features', label: 'Fitur & Analitik', icon: 'spark' },
+                        { id: 'auth', label: 'Otoritas NIK', icon: 'user' },
                         { id: 'sync', label: 'Data & Migrasi', icon: 'upload' },
                         { id: 'content', label: 'Konten Tampilan', icon: 'clipboard' },
                         { id: 'docs', label: 'Email & PDF', icon: 'document' },
@@ -4370,6 +4456,100 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                                 )
                             )
                         ),
+                settingsTab === 'auth' && React.createElement("div", { className: "mb-5 space-y-5 fade-in" },
+                    React.createElement("div", { className: "rounded-3xl border border-brand-teal/30 bg-gradient-to-br from-teal-50/60 via-white to-slate-50 p-5 shadow-sm space-y-4" },
+                        React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3" },
+                            React.createElement("div", { className: "space-y-1" },
+                                React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
+                                    React.createElement(Icon, { name: "user", className: "w-5 h-5 text-brand-teal" }),
+                                    React.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Tambah Otoritas Login (NIK & Nama Baru)"),
+                                    React.createElement("span", { className: "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200/60" },
+                                        React.createElement("span", { className: "w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" }),
+                                        "Realtime Online Sync"
+                                    )
+                                ),
+                                React.createElement("p", { className: "text-xs text-slate-600 max-w-xl leading-relaxed" },
+                                    "Daftarkan NIK dan Nama Regional Bestie baru agar dapat login pada layar Welcome dan menjalankan laporan visit. Data otomatis tersinkron ke semua device online secara realtime."
+                                )
+                            )
+                        ),
+                        React.createElement("form", { onSubmit: handleAddBestie, className: "grid gap-4 sm:grid-cols-2 pt-2" },
+                            React.createElement(Field, { label: "Nomor Induk Karyawan (NIK)", required: true },
+                                React.createElement(TextInput, {
+                                    value: newNik,
+                                    onChange: (e) => setNewNik(normalizeNik(e.target.value)),
+                                    placeholder: "Contoh: 240124001 (angka)",
+                                    inputMode: "numeric",
+                                    maxLength: 12
+                                })
+                            ),
+                            React.createElement(Field, { label: "Nama Lengkap Regional Bestie", required: true },
+                                React.createElement(TextInput, {
+                                    value: newName,
+                                    onChange: (e) => setNewName(e.target.value),
+                                    placeholder: "Contoh: Ahmad Fauzi",
+                                    maxLength: 60
+                                })
+                            ),
+                            React.createElement("div", { className: "sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1" },
+                                bestieMsg ? React.createElement("p", { className: cx("text-xs font-bold leading-relaxed", bestieMsg.includes("✅") ? "text-emerald-700" : "text-amber-700") }, bestieMsg) : React.createElement("span", null),
+                                React.createElement(Button, {
+                                    variant: "primary",
+                                    icon: "plus",
+                                    type: "submit",
+                                    className: "justify-center shadow-md",
+                                    disabled: bestieBusy || !newNik || !newName.trim()
+                                }, bestieBusy ? "Menyimpan ke Cloud..." : "Tambah Otoritas NIK")
+                            )
+                        )
+                    ),
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4" },
+                        React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100" },
+                            React.createElement("div", null,
+                                React.createElement("h3", { className: "text-lg font-black text-slate-900" }, `Daftar Otoritas Login (${bestieList.length} Bestie)`),
+                                React.createElement("p", { className: "text-xs text-slate-500 mt-0.5" },
+                                    `${customBesties.length} akun kustom ditambahkan lewat panel, ${bestieList.length - customBesties.length} akun bawaan sistem.`
+                                )
+                            ),
+                            React.createElement("div", { className: "w-full sm:w-64" },
+                                React.createElement(TextInput, {
+                                    value: bestieSearch,
+                                    onChange: (e) => setBestieSearch(e.target.value),
+                                    placeholder: "Cari NIK atau Nama..."
+                                })
+                            )
+                        ),
+                        React.createElement("div", { className: "divide-y divide-slate-100 max-h-[460px] overflow-y-auto pr-1" },
+                            filteredBesties.length ? filteredBesties.map((item) => (
+                                React.createElement("div", {
+                                    key: item.nik,
+                                    className: "flex items-center justify-between py-3 px-2 rounded-xl hover:bg-slate-50/80 transition-colors gap-3"
+                                },
+                                    React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
+                                        React.createElement("div", { className: "w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 font-black text-slate-600 text-sm" },
+                                            (item.name || 'B').slice(0, 2).toUpperCase()
+                                        ),
+                                        React.createElement("div", { className: "min-w-0" },
+                                            React.createElement("p", { className: "font-extrabold text-sm text-slate-900 truncate" }, item.name),
+                                            React.createElement("div", { className: "flex items-center gap-2 mt-0.5" },
+                                                React.createElement("span", { className: "font-mono text-xs text-slate-500 tracking-wider font-semibold" }, `NIK: ${item.nik}`),
+                                                item.isDefault ? React.createElement("span", { className: "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600" }, "Bawaan Sistem") : React.createElement("span", { className: "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800" }, "Kustom (Panel)")
+                                            )
+                                        )
+                                    ),
+                                    !item.isDefault ? React.createElement("button", {
+                                        type: "button",
+                                        onClick: () => handleDeleteBestie(item.nik),
+                                        className: "p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors shrink-0",
+                                        title: `Hapus otoritas NIK ${item.nik}`
+                                    },
+                                        React.createElement(Icon, { name: "trash", className: "w-4 h-4" })
+                                    ) : React.createElement("span", { className: "text-slate-300 text-xs px-2 select-none" }, "Terkunci")
+                                )
+                            )) : React.createElement("div", { className: "py-8 text-center text-slate-400 text-sm font-medium" }, "Tidak ada Bestie yang cocok dengan pencarian.")
+                        )
+                    )
+                ),
                         React.createElement("div", { className: "flex items-center gap-2 pt-2.5 border-t border-slate-200/70 text-xs font-semibold" },
                             React.createElement("span", { className: cx("inline-block w-2 h-2 rounded-full", features.evidenceTimestamp !== false ? "bg-emerald-500 animate-pulse" : "bg-slate-400") }),
                             React.createElement("span", { className: features.evidenceTimestamp !== false ? "text-emerald-800" : "text-slate-500" },

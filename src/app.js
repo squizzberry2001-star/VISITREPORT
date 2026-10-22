@@ -485,7 +485,7 @@ function App() {
             try {
                 await refreshRemoteConfigs();
                 if (!cloudflareEnabled() && !netlifyEnabled() && !supabaseEnabled()) {
-                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features] }, (rows) => { if (!cancelled)
+                    unsubscribe = await subscribeConvexQuery(getConvexConfig().appConfigListQuery || 'appSettings:listConfigs', { keys: [APP_CONFIG_KEYS.welcome, APP_CONFIG_KEYS.updateNotice, APP_CONFIG_KEYS.emailTemplate, APP_CONFIG_KEYS.webSync, APP_CONFIG_KEYS.schedule, APP_CONFIG_KEYS.features, APP_CONFIG_KEYS.besties] }, (rows) => { if (!cancelled)
                         applyConfigRows(rows); }, (error) => { console.warn('Realtime app config gagal:', error); });
                 }
             }
