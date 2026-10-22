@@ -4456,6 +4456,32 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                                 )
                             )
                         ),
+                        React.createElement("div", { className: "flex items-center gap-2 pt-2.5 border-t border-slate-200/70 text-xs font-semibold" },
+                            React.createElement("span", { className: cx("inline-block w-2 h-2 rounded-full", features.evidenceTimestamp !== false ? "bg-emerald-500 animate-pulse" : "bg-slate-400") }),
+                            React.createElement("span", { className: features.evidenceTimestamp !== false ? "text-emerald-800" : "text-slate-500" },
+                                features.evidenceTimestamp !== false ? "Status: AKTIF (Watermark waktu & GPS dicetak pada setiap foto evidence)" : "Status: NONAKTIF (Foto evidence disimpan asli/polos tanpa watermark)"
+                            )
+                        )
+                    ),
+                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm" },
+                        React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-3" }, "Tampilan Fitur Analitik"),
+                        React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
+                            [
+                                { key: 'map', label: 'Peta Kunjungan Live (GIS)' },
+                                { key: 'ai', label: 'AI Executive Summary' },
+                                { key: 'trend', label: 'Tren Temuan (QSC vs OPI)' },
+                                { key: 'leaderboard', label: 'Leaderboard (List Toko)' },
+                                { key: 'evidenceTimestamp', label: 'Time Stamp Foto Evidence' }
+                            ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
+                                React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
+                                React.createElement("button", { onClick: () => handleToggleFeature(f.key), className: "relative inline-flex h-8 w-16 items-center rounded-full transition-colors shadow-inner cursor-pointer", style: { backgroundColor: features[f.key] !== false ? '#10b981' : '#cbd5e1' } },
+                                    React.createElement("span", { className: "inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform", style: { transform: features[f.key] !== false ? 'translateX(34px)' : 'translateX(4px)' } }),
+                                    React.createElement("span", { className: "absolute text-[10px] font-black text-white pointer-events-none select-none", style: { left: features[f.key] !== false ? '10px' : 'auto', right: features[f.key] !== false ? 'auto' : '10px' } }, features[f.key] !== false ? 'ON' : 'OFF')
+                                )
+                            ))
+                        )
+                    )
+                ),
                 settingsTab === 'auth' && React.createElement("div", { className: "mb-5 space-y-5 fade-in" },
                     React.createElement("div", { className: "rounded-3xl border border-brand-teal/30 bg-gradient-to-br from-teal-50/60 via-white to-slate-50 p-5 shadow-sm space-y-4" },
                         React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3" },
@@ -4492,7 +4518,7 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                                 })
                             ),
                             React.createElement("div", { className: "sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1" },
-                                bestieMsg ? React.createElement("p", { className: cx("text-xs font-bold leading-relaxed", bestieMsg.includes("✅") ? "text-emerald-700" : "text-amber-700") }, bestieMsg) : React.createElement("span", null),
+                                bestieMsg ? React.createElement("p", { className: cx("text-xs font-bold leading-relaxed", bestieMsg.includes("Berhasil") || bestieMsg.includes("tersimpan") ? "text-emerald-700" : "text-amber-700") }, bestieMsg) : React.createElement("span", null),
                                 React.createElement(Button, {
                                     variant: "primary",
                                     icon: "plus",
@@ -4540,39 +4566,13 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                                     !item.isDefault ? React.createElement("button", {
                                         type: "button",
                                         onClick: () => handleDeleteBestie(item.nik),
-                                        className: "p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors shrink-0",
+                                        className: "p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors shrink-0 cursor-pointer",
                                         title: `Hapus otoritas NIK ${item.nik}`
                                     },
                                         React.createElement(Icon, { name: "trash", className: "w-4 h-4" })
                                     ) : React.createElement("span", { className: "text-slate-300 text-xs px-2 select-none" }, "Terkunci")
                                 )
                             )) : React.createElement("div", { className: "py-8 text-center text-slate-400 text-sm font-medium" }, "Tidak ada Bestie yang cocok dengan pencarian.")
-                        )
-                    )
-                ),
-                        React.createElement("div", { className: "flex items-center gap-2 pt-2.5 border-t border-slate-200/70 text-xs font-semibold" },
-                            React.createElement("span", { className: cx("inline-block w-2 h-2 rounded-full", features.evidenceTimestamp !== false ? "bg-emerald-500 animate-pulse" : "bg-slate-400") }),
-                            React.createElement("span", { className: features.evidenceTimestamp !== false ? "text-emerald-800" : "text-slate-500" },
-                                features.evidenceTimestamp !== false ? "Status: AKTIF (Watermark waktu & GPS dicetak pada setiap foto evidence)" : "Status: NONAKTIF (Foto evidence disimpan asli/polos tanpa watermark)"
-                            )
-                        )
-                    ),
-                    React.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm" },
-                        React.createElement("h3", { className: "text-lg font-black text-slate-900 mb-3" }, "Tampilan Fitur Analitik"),
-                        React.createElement("div", { className: "grid gap-3 md:grid-cols-2" },
-                            [
-                                { key: 'map', label: 'Peta Kunjungan Live (GIS)' },
-                                { key: 'ai', label: 'AI Executive Summary' },
-                                { key: 'trend', label: 'Tren Temuan (QSC vs OPI)' },
-                                { key: 'leaderboard', label: 'Leaderboard (List Toko)' },
-                                { key: 'evidenceTimestamp', label: 'Time Stamp Foto Evidence' }
-                            ].map(f => React.createElement("div", { key: f.key, className: "flex items-center justify-between p-3 bg-slate-50 rounded-xl" },
-                                React.createElement("span", { className: "text-sm font-bold text-slate-700" }, f.label),
-                                React.createElement("button", { onClick: () => handleToggleFeature(f.key), className: "relative inline-flex h-8 w-16 items-center rounded-full transition-colors shadow-inner cursor-pointer", style: { backgroundColor: features[f.key] !== false ? '#10b981' : '#cbd5e1' } },
-                                    React.createElement("span", { className: "inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform", style: { transform: features[f.key] !== false ? 'translateX(34px)' : 'translateX(4px)' } }),
-                                    React.createElement("span", { className: "absolute text-[10px] font-black text-white pointer-events-none select-none", style: { left: features[f.key] !== false ? '10px' : 'auto', right: features[f.key] !== false ? 'auto' : '10px' } }, features[f.key] !== false ? 'ON' : 'OFF')
-                                )
-                            ))
                         )
                     )
                 ),
