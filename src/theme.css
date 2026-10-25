@@ -7435,3 +7435,120 @@ body.rbv-keyboard-visible {
   scroll-behavior: auto !important;
   scroll-padding-bottom: calc(var(--rbv-keyboard-inset, 0px) + 40px) !important;
 }
+
+
+/* Revamp Desktop UI & PDF Full View */
+.preview-modal-card-fullview {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: #090d16 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: none !important;
+}
+
+.preview-modal-card-fullview .preview-toolbar {
+  background: #111827 !important;
+  border-bottom: 1px solid #1f2937 !important;
+  color: #f8fafc !important;
+  flex-shrink: 0 !important;
+  padding: 10px 16px !important;
+}
+
+.preview-modal-card-fullview .preview-toolbar p {
+  color: #f8fafc !important;
+}
+
+.preview-modal-card-fullview .preview-toolbar p:last-child {
+  color: #94a3b8 !important;
+}
+
+.preview-modal-card-fullview .preview-frame-wrap {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  background: #090d16 !important;
+  overflow: hidden !important;
+}
+
+.preview-modal-card-fullview .pdf-canvas-direct-preview {
+  height: 100% !important;
+  min-height: 0 !important;
+  background: #090d16 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.preview-modal-card-fullview .pdf-canvas-direct-toolbar {
+  background: #111827 !important;
+  border-bottom: 1px solid #1f2937 !important;
+  color: #cbd5e1 !important;
+}
+
+.preview-modal-card-fullview .pdf-canvas-statusline strong {
+  color: #e2e8f0 !important;
+}
+
+.preview-modal-card-fullview .pdf-canvas-pages {
+  flex: 1 1 0 !important;
+  height: 100% !important;
+  max-height: none !important;
+  background: #090d16 !important;
+  padding: 24px 16px 40px !important;
+}
+
+.preview-modal-card-fullview .pdf-canvas-page-wrap {
+  margin: 0 auto 28px !important;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Enhanced default preview layout for desktop */
+@media (min-width: 768px) {
+  .preview-page {
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+  .preview-modal-card {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 75vh !important;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+  }
+  .preview-frame-wrap {
+    flex: 1 1 auto !important;
+    min-height: 70vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .preview-modal-card .pdf-canvas-direct-preview {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 70vh !important;
+  }
+  .preview-modal-card .pdf-canvas-pages {
+    flex: 1 1 auto !important;
+    max-height: 85vh !important;
+  }
+}
+
+/* Floating bottom nav desktop dock hover and focus micro-interactions */
+@media (min-width: 1024px) {
+  .audit-shell {
+    padding-bottom: 96px !important;
+  }
+}

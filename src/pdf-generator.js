@@ -459,10 +459,8 @@
   }
 
   function addFooter(doc, pageWidth, pageHeight) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
-    doc.setTextColor(148, 163, 184);
-    doc.text('GENERATE BY BESTIE VISIT WEB REPORT', pageWidth / 2, pageHeight - 4.8, { align: 'center' });
+    // Watermark removed per user request
+    return;
   }
 
   function applyFooterAllPages(doc, pageWidth, pageHeight) {

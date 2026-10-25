@@ -1038,7 +1038,20 @@ function EmailReportModal({ open, form, onChange, onClose, onSubmit, busy, statu
     return (typeof document !== 'undefined' && ReactDOM?.createPortal) ? ReactDOM.createPortal(overlay, document.body) : overlay;
 }
 
-function PdfCanvasPreview({ blob, pdfUrl, status }) {
+function PdfCanvasPreview({ blob, pdfUrl, status, isFullView, onToggleFullView }) {
+    const [resizeTick, setResizeTick] = useState(0);
+    useEffect(() => {
+        let timer = null;
+        const handleResize = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => setResizeTick(t => t + 1), 80);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
     const pagesRef = useRef(null);
     const taskRef = useRef(null);
     const [viewerStatus, setViewerStatus] = useState(status || 'Menyiapkan preview PDF...');
@@ -1100,7 +1113,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                     if (cancelled)
                         break;
                     const baseViewport = page.getViewport({ scale: 1 });
-                    const hostWidth = Math.max(280, Math.floor((host.clientWidth || 360) - 18));
+                    const hostWidth = Math.max(280, Math.floor((host.clientWidth || window.innerWidth || 360) - (isFullView ? 36 : 20)));
                     const fitCssScale = Math.max(0.2, hostWidth / baseViewport.width);
                     const cssScale = Math.max(0.2, fitCssScale * clampZoom(zoom));
                     const renderScale = Math.max(0.65, Math.min(4.25, cssScale * deviceRatio));
@@ -1151,7 +1164,7 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
             try { taskRef.current?.destroy?.(); } catch (_) { }
             try { pdfDocument?.destroy?.(); } catch (_) { }
         };
-    }, [blob, status, zoom]);
+    }, [blob, status, zoom, isFullView, resizeTick]);
     function touchDistance(touches) {
         if (!touches || touches.length < 2) return 0;
         const dx = touches[0].clientX - touches[1].clientX;
@@ -1190,7 +1203,19 @@ function PdfCanvasPreview({ blob, pdfUrl, status }) {
                 React.createElement("button", { type: "button", onClick: zoomOut, disabled: zoom <= 0.66, "aria-label": "Perkecil preview PDF" }, "−"),
                 React.createElement("span", null, Math.round(clampZoom(zoom) * 100), "%"),
                 React.createElement("button", { type: "button", onClick: zoomIn, disabled: zoom >= 2.74, "aria-label": "Perbesar preview PDF" }, "+"),
-                React.createElement("button", { type: "button", onClick: zoomFit, disabled: Math.abs(zoom - 1) < 0.01 }, "Fit"))),
+                React.createElement("button", { type: "button", onClick: zoomFit, disabled: Math.abs(zoom - 1) < 0.01 }, "Fit"),
+                onToggleFullView ? React.createElement("button", {
+                    type: "button",
+                    onClick: onToggleFullView,
+                    title: isFullView ? "Keluar dari Full View (Esc)" : "Lihat Layar Penuh (Full View)",
+                    style: {
+                        width: "auto",
+                        padding: "0 10px",
+                        fontSize: "11px",
+                        background: isFullView ? "#0f766e" : "#ffffff",
+                        color: isFullView ? "#ffffff" : "#0f172a"
+                    }
+                }, isFullView ? "Normal" : "Full View") : null)),
         React.createElement("div", { ref: pagesRef, className: "pdf-canvas-pages", "aria-label": "Preview PDF final identik", onTouchStart: handlePreviewTouchStart, onTouchMove: handlePreviewTouchMove, onTouchEnd: handlePreviewTouchEnd, onTouchCancel: handlePreviewTouchEnd }),
         fallback ? React.createElement("div", { className: "pdf-canvas-fallback" },
             React.createElement("p", null, "Browser ini tidak bisa menampilkan preview PDF canvas. Coba reload halaman."),
@@ -1344,6 +1369,16 @@ function RbvHtmlReportPreview({ visit }) {
     return React.createElement("div", { className: "rbv-html-preview-stage", "aria-label": "Preview report" }, pages);
 }
 function PreviewPage({ visit, update, onBack }) {
+    const [isFullView, setIsFullView] = useState(false);
+    useEffect(() => {
+        function handleKey(e) {
+            if (e.key === 'Escape' && isFullView) {
+                setIsFullView(false);
+            }
+        }
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [isFullView]);
     const [pdfUrl, setPdfUrl] = useState('');
     const [pdfBlob, setPdfBlob] = useState(null);
     const [status, setStatus] = useState('Menyiapkan preview PDF...');
@@ -1556,18 +1591,19 @@ function PreviewPage({ visit, update, onBack }) {
     if (!visit)
         return React.createElement("main", { className: "preview-page w-full px-4 py-8 md:px-8" },
             React.createElement(EmptyState, { icon: "pdf", title: "Belum ada visit aktif" }));
-    return (React.createElement("main", { className: "preview-page w-full px-4 pt-1 pb-6 md:px-8 md:pt-4 md:pb-8" },
+    return (React.createElement("main", { className: cx("preview-page w-full px-2 pt-1 pb-6 md:px-6 md:pt-3 md:pb-6", isFullView && "p-0 max-w-none") },
         downloadBusy ? React.createElement("div", { className: "download-pdf-overlay", role: "status", "aria-live": "polite" },
             React.createElement("div", { className: "download-pdf-loader" },
                 React.createElement("span", { className: "download-pdf-spinner", "aria-hidden": "true" }),
                 React.createElement("strong", null, downloadMessage || 'Menyiapkan PDF...'),
                 React.createElement("p", null, "Jangan tutup halaman sampai file manager muncul."))) : null,
         React.createElement(EmailReportModal, { open: emailOpen, form: emailForm, onChange: (patch) => setEmailForm((state) => ({ ...state, ...patch })), onClose: () => setEmailOpen(false), onSubmit: handleSendReportEmail, busy: emailBusy, status: emailStatus, visit: visit }),
-        React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-40 bg-slate-50 pt-2 pb-3 -mx-4 px-4 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0" },
-            React.createElement("div", { className: "flex items-center gap-4 sm:block" },
+        !isFullView ? React.createElement("div", { className: "preview-header mb-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end sticky top-0 z-40 bg-slate-50 pt-2 pb-3 -mx-2 px-2 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0" },
+            React.createElement("div", { className: "flex items-center gap-3 sm:block" },
                 React.createElement("button", { 
                     onClick: onBack, 
-                    className: "sm:hidden w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600 flex-shrink-0" 
+                    className: "w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm border border-slate-200 active:scale-95 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex-shrink-0",
+                    title: "Kembali"
                 },
                     React.createElement(Icon, { name: "left", className: "w-5 h-5" })
                 ),
@@ -1583,17 +1619,33 @@ function PreviewPage({ visit, update, onBack }) {
                         visitProgress(visit),
                         "%")),
                 React.createElement(ProgressBar, { value: visitProgress(visit) }),
-                React.createElement(ProgressMissingInfo, { visit: visit, maxItems: 4, compact: true }))),
-        React.createElement("div", { className: "preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px]" },
+                React.createElement(ProgressMissingInfo, { visit: visit, maxItems: 4, compact: true }))) : null,
+        React.createElement("div", { className: cx("preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px] transition-all", isFullView && "preview-modal-card-fullview") },
             React.createElement("div", { className: "preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between" },
-                React.createElement("div", { className: "min-w-0" },
-                    React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-950" }, visit.store || 'Store belum dipilih'),
-                    React.createElement("p", { className: "truncate text-xs text-slate-500" },
-                        visit.nama || 'Bestie belum dipilih',
-                        " \u2022 ",
-                        formatDate(visit.tanggal))),
+                React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
+                    isFullView ? React.createElement("button", {
+                        onClick: () => setIsFullView(false),
+                        className: "px-3 py-1.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all shrink-0",
+                        title: "Keluar dari Full View (Esc)"
+                    },
+                        React.createElement(Icon, { name: "left", className: "w-4 h-4" }),
+                        React.createElement("span", null, "Kembali")
+                    ) : null,
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("p", { className: "truncate text-sm font-extrabold text-slate-950" }, visit.store || 'Store belum dipilih'),
+                        React.createElement("p", { className: "truncate text-xs text-slate-500" },
+                            visit.nama || 'Bestie belum dipilih',
+                            " \u2022 ",
+                            formatDate(visit.tanggal)))),
                 React.createElement("div", { className: "preview-actions-v99" },
                     React.createElement("div", { className: "preview-actions-left-v99" },
+                        React.createElement(Button, { 
+                            variant: isFullView ? "primary" : "secondary", 
+                            icon: isFullView ? "minimize" : "maximize", 
+                            onClick: () => setIsFullView(v => !v), 
+                            className: "preview-fullview-btn preview-secondary-action-v99",
+                            title: isFullView ? "Kembali ke Tampilan Normal (Esc)" : "Lihat Preview Layar Penuh"
+                        }, isFullView ? "Keluar Full View" : "Full View"),
                         React.createElement(Button, { icon: downloadBusy ? null : "download", onClick: handleDownloadPdf, disabled: busy || downloadBusy, className: "preview-secondary-action-v99" }, downloadBusy ? 'Memproses...' : 'Download PDF'),
                         React.createElement(Button, { variant: "secondary", icon: "excel", onClick: handleExportExcel, disabled: busy || downloadBusy, className: "excel-export-button preview-secondary-action-v99" },
                             React.createElement("span", { className: "text-left leading-tight" },
@@ -1601,8 +1653,9 @@ function PreviewPage({ visit, update, onBack }) {
                                 React.createElement("span", { className: "block text-[11px] font-semibold text-slate-500" }, "file untuk feedback store")))),
                     React.createElement(Button, { icon: "upload", onClick: openEmailReportModal, disabled: busy || downloadBusy, className: "preview-send-action-v99" }, "Send Email"))),
             React.createElement("div", { className: "preview-frame-wrap" },
-                React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status })))));
+                React.createElement(PdfCanvasPreview, { blob: pdfBlob, pdfUrl: pdfUrl, status: status, isFullView: isFullView, onToggleFullView: () => setIsFullView(v => !v) })))));
 }
+
 // =============================================================
 // Secret monitor helpers
 // =============================================================

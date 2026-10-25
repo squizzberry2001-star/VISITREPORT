@@ -130,7 +130,11 @@ function Icon({ name, className = 'h-5 w-5', strokeWidth = 2 }) {
             React.createElement("circle", { cx: "16", cy: "7", r: "2" }),
             React.createElement("path", { d: "M4 17h2" }),
             React.createElement("path", { d: "M10 17h10" }),
-            React.createElement("circle", { cx: "8", cy: "17", r: "2" }))
+            React.createElement("circle", { cx: "8", cy: "17", r: "2" })),
+        maximize: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" })),
+        minimize: React.createElement(React.Fragment, null,
+            React.createElement("path", { d: "M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6 7 7M10 10V4m0 6H4m6 0L3 3m10 7h6m-6 0V4m0 6 7-7" }))
     };
     return (React.createElement("svg", { className: cx("transition-all duration-300", className), viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: strokeWidth === 2 ? 2.25 : strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, paths[name] || paths.spark));
 }
