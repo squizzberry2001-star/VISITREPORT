@@ -7509,7 +7509,23 @@ body.rbv-keyboard-visible {
   box-shadow: 0 25px 65px rgba(0, 0, 0, 0.6) !important;
 }
 
-/* Enhanced default preview layout for desktop */
+/* Enhanced preview layout - No height restriction, display all pages continuously */
+.preview-page {
+  height: auto !important;
+  min-height: 100vh !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 767px) {
+  .preview-page {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+}
+
 @media (min-width: 768px) {
   .preview-page {
     max-width: 1400px !important;
@@ -7521,29 +7537,103 @@ body.rbv-keyboard-visible {
     height: auto !important;
     min-height: 100vh !important;
   }
-  .preview-modal-card {
-    flex: 1 1 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 75vh !important;
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
-  }
-  .preview-frame-wrap {
-    flex: 1 1 auto !important;
-    min-height: 70vh !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  .preview-modal-card .pdf-canvas-direct-preview {
-    flex: 1 1 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 70vh !important;
-  }
-  .preview-modal-card .pdf-canvas-pages {
-    flex: 1 1 auto !important;
-    max-height: 85vh !important;
-  }
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .preview-toolbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .preview-frame-wrap {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: #f1f5f9 !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .pdf-canvas-direct-preview {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: #f1f5f9 !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .pdf-canvas-direct-toolbar {
+  position: relative !important;
+  top: auto !important;
+  z-index: 10 !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .pdf-canvas-pages {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: auto !important;
+  padding: 24px 16px 48px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 24px !important;
+  background: #f1f5f9 !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .pdf-canvas-page-wrap {
+  position: relative !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  overflow: hidden !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .pdf-canvas-page {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.preview-modal-card:not(.preview-modal-card-fullview) .pdf-canvas-page-label {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  z-index: 10 !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.03em !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(4px) !important;
+  pointer-events: none !important;
 }
 
 /* Floating bottom nav desktop dock hover and focus micro-interactions */

@@ -1620,7 +1620,7 @@ function PreviewPage({ visit, update, onBack }) {
                         "%")),
                 React.createElement(ProgressBar, { value: visitProgress(visit) }),
                 React.createElement(ProgressMissingInfo, { visit: visit, maxItems: 4, compact: true }))) : null,
-        React.createElement("div", { className: cx("preview-modal-card surface-card overflow-hidden rounded-[24px] md:rounded-[28px] transition-all", isFullView && "preview-modal-card-fullview") },
+        React.createElement("div", { className: cx("preview-modal-card surface-card rounded-[24px] md:rounded-[28px] transition-all", !isFullView ? "overflow-visible" : "overflow-hidden", isFullView && "preview-modal-card-fullview") },
             React.createElement("div", { className: "preview-toolbar flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between" },
                 React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
                     isFullView ? React.createElement("button", {
