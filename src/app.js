@@ -1091,6 +1091,20 @@ function App() {
         setActiveSection(0);
         setScreen('audit');
     }
+    function handleLogout() {
+        const login = typeof readBestieLogin === 'function' ? readBestieLogin() : null;
+        const msg = login?.name ? `Keluar / Logout dari akun ${login.name}?` : 'Keluar / Logout dari akun Bestie?';
+        if (confirm(msg)) {
+            if (typeof clearBestieLogin === 'function') {
+                clearBestieLogin();
+            }
+            setAdminMode(false);
+            setAdminUser(false);
+            setWelcomeOpen(true);
+            setScreen('dashboard');
+        }
+    }
+
     let content;
     if (adminUser && adminMode) {
         content = React.createElement(AdminCommandCenter, {
@@ -1099,11 +1113,11 @@ function App() {
             history: history,
             presenceRows: presenceRows,
             scheduleConfig: scheduleConfig,
-            onNewVisit: () => setNewVisitOpen(true)
+            onNewVisit: () => setNewVisitOpen(true), onLogout: handleLogout
         });
     }
     else if (['dashboard', 'analytics', 'utility', 'schedule'].includes(screen)) {
-        content = React.createElement(DashboardPage, { activeTab: screen === "dashboard" ? "home" : screen, onTabChange: navigateScreen, history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onQuickVisit: (storeName) => createNewVisit(readBestieLogin()?.name || '', storeName), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
+        content = React.createElement(DashboardPage, { activeTab: screen === "dashboard" ? "home" : screen, onTabChange: navigateScreen, history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onQuickVisit: (storeName) => createNewVisit(readBestieLogin()?.name || '', storeName), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig, onLogout: handleLogout });
     }
     else if (screen === 'preview') {
         content = React.createElement(PreviewPage, { visit: visit, update: updateVisit, onBack: () => navigateScreen('audit') });

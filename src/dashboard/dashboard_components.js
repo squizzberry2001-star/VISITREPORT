@@ -1723,17 +1723,59 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                     React.createElement("p", { style: { color:"rgba(255,255,255,0.55)", fontSize:"11px", fontWeight:"800", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:"2px" } }, "VISIT REPORT"),
                     React.createElement("p", { style: { color:"rgba(255,255,255,0.65)", fontSize:"13px", fontWeight:"500" } }, greeting)
                 ),
-                React.createElement("button", { onClick: onTitleTap,
-                    style: {
-                        width:"42px", height:"42px", borderRadius:"50%",
-                        background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.2)",
-                        backdropFilter:"blur(12px)", display:"flex", alignItems:"center", justifyContent:"center",
-                        cursor:"pointer", transition:"transform 0.2s"
+                React.createElement("div", { className: "flex items-center gap-2.5" },
+                    // Logout button in top right corner of home
+                    React.createElement("button", {
+                        type: "button",
+                        onClick: () => {
+                            if (typeof onLogout === "function") {
+                                onLogout();
+                            } else {
+                                const l = typeof readBestieLogin === "function" ? readBestieLogin() : null;
+                                if (confirm(`Keluar / Logout dari akun ${l?.name || "Bestie"}?`)) {
+                                    if (typeof clearBestieLogin === "function") clearBestieLogin();
+                                    location.reload();
+                                }
+                            }
+                        },
+                        style: {
+                            height: "40px",
+                            padding: "0 14px",
+                            borderRadius: "20px",
+                            background: "rgba(239, 68, 68, 0.22)",
+                            border: "1.5px solid rgba(248, 113, 113, 0.45)",
+                            backdropFilter: "blur(12px)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            color: "#ffffff",
+                            fontSize: "12px",
+                            fontWeight: "800",
+                            cursor: "pointer",
+                            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                            boxShadow: "0 4px 14px rgba(239, 68, 68, 0.25)"
+                        },
+                        onPointerDown: e => { e.currentTarget.style.transform = "scale(0.93)"; },
+                        onPointerUp: e => { e.currentTarget.style.transform = "scale(1)"; },
+                        title: "Logout / Keluar dari Akun Bestie"
                     },
-                    onPointerDown: e => { e.currentTarget.style.transform = "scale(0.93)"; },
-                    onPointerUp: e => { e.currentTarget.style.transform = "scale(1)"; }
-                },
-                    React.createElement(Icon, { name:"user", className:"w-5 h-5", style:{ color:"#fff" } })
+                        React.createElement(Icon, { name: "logout", className: "w-4 h-4 text-rose-200", strokeWidth: 2.5 }),
+                        React.createElement("span", { style: { letterSpacing: "0.02em" } }, "Logout")
+                    ),
+                    // Profil / Secret tap button
+                    React.createElement("button", { onClick: onTitleTap,
+                        style: {
+                            width:"40px", height:"40px", borderRadius:"50%",
+                            background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.2)",
+                            backdropFilter:"blur(12px)", display:"flex", alignItems:"center", justifyContent:"center",
+                            cursor:"pointer", transition:"transform 0.2s"
+                        },
+                        onPointerDown: e => { e.currentTarget.style.transform = "scale(0.93)"; },
+                        onPointerUp: e => { e.currentTarget.style.transform = "scale(1)"; },
+                        title: "Profil & Panel Rahasia"
+                    },
+                        React.createElement(Icon, { name:"user", className:"w-5 h-5", style:{ color:"#fff" } })
+                    )
                 )
             ),
 

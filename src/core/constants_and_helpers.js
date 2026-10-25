@@ -193,6 +193,14 @@ function readBestieLogin() {
         return { nik: '', name: '' };
     }
 }
+
+function clearBestieLogin() {
+    try {
+        localStorage.removeItem(BESTIE_LOGIN_KEY);
+        sessionStorage.removeItem(WELCOME_SEEN_KEY);
+    } catch (e) {}
+    window.dispatchEvent(new CustomEvent('rbv-bestie-login-change', { detail: { nik: '', name: '' } }));
+}
 function saveBestieLogin(payload) {
     const found = findBestieByNik(payload && payload.nik);
     if (!found)
@@ -264,7 +272,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v121';
+const APP_BUILD_VERSION = 'revamp327-modular-v122';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';

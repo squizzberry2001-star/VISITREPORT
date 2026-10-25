@@ -9,7 +9,8 @@ function AdminCommandCenter({
     history = [],
     presenceRows = [],
     scheduleConfig = [],
-    onNewVisit
+    onNewVisit,
+    onLogout
 }) {
     const [activeTab, setActiveTab] = useState('radar'); // 'radar' | 'dispatch' | 'performance' | 'progress'
     const [besties, setBesties] = useState(() => getAllBesties());
@@ -485,6 +486,26 @@ function AdminCommandCenter({
                         },
                             React.createElement(Icon, { name: "settings", className: "w-3.5 h-3.5" }),
                             React.createElement("span", null, "Panel Otoritas")
+                        ),
+
+                        // Logout Button in Command Center
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => {
+                                if (typeof onLogout === 'function') {
+                                    onLogout();
+                                } else {
+                                    if (confirm('Keluar / Logout dari akun Admin?')) {
+                                        if (typeof clearBestieLogin === 'function') clearBestieLogin();
+                                        location.reload();
+                                    }
+                                }
+                            },
+                            className: "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs transition-all cursor-pointer shadow-sm",
+                            title: "Logout / Keluar dari Akun Admin"
+                        },
+                            React.createElement(Icon, { name: "logout", className: "w-3.5 h-3.5" }),
+                            React.createElement("span", null, "Logout")
                         )
                     )
                 )
