@@ -12,71 +12,70 @@ function AppBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, onTit
 
     return React.createElement("div", { className: "rbv-dock-container" },
         React.createElement("nav", { className: "rbv-bottom-dock", "aria-label": "System navigation" },
-            // Home / Dashboard
+            // 1. Home / Dashboard
             React.createElement("button", {
                 type: "button",
                 className: cx("rbv-dock-item", screen === "dashboard" && "active"),
                 onClick: () => { setScreen("dashboard"); },
-                title: "Dashboard"
+                title: "Beranda"
             },
                 React.createElement(Icon, { name: "home", className: "rbv-dock-icon", strokeWidth: screen === "dashboard" ? 2.5 : 2 }),
                 React.createElement("span", { className: "rbv-dock-label" }, "Home")
             ),
 
-            // Schedule / Jadwal
+            // 2. Riwayat / Mutasi
             React.createElement("button", {
                 type: "button",
-                className: cx("rbv-dock-item", screen === "schedule" && "active"),
-                onClick: () => { setScreen("schedule"); },
-                title: "Jadwal Bestie"
+                className: cx("rbv-dock-item", screen === "analytics" && "active"),
+                onClick: () => { setScreen("analytics"); },
+                title: "Riwayat & Mutasi"
             },
-                React.createElement(Icon, { name: "calendar", className: "rbv-dock-icon", strokeWidth: screen === "schedule" ? 2.5 : 2 }),
-                React.createElement("span", { className: "rbv-dock-label" }, "Jadwal")
+                React.createElement(Icon, { name: "clipboard", className: "rbv-dock-icon", strokeWidth: screen === "analytics" ? 2.5 : 2 }),
+                React.createElement("span", { className: "rbv-dock-label" }, "Mutasi")
             ),
 
-            // Center Action - Kunjungan Baru
+            // 3. Center Raised Action Button (+ Visit Baru / QR)
             React.createElement("div", { className: "rbv-dock-fab-slot" },
-                // Mobile circular floating FAB
                 React.createElement("button", {
                     type: "button",
                     "aria-label": "Kunjungan Baru",
                     className: "rbv-dock-fab-mobile",
-                    onClick: onNewVisit
+                    onClick: onNewVisit,
+                    title: "Mulai Kunjungan Baru"
                 },
-                    React.createElement(Icon, { name: "plus", className: "h-6 w-6 stroke-[2.5px]" })
+                    React.createElement(Icon, { name: "plus", className: "h-6 w-6 stroke-[2.8px]" })
                 ),
-                // Desktop sleek jewel action pill
                 React.createElement("button", {
                     type: "button",
                     className: "rbv-dock-fab-desktop",
                     onClick: onNewVisit,
                     title: "Mulai Kunjungan Baru"
                 },
-                    React.createElement(Icon, { name: "plus", className: "h-4 w-4 stroke-[2.5px]" }),
-                    React.createElement("span", null, "Kunjungan")
+                    React.createElement(Icon, { name: "plus", className: "h-4 w-4 stroke-[2.8px]" }),
+                    React.createElement("span", null, "Visit Baru")
                 )
             ),
 
-            // Analytics / Analitik
+            // 4. Jadwal / Aktivitas
             React.createElement("button", {
                 type: "button",
-                className: cx("rbv-dock-item", screen === "analytics" && "active"),
-                onClick: () => setScreen("analytics"),
-                title: "Analitik"
+                className: cx("rbv-dock-item", screen === "schedule" && "active"),
+                onClick: () => { setScreen("schedule"); },
+                title: "Jadwal & Aktivitas FMCU"
             },
-                React.createElement(Icon, { name: "chart", className: "rbv-dock-icon", strokeWidth: screen === "analytics" ? 2.5 : 2 }),
-                React.createElement("span", { className: "rbv-dock-label" }, "Analitik")
+                React.createElement(Icon, { name: "calendar", className: "rbv-dock-icon", strokeWidth: screen === "schedule" ? 2.5 : 2 }),
+                React.createElement("span", { className: "rbv-dock-label" }, "Aktivitas")
             ),
 
-            // Utility / Profil
+            // 5. Akun / Profil & Panel
             React.createElement("button", {
                 type: "button",
                 className: cx("rbv-dock-item", screen === "utility" && "active"),
                 onClick: () => setScreen("utility"),
-                title: "Utiliti & Profil"
+                title: "Akun & Profil Bestie"
             },
                 React.createElement(Icon, { name: "user", className: "rbv-dock-icon", strokeWidth: screen === "utility" ? 2.5 : 2 }),
-                React.createElement("span", { className: "rbv-dock-label" }, "Profil")
+                React.createElement("span", { className: "rbv-dock-label" }, "Akun")
             )
         )
     );
