@@ -7806,3 +7806,294 @@ body.rbv-keyboard-visible {
     display: none !important;
   }
 }
+
+
+/* ========================================================
+   REVAMP: Form Workspace & Section Bottom Navbar
+   ======================================================== */
+
+.rbv-form-dock-container {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 60 !important;
+  display: flex !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+}
+
+body.rbv-keyboard-visible .rbv-form-dock-container {
+  display: none !important;
+}
+
+/* --- DESKTOP FORM SECTION DOCK (min-width: 768px) --- */
+@media (min-width: 768px) {
+  .rbv-form-dock-container {
+    bottom: 24px !important;
+    padding: 0 16px !important;
+  }
+
+  .rbv-form-bottom-dock {
+    pointer-events: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 12px !important;
+    height: 58px !important;
+    max-width: 820px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 
+      0 20px 45px -10px rgba(15, 23, 42, 0.16),
+      0 0 0 1px rgba(15, 23, 42, 0.05),
+      inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease !important;
+  }
+
+  .rbv-form-bottom-dock:hover {
+    box-shadow: 
+      0 24px 52px -10px rgba(15, 23, 42, 0.20),
+      0 0 0 1px rgba(15, 23, 42, 0.07),
+      inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+  }
+
+  .rbv-form-sections-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .rbv-form-sec-tab {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 7px 14px !important;
+    height: 42px !important;
+    border-radius: 9999px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+    position: relative !important;
+  }
+
+  .rbv-form-sec-tab:hover {
+    color: #0f172a !important;
+    background: rgba(241, 245, 249, 0.85) !important;
+    transform: translateY(-1.5px) !important;
+  }
+
+  .rbv-form-sec-tab.active {
+    color: #ffffff !important;
+    background: #0f766e !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px rgba(15, 118, 110, 0.32) !important;
+  }
+
+  .rbv-form-tab-icon-wrap {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .rbv-form-tab-icon {
+    width: 17px !important;
+    height: 17px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .rbv-form-check-badge {
+    position: absolute !important;
+    top: -4px !important;
+    right: -6px !important;
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 9999px !important;
+    background: #10b981 !important;
+    color: #ffffff !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .rbv-form-sec-tab.active .rbv-form-check-badge {
+    background: #ffffff !important;
+    color: #0f766e !important;
+  }
+
+  .rbv-form-nav-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 42px !important;
+    padding: 0 14px !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+  }
+
+  .rbv-form-nav-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    transform: translateY(-1.5px) !important;
+  }
+
+  .rbv-form-next-btn.is-next {
+    background: #0f766e !important;
+    color: #ffffff !important;
+    border-color: #0f766e !important;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25) !important;
+  }
+
+  .rbv-form-next-btn.is-next:hover {
+    background: #115e59 !important;
+    box-shadow: 0 6px 16px rgba(15, 118, 110, 0.35) !important;
+  }
+
+  .rbv-form-next-btn.is-finish {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35) !important;
+  }
+
+  .rbv-form-next-btn.is-finish:hover {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%) !important;
+    box-shadow: 0 6px 18px rgba(249, 115, 22, 0.45) !important;
+  }
+}
+
+/* --- MOBILE FORM SECTION NAVBAR (max-width: 767px) --- */
+@media (max-width: 767px) {
+  .rbv-form-bottom-dock {
+    pointer-events: auto !important;
+    width: 100% !important;
+    height: 66px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 4px 8px !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  .rbv-form-sections-row {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    padding: 0 4px !important;
+  }
+
+  .rbv-form-sec-tab {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    padding: 4px 6px !important;
+    height: 50px !important;
+    min-width: 48px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .rbv-form-sec-tab.active {
+    color: #0f766e !important;
+    background: rgba(15, 118, 110, 0.12) !important;
+    font-weight: 800 !important;
+  }
+
+  .rbv-form-tab-icon-wrap {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .rbv-form-tab-icon {
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  .rbv-form-tab-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+  }
+
+  .rbv-form-check-badge {
+    position: absolute !important;
+    top: -3px !important;
+    right: -6px !important;
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 9999px !important;
+    background: #10b981 !important;
+    color: #ffffff !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .rbv-form-nav-btn {
+    width: 38px !important;
+    height: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    background: #f8fafc !important;
+    color: #475569 !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.15s ease !important;
+  }
+
+  .rbv-form-nav-btn:active {
+    transform: scale(0.92) !important;
+  }
+
+  .rbv-form-next-btn.is-next {
+    background: #0f766e !important;
+    color: #ffffff !important;
+    border-color: #0f766e !important;
+  }
+
+  .rbv-form-next-btn.is-finish {
+    background: #f97316 !important;
+    color: #ffffff !important;
+    border-color: #f97316 !important;
+  }
+}

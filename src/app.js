@@ -204,106 +204,171 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
         ));
     }
 
-    return (React.createElement("main", { className: "workspace-page section-mode no-top-space mx-auto w-full max-w-4xl px-0 pt-0 pb-0 sm:px-8 sm:py-8 sm:pb-8 bg-brand-bg", style: { paddingBottom: '220px' } },
-        
-        // Modern Floating Mobile Header
-        React.createElement("div", { className: "sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100/60 px-4 py-3 sm:hidden shadow-sm" },
-            React.createElement("div", { className: "flex items-center gap-3" },
-                React.createElement("button", { 
-                    onClick: onDashboard,
-                    className: "w-10 h-10 flex-shrink-0 flex items-center justify-center bg-brand-teal/5 rounded-full text-brand-teal active:scale-95 transition-transform"
-                },
-                    React.createElement(Icon, { name: "left", className: "w-5 h-5" })
-                ),
-                React.createElement("div", { className: "flex-1 min-w-0" },
-                    React.createElement("p", { className: "text-[10px] font-bold text-brand-orange uppercase tracking-wider mb-0.5" }, "Langkah " + (activeSection + 1)),
-                    React.createElement("h2", { className: "text-base font-black text-slate-800 truncate leading-tight" }, SECTION_DEFS[activeSection]?.title)
-                )
-            ),
-            // Progress line
-            React.createElement("div", { className: "absolute bottom-0 left-0 h-0.5 bg-brand-teal transition-all duration-500", style: { width: `${progress}%` } })
-        ),
-
-        // Horizontal Step Chip Bar (Seamless Navigation Without Going Back to Grid)
-        React.createElement("div", { className: "flex items-center gap-2 overflow-x-auto no-scrollbar py-3 px-4 sm:mx-0 sm:px-0 sm:py-0 sm:mb-4 bg-brand-bg" },
-            SECTION_DEFS.map((sec, idx) => {
-                const isActive = idx === activeSection;
-                const secProgress = visitProgress(visit, idx);
-                const isComplete = secProgress === 100;
-                return React.createElement("button", {
-                    key: idx,
-                    type: "button",
-                    onClick: () => goSection(idx),
-                    className: cx(
-                        "flex items-center gap-1.5 px-4 py-2 rounded-2xl font-extrabold text-xs whitespace-nowrap transition-all border shrink-0 cursor-pointer shadow-sm",
-                        isActive
-                            ? "bg-brand-teal text-white border-brand-teal scale-105"
-                            : isComplete
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : "bg-white text-slate-600 border-slate-100 hover:border-brand-teal/30 hover:bg-slate-50"
+    return (React.createElement("main", { className: "workspace-page section-mode no-top-space mx-auto w-full min-h-screen flex flex-col bg-slate-50 relative pb-36" },
+        // Unified Sleek Sticky Header
+        React.createElement("header", { className: "sticky top-0 z-40 bg-white/90 backdrop-blur-2xl border-b border-slate-200/80 px-4 py-3 sm:px-6 shadow-sm transition-all" },
+            React.createElement("div", { className: "max-w-4xl mx-auto flex items-center justify-between gap-3" },
+                // Left: Back button + Store & Bestie info
+                React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
+                    React.createElement("button", {
+                        type: "button",
+                        onClick: onDashboard,
+                        className: "w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-2xl bg-slate-100 hover:bg-slate-200/80 active:scale-95 text-slate-700 transition-all border border-slate-200/70 cursor-pointer",
+                        title: "Kembali ke Dashboard"
+                    },
+                        React.createElement(Icon, { name: "left", className: "w-5 h-5" })
+                    ),
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement("h1", { className: "text-sm sm:text-base font-black text-slate-900 truncate leading-tight" },
+                                visit.store || 'Store belum dipilih'
+                            ),
+                            React.createElement(SyncStatusBadge, null)
+                        ),
+                        React.createElement("p", { className: "text-[11px] sm:text-xs font-semibold text-slate-500 truncate mt-0.5" },
+                            visit.nama || 'Bestie belum dipilih',
+                            " \u2022 ",
+                            formatDate(visit.tanggal)
+                        )
                     )
-                },
-                    React.createElement("span", null, `${idx + 1}. `),
-                    React.createElement("span", null, sec.title),
-                    isComplete && !isActive && React.createElement("span", { className: "text-emerald-500 font-black ml-1" }, "✓")
-                );
-            })
-        ),
-        
-        // Wizard Header Card (Hidden on mobile)
-        React.createElement("div", { className: "mb-6 overflow-hidden rounded-[32px] bg-white shadow-sm border border-slate-100 hidden sm:block relative" },
-            React.createElement("div", { className: "absolute top-0 right-0 w-64 h-64 bg-brand-teal/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" }),
-            React.createElement("div", { className: "flex items-center justify-between p-6 md:p-8 relative z-10" },
-                React.createElement("div", { className: "min-w-0 flex-1" },
-                    React.createElement("p", { className: "mb-2 text-xs font-black uppercase tracking-widest text-brand-orange" }, "Step ", activeSection + 1, " of ", SECTION_DEFS.length),
-                    React.createElement("h2", { className: "truncate text-2xl font-black text-slate-900 md:text-3xl mb-1" }, SECTION_DEFS[activeSection]?.title),
-                    React.createElement("p", { className: "truncate text-sm font-bold text-slate-500 flex items-center gap-2" }, 
-                        React.createElement(Icon, { name: "store", className: "w-4 h-4 text-slate-400" }),
-                        visit.store || 'Store belum dipilih', " \u2022 ", visit.nama || 'Bestie belum dipilih')),
-                React.createElement("div", { className: "hidden shrink-0 gap-3 sm:flex ml-4" },
-                    React.createElement(Button, { variant: "secondary", onClick: () => goSection(activeSection - 1), disabled: activeSection <= 0, className: "!rounded-2xl !px-6 !py-3 !font-extrabold shadow-sm border-slate-200 text-slate-600", icon: "left" }, "Kembali"),
-                    React.createElement(Button, { onClick: () => { if (activeSection >= SECTION_DEFS.length - 1) onPreview(); else goSection(activeSection + 1); }, className: "!rounded-2xl !px-8 !py-3 !font-extrabold shadow-md bg-brand-teal text-white hover:bg-[#153640]", icon: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right" }, activeSection >= SECTION_DEFS.length - 1 ? "Selesai & Preview" : "Berikutnya"))),
-            // Progress Bar
-            React.createElement("div", { className: "h-2 w-full bg-slate-100 relative z-10" },
-                React.createElement("div", { className: "h-full bg-brand-teal transition-all duration-500 ease-out", style: { width: `${progress}%` } }))),
-        
-        // Wizard Content Card
-        React.createElement("div", { className: "sm:rounded-[32px] sm:bg-white sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 px-2 sm:px-4 pt-3 pb-24 sm:pb-8" },
-            React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" }, screens[activeSection])),
+                ),
 
-        // Sticky Mobile Bottom Wizard Navigation Bar (Eliminates "Keluar Masuk Grid")
-        React.createElement("div", {
-            className: "fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-4 py-3 shadow-[0_-8px_30px_rgb(0,0,0,0.08)] flex items-center justify-between gap-3 sm:hidden",
-            style: { paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }
-        },
-            React.createElement("button", {
-                type: "button",
-                onClick: () => {
-                    if (activeSection <= 0) onDashboard();
-                    else goSection(activeSection - 1);
-                },
-                className: "w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-600 flex items-center justify-center active:scale-95 transition-all shadow-sm shrink-0"
-            },
-                React.createElement(Icon, { name: activeSection <= 0 ? "home" : "left", className: "w-5 h-5" })
-            ),
-            React.createElement("button", {
-                type: "button",
-                onClick: () => {
-                    if (activeSection >= SECTION_DEFS.length - 1) onPreview();
-                    else goSection(activeSection + 1);
-                },
-                className: cx(
-                    "flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl font-extrabold text-sm text-white shadow-xl active:scale-95 transition-all",
-                    activeSection >= SECTION_DEFS.length - 1 ? "bg-brand-orange shadow-brand-orange/20" : "bg-brand-teal shadow-brand-teal/20"
+                // Right: Overall progress + View Grid Toggle + Preview PDF
+                React.createElement("div", { className: "flex items-center gap-2 shrink-0" },
+                    React.createElement("button", {
+                        type: "button",
+                        onClick: () => setViewMode('grid'),
+                        className: "hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-slate-200/60",
+                        title: "Lihat Ringkasan Grid"
+                    },
+                        React.createElement(Icon, { name: "spark", className: "w-3.5 h-3.5" }),
+                        React.createElement("span", null, "Grid")
+                    ),
+                    React.createElement("div", { className: "flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-[11px] sm:text-xs font-black shadow-sm" },
+                        React.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse" }),
+                        React.createElement("span", null, `${overallProgress}%`)
+                    ),
+                    React.createElement("button", {
+                        type: "button",
+                        onClick: onPreview,
+                        className: "flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-brand-teal text-white hover:bg-[#153640] active:scale-95 text-xs font-extrabold shadow-md shadow-brand-teal/20 transition-all cursor-pointer",
+                        title: "Lihat Preview PDF"
+                    },
+                        React.createElement(Icon, { name: "pdf", className: "w-4 h-4" }),
+                        React.createElement("span", { className: "hidden xs:inline sm:inline" }, "Preview")
+                    )
                 )
-            },
-                React.createElement("span", null, activeSection >= SECTION_DEFS.length - 1 ? "Selesai" : "Selanjutnya"),
-                React.createElement(Icon, { name: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right", className: "w-4 h-4" })
+            ),
+            // Sub-bar: Active section title and progress percentage
+            React.createElement("div", { className: "max-w-4xl mx-auto mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs" },
+                React.createElement("div", { className: "flex items-center gap-2 min-w-0" },
+                    React.createElement("span", { className: "px-2 py-0.5 rounded-md bg-brand-orange/15 text-brand-orange font-black text-[10px] sm:text-[11px] uppercase tracking-wider shrink-0" },
+                        `Langkah ${activeSection + 1}/${SECTION_DEFS.length}`
+                    ),
+                    React.createElement("h2", { className: "font-black text-slate-800 text-xs sm:text-sm truncate" },
+                        SECTION_DEFS[activeSection]?.title
+                    )
+                ),
+                React.createElement("span", { className: "text-[11px] font-bold text-slate-400 shrink-0 ml-2" },
+                    `${progress}% selesai`
+                )
+            ),
+            // Progress Bar Line at bottom of header
+            React.createElement("div", { className: "absolute bottom-0 left-0 right-0 h-1 bg-slate-100 overflow-hidden" },
+                React.createElement("div", {
+                    className: "h-full bg-brand-teal transition-all duration-500 ease-out",
+                    style: { width: `${progress}%` }
+                })
+            )
+        ),
+
+        // Main Form Content Card
+        React.createElement("div", { className: "max-w-4xl mx-auto w-full px-3 sm:px-6 pt-4 pb-36 flex-1" },
+            React.createElement("div", { className: "bg-white rounded-[28px] border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-3 sm:p-8 transition-all" },
+                React.createElement("div", { key: SECTION_DEFS[activeSection]?.id || activeSection, className: "fade-in" },
+                    screens[activeSection]
+                )
+            )
+        ),
+
+        // Section Bottom Navbar (Direct Switch between Sections)
+        React.createElement("div", { className: "rbv-form-dock-container" },
+            React.createElement("nav", { className: "rbv-form-bottom-dock", "aria-label": "Navigasi section form" },
+                // Previous button
+                React.createElement("button", {
+                    type: "button",
+                    onClick: () => {
+                        if (activeSection <= 0) onDashboard();
+                        else goSection(activeSection - 1);
+                    },
+                    className: "rbv-form-nav-btn rbv-form-prev-btn",
+                    title: activeSection <= 0 ? "Kembali ke Dashboard" : "Bagian Sebelumnya",
+                    "aria-label": "Sebelumnya"
+                },
+                    React.createElement(Icon, { name: activeSection <= 0 ? "home" : "left", className: "w-4 h-4 sm:w-4 sm:h-4" }),
+                    React.createElement("span", { className: "hidden md:inline text-xs font-bold" }, activeSection <= 0 ? "Home" : "Prev")
+                ),
+
+                // 5 Section Tabs
+                React.createElement("div", { className: "rbv-form-sections-row" },
+                    SECTION_DEFS.map((sec, idx) => {
+                        const isActive = idx === activeSection;
+                        const secProgress = visitProgress(visit, idx);
+                        const isComplete = secProgress === 100;
+
+                        const shortLabels = ['Setup', 'Info', 'QSC', 'Observasi', 'Evidence'];
+                        const iconNames = ['store', 'home', 'spark', 'clipboard', 'camera'];
+
+                        return React.createElement("button", {
+                            key: sec.id || idx,
+                            type: "button",
+                            onClick: () => goSection(idx),
+                            className: cx("rbv-form-sec-tab", isActive && "active", isComplete && "complete"),
+                            title: `${sec.title} (${secProgress}%)`,
+                            "aria-label": sec.title
+                        },
+                            React.createElement("div", { className: "rbv-form-tab-icon-wrap" },
+                                React.createElement(Icon, {
+                                    name: iconNames[idx] || sec.icon || 'clipboard',
+                                    className: "rbv-form-tab-icon",
+                                    strokeWidth: isActive ? 2.5 : 2
+                                }),
+                                isComplete && React.createElement("span", { className: "rbv-form-check-badge", title: "Selesai" }, "\u2713")
+                            ),
+                            React.createElement("span", { className: "rbv-form-tab-label" },
+                                React.createElement("span", { className: "hidden lg:inline mr-0.5 opacity-70" }, `${idx + 1}.`),
+                                shortLabels[idx] || sec.label || sec.title
+                            )
+                        );
+                    })
+                ),
+
+                // Next / Selesai button
+                React.createElement("button", {
+                    type: "button",
+                    onClick: () => {
+                        if (activeSection >= SECTION_DEFS.length - 1) onPreview();
+                        else goSection(activeSection + 1);
+                    },
+                    className: cx(
+                        "rbv-form-nav-btn rbv-form-next-btn",
+                        activeSection >= SECTION_DEFS.length - 1 ? "is-finish" : "is-next"
+                    ),
+                    title: activeSection >= SECTION_DEFS.length - 1 ? "Selesai & Buka Preview PDF" : "Bagian Selanjutnya",
+                    "aria-label": "Selanjutnya"
+                },
+                    React.createElement("span", { className: "hidden md:inline text-xs font-black" },
+                        activeSection >= SECTION_DEFS.length - 1 ? "Selesai" : "Lanjut"
+                    ),
+                    React.createElement(Icon, {
+                        name: activeSection >= SECTION_DEFS.length - 1 ? "pdf" : "right",
+                        className: "w-4 h-4 sm:w-4 sm:h-4"
+                    })
+                )
             )
         )
     ));
 }
-
 
 function CoffeePopup({ open, onClose }) {
   if (!open) return null;
