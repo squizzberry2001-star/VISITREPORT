@@ -3369,9 +3369,14 @@ function WelcomeOverlay({ config, onDone }) {
                         
                         React.createElement("div", { className: "mt-4 flex min-h-[48px] items-center justify-center rounded-xl bg-slate-50 px-4" },
                             loginName ? (
-                                React.createElement("div", { className: "flex items-center gap-2 text-teal-600 animate-in fade-in zoom-in duration-300" },
-                                    React.createElement(Icon, { name: "check-circle", className: "h-5 w-5" }),
-                                    React.createElement("span", { className: "font-extrabold" }, loginName)
+                                React.createElement("div", { className: "flex flex-col items-center gap-1 text-teal-600 animate-in fade-in zoom-in duration-300" },
+                                    React.createElement("div", { className: "flex items-center gap-2" },
+                                        React.createElement(Icon, { name: "check-circle", className: "h-5 w-5" }),
+                                        React.createElement("span", { className: "font-extrabold text-slate-800" }, loginName)
+                                    ),
+                                    (typeof isAdminNik === 'function' && isAdminNik(nikInput)) ? React.createElement("span", {
+                                        className: "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-500/25"
+                                    }, "👑 Akses Khusus: Administrator") : null
                                 )
                             ) : loginError ? (
                                 React.createElement("span", { className: "text-xs font-semibold text-rose-500" }, loginError)
@@ -3385,8 +3390,8 @@ function WelcomeOverlay({ config, onDone }) {
                             disabled: !findBestieByNik(nikInput),
                             className: "mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 font-bold text-white shadow-xl shadow-slate-900/20 transition-all hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                         },
-                            "Mulai Visit",
-                            React.createElement(Icon, { name: "right", className: "h-5 w-5" })
+                            (typeof isAdminNik === 'function' && isAdminNik(nikInput)) ? "Masuk ke Ops Command Center" : "Mulai Visit",
+                                React.createElement(Icon, { name: "right", className: "h-5 w-5" })
                         )
                     )
                 )
@@ -3518,6 +3523,39 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
     const [bestieSearch, setBestieSearch] = useState('');
     const [bestieMsg, setBestieMsg] = useState('');
     const [bestieBusy, setBestieBusy] = useState(false);
+    const [adminNiks, setAdminNiks] = useState(() => typeof readAdminAuthorizedNiks === 'function' ? readAdminAuthorizedNiks() : []);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (typeof readAdminAuthorizedNiks === 'function') {
+                setAdminNiks(readAdminAuthorizedNiks());
+            }
+        };
+        window.addEventListener('rbv-admin-niks-change', handler);
+        return () => window.removeEventListener('rbv-admin-niks-change', handler);
+    }, []);
+
+    const handleToggleAdmin = async (nik) => {
+        const clean = normalizeNik(nik);
+        if (!clean) return;
+        const currentList = typeof readAdminAuthorizedNiks === 'function' ? readAdminAuthorizedNiks() : [];
+        const isCurrentlyAdmin = currentList.includes(clean);
+        let nextList;
+        if (isCurrentlyAdmin) {
+            nextList = currentList.filter(n => n !== clean);
+        } else {
+            nextList = [...currentList, clean];
+        }
+        setAdminNiks(nextList);
+        if (typeof saveAdminAuthorizedNiks === 'function') {
+            await saveAdminAuthorizedNiks(nextList);
+        }
+        const target = bestieList.find(b => b.nik === clean);
+        setBestieMsg(isCurrentlyAdmin 
+            ? `Hak akses Admin dicabut dari ${target?.name || clean}.` 
+            : `👑 Berhasil! ${target?.name || clean} (NIK ${clean}) sekarang memiliki Otoritas Admin Command Center.`
+        );
+    };
 
     useEffect(() => {
         const handler = () => {
@@ -4536,6 +4574,24 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                     )
                 ),
                 settingsTab === 'auth' && React.createElement("div", { className: "mb-5 space-y-5 fade-in" },
+                    // Admin Authority Control Banner
+                    React.createElement("div", { className: "rounded-3xl border border-blue-500/30 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4" },
+                        React.createElement("div", { className: "space-y-1.5" },
+                            React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
+                                React.createElement("span", { className: "text-xl" }, "👑"),
+                                React.createElement("h4", { className: "font-black text-base text-white tracking-tight" }, "Otoritas Admin Ops Command Center"),
+                                React.createElement("span", { className: "px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 shadow-sm" }, `${adminNiks.length} ADMINISTRATOR`)
+                            ),
+                            React.createElement("p", { className: "text-xs text-slate-300 max-w-xl leading-relaxed" },
+                                "User dengan status Admin akan otomatis masuk ke tampilan khusus Ops Command Center (melihat overview lokasi GPS aktual Bestie, radar live loc, menentukan toko yang harus divisit, serta memantau kinerja & progres laporan). Klik tombol toggle pada nama Bestie di bawah untuk mengatur hak akses Admin."
+                            )
+                        ),
+                        React.createElement("div", { className: "shrink-0 flex items-center gap-2" },
+                            React.createElement("span", { className: "px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-400/40 text-blue-300 text-xs font-bold" },
+                                "Realtime Sync Aktif"
+                            )
+                        )
+                    ),
                     React.createElement("div", { className: "rounded-3xl border border-brand-teal/30 bg-gradient-to-br from-teal-50/60 via-white to-slate-50 p-5 shadow-sm space-y-4" },
                         React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3" },
                             React.createElement("div", { className: "space-y-1" },
@@ -4616,14 +4672,30 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                                             )
                                         )
                                     ),
-                                    !item.isDefault ? React.createElement("button", {
-                                        type: "button",
-                                        onClick: () => handleDeleteBestie(item.nik),
-                                        className: "p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors shrink-0 cursor-pointer",
-                                        title: `Hapus otoritas NIK ${item.nik}`
-                                    },
-                                        React.createElement(Icon, { name: "trash", className: "w-4 h-4" })
-                                    ) : React.createElement("span", { className: "text-slate-300 text-xs px-2 select-none" }, "Terkunci")
+                                    React.createElement("div", { className: "flex items-center gap-2 shrink-0" },
+                                        // Admin Role Toggle Button
+                                        React.createElement("button", {
+                                            type: "button",
+                                            onClick: () => handleToggleAdmin(item.nik),
+                                            className: cx(
+                                                "px-2.5 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer select-none",
+                                                adminNiks.includes(item.nik)
+                                                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-500/30 border border-amber-400"
+                                                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200"
+                                            ),
+                                            title: adminNiks.includes(item.nik) ? "Cabut akses Admin Command Center" : "Beri akses Admin Command Center"
+                                        },
+                                            adminNiks.includes(item.nik) ? "👑 Admin Ops" : "+ Jadi Admin"
+                                        ),
+                                        !item.isDefault ? React.createElement("button", {
+                                            type: "button",
+                                            onClick: () => handleDeleteBestie(item.nik),
+                                            className: "p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors shrink-0 cursor-pointer",
+                                            title: `Hapus otoritas NIK ${item.nik}`
+                                        },
+                                            React.createElement(Icon, { name: "trash", className: "w-4 h-4" })
+                                        ) : React.createElement("span", { className: "text-slate-300 text-[10px] px-1 select-none font-bold" }, "Sistem")
+                                    )
                                 )
                             )) : React.createElement("div", { className: "py-8 text-center text-slate-400 text-sm font-medium" }, "Tidak ada Bestie yang cocok dengan pencarian.")
                         )

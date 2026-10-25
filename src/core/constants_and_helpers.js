@@ -34,7 +34,10 @@ const APP_CONFIG_KEYS = {
     webSync: 'web_update_signal',
     schedule: 'rbv_schedule_config_v1',
     features: 'rbv_features_config_v1',
-    besties: 'rbv_bestie_directory_v1'
+    besties: 'rbv_bestie_directory_v1',
+    adminNiks: 'rbv_admin_authorized_niks_v1',
+    adminAssignedStores: 'rbv_admin_assigned_stores_v1',
+    liveBestieTracking: 'rbv_live_bestie_tracking_v1'
 };
 const MASTER_STORE_LOCAL_KEY = 'rbv_master_store_detail_rows_v200';
 const MASTER_STORE_TEMPLATE_FILE = 'templates/master-data-detail-toko-template.xlsx';
@@ -261,7 +264,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v120';
+const APP_BUILD_VERSION = 'revamp327-modular-v121';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -2029,3 +2032,213 @@ function fileToDataUrl(file) {
 // =============================================================
 // Atomic components
 // =============================================================
+
+// =============================================================
+// Admin Authorization, Store Dispatch & Live Tracking Helpers
+// =============================================================
+const ADMIN_AUTHORIZED_NIKS_KEY = 'rbv_admin_authorized_niks_v1';
+const ADMIN_ASSIGNED_STORES_KEY = 'rbv_admin_assigned_stores_v1';
+const LIVE_BESTIE_TRACKING_KEY = 'rbv_live_bestie_tracking_v1';
+const DEFAULT_ADMIN_NIKS = ['210822947']; // Aan Bagus Permana (Default PIC)
+
+function readAdminAuthorizedNiks() {
+    try {
+        const raw = localStorage.getItem(ADMIN_AUTHORIZED_NIKS_KEY);
+        if (raw === null) {
+            return [...DEFAULT_ADMIN_NIKS];
+        }
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+            const cleaned = parsed.map(n => normalizeNik(n)).filter(Boolean);
+            return cleaned.length ? cleaned : [...DEFAULT_ADMIN_NIKS];
+        }
+        return [...DEFAULT_ADMIN_NIKS];
+    } catch (e) {
+        return [...DEFAULT_ADMIN_NIKS];
+    }
+}
+
+function saveAdminAuthorizedNiks(nikList) {
+    const cleanList = uniqueBy((Array.isArray(nikList) ? nikList : []).map(n => normalizeNik(n)).filter(Boolean), item => item);
+    localStorage.setItem(ADMIN_AUTHORIZED_NIKS_KEY, JSON.stringify(cleanList));
+    window.dispatchEvent(new CustomEvent('rbv-admin-niks-change', { detail: cleanList }));
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.adminNiks, cleanList);
+}
+
+function isAdminNik(nik) {
+    const clean = normalizeNik(nik);
+    if (!clean) return false;
+    const adminNiks = readAdminAuthorizedNiks();
+    return adminNiks.includes(clean);
+}
+
+function isAdminUser(login = readBestieLogin()) {
+    if (!login || !login.nik) return false;
+    return isAdminNik(login.nik);
+}
+
+function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+    const p1 = parseFloat(lat1);
+    const l1 = parseFloat(lon1);
+    const p2 = parseFloat(lat2);
+    const l2 = parseFloat(lon2);
+    if (isNaN(p1) || isNaN(l1) || isNaN(p2) || isNaN(l2)) return Infinity;
+    const toRad = x => (x * Math.PI) / 180;
+    const R = 6371; // Earth radius in km
+    const dLat = toRad(p2 - p1);
+    const dLon = toRad(l2 - l1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(p1)) * Math.cos(toRad(p2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function readAdminAssignedStores() {
+    try {
+        const raw = localStorage.getItem(ADMIN_ASSIGNED_STORES_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveAdminAssignedStores(list) {
+    const cleanList = Array.isArray(list) ? list : [];
+    localStorage.setItem(ADMIN_ASSIGNED_STORES_KEY, JSON.stringify(cleanList));
+    window.dispatchEvent(new CustomEvent('rbv-admin-assigned-stores-change', { detail: cleanList }));
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.adminAssignedStores, cleanList);
+}
+
+function assignStoreToBestie({ bestieNik, bestieName, storeCode, storeName, targetDate, priority, notes, assignedBy }) {
+    const current = readAdminAssignedStores();
+    const newAssignment = {
+        id: 'assign-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+        bestieNik: normalizeNik(bestieNik),
+        bestieName: cleanText(bestieName),
+        storeCode: cleanText(storeCode),
+        storeName: cleanText(storeName),
+        targetDate: cleanText(targetDate) || new Date().toISOString().slice(0, 10),
+        priority: priority || 'normal', // 'normal' | 'high' | 'urgent'
+        notes: cleanText(notes),
+        status: 'PENDING', // 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+        assignedBy: cleanText(assignedBy) || 'Admin Ops',
+        assignedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    const nextList = [newAssignment, ...current];
+    saveAdminAssignedStores(nextList);
+    return newAssignment;
+}
+
+function updateStoreAssignmentStatus(assignmentId, newStatus) {
+    const current = readAdminAssignedStores();
+    const nextList = current.map(item => {
+        if (item.id === assignmentId) {
+            return { ...item, status: newStatus, updatedAt: new Date().toISOString() };
+        }
+        return item;
+    });
+    saveAdminAssignedStores(nextList);
+    return nextList;
+}
+
+function deleteStoreAssignment(assignmentId) {
+    const current = readAdminAssignedStores();
+    const nextList = current.filter(item => item.id !== assignmentId);
+    saveAdminAssignedStores(nextList);
+    return nextList;
+}
+
+function readLiveBestieTracking() {
+    try {
+        const raw = localStorage.getItem(LIVE_BESTIE_TRACKING_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveLiveBestieTracking(records) {
+    const cleanList = Array.isArray(records) ? records : [];
+    localStorage.setItem(LIVE_BESTIE_TRACKING_KEY, JSON.stringify(cleanList));
+    window.dispatchEvent(new CustomEvent('rbv-live-tracking-change', { detail: cleanList }));
+    return syncAppConfigToConvex(APP_CONFIG_KEYS.liveBestieTracking, cleanList);
+}
+
+function recordBestieLiveGps({ nik, name, lat, lng, accuracy, activeStore, storeCode, visitId, progress }) {
+    const cleanNik = normalizeNik(nik);
+    const cleanName = cleanText(name);
+    if (!cleanNik || !cleanName) return null;
+
+    const currentRecords = readLiveBestieTracking();
+    const existing = currentRecords.find(r => r.nik === cleanNik) || {};
+    const nowIso = new Date().toISOString();
+    const nowMs = Date.now();
+
+    let nearestStore = null;
+    let minDistance = Infinity;
+    const masterStores = typeof readLocalMasterStores === 'function' ? readLocalMasterStores() : [];
+    if (lat && lng && masterStores.length) {
+        for (const s of masterStores) {
+            const d = calculateDistanceKm(lat, lng, s.latitude, s.longitude);
+            if (d < minDistance) {
+                minDistance = d;
+                nearestStore = s;
+            }
+        }
+    }
+
+    const currentStoreName = cleanText(activeStore || existing.currentStoreName || (minDistance <= 0.15 ? nearestStore?.siteDescr : ''));
+    const currentStoreCode = cleanText(storeCode || existing.currentStoreCode || (minDistance <= 0.15 ? (nearestStore?.siteCode4 || nearestStore?.siteCode) : ''));
+
+    let status = 'STANDBY';
+    let arrivalTime = existing.arrivalTime || null;
+    let departureTime = existing.departureTime || null;
+
+    const isOnSite = Boolean((minDistance <= 0.15 && currentStoreName) || (visitId && currentStoreName));
+
+    if (isOnSite) {
+        status = 'ON_SITE';
+        if (!arrivalTime || (existing.status !== 'ON_SITE' && existing.currentStoreName !== currentStoreName)) {
+            arrivalTime = nowIso;
+            departureTime = null;
+        }
+    } else if (existing.status === 'ON_SITE' && !isOnSite) {
+        status = 'CHECKED_OUT';
+        departureTime = nowIso;
+    } else if (lat && lng) {
+        status = 'EN_ROUTE';
+    }
+
+    let dwellMinutes = 0;
+    if (arrivalTime) {
+        const arrMs = new Date(arrivalTime).getTime();
+        dwellMinutes = Math.max(0, Math.floor((nowMs - arrMs) / 60000));
+    }
+
+    const record = {
+        nik: cleanNik,
+        name: cleanName,
+        lat: lat ? Number(lat) : (existing.lat || null),
+        lng: lng ? Number(lng) : (existing.lng || null),
+        accuracy: accuracy ? Number(accuracy) : (existing.accuracy || null),
+        status: status,
+        currentStoreName: currentStoreName,
+        currentStoreCode: currentStoreCode,
+        distanceToStoreKm: minDistance !== Infinity ? Number(minDistance.toFixed(3)) : null,
+        arrivalTime: arrivalTime,
+        departureTime: departureTime,
+        dwellMinutes: dwellMinutes,
+        visitId: visitId || existing.visitId || '',
+        progress: typeof progress === 'number' ? progress : (existing.progress || 0),
+        lastUpdated: nowIso,
+        lastUpdatedMs: nowMs
+    };
+
+    const nextRecords = [record, ...currentRecords.filter(r => r.nik !== cleanNik)];
+    saveLiveBestieTracking(nextRecords);
+    return record;
+}

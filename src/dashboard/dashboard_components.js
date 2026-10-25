@@ -1752,6 +1752,39 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 )
             ),
 
+            // Admin Assigned Store Banner (If assigned by Admin)
+            (() => {
+                const myNik = typeof readBestieLogin === 'function' ? normalizeNik(readBestieLogin()?.nik) : '';
+                const assignments = typeof readAdminAssignedStores === 'function' ? (readAdminAssignedStores() || []).filter(a => a.bestieNik === myNik && a.status !== 'COMPLETED') : [];
+                if (!assignments.length) return null;
+                const topAssign = assignments[0];
+                return React.createElement("div", {
+                    className: "mx-5 mb-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-4 shadow-xl border border-blue-400/40 relative overflow-hidden"
+                },
+                    React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3" },
+                        React.createElement("div", null,
+                            React.createElement("div", { className: "flex items-center gap-2" },
+                                React.createElement("span", { className: "text-base" }, "🎯"),
+                                React.createElement("span", { className: "text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full" }, "PENUGASAN TOKO ADMIN"),
+                                React.createElement("span", { className: "text-[10px] font-black uppercase bg-amber-400 text-slate-900 px-2 py-0.5 rounded-full" }, topAssign.priority || 'Normal')
+                            ),
+                            React.createElement("h3", { className: "text-base font-black text-white mt-1.5" }, topAssign.storeName),
+                            topAssign.notes ? React.createElement("p", { className: "text-xs text-blue-100 font-medium mt-1 leading-relaxed bg-black/20 p-2 rounded-xl" }, `"${topAssign.notes}"` ) : null
+                        ),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => {
+                                if (typeof updateStoreAssignmentStatus === 'function') { updateStoreAssignmentStatus(topAssign.id, 'IN_PROGRESS'); }
+                                onQuickVisit(topAssign.storeName);
+                            },
+                            className: "px-4 py-2.5 rounded-xl bg-white text-blue-700 font-black text-xs shadow-lg hover:bg-blue-50 active:scale-95 transition-all shrink-0 cursor-pointer text-center"
+                        },
+                            "Mulai Visit Toko Ini ➔"
+                        )
+                    )
+                );
+            })(),
+
             // Stat chips row
             React.createElement("div", { className:"flex gap-3 px-5 mb-5 overflow-x-auto hide-scrollbar" },
                 // Today Visits

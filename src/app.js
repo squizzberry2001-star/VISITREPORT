@@ -397,6 +397,53 @@ function App() {
     const [secretOpen, setSecretOpen] = useState(false);
     const [welcomeConfig, setWelcomeConfig] = useState(() => readWelcomeConfig());
     const [scheduleConfig, setScheduleConfig] = useState(() => readScheduleConfig());
+    const [adminUser, setAdminUser] = useState(() => typeof isAdminUser === 'function' ? isAdminUser() : false);
+    const [adminMode, setAdminMode] = useState(() => typeof isAdminUser === 'function' ? isAdminUser() : false);
+    const [presenceRows, setPresenceRows] = useState(() => typeof readLocalPresenceRows === 'function' ? readLocalPresenceRows() : []);
+
+    useEffect(() => {
+        const handleAdminChange = () => {
+            const isAdmin = typeof isAdminUser === 'function' ? isAdminUser() : false;
+            setAdminUser(isAdmin);
+            if (isAdmin) setAdminMode(true);
+        };
+        window.addEventListener('rbv-admin-niks-change', handleAdminChange);
+        window.addEventListener('rbv-bestie-login-change', handleAdminChange);
+        return () => {
+            window.removeEventListener('rbv-admin-niks-change', handleAdminChange);
+            window.removeEventListener('rbv-bestie-login-change', handleAdminChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!('geolocation' in navigator)) return;
+        const captureGps = () => {
+            const login = typeof readBestieLogin === 'function' ? readBestieLogin() : null;
+            if (!login?.nik) return;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    if (pos && pos.coords && typeof recordBestieLiveGps === 'function') {
+                        recordBestieLiveGps({
+                            nik: login.nik,
+                            name: login.name,
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            accuracy: Math.round(pos.coords.accuracy || 0),
+                            activeStore: visit?.store,
+                            storeCode: visit?.storeCode,
+                            visitId: visit?.id,
+                            progress: typeof visitProgress === 'function' ? visitProgress(visit) : 0
+                        });
+                    }
+                },
+                (err) => {},
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+            );
+        };
+        captureGps();
+        const timer = setInterval(captureGps, 25000);
+        return () => clearInterval(timer);
+    }, [visit?.id, visit?.store, typeof visitProgress === 'function' ? visitProgress(visit) : 0]);
     const [welcomeOpen, setWelcomeOpen] = useState(() => {
         try {
             return sessionStorage.getItem(WELCOME_SEEN_KEY) !== '1';
@@ -1045,7 +1092,17 @@ function App() {
         setScreen('audit');
     }
     let content;
-    if (['dashboard', 'analytics', 'utility', 'schedule'].includes(screen)) {
+    if (adminUser && adminMode) {
+        content = React.createElement(AdminCommandCenter, {
+            onSwitchToFieldMode: () => setAdminMode(false),
+            onOpenSecretPanel: () => setSecretOpen(true),
+            history: history,
+            presenceRows: presenceRows,
+            scheduleConfig: scheduleConfig,
+            onNewVisit: () => setNewVisitOpen(true)
+        });
+    }
+    else if (['dashboard', 'analytics', 'utility', 'schedule'].includes(screen)) {
         content = React.createElement(DashboardPage, { activeTab: screen === "dashboard" ? "home" : screen, onTabChange: navigateScreen, history: history, storageLabel: storageLabel, onNewVisit: () => setNewVisitOpen(true), onQuickVisit: (storeName) => createNewVisit(readBestieLogin()?.name || '', storeName), onOpenVisit: openVisit, onDeleteVisit: deleteVisit, onClearHistory: clearAllHistory, onTitleTap: handleTitleTap, onToggleFeedback: toggleVisitFeedback, scheduleConfig: scheduleConfig });
     }
     else if (screen === 'preview') {
@@ -1056,9 +1113,22 @@ function App() {
     }
     return (React.createElement("div", { className: "audit-shell min-h-screen flex flex-col bg-slate-50 relative pb-20 lg:pb-24" },
         React.createElement("div", { className: "flex min-h-screen min-w-0 flex-1 flex-col" },
-            !['audit', 'preview'].includes(screen) && !welcomeOpen ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
+            // Return to Admin Command Center button when admin is in field mode
+            adminUser && !adminMode && !['audit', 'preview'].includes(screen) ? (
+                React.createElement("div", { className: "fixed top-3 right-4 z-50 animate-pulse" },
+                    React.createElement("button", {
+                        type: "button",
+                        onClick: () => setAdminMode(true),
+                        className: "flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs shadow-xl shadow-blue-500/30 border border-blue-400/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    },
+                        React.createElement("span", null, "🛡️"),
+                        React.createElement("span", null, "Kembali ke Command Center")
+                    )
+                )
+            ) : null,
+            !['audit', 'preview'].includes(screen) && !welcomeOpen && !(adminUser && adminMode) ? React.createElement(MobileTopBar, { screen: screen, setScreen: navigateScreen, visit: visit, activeSection: activeSection, goSection: goSection, onNewVisit: () => setNewVisitOpen(true), onTitleTap: handleTitleTap }) : null,
             React.createElement("div", { className: "min-w-0 flex-1" }, content),
-            !['audit', 'preview'].includes(screen) && !welcomeOpen ? React.createElement(AppBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null),
+            !['audit', 'preview'].includes(screen) && !welcomeOpen && !(adminUser && adminMode) ? React.createElement(AppBottomNav, { screen: screen, setScreen: navigateScreen, visit: visit, onNewVisit: () => setNewVisitOpen(true), onClearData: clearCurrentData, onTitleTap: handleTitleTap }) : null),
         welcomeOpen ? React.createElement(WelcomeOverlay, { config: welcomeConfig, onDone: closeWelcome }) : null,
                 React.createElement(NewVisitModal, { key: 'new-visit-' + masterStoreRevision, open: newVisitOpen, onClose: () => setNewVisitOpen(false), onCreate: createNewVisit }),
         React.createElement(CoffeePopup, { open: coffeeOpen, onClose: closeCoffee }),
