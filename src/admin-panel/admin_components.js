@@ -3320,154 +3320,98 @@ function WelcomeOverlay({ config, onDone }) {
 
     return (
         React.createElement("div", {
-            className: cx("fixed inset-0 z-[100] flex flex-col justify-between overflow-y-auto transition-all duration-500", closing ? "opacity-0 pointer-events-none" : "opacity-100"),
-            style: {
-                background: "linear-gradient(180deg, #1d4ed8 0%, #2563eb 45%, #1e40af 100%)"
-            },
+            className: cx("fixed inset-0 z-[100] grid place-items-center bg-slate-900/40 backdrop-blur-xl transition-all duration-500", closing ? "opacity-0" : "opacity-100"),
             role: "dialog",
             "aria-modal": "true"
         },
-            // Decorative sparkles and bubbles
-            React.createElement("div", { className: "absolute top-4 left-10 w-2.5 h-2.5 rounded-full bg-white/40 blur-[1px] pointer-events-none" }),
-            React.createElement("div", { className: "absolute top-20 right-8 w-2 h-2 rounded-full bg-white/30 blur-[1px] pointer-events-none" }),
-            React.createElement("div", { className: "absolute top-36 left-1/4 w-1.5 h-1.5 rounded-full bg-white/50 pointer-events-none" }),
-            React.createElement("div", { className: "absolute top-1/3 right-1/4 w-3 h-3 rounded-full bg-white/20 blur-[2px] pointer-events-none" }),
-
-            // === TOP BRAND & ILLUSTRATION AREA ===
-            React.createElement("div", { className: "w-full max-w-md mx-auto pt-10 sm:pt-14 px-6 text-center text-white relative z-10 flex flex-col items-center" },
-                // Logo
-                React.createElement("div", { className: "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 shadow-sm mb-3" },
-                    React.createElement(Icon, { name: "spark", className: "w-4 h-4 text-amber-300" }),
-                    React.createElement("span", { className: "text-xs font-black tracking-widest uppercase text-white" }, "BESTIE MOBILE")
-                ),
-                React.createElement("h1", { className: "text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 leading-tight" },
-                    loginName ? `Halo, ${loginName}!` : 'Halo, Regional Bestie!'
-                ),
-                React.createElement("p", { className: "text-xs sm:text-sm text-blue-100 font-semibold mt-1" },
-                    "Selamat Datang di Portal Visit Report"
-                ),
-
-                // Friendly Illustration Vector
-                React.createElement("div", { className: "my-4 sm:my-6 relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center" },
-                    React.createElement("div", { className: "absolute inset-0 bg-white/10 rounded-full blur-xl pointer-events-none animate-pulse" }),
-                    React.createElement("div", { className: "w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-tr from-white/20 to-white/5 border border-white/30 backdrop-blur-md flex items-center justify-center shadow-2xl relative" },
-                        React.createElement("span", { className: "text-5xl sm:text-6xl select-none" }, "🙌"),
-                        // Small floating badges
-                        React.createElement("div", { className: "absolute -top-2 -right-1 p-2 rounded-2xl bg-amber-400 text-slate-900 shadow-lg text-xs font-black" }, "★ 100%"),
-                        React.createElement("div", { className: "absolute -bottom-2 -left-2 p-2 rounded-2xl bg-emerald-400 text-slate-900 shadow-lg text-xs font-black" }, "✓ Online")
-                    )
+        React.createElement("div", {
+            className: cx("relative w-[92vw] max-w-sm rounded-[32px] bg-white/95 p-8 shadow-2xl backdrop-blur-2xl transition-all duration-500", closing ? "scale-95 opacity-0 translate-y-8" : "scale-100 opacity-100 translate-y-0", !introDone && "animate-pulse")
+        },
+            React.createElement("div", { className: "absolute -top-12 left-1/2 -translate-x-1/2 rounded-full bg-white p-2 shadow-xl" },
+                React.createElement("div", { className: "flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 shadow-inner" },
+                    React.createElement(Icon, { name: "spark", className: "h-8 w-8 text-white" })
                 )
             ),
-
-            // === BOTTOM CURVED WHITE SHEET (Fast Menu & Login Form) ===
-            React.createElement("div", { className: "w-full max-w-md mx-auto bg-white rounded-t-[36px] sm:rounded-t-[40px] px-6 pt-6 pb-8 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] relative z-20 transition-transform duration-500" },
-                // Curved sheet handle indicator
-                React.createElement("div", { className: "w-12 h-1.5 rounded-full bg-slate-200 mx-auto mb-4" }),
-
-                // Fast Menu Header
-                React.createElement("div", { className: "flex items-center justify-between mb-3.5" },
-                    React.createElement("h2", { className: "text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5" },
-                        "Fast Menu",
-                        React.createElement("span", { className: "text-slate-400 text-xs font-normal" }, "ℹ️")
-                    ),
-                    React.createElement("span", { className: "text-[11px] font-bold text-blue-600" }, "Akses Cepat")
-                ),
-
-                // 4 Circular Fast Menu Icons
-                React.createElement("div", { className: "grid grid-cols-4 gap-2 text-center mb-5" },
-                    React.createElement("div", { className: "flex flex-col items-center gap-1.5 cursor-pointer", onClick: finishWelcome },
-                        React.createElement("div", { className: "w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform" },
-                            React.createElement(Icon, { name: "clipboard", className: "w-5 h-5 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[10px] font-bold text-slate-600 leading-tight" }, "Catatan Visit")
-                    ),
-                    React.createElement("div", { className: "flex flex-col items-center gap-1.5 cursor-pointer", onClick: finishWelcome },
-                        React.createElement("div", { className: "w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform" },
-                            React.createElement(Icon, { name: "calendar", className: "w-5 h-5 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[10px] font-bold text-slate-600 leading-tight" }, "Jadwal FMCU")
-                    ),
-                    React.createElement("div", { className: "flex flex-col items-center gap-1.5 cursor-pointer", onClick: finishWelcome },
-                        React.createElement("div", { className: "w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform" },
-                            React.createElement(Icon, { name: "store", className: "w-5 h-5 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[10px] font-bold text-slate-600 leading-tight" }, "Master Toko")
-                    ),
-                    React.createElement("div", { className: "flex flex-col items-center gap-1.5 cursor-pointer", onClick: finishWelcome },
-                        React.createElement("div", { className: "w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform" },
-                            React.createElement(Icon, { name: "spark", className: "w-5 h-5 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[10px] font-bold text-slate-600 leading-tight" }, "Panduan")
-                    )
-                ),
-
-                // Form Login NIK
-                React.createElement("form", { onSubmit: submitBestieLogin, className: "space-y-3" },
-                    React.createElement("div", { className: "text-left" },
-                        React.createElement("label", { className: "text-[11px] font-black uppercase tracking-wider text-slate-400 ml-1" }, "Otoritas NIK Regional Bestie"),
-                        React.createElement("div", { className: "relative mt-1" },
-                            React.createElement("div", { className: "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5" },
-                                React.createElement(Icon, { name: "user", className: "h-5 w-5 text-slate-400" })
-                            ),
-                            React.createElement("input", {
-                                ref: nikInputRef,
-                                value: nikInput,
-                                onChange: handleNikChange,
-                                inputMode: "numeric",
-                                maxLength: 12,
-                                placeholder: "Masukkan NIK Bestie...",
-                                className: "block w-full rounded-2xl border-2 border-slate-100 bg-slate-50 py-3 pl-11 pr-4 text-sm font-bold text-slate-900 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            
+            React.createElement("div", { className: "mt-6 text-center" },
+                React.createElement("h1", { className: "text-2xl font-black text-slate-900 tracking-tight whitespace-pre-line" }, title),
+                React.createElement("p", { className: "mt-2 text-sm font-medium text-slate-500 leading-relaxed whitespace-pre-line" }, subtitle),
+                
+                !introDone ? (
+                    React.createElement("div", { className: "mt-8" },
+                        React.createElement("div", { className: "h-1.5 w-full overflow-hidden rounded-full bg-slate-100" },
+                            React.createElement("div", { 
+                                className: "h-full rounded-full bg-teal-500 transition-all ease-linear",
+                                style: { animation: `rbvWelcomeProgress ${durationSeconds}s linear forwards` }
                             })
-                        )
-                    ),
-
-                    // Detected Name or Error Box
-                    React.createElement("div", { className: "min-h-[38px] flex items-center justify-center rounded-xl bg-slate-50 px-3 py-1.5" },
-                        loginName ? (
-                            React.createElement("div", { className: "flex items-center gap-2 text-blue-600 font-extrabold text-xs animate-in fade-in zoom-in" },
-                                React.createElement(Icon, { name: "check", className: "h-4 w-4 text-emerald-500" }),
-                                React.createElement("span", null, loginName)
+                        ),
+                        React.createElement("p", { className: "mt-3 text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse" }, "Menyiapkan Sistem...")
+                    )
+                ) : (
+                    React.createElement("form", { onSubmit: submitBestieLogin, className: "mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500" },
+                        React.createElement("div", { className: "text-left" },
+                            React.createElement("label", { className: "ml-1 text-[11px] font-bold uppercase tracking-wider text-slate-400" }, "NIK Regional Bestie"),
+                            React.createElement("div", { className: "relative mt-1" },
+                                React.createElement("div", { className: "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4" },
+                                    React.createElement(Icon, { name: "user", className: "h-5 w-5 text-slate-400" })
+                                ),
+                                React.createElement("input", {
+                                    ref: nikInputRef,
+                                    value: nikInput,
+                                    onChange: handleNikChange,
+                                    inputMode: "numeric",
+                                    maxLength: 12,
+                                    placeholder: "Contoh: 123456",
+                                    className: "block w-full rounded-2xl border-2 border-slate-100 bg-slate-50 py-3.5 px-11 text-center text-lg font-black tracking-widest text-slate-900 transition-all focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-teal-500/10"
+                                })
                             )
-                        ) : loginError ? (
-                            React.createElement("span", { className: "text-xs font-bold text-rose-500" }, loginError)
-                        ) : (
-                            React.createElement("span", { className: "text-xs font-semibold text-slate-400" }, "Ketik NIK untuk otorisasi login")
-                        )
-                    ),
-
-                    // Action Buttons Row: [Login Pill Button] + [Fingerprint Button]
-                    React.createElement("div", { className: "flex items-center gap-3 pt-1" },
+                        ),
+                        
+                        React.createElement("div", { className: "mt-4 flex min-h-[48px] items-center justify-center rounded-xl bg-slate-50 px-4" },
+                            loginName ? (
+                                React.createElement("div", { className: "flex items-center gap-2 text-teal-600 animate-in fade-in zoom-in duration-300" },
+                                    React.createElement(Icon, { name: "check-circle", className: "h-5 w-5" }),
+                                    React.createElement("span", { className: "font-extrabold" }, loginName)
+                                )
+                            ) : loginError ? (
+                                React.createElement("span", { className: "text-xs font-semibold text-rose-500" }, loginError)
+                            ) : (
+                                React.createElement("span", { className: "text-xs font-medium text-slate-400" }, "Nama Anda akan muncul di sini")
+                            )
+                        ),
+                        
                         React.createElement("button", {
                             type: "submit",
                             disabled: !findBestieByNik(nikInput),
-                            className: "flex-1 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 py-3.5 px-6 font-black text-sm text-white shadow-xl shadow-blue-500/30 transition-all hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 cursor-pointer"
+                            className: "mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 font-bold text-white shadow-xl shadow-slate-900/20 transition-all hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                         },
-                            "Login",
-                            React.createElement(Icon, { name: "right", className: "h-4 w-4" })
-                        ),
-                        React.createElement("button", {
-                            type: "button",
-                            onClick: finishWelcome,
-                            className: "w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center hover:bg-blue-600 hover:text-white active:scale-95 transition-all shadow-sm shrink-0 cursor-pointer",
-                            title: "Login Cepat / Biometrik"
-                        },
-                            React.createElement(Icon, { name: "fingerprint", className: "w-6 h-6 stroke-[2.2px]" })
+                            "Mulai Visit",
+                            React.createElement(Icon, { name: "right", className: "h-5 w-5" })
                         )
-                    )
-                ),
-
-                // Traktir Kopi Link
-                React.createElement("div", { className: "mt-4 text-center" },
-                    React.createElement("a", {
-                        href: "https://trakteer.id/HEHBESTIE/tip",
-                        target: "_blank",
-                        rel: "noopener noreferrer",
-                        className: "inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
-                    },
-                        "☕ Traktir Bestie Coffee"
                     )
                 )
             )
+        ),
+        React.createElement("div", {
+            className: cx(
+                "fixed inset-x-0 bottom-6 sm:bottom-8 z-[110] flex justify-center items-center pointer-events-none px-4",
+                closing ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0",
+                "transition-all duration-300"
+            ),
+            style: {
+                bottom: 'max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px))'
+            }
+        },
+            React.createElement("a", {
+                href: "https://trakteer.id/HEHBESTIE/tip",
+                target: "_blank",
+                rel: "noopener noreferrer",
+                className: "coffee-floating-btn pointer-events-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 text-white text-xs sm:text-sm font-black border-2 border-white/60 shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+            },
+                React.createElement(Icon, { name: "coffee", className: "w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" }),
+                React.createElement("span", { className: "tracking-wide whitespace-nowrap" }, "Trakteer Bestie Coffee")
+            )
+        )
         )
     );
 }

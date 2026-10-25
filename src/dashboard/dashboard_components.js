@@ -1705,181 +1705,118 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         
         // Home View
         activeTab === 'home' ? React.createElement(React.Fragment, null,
-        // === UNPIX NEO-BANKING HERO HEADER ===
-        React.createElement("div", { className: "rbv-unpix-hero relative overflow-hidden text-white pt-10 pb-12 px-5 sm:px-8", style: {
-            background: "linear-gradient(180deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%)",
-            borderRadius: "0 0 40px 40px",
-            boxShadow: "0 12px 36px rgba(37,99,235,0.22)"
+        // === PREMIUM HERO HEADER ===
+        React.createElement("div", { className: "rbv-hero-header relative overflow-hidden", style: {
+            background: "linear-gradient(145deg, #0d2137 0%, #0f3460 40%, #1a4a6b 70%, #0d3347 100%)",
+            borderRadius: "0 0 36px 36px",
+            paddingBottom: "24px",
+            boxShadow: "0 12px 48px rgba(13,33,55,0.55)"
         }},
-            // Water sparkle decorative elements
-            React.createElement("div", { className: "absolute top-2 right-12 w-2 h-2 rounded-full bg-white/40 blur-[1px]" }),
-            React.createElement("div", { className: "absolute top-16 left-8 w-1.5 h-1.5 rounded-full bg-white/50 blur-[1px]" }),
-            React.createElement("div", { className: "absolute top-28 right-24 w-3 h-3 rounded-full bg-white/30 blur-[2px]" }),
-            React.createElement("div", { className: "absolute -bottom-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-2xl pointer-events-none" }),
+            // Decorative blobs
+            React.createElement("div", { style: { position:"absolute", top:"-40px", right:"-30px", width:"180px", height:"180px", background:"radial-gradient(circle, rgba(20,184,166,0.25) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" } }),
+            React.createElement("div", { style: { position:"absolute", bottom:"-20px", left:"-20px", width:"140px", height:"140px", background:"radial-gradient(circle, rgba(251,146,60,0.18) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" } }),
+            React.createElement("div", { style: { position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"300px", height:"300px", background:"radial-gradient(circle, rgba(20,184,166,0.06) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" } }),
 
-            // Top Status Bar: Avatar + Brand Title + Notification Bell
-            React.createElement("div", { className: "max-w-4xl mx-auto flex items-center justify-between mb-5 relative z-10" },
-                // Left: Avatar with online dot
-                React.createElement("div", { className: "flex items-center gap-2.5" },
-                    React.createElement("div", { className: "relative cursor-pointer", onClick: onTitleTap },
-                        React.createElement("div", { className: "w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center font-black text-sm shadow-inner" },
-                            (bestieName || 'B').charAt(0).toUpperCase()
-                        ),
-                        React.createElement("span", { className: "absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-blue-700 animate-pulse", title: "Online Realtime" })
-                    ),
-                    React.createElement("div", { className: "hidden xs:block sm:block" },
-                        React.createElement("p", { className: "text-white/70 text-[10px] font-black uppercase tracking-widest leading-none mb-0.5" }, greeting),
-                        React.createElement("p", { className: "text-white text-xs font-extrabold truncate max-w-[140px]" }, bestieName)
-                    )
+            // Top Row: App label + user button
+            React.createElement("div", { className:"flex items-center justify-between px-5 pt-12 pb-4" },
+                React.createElement("div", null,
+                    React.createElement("p", { style: { color:"rgba(255,255,255,0.55)", fontSize:"11px", fontWeight:"800", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:"2px" } }, "VISIT REPORT"),
+                    React.createElement("p", { style: { color:"rgba(255,255,255,0.65)", fontSize:"13px", fontWeight:"500" } }, greeting)
                 ),
-
-                // Center: Brand Logo
-                React.createElement("div", { className: "text-center cursor-pointer", onClick: handleSecretTap },
-                    React.createElement("h1", { className: "text-base sm:text-lg font-black tracking-tight text-white leading-none flex items-center justify-center gap-1.5" },
-                        "BESTIE",
-                        React.createElement("span", { className: "text-[10px] font-black tracking-widest px-1.5 py-0.5 rounded-md bg-white/20 text-white uppercase" }, "Mobile")
-                    ),
-                    React.createElement("p", { className: "text-[10px] font-semibold text-white/70 tracking-wider mt-0.5" }, "Regional Visit Report")
-                ),
-
-                // Right: Bell Notification with badge (also secret tap)
-                React.createElement("button", {
-                    type: "button",
-                    onClick: handleSecretTap,
-                    className: "relative w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center hover:bg-white/30 active:scale-95 transition-all cursor-pointer shadow-sm",
-                    title: "Notifikasi & Pembaruan"
+                React.createElement("button", { onClick: onTitleTap,
+                    style: {
+                        width:"42px", height:"42px", borderRadius:"50%",
+                        background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.2)",
+                        backdropFilter:"blur(12px)", display:"flex", alignItems:"center", justifyContent:"center",
+                        cursor:"pointer", transition:"transform 0.2s"
+                    },
+                    onPointerDown: e => { e.currentTarget.style.transform = "scale(0.93)"; },
+                    onPointerUp: e => { e.currentTarget.style.transform = "scale(1)"; }
                 },
-                    React.createElement(Icon, { name: "bell", className: "w-5 h-5" }),
-                    React.createElement("span", { className: "absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 border-2 border-blue-600 text-[10px] font-black text-white flex items-center justify-center shadow-sm" },
-                        history.filter(h => Number(h.progress||0) < 100).length || 1
-                    )
+                    React.createElement(Icon, { name:"user", className:"w-5 h-5", style:{ color:"#fff" } })
                 )
             ),
 
-            // Main Metric Card ("Saldo Rekening Utama" style)
-            React.createElement("div", { className: "max-w-4xl mx-auto text-center relative z-10 mt-2" },
-                React.createElement("p", { className: "text-white/75 text-xs font-bold uppercase tracking-wider mb-1" },
-                    "Total Kunjungan Toko"
+            // Name + greeting
+            React.createElement("div", { className:"px-5 mb-5" },
+                React.createElement("h1", { style: {
+                    fontSize: "clamp(26px, 7vw, 34px)",
+                    fontWeight: "900",
+                    color: "#ffffff",
+                    lineHeight: "1.15",
+                    letterSpacing: "-0.02em",
+                    marginBottom: "4px"
+                }}, bestieName),
+                React.createElement("p", { style: { color:"rgba(255,255,255,0.55)", fontSize:"13px", fontWeight:"500" } },
+                    new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+                )
+            ),
+
+            // Stat chips row
+            React.createElement("div", { className:"flex gap-3 px-5 mb-5 overflow-x-auto hide-scrollbar" },
+                // Today Visits
+                React.createElement("div", { style: {
+                    flex:"0 0 auto", background:"rgba(255,255,255,0.10)", backdropFilter:"blur(12px)",
+                    border:"1px solid rgba(255,255,255,0.16)", borderRadius:"18px",
+                    padding:"12px 16px", minWidth:"110px"
+                }},
+                    React.createElement("p", { style:{ color:"rgba(255,255,255,0.55)", fontSize:"10px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"4px" }}, "Hari Ini"),
+                    React.createElement("p", { style:{ color:"#fff", fontSize:"24px", fontWeight:"900", lineHeight:"1" }}, todayVisits),
+                    React.createElement("p", { style:{ color:"rgba(255,255,255,0.5)", fontSize:"11px", fontWeight:"600", marginTop:"2px" }}, "kunjungan")
                 ),
-                React.createElement("div", { className: "flex items-center justify-center gap-2 mb-3" },
-                    React.createElement("h2", { className: "text-2xl sm:text-3xl font-black text-white tracking-tight" },
-                        `${history.filter(h => Number(h.progress||0) >= 100).length} Toko Selesai`
+                // Total History
+                React.createElement("div", { style: {
+                    flex:"0 0 auto", background:"rgba(20,184,166,0.18)", backdropFilter:"blur(12px)",
+                    border:"1px solid rgba(20,184,166,0.3)", borderRadius:"18px",
+                    padding:"12px 16px", minWidth:"110px"
+                }},
+                    React.createElement("p", { style:{ color:"rgba(167,243,208,0.85)", fontSize:"10px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"4px" }}, "Total"),
+                    React.createElement("p", { style:{ color:"#fff", fontSize:"24px", fontWeight:"900", lineHeight:"1" }}, history.length),
+                    React.createElement("p", { style:{ color:"rgba(167,243,208,0.7)", fontSize:"11px", fontWeight:"600", marginTop:"2px" }}, "riwayat")
+                ),
+                // Selesai count
+                React.createElement("div", { style: {
+                    flex:"0 0 auto", background:"rgba(251,146,60,0.18)", backdropFilter:"blur(12px)",
+                    border:"1px solid rgba(251,146,60,0.3)", borderRadius:"18px",
+                    padding:"12px 16px", minWidth:"110px"
+                }},
+                    React.createElement("p", { style:{ color:"rgba(254,215,170,0.85)", fontSize:"10px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"4px" }}, "Selesai"),
+                    React.createElement("p", { style:{ color:"#fff", fontSize:"24px", fontWeight:"900", lineHeight:"1" }}, history.filter(h => Number(h.progress||0) >= 100).length),
+                    React.createElement("p", { style:{ color:"rgba(254,215,170,0.7)", fontSize:"11px", fontWeight:"600", marginTop:"2px" }}, "laporan")
+                )
+            ),
+
+            // Progress bar + CTA
+            React.createElement("div", { className:"mx-5", style: {
+                background:"rgba(255,255,255,0.09)", backdropFilter:"blur(16px)",
+                border:"1px solid rgba(255,255,255,0.15)", borderRadius:"24px", padding:"16px"
+            }},
+                React.createElement("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"10px" }},
+                    React.createElement("span", { style:{ color:"rgba(255,255,255,0.7)", fontSize:"12px", fontWeight:"700" }}, "Target Hari Ini"),
+                    React.createElement("span", { style:{ color: progressPercent >= 100 ? "#34d399" : "#fb923c", fontSize:"13px", fontWeight:"900" }},
+                        todayVisits, " / ", scheduleCount, " visit"
                     )
                 ),
-                React.createElement("div", { className: "flex items-center justify-center gap-2" },
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: () => onTabChange("schedule"),
-                        className: "px-4 py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 border border-white/30 text-white text-xs font-extrabold tracking-wide transition-all shadow-sm backdrop-blur-sm cursor-pointer"
-                    }, "Jadwal FMCU")
-                )
-            )
-        ),
-
-        // === FLOATING 8-GRID QUICK ACTION CARD ===
-        React.createElement("div", { className: "max-w-4xl mx-auto w-full px-4 sm:px-6 -mt-8 relative z-20 mb-3" },
-            React.createElement("div", { className: "bg-white rounded-[28px] p-4 sm:p-6 shadow-[0_16px_40px_rgba(30,64,175,0.08)] border border-slate-100" },
-                React.createElement("div", { className: "grid grid-cols-4 gap-y-4 gap-x-2 sm:gap-x-4 text-center" },
-                    // 1. Visit Baru
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: onNewVisit,
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-blue-600 group-hover:bg-blue-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "store", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-blue-600" }, "Visit Baru")
-                    ),
-
-                    // 2. Riwayat
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: () => {
-                            const el = document.getElementById('rbv-history-section');
-                            if (el) el.scrollIntoView({ behavior: 'smooth' });
-                            else onTabChange('analytics');
-                        },
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-50 text-cyan-600 group-hover:bg-cyan-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "clipboard", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-cyan-600" }, "Riwayat")
-                    ),
-
-                    // 3. Jadwal FMCU
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: () => onTabChange("schedule"),
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "calendar", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-emerald-600" }, "Jadwal FMCU")
-                    ),
-
-                    // 4. Master Toko
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: () => setMasterStoreModalOpen(true),
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-50 text-amber-600 group-hover:bg-amber-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "home", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-amber-600" }, "Master Toko")
-                    ),
-
-                    // 5. QSC Result
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: onNewVisit,
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "spark", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-indigo-600" }, "QSC Result")
-                    ),
-
-                    // 6. Observasi OPI
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: () => onTabChange("analytics"),
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-50 text-purple-600 group-hover:bg-purple-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "eye", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-purple-600" }, "Observasi")
-                    ),
-
-                    // 7. Evidence Foto
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: onNewVisit,
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-rose-50 text-rose-600 group-hover:bg-rose-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "camera", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-rose-600" }, "Evidence")
-                    ),
-
-                    // 8. Analitik & Laporan
-                    React.createElement("button", {
-                        type: "button",
-                        onClick: () => onTabChange("analytics"),
-                        className: "group flex flex-col items-center gap-2 cursor-pointer transition-transform active:scale-95"
-                    },
-                        React.createElement("div", { className: "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 text-sky-600 group-hover:bg-sky-100 flex items-center justify-center shadow-sm transition-all" },
-                            React.createElement(Icon, { name: "chart", className: "w-6 h-6 stroke-[2.2px]" })
-                        ),
-                        React.createElement("span", { className: "text-[11px] sm:text-xs font-extrabold text-slate-700 leading-tight group-hover:text-sky-600" }, "Analitik")
-                    )
-                )
+                React.createElement("div", { style:{ height:"8px", background:"rgba(255,255,255,0.12)", borderRadius:"999px", overflow:"hidden", marginBottom:"14px" }},
+                    React.createElement("div", { style:{
+                        height:"100%", borderRadius:"999px",
+                        width: `${progressPercent}%`,
+                        background: progressPercent >= 100 ? "linear-gradient(90deg,#34d399,#10b981)" : "linear-gradient(90deg,#fb923c,#f97316)",
+                        boxShadow: progressPercent >= 100 ? "0 0 12px rgba(52,211,153,0.6)" : "0 0 12px rgba(251,146,60,0.6)",
+                        transition:"width 1s ease"
+                    }})
+                ),
+                React.createElement("button", { onClick: onNewVisit, style:{
+                    width:"100%", padding:"13px 0", borderRadius:"16px",
+                    background:"linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)",
+                    border:"none", color:"#fff", fontSize:"14px", fontWeight:"900",
+                    letterSpacing:"0.04em", cursor:"pointer",
+                    boxShadow:"0 4px 20px rgba(20,184,166,0.45)",
+                    transition:"transform 0.15s, box-shadow 0.15s"
+                },
+                    onPointerDown: e => { e.currentTarget.style.transform="scale(0.97)"; e.currentTarget.style.boxShadow="0 2px 10px rgba(20,184,166,0.3)"; },
+                    onPointerUp: e => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.boxShadow="0 4px 20px rgba(20,184,166,0.45)"; }
+                }, "✦  Mulai Kunjungan Baru")
             )
         ),
 
@@ -1932,42 +1869,8 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
                 )
             ),
             
-            // === WIDGET 2: RINGKASAN AUDIT (Catatan Keuangan style split card) ===
-            React.createElement("div", { className: "mb-8" },
-                React.createElement("div", { className: "flex justify-between items-center mb-3.5" },
-                    React.createElement("h3", { className: "text-base sm:text-lg font-black text-slate-900 tracking-tight" }, "Ringkasan Audit"),
-                    React.createElement("button", { className: "text-xs text-blue-600 font-extrabold hover:underline", onClick: () => onTabChange("analytics") }, "Lihat Detail")
-                ),
-                React.createElement("div", { className: "bg-white rounded-[24px] border border-slate-100 shadow-sm p-4 sm:p-5" },
-                    React.createElement("div", { className: "grid grid-cols-2 gap-4 pb-3 border-b border-slate-100" },
-                        // Kunjungan Selesai
-                        React.createElement("div", { className: "flex items-start gap-3" },
-                            React.createElement("div", { className: "w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-black shrink-0 mt-0.5" }, "↓"),
-                            React.createElement("div", null,
-                                React.createElement("p", { className: "text-xs font-bold text-slate-500 mb-0.5" }, "Kunjungan Selesai"),
-                                React.createElement("p", { className: "text-base sm:text-lg font-black text-slate-900" }, `${history.filter(h => Number(h.progress||0) >= 100).length} Toko`)
-                            )
-                        ),
-                        // Temuan Pending
-                        React.createElement("div", { className: "flex items-start gap-3" },
-                            React.createElement("div", { className: "w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-black shrink-0 mt-0.5" }, "↑"),
-                            React.createElement("div", null,
-                                React.createElement("p", { className: "text-xs font-bold text-slate-500 mb-0.5" }, "Temuan Pending"),
-                                React.createElement("p", { className: "text-base sm:text-lg font-black text-slate-900" }, `${history.filter(h => Number(h.progress||0) < 100).length} Temuan`)
-                            )
-                        )
-                    ),
-                    React.createElement("div", { className: "pt-3 flex items-center justify-between text-xs" },
-                        React.createElement("span", { className: "font-semibold text-slate-400" }, "Total Riwayat Laporan"),
-                        React.createElement("span", { className: "font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full text-[11px]" },
-                            `${history.length} Laporan (${history.length ? Math.round((history.filter(h => Number(h.progress||0) >= 100).length / history.length) * 100) : 0}% Tuntas)`
-                        )
-                    )
-                )
-            ),
-
             // Histori Aktivitas
-            React.createElement("div", { id: "rbv-history-section", className: "mb-8" },
+            React.createElement("div", { className: "mb-8" },
                 React.createElement("h3", { className: "text-lg font-black text-slate-800 tracking-tight mb-4" }, "Histori Aktivitas"),
                 history.length ? React.createElement("div", { className: "space-y-4" },
                     visibleHistory.map((item, index) => React.createElement("div", { key: item.id, className: "group relative bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md hover:border-brand-teal/20 transition-all flex flex-col gap-3 cursor-pointer overflow-hidden", onClick: () => onOpenVisit(item.id) },
