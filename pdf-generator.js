@@ -516,8 +516,8 @@
 
     doc.setTextColor.apply(doc, palette.primary);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(26);
-    doc.text('Regional Bestie Visit Report', margin + 2, 126);
+    doc.setFontSize(24);
+    doc.text('Regional Bestie Visit Report', margin + 2, 120);
 
     const storeHead = text((data && (data.storeHead || data.storeLeader)) || detail.storeHead || detail.storeLeader, '-');
     const storeCode = text(detail.siteCode4 || detail.siteCode || detail.storeCode || (data && (data.siteCode4 || data.siteCode || data.storeCode)), '-');
@@ -526,21 +526,22 @@
     const regionalManager = text(detail.regionalManager || (data && data.regionalManager), '-');
 
     const leftX = margin + 2;
-    const coverLabelW = 43;
-    let y = 144;
-    drawLabelValue(doc, 'Nama', data && data.nama, leftX, y, coverLabelW, 108, palette, { fontSize: 12.5, boldValue: true });
-    y += 9;
-    drawLabelValue(doc, 'Store', data && data.store, leftX, y, coverLabelW, 108, palette, { fontSize: 12.5, boldValue: true });
-    y += 9;
-    drawLabelValue(doc, 'Store Head', storeHead, leftX, y, coverLabelW, 108, palette, { fontSize: 11.5, boldValue: true });
+    const coverLabelW = 42;
+    let y = 134;
+    drawLabelValue(doc, 'Nama', data && data.nama, leftX, y, coverLabelW, 115, palette, { fontSize: 12, boldValue: true });
+    y += 12.5;
+    drawLabelValue(doc, 'Store', data && data.store, leftX, y, coverLabelW, 115, palette, { fontSize: 12, boldValue: true });
+    y += 12.5;
+    drawLabelValue(doc, 'Store Head', storeHead, leftX, y, coverLabelW, 115, palette, { fontSize: 11.5, boldValue: true });
 
-    const cardX = 180;
-    const cardY = 134;
+    const cardX = 175;
+    const cardY = 124;
     const cardW = pageWidth - cardX - margin;
-    const cardH = 50;
+    const cardH = 46;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'FD');
+    doc.setLineWidth(0.35);
+    doc.roundedRect(cardX, cardY, cardW, cardH, 3.5, 3.5, 'FD');
 
     const items = [
       ['Tanggal Visit', formatDate(data && data.tanggal)],
@@ -549,19 +550,22 @@
       ['Area Manager', areaManager],
       ['Regional Manager', regionalManager]
     ];
+    const padX = 9;
+    const colW = (cardW - padX * 2) / 2;
     items.forEach(function (item, index) {
       const col = index % 2;
       const row = Math.floor(index / 2);
-      const x = cardX + 8 + col * (cardW / 2);
-      const yy = cardY + 8 + row * 13;
+      const x = cardX + padX + (col === 0 ? 0 : colW + 4);
+      const yy = cardY + 8 + row * 12.5;
+      const maxValW = (col === 0 && row === 2) ? (cardW - padX * 2) : (colW - 6);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.2);
       doc.setTextColor(100, 116, 139);
       doc.text(item[0].toUpperCase(), x, yy);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(clampNumber(pdfTableFontSize() - 0.7, 8.2, 10.6, 8.7));
-      doc.setTextColor.apply(doc, palette.ink);
-      doc.text(doc.splitTextToSize(text(item[1]), cardW / 2 - 12).slice(0, 1), x, yy + 5);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.8);
+      doc.setTextColor(15, 23, 42);
+      doc.text(doc.splitTextToSize(text(item[1]), maxValW).slice(0, 1), x, yy + 4.5);
     });
 
     // Alamat sengaja tidak ditampilkan pada hasil PDF.
