@@ -7552,3 +7552,257 @@ body.rbv-keyboard-visible {
     padding-bottom: 96px !important;
   }
 }
+
+
+/* ========================================================
+   REVAMP: Ultra-Elegant, Minimalist, Smooth Floating Dock
+   ======================================================== */
+
+.rbv-dock-container {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 60 !important;
+  display: flex !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+}
+
+/* --- DESKTOP FLOATING DOCK (min-width: 768px) --- */
+@media (min-width: 768px) {
+  .rbv-dock-container {
+    bottom: 24px !important;
+    padding: 0 16px !important;
+  }
+
+  .rbv-bottom-dock {
+    pointer-events: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 6px 10px !important;
+    height: 56px !important;
+    max-width: 580px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 
+      0 20px 45px -10px rgba(15, 23, 42, 0.14),
+      0 0 0 1px rgba(15, 23, 42, 0.05),
+      inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease !important;
+  }
+
+  .rbv-bottom-dock:hover {
+    box-shadow: 
+      0 24px 50px -10px rgba(15, 23, 42, 0.18),
+      0 0 0 1px rgba(15, 23, 42, 0.07),
+      inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+  }
+
+  .rbv-dock-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 8px 16px !important;
+    height: 42px !important;
+    border-radius: 9999px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    user-select: none !important;
+  }
+
+  .rbv-dock-item:hover {
+    color: #0f172a !important;
+    background: rgba(241, 245, 249, 0.85) !important;
+    transform: translateY(-1.5px) !important;
+  }
+
+  .rbv-dock-item:active {
+    transform: translateY(0) scale(0.97) !important;
+  }
+
+  .rbv-dock-item.active {
+    color: #0f766e !important;
+    background: rgba(15, 118, 110, 0.12) !important;
+    font-weight: 800 !important;
+    box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.20) !important;
+  }
+
+  .rbv-dock-item.active .rbv-dock-icon {
+    color: #0f766e !important;
+    transform: scale(1.05) !important;
+  }
+
+  .rbv-dock-icon {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
+  }
+
+  .rbv-dock-label {
+    display: inline-block !important;
+    line-height: 1 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .rbv-dock-fab-slot {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 4px !important;
+  }
+
+  .rbv-dock-fab-mobile {
+    display: none !important;
+  }
+
+  .rbv-dock-fab-desktop {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    height: 42px !important;
+    padding: 0 18px !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(15, 118, 110, 0.30), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+  }
+
+  .rbv-dock-fab-desktop:hover {
+    background: linear-gradient(135deg, #134e4a 0%, #0f766e 100%) !important;
+    box-shadow: 0 8px 22px rgba(15, 118, 110, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  .rbv-dock-fab-desktop:active {
+    transform: translateY(0) scale(0.97) !important;
+  }
+
+  .rbv-dock-fab-desktop svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Prevent any desktop content from being obscured by the floating dock */
+  .dashboard-page,
+  .workspace-page,
+  .audit-shell {
+    padding-bottom: 110px !important;
+  }
+
+  .dashboard-page .dashboard-history-section {
+    padding-bottom: 110px !important;
+  }
+}
+
+/* --- MOBILE BOTTOM NAVBAR (max-width: 767px) --- */
+@media (max-width: 767px) {
+  .rbv-bottom-dock {
+    pointer-events: auto !important;
+    width: 100% !important;
+    height: 72px !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.85) !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 0 12px !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    position: relative !important;
+  }
+
+  .rbv-dock-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    width: 58px !important;
+    height: 52px !important;
+    border-radius: 16px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .rbv-dock-item.active {
+    color: #0f766e !important;
+    background: rgba(15, 118, 110, 0.10) !important;
+    font-weight: 800 !important;
+  }
+
+  .rbv-dock-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .rbv-dock-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+  }
+
+  .rbv-dock-fab-slot {
+    position: relative !important;
+    width: 60px !important;
+    height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .rbv-dock-fab-mobile {
+    position: absolute !important;
+    top: -18px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 54px !important;
+    height: 54px !important;
+    border-radius: 9999px !important;
+    background: #0f766e !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 3px solid #ffffff !important;
+    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.35) !important;
+    cursor: pointer !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  .rbv-dock-fab-mobile:active {
+    transform: translateX(-50%) scale(0.92) !important;
+  }
+
+  .rbv-dock-fab-desktop {
+    display: none !important;
+  }
+}

@@ -10,79 +10,73 @@ function AppBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, onTit
     // Hide entirely when actively doing an audit or preview to maximize screen space
     if (screen === 'audit' || screen === 'preview') return null; 
 
-    return React.createElement("div", { className: "fixed bottom-0 lg:bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none pb-safe px-3 sm:px-6" },
-        React.createElement("nav", { className: "pointer-events-auto w-full max-w-full lg:max-w-xl bg-white/95 backdrop-blur-2xl border-t lg:border border-slate-200/80 shadow-[0_-12px_40px_rgba(0,0,0,0.06)] lg:shadow-[0_20px_50px_rgba(15,23,42,0.16)] lg:rounded-3xl transition-all duration-300", "aria-label": "System navigation" },
-            React.createElement("div", { className: "flex justify-around items-center h-[72px] lg:h-[66px] px-3 sm:px-6 relative" },
-                // Home / Dashboard
+    return React.createElement("div", { className: "rbv-dock-container" },
+        React.createElement("nav", { className: "rbv-bottom-dock", "aria-label": "System navigation" },
+            // Home / Dashboard
+            React.createElement("button", {
+                type: "button",
+                className: cx("rbv-dock-item", screen === "dashboard" && "active"),
+                onClick: () => { setScreen("dashboard"); },
+                title: "Dashboard"
+            },
+                React.createElement(Icon, { name: "home", className: "rbv-dock-icon", strokeWidth: screen === "dashboard" ? 2.5 : 2 }),
+                React.createElement("span", { className: "rbv-dock-label" }, "Home")
+            ),
+
+            // Schedule / Jadwal
+            React.createElement("button", {
+                type: "button",
+                className: cx("rbv-dock-item", screen === "schedule" && "active"),
+                onClick: () => { setScreen("schedule"); },
+                title: "Jadwal Bestie"
+            },
+                React.createElement(Icon, { name: "calendar", className: "rbv-dock-icon", strokeWidth: screen === "schedule" ? 2.5 : 2 }),
+                React.createElement("span", { className: "rbv-dock-label" }, "Jadwal")
+            ),
+
+            // Center Action - Kunjungan Baru
+            React.createElement("div", { className: "rbv-dock-fab-slot" },
+                // Mobile circular floating FAB
                 React.createElement("button", {
                     type: "button",
-                    className: cx('flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 px-3 py-2 rounded-2xl transition-all',
-                        screen === 'dashboard' ? 'bg-brand-teal/15 text-brand-teal font-extrabold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'),
-                    onClick: () => { setScreen('dashboard'); },
-                    title: "Dashboard"
+                    "aria-label": "Kunjungan Baru",
+                    className: "rbv-dock-fab-mobile",
+                    onClick: onNewVisit
                 },
-                    React.createElement(Icon, { name: "home", className: "h-6 w-6 lg:h-5 lg:w-5 shrink-0", strokeWidth: screen === 'dashboard' ? 2.5 : 2 }),
-                    React.createElement("span", { className: "text-[11px] lg:text-xs font-bold leading-tight" }, "Home")
+                    React.createElement(Icon, { name: "plus", className: "h-6 w-6 stroke-[2.5px]" })
                 ),
-
-                // Schedule / Jadwal
+                // Desktop sleek jewel action pill
                 React.createElement("button", {
                     type: "button",
-                    className: cx('flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 px-3 py-2 rounded-2xl transition-all',
-                        screen === 'schedule' ? 'bg-brand-teal/15 text-brand-teal font-extrabold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'),
-                    onClick: () => { setScreen('schedule'); },
-                    title: "Jadwal Bestie"
+                    className: "rbv-dock-fab-desktop",
+                    onClick: onNewVisit,
+                    title: "Mulai Kunjungan Baru"
                 },
-                    React.createElement(Icon, { name: "calendar", className: "h-6 w-6 lg:h-5 lg:w-5 shrink-0", strokeWidth: screen === 'schedule' ? 2.5 : 2 }),
-                    React.createElement("span", { className: "text-[11px] lg:text-xs font-bold leading-tight" }, "Jadwal")
-                ),
-
-                // Center FAB - Kunjungan Baru
-                React.createElement("div", { className: "relative flex items-center justify-center shrink-0 px-1" },
-                    // Mobile floating circular FAB
-                    React.createElement("button", {
-                        type: "button",
-                        "aria-label": "Kunjungan Baru",
-                        className: "lg:hidden -top-5 w-14 h-14 bg-brand-teal text-white rounded-full shadow-xl shadow-brand-teal/30 flex items-center justify-center border-[3px] border-white active:scale-95 transition-transform",
-                        onClick: onNewVisit
-                    },
-                        React.createElement(Icon, { name: "plus", className: "h-6 w-6 stroke-[2.5px]" })
-                    ),
-                    // Desktop sleek pill button
-                    React.createElement("button", {
-                        type: "button",
-                        className: "hidden lg:flex items-center gap-2 h-11 px-4 rounded-2xl bg-brand-teal text-white shadow-md shadow-brand-teal/25 hover:bg-[#153640] hover:scale-105 active:scale-95 transition-all font-bold text-xs",
-                        onClick: onNewVisit,
-                        title: "Mulai Kunjungan Baru"
-                    },
-                        React.createElement(Icon, { name: "plus", className: "h-4 w-4 stroke-[2.5px]" }),
-                        React.createElement("span", null, "Kunjungan")
-                    )
-                ),
-
-                // Analytics / Analitik
-                React.createElement("button", {
-                    type: "button",
-                    className: cx('flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 px-3 py-2 rounded-2xl transition-all',
-                        screen === 'analytics' ? 'bg-brand-teal/15 text-brand-teal font-extrabold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'),
-                    onClick: () => setScreen('analytics'),
-                    title: "Analitik"
-                },
-                    React.createElement(Icon, { name: "chart", className: "h-6 w-6 lg:h-5 lg:w-5 shrink-0", strokeWidth: screen === 'analytics' ? 2.5 : 2 }),
-                    React.createElement("span", { className: "text-[11px] lg:text-xs font-bold leading-tight" }, "Analitik")
-                ),
-
-                // Utility / Profil
-                React.createElement("button", {
-                    type: "button",
-                    className: cx('flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 px-3 py-2 rounded-2xl transition-all',
-                        screen === 'utility' ? 'bg-brand-teal/15 text-brand-teal font-extrabold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'),
-                    onClick: () => setScreen('utility'),
-                    title: "Utiliti & Profil"
-                },
-                    React.createElement(Icon, { name: "user", className: "h-6 w-6 lg:h-5 lg:w-5 shrink-0", strokeWidth: screen === 'utility' ? 2.5 : 2 }),
-                    React.createElement("span", { className: "text-[11px] lg:text-xs font-bold leading-tight" }, "Profil")
+                    React.createElement(Icon, { name: "plus", className: "h-4 w-4 stroke-[2.5px]" }),
+                    React.createElement("span", null, "Kunjungan")
                 )
+            ),
+
+            // Analytics / Analitik
+            React.createElement("button", {
+                type: "button",
+                className: cx("rbv-dock-item", screen === "analytics" && "active"),
+                onClick: () => setScreen("analytics"),
+                title: "Analitik"
+            },
+                React.createElement(Icon, { name: "chart", className: "rbv-dock-icon", strokeWidth: screen === "analytics" ? 2.5 : 2 }),
+                React.createElement("span", { className: "rbv-dock-label" }, "Analitik")
+            ),
+
+            // Utility / Profil
+            React.createElement("button", {
+                type: "button",
+                className: cx("rbv-dock-item", screen === "utility" && "active"),
+                onClick: () => setScreen("utility"),
+                title: "Utiliti & Profil"
+            },
+                React.createElement(Icon, { name: "user", className: "rbv-dock-icon", strokeWidth: screen === "utility" ? 2.5 : 2 }),
+                React.createElement("span", { className: "rbv-dock-label" }, "Profil")
             )
         )
     );
