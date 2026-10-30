@@ -703,19 +703,11 @@ function ProgressMissingInfo({ visit, activeSection = null, maxItems = 4, compac
 }
 
 function VisitSetupSection({ visit, update }) {
-    const [, setMasterStoreTick] = useState(0);
-    useEffect(() => {
-        const handler = () => setMasterStoreTick(t => t + 1);
-        window.addEventListener('rbv-master-store-change', handler);
-        return () => window.removeEventListener('rbv-master-store-change', handler);
-    }, []);
-    // Revamp 229: master store can update from Firebase while app is open.
-    // Avoid memoizing against only visit fields so latest remote master data is visible immediately.
-    const storeOptions = getStoresForBestie(visit.nama).map((item) => ({
+    const storeOptions = useMemo(() => getStoresForBestie(visit.nama).map((item) => ({
         label: item.label,
         value: item.value || item.label,
         disabled: !!item.disabled
-    }));
+    })), [visit.nama]);
     const baseDetail = getStoreWebDetail(visit.store);
     const manualDetail = visit.manualStoreDetail || {};
     const detail = { ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr };

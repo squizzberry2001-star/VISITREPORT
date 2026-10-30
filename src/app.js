@@ -543,12 +543,23 @@ function App() {
         let unsubscribe = null;
         let pollId = null;
         const applyRemoteMasterStores = (rows) => {
-            const normalized = normalizeMasterStoreRows(rows?.rows || rows?.data || rows);
-            if (cancelled || !normalized.length)
+            const incoming = rows?.rows || rows?.data || rows;
+            if (cancelled || !Array.isArray(incoming) || !incoming.length)
                 return;
-            const saved = saveLocalMasterStores(normalized);
-            setMasterStoreRevision((value) => value + 1);
-            console.info(`Master data toko diterapkan dari Convex: ${saved.length} baris.`);
+            const current = getEffectiveMasterStores();
+            if (current && current.length === incoming.length) {
+                const firstCur = current[0];
+                const firstInc = incoming[0];
+                if (firstCur && firstInc && (firstCur.siteCode4 || firstCur.siteCode) === (firstInc.siteCode4 || firstInc.siteCode || firstInc.code)) {
+                    const lastCur = current[current.length - 1];
+                    const lastInc = incoming[incoming.length - 1];
+                    if (lastCur && lastInc && (lastCur.siteCode4 || lastCur.siteCode) === (lastInc.siteCode4 || lastInc.siteCode || lastInc.code)) {
+                        return; // Already up to date, skip redundant processing!
+                    }
+                }
+            }
+            saveLocalMasterStores(incoming, { replace: true });
+            console.info(`Master data toko diterapkan dari remote: ${incoming.length} baris.`);
         };
         async function refreshRemoteMasterStores() {
             try {

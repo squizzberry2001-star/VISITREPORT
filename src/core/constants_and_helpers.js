@@ -272,7 +272,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v124';
+const APP_BUILD_VERSION = 'revamp327-modular-v125';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1177,23 +1177,59 @@ function mergeMasterStoreRows(existingRows, incomingRows) {
     });
     return Array.from(map.values()).sort((a, b) => a.siteDescr.localeCompare(b.siteDescr));
 }
-function readLocalMasterStores() {
-    const rawLocal = readJsonArray(MASTER_STORE_LOCAL_KEY);
-    if (!rawLocal || !rawLocal.length) {
-        return normalizeMasterStoreRows(MASTER_STORES);
-    }
-    // Always merge with base MASTER_STORES to ensure no store is ever dropped or lost!
-    return mergeMasterStoreRows(MASTER_STORES, rawLocal);
+
+let _CACHED_MASTER_STORES = null;
+let _CACHED_STORE_NAME_MAP = null;
+let _CACHED_STORE_CODE_MAP = null;
+
+function invalidateMasterStoreCache() {
+    _CACHED_MASTER_STORES = null;
+    _CACHED_STORE_NAME_MAP = null;
+    _CACHED_STORE_CODE_MAP = null;
 }
+
+function getEffectiveMasterStores() {
+    if (_CACHED_MASTER_STORES) {
+        return _CACHED_MASTER_STORES;
+    }
+    const rawLocal = readJsonArray(MASTER_STORE_LOCAL_KEY);
+    const list = (!rawLocal || !rawLocal.length)
+        ? normalizeMasterStoreRows(MASTER_STORES)
+        : mergeMasterStoreRows(MASTER_STORES, rawLocal);
+
+    const byName = new Map();
+    const byCode = new Map();
+    list.forEach(st => {
+        if (st.siteDescr) byName.set(normalize(st.siteDescr), st);
+        if (st.siteCode) {
+            byCode.set(normalize(st.siteCode), st);
+            const n = normalizeMasterStoreCode(st.siteCode);
+            if (n) byCode.set(n, st);
+        }
+        if (st.siteCode4) {
+            byCode.set(normalize(st.siteCode4), st);
+            const n4 = normalizeMasterStoreCode(st.siteCode4);
+            if (n4) byCode.set(n4, st);
+        }
+    });
+
+    _CACHED_STORE_NAME_MAP = byName;
+    _CACHED_STORE_CODE_MAP = byCode;
+    _CACHED_MASTER_STORES = list;
+    return list;
+}
+
+function readLocalMasterStores() {
+    return getEffectiveMasterStores();
+}
+
 function saveLocalMasterStores(rows, options = {}) {
     const incoming = Array.isArray(rows) ? rows : [];
-    const merged = options && options.replace ? normalizeMasterStoreRows(incoming) : mergeMasterStoreRows(readLocalMasterStores(), incoming);
+    const merged = options && options.replace ? normalizeMasterStoreRows(incoming) : mergeMasterStoreRows(getEffectiveMasterStores(), incoming);
     localStorage.setItem(MASTER_STORE_LOCAL_KEY, JSON.stringify(merged));
+    invalidateMasterStoreCache();
     window.dispatchEvent(new CustomEvent('rbv-master-store-change', { detail: merged }));
     return merged;
-}
-function getEffectiveMasterStores() {
-    return readLocalMasterStores();
 }
 async function downloadMasterStoreTemplateExcel() {
     const sampleRows = [
@@ -1271,6 +1307,7 @@ function getStoreLabel(item) {
 }
 function getStoresForBestie(bestieName) {
     const key = normalize(bestieName);
+    const effectiveStores = getEffectiveMasterStores();
     const assigned = BESTIE_ASSIGNMENTS
         .filter((item) => !key || normalize(item.bestieName) === key)
         .map((item) => {
@@ -1292,12 +1329,18 @@ function getStoresForBestie(bestieName) {
         if (typeof readAdminAssignedStores === 'function') {
             adminAssigned = readAdminAssignedStores()
                 .filter((item) => !key || normalize(item.bestieName) === key)
-                .map((item) => ({
-                    label: cleanText(item.storeName),
-                    source: 'admin-assigned',
-                    assignment: item,
-                    value: cleanText(item.storeName)
-                }))
+                .map((item) => {
+                    const rawLabel = cleanText(item.storeName);
+                    const master = findMasterStore(rawLabel) || (item.storeCode ? findMasterStore(item.storeCode) : null);
+                    const label = cleanText(master?.siteDescr || rawLabel);
+                    return {
+                        label,
+                        source: 'admin-assigned',
+                        assignment: item,
+                        master: master || undefined,
+                        value: label
+                    };
+                })
                 .filter((item) => item.label);
         }
     } catch (e) {
@@ -1319,12 +1362,15 @@ function getStoresForBestie(bestieName) {
     }
 
     const userStores = [...assigned, ...adminAssigned];
-    const otherStores = getEffectiveMasterStores().map((item) => ({
-        label: cleanText(item.siteDescr),
-        source: 'master',
-        master: item,
-        value: cleanText(item.siteDescr)
-    })).filter((item) => item.label && !userStores.some(u => normalize(u.label) === normalize(item.label)));
+    const userStoreSet = new Set(userStores.map(u => normalize(u.label)));
+    const otherStores = effectiveStores
+        .filter(item => cleanText(item.siteDescr) && !userStoreSet.has(normalize(item.siteDescr)))
+        .map(item => ({
+            label: cleanText(item.siteDescr),
+            source: 'master',
+            master: item,
+            value: cleanText(item.siteDescr)
+        }));
     
     const combined = [...userStores, ...approvedManual];
     const uniqueCombined = uniqueBy(combined, (item) => normalize(item.label)).sort((a, b) => a.label.localeCompare(b.label));
@@ -1347,35 +1393,32 @@ function findAssignmentStore(storeName, bestieName) {
     }) || BESTIE_ASSIGNMENTS.find((item) => normalize(item.storeName) === storeKey || normalize(item.assignmentStoreName) === storeKey) || null;
 }
 function findMasterStore(storeName) {
+    if (!storeName) return null;
+    const stores = getEffectiveMasterStores();
     const key = normalize(storeName);
-    if (!key)
-        return null;
-    const codeKey = normalizeMasterStoreCode(key);
-    const effectiveStores = getEffectiveMasterStores();
+    if (!key) return null;
 
-    // 1. Exact match on siteDescr, siteCode, or siteCode4
-    let found = effectiveStores.find((item) => 
-        normalize(item.siteDescr) === key || 
-        normalize(item.siteCode) === key || 
-        normalize(item.siteCode4) === key
-    );
-    if (found) return found;
-
-    // 2. Normalized code match (with 4-digit padding)
-    if (codeKey) {
-        found = effectiveStores.find((item) => 
-            normalizeMasterStoreCode(item.siteCode4) === codeKey || 
-            normalizeMasterStoreCode(item.siteCode) === codeKey
-        );
+    if (_CACHED_STORE_NAME_MAP) {
+        const found = _CACHED_STORE_NAME_MAP.get(key);
         if (found) return found;
     }
+    if (_CACHED_STORE_CODE_MAP) {
+        const foundCode = _CACHED_STORE_CODE_MAP.get(key);
+        if (foundCode) return foundCode;
+        const codeKey = normalizeMasterStoreCode(key);
+        if (codeKey) {
+            const foundNorm = _CACHED_STORE_CODE_MAP.get(codeKey);
+            if (foundNorm) return foundNorm;
+        }
+    }
 
-    // 3. Substring / contains description match
-    found = effectiveStores.find((item) => {
-        const itemDescr = normalize(item.siteDescr);
-        return itemDescr && (itemDescr.includes(key) || key.includes(itemDescr));
-    });
-    return found || null;
+    if (key.length >= 4) {
+        return stores.find(item => {
+            const d = normalize(item.siteDescr);
+            return d && (d.includes(key) || key.includes(d));
+        }) || null;
+    }
+    return null;
 }
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
