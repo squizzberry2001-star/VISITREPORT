@@ -1738,6 +1738,12 @@ async function runConvexQuery(functionName, args = {}) {
             rows.sort((a, b) => (b.updatedAt || b.updated_at || b.created_at || 0) - (a.updatedAt || a.updated_at || a.created_at || 0));
             return rows.slice(0, args?.limit || 200);
         } else if (functionName.includes('masterStores:listStores') || functionName.includes('listStores')) {
+            try {
+                const cfgDoc = await db.collection(cols.appSettings).doc('masterStores').get();
+                if (cfgDoc.exists && Array.isArray(cfgDoc.data()?.payload) && cfgDoc.data().payload.length > 0) {
+                    return cfgDoc.data().payload;
+                }
+            } catch (e) {}
             let query = db.collection(cols.masterStores);
             if (args && args.limit) query = query.limit(args.limit);
             const snapshot = await query.get();
@@ -1786,14 +1792,33 @@ async function runConvexMutation(functionName, args = {}) {
             await docRef.set({ ...p, updatedAt: Date.now(), _id: docRef.id }, { merge: true });
             return { ok: true };
         }
-        if (functionName.includes('masterStores:upsertMany')) {
+        if (functionName.includes('masterStores:upsertMany') || functionName.includes('masterStores:replaceStores')) {
             const stores = args.stores || args.payload || (Array.isArray(args) ? args : []);
-            const batch = db.batch();
-            stores.forEach(st => {
-                const docRef = db.collection(cols.masterStores).doc(st.code);
-                batch.set(docRef, { ...st, _id: docRef.id }, { merge: true });
-            });
-            await batch.commit();
+            if (!stores.length) return { ok: true };
+            for (let i = 0; i < stores.length; i += 200) {
+                const chunk = stores.slice(i, i + 200);
+                const batch = db.batch();
+                chunk.forEach(st => {
+                    const docId = cleanText(st.siteCode4 || st.siteCode || st.code || st.id || st.siteDescr);
+                    if (docId) {
+                        const docRef = db.collection(cols.masterStores).doc(docId);
+                        batch.set(docRef, { ...st, code: docId, _id: docId }, { merge: true });
+                    }
+                });
+                await batch.commit();
+            }
+            try {
+                const docRef = db.collection(cols.appSettings).doc('masterStores');
+                await docRef.set({
+                    key: 'masterStores',
+                    payload: stores,
+                    updatedAt: Date.now(),
+                    updatedBy: args.updatedBy || 'web',
+                    _id: 'masterStores'
+                }, { merge: true });
+            } catch (err) {
+                console.warn('Consolidated appSettings masterStores write warn:', err);
+            }
             return { ok: true };
         }
     } catch(err) { rememberRemoteSyncError(err, 'Firebase Firestore mutation'); console.error('Firestore Mutation Error:', err); return null; }
@@ -1816,7 +1841,18 @@ async function subscribeConvexQuery(functionName, args, onData, onError) {
         } else if (functionName.includes('appSettings:listConfigs') || functionName.includes('listConfigs')) {
             query = db.collection(cols.appSettings);
         } else if (functionName.includes('masterStores:listStores')) {
-            query = db.collection(cols.masterStores);
+            try {
+                const unsubDoc = db.collection(cols.appSettings).doc('masterStores').onSnapshot((doc) => {
+                    if (doc.exists && Array.isArray(doc.data()?.payload) && doc.data().payload.length > 0) {
+                        if (onData) onData(doc.data().payload);
+                    }
+                }, (err) => {
+                    console.warn('Realtime masterStores doc sub warn:', err);
+                });
+                return () => unsubDoc();
+            } catch (err) {
+                query = db.collection(cols.masterStores);
+            }
         }
         
         if (!query) {
@@ -2185,34 +2221,20 @@ async function syncMasterStoresToConvex(rows, options = {}) {
     if (!normalized.length)
         return false;
     if (!convexEnabled()) {
-        setRemoteSyncError('Convex belum aktif. Isi deploymentUrl di convex-config.js.');
+        setRemoteSyncError('Firebase belum aktif. Cek firebase-config.js.');
         return false;
     }
-    const config = getConvexConfig();
     try {
-        if (options.replace !== false) {
-            const mutationName = config.masterStoreReplaceMutation || 'masterStores:replaceStores';
-            const result = await runConvexMutation(mutationName, { stores: normalized, updatedBy: SESSION_ID });
-            if (result !== null)
-                return true;
-        }
+        const result = await runConvexMutation('masterStores:upsertMany', { stores: normalized, updatedBy: SESSION_ID });
+        if (result !== null)
+            return true;
     }
     catch (error) {
-        console.warn('Convex replace master store gagal, coba upsertMany:', error);
-    }
-    try {
-        const mutationName = config.masterStoreUpsertManyMutation || 'masterStores:upsertMany';
-        for (let index = 0; index < normalized.length; index += 200) {
-            const chunk = normalized.slice(index, index + 200);
-            await runConvexMutation(mutationName, { stores: chunk, updatedBy: SESSION_ID });
-        }
-        return true;
-    }
-    catch (error) {
-        setRemoteSyncError(error?.message || 'Convex master store sync gagal.');
-        console.warn('Convex master store sync gagal:', error);
+        setRemoteSyncError(error?.message || 'Firebase master store sync gagal.');
+        console.warn('Firebase master store sync gagal:', error);
         return false;
     }
+    return false;
 }
 function remoteSaveSuccessText(label) {
     return `${label} berhasil disimpan dan disinkronkan ke ${remoteSyncLabel()}.`;
@@ -4107,21 +4129,13 @@ function SecretMonitorPanel({ open, onClose, history, welcomeConfig, onWelcomeCo
                 throw new Error('Tidak ada baris master toko valid. Pastikan header sesuai template.');
             const saved = saveLocalMasterStores(parsedRows);
             setMasterStoreRows(saved);
-            setMasterStoreStatus(`Upload berhasil: ${saved.length} toko terbaca lokal. Publish ke Convex untuk semua device...`);
+            setMasterStoreStatus(`Upload berhasil: ${saved.length} toko tersimpan lokal & diperbarui. Menyinkronkan ke Firebase untuk semua device...`);
             const ok = await syncMasterStoresToConvex(saved, { replace: true });
             if (ok) {
-                const remoteRows = await fetchMasterStoresFromConvex();
-                if (remoteRows && remoteRows.length) {
-                    const confirmed = saveLocalMasterStores(remoteRows);
-                    setMasterStoreRows(confirmed);
-                    setMasterStoreStatus(`Upload + publish Convex selesai: ${confirmed.length} toko aktif untuk semua device.`);
-                }
-                else {
-                    setMasterStoreStatus(`Upload + sync Convex selesai: ${saved.length} toko terkirim. Device lain akan menarik data saat reload/buka ulang.`);
-                }
+                setMasterStoreStatus(`Upload + publish Firebase berhasil! Total ${saved.length} toko aktif dan tersinkronkan ke semua device.`);
             }
             else {
-                setMasterStoreStatus(`Upload hanya tersimpan lokal (${saved.length} toko), belum masuk Convex: ${LAST_REMOTE_SYNC_ERROR || 'cek config Convex / deploy function masterStores.'}`);
+                setMasterStoreStatus(`Upload tersimpan lokal (${saved.length} toko), sinkronisasi Firebase gagal: ${LAST_REMOTE_SYNC_ERROR || 'cek konfigurasi Firebase.'}`);
             }
         }
         catch (error) {

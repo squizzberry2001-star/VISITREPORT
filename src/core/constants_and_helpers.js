@@ -272,7 +272,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v123';
+const APP_BUILD_VERSION = 'revamp327-modular-v124';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1097,27 +1097,34 @@ function pickMasterStoreValue(row, keys, fallback = '') {
 }
 function normalizeMasterStoreRow(row, index = 0) {
     const source = row && typeof row === 'object' ? row : {};
-    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Site', 'SITE', 'Kode Toko', 'Kode Store', 'Store Code', 'kodeToko', 'kodeStore', 'storeCode', 'store_code', 'site']));
-    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'Site', 'SITE', 'code', 'kode', 'kodeStore', 'storeCode']));
-    const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'Site Description', 'SITE_DESCR', 'Nama Toko', 'Nama Store', 'Store Name', 'namaToko', 'namaStore', 'storeName', 'store_name', 'name']));
+    const siteCode4 = normalizeMasterStoreCode(pickMasterStoreValue(source, ['siteCode4', 'Site Code 4', 'SITE_CODE4', 'Site', 'SITE', 'Kode Toko', 'Kode Store', 'Store Code', 'Site Code', 'kodeToko', 'kodeStore', 'storeCode', 'store_code', 'site_code', 'site', 'code', 'kode']));
+    const siteCode = cleanText(pickMasterStoreValue(source, ['siteCode', 'Site Code', 'SITE_CODE', 'Site', 'SITE', 'code', 'kode', 'kodeStore', 'storeCode', 'siteCode4']));
+    const siteDescr = cleanText(pickMasterStoreValue(source, ['siteDescr', 'Site Descr', 'Site Description', 'SITE_DESCR', 'Nama Toko', 'Nama Store', 'Store Name', 'Site Name', 'namaToko', 'namaStore', 'storeName', 'siteName', 'store_name', 'name', 'toko', 'store']));
     const status = cleanText(pickMasterStoreValue(source, ['operationalStatus', 'Operational Status', 'status', 'Status'], 'active')).toLowerCase();
     const typeStore = cleanText(pickMasterStoreValue(source, ['type', 'Type', 'typeStore', 'Type Store', 'TYPE STORE', 'Jenis', 'Jenis Store', 'jenis', 'formatStore', 'Format Store']));
     const emailStore = cleanText(pickMasterStoreValue(source, ['emailStore', 'Email Store', 'EMAIL STORE', 'Email Toko', 'Email', 'EMAIL', 'storeEmail', 'Store Email', 'email_store', 'mailStore', 'Mail Store'])).toLowerCase();
+    const storeHead = cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'STORE HEAD', 'Kepala Toko', 'kepalaToko', 'headStore', 'Store Leader', 'storeLeader']));
+    const areaManager = cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'AREA MANAGER', 'Nama Area Manager', 'am', 'AM']));
+    const areaManagerEmail = cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'Email Area Manager', 'amEmail', 'AM Email'])).toLowerCase();
+    const regionalManager = cleanText(pickMasterStoreValue(source, ['regionalManager', 'Regional Manager', 'REGIONAL MANAGER', 'Nama Regional Manager', 'rm', 'RM']));
+    const regionalManagerEmail = cleanText(pickMasterStoreValue(source, ['regionalManagerEmail', 'Regional Manager Email', 'Email Regional Manager', 'rmEmail', 'RM Email'])).toLowerCase();
+    const address = cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'Alamat Store', 'Alamat Toko', 'alamat', 'alamatStore', 'alamatToko', 'storeAddress', 'store_address']));
     return {
         id: cleanText(source.id || source._id || siteCode4 || siteCode || `master-${index}`),
-        siteCode,
-        siteCode4,
+        siteCode: siteCode || siteCode4,
+        siteCode4: siteCode4 || normalizeMasterStoreCode(siteCode),
         siteDescr,
         type: typeStore,
         typeStore,
         city: cleanText(pickMasterStoreValue(source, ['city', 'City', 'Kota', 'kota'])),
-        address: cleanText(pickMasterStoreValue(source, ['address', 'Address', 'Alamat', 'Alamat Store', 'alamat', 'alamatStore'])),
+        address,
+        storeAddress: address,
         emailStore,
-        storeHead: cleanText(pickMasterStoreValue(source, ['storeHead', 'Store Head', 'STORE HEAD', 'Kepala Toko', 'kepalaToko', 'headStore'])),
-        areaManager: cleanText(pickMasterStoreValue(source, ['areaManager', 'Area Manager', 'AREA MANAGER', 'Nama Area Manager', 'am', 'AM'])),
-        areaManagerEmail: cleanText(pickMasterStoreValue(source, ['areaManagerEmail', 'Area Manager Email', 'Email Area Manager', 'amEmail', 'AM Email'])).toLowerCase(),
-        regionalManager: cleanText(pickMasterStoreValue(source, ['regionalManager', 'Regional Manager', 'REGIONAL MANAGER', 'Nama Regional Manager', 'rm', 'RM'])),
-        regionalManagerEmail: cleanText(pickMasterStoreValue(source, ['regionalManagerEmail', 'Regional Manager Email', 'Email Regional Manager', 'rmEmail', 'RM Email'])).toLowerCase(),
+        storeHead,
+        areaManager,
+        areaManagerEmail,
+        regionalManager,
+        regionalManagerEmail,
         operationalStatus: ['inactive', 'temporary_closed'].includes(status) ? status : 'active',
         latitude: cleanText(pickMasterStoreValue(source, ['latitude', 'lat'])),
         longitude: cleanText(pickMasterStoreValue(source, ['longitude', 'lng', 'lon'])),
@@ -1129,15 +1136,61 @@ function normalizeMasterStoreRows(rows) {
     const input = Array.isArray(rows) ? rows : [];
     return uniqueBy(input.map((row, index) => normalizeMasterStoreRow(row, index)).filter((row) => row.siteDescr || row.siteCode4 || row.siteCode), (row) => normalize(row.siteCode4 || row.siteCode || row.siteDescr));
 }
-function readLocalMasterStores() {
-    const local = normalizeMasterStoreRows(readJsonArray(MASTER_STORE_LOCAL_KEY));
-    return local.length ? local : normalizeMasterStoreRows(MASTER_STORES);
+function mergeMasterStoreRows(existingRows, incomingRows) {
+    const base = normalizeMasterStoreRows(existingRows);
+    const updates = normalizeMasterStoreRows(incomingRows);
+    const map = new Map();
+    base.forEach(item => {
+        const key = normalize(item.siteCode4 || item.siteCode || item.siteDescr);
+        if (key) map.set(key, item);
+    });
+    updates.forEach(item => {
+        const key = normalize(item.siteCode4 || item.siteCode || item.siteDescr);
+        if (key) {
+            const prev = map.get(key) || {};
+            map.set(key, {
+                ...prev,
+                ...item,
+                siteDescr: cleanText(item.siteDescr) || prev.siteDescr || '',
+                siteCode: cleanText(item.siteCode) || prev.siteCode || '',
+                siteCode4: cleanText(item.siteCode4) || prev.siteCode4 || '',
+                address: cleanText(item.address) || prev.address || '',
+                storeAddress: cleanText(item.address || item.storeAddress) || prev.storeAddress || '',
+                storeHead: cleanText(item.storeHead) || prev.storeHead || '',
+                areaManager: cleanText(item.areaManager) || prev.areaManager || '',
+                areaManagerEmail: cleanText(item.areaManagerEmail) || prev.areaManagerEmail || '',
+                regionalManager: cleanText(item.regionalManager) || prev.regionalManager || '',
+                regionalManagerEmail: cleanText(item.regionalManagerEmail) || prev.regionalManagerEmail || '',
+                city: cleanText(item.city) || prev.city || '',
+                emailStore: cleanText(item.emailStore) || prev.emailStore || '',
+                latitude: cleanText(item.latitude) || prev.latitude || '',
+                longitude: cleanText(item.longitude) || prev.longitude || '',
+                operationalStatus: cleanText(item.operationalStatus) || prev.operationalStatus || 'active',
+                type: cleanText(item.type) || prev.type || '',
+                typeStore: cleanText(item.typeStore || item.type) || prev.typeStore || '',
+                updatedAt: item.updatedAt || new Date().toISOString()
+            });
+        } else {
+            const fallbackKey = normalize(item.siteDescr);
+            if (fallbackKey) map.set(fallbackKey, item);
+        }
+    });
+    return Array.from(map.values()).sort((a, b) => a.siteDescr.localeCompare(b.siteDescr));
 }
-function saveLocalMasterStores(rows) {
-    const normalized = normalizeMasterStoreRows(rows);
-    localStorage.setItem(MASTER_STORE_LOCAL_KEY, JSON.stringify(normalized));
-    window.dispatchEvent(new CustomEvent('rbv-master-store-change', { detail: normalized }));
-    return normalized;
+function readLocalMasterStores() {
+    const rawLocal = readJsonArray(MASTER_STORE_LOCAL_KEY);
+    if (!rawLocal || !rawLocal.length) {
+        return normalizeMasterStoreRows(MASTER_STORES);
+    }
+    // Always merge with base MASTER_STORES to ensure no store is ever dropped or lost!
+    return mergeMasterStoreRows(MASTER_STORES, rawLocal);
+}
+function saveLocalMasterStores(rows, options = {}) {
+    const incoming = Array.isArray(rows) ? rows : [];
+    const merged = options && options.replace ? normalizeMasterStoreRows(incoming) : mergeMasterStoreRows(readLocalMasterStores(), incoming);
+    localStorage.setItem(MASTER_STORE_LOCAL_KEY, JSON.stringify(merged));
+    window.dispatchEvent(new CustomEvent('rbv-master-store-change', { detail: merged }));
+    return merged;
 }
 function getEffectiveMasterStores() {
     return readLocalMasterStores();
@@ -1181,10 +1234,10 @@ async function parseMasterStoreExcelFile(file) {
                 const normalizeHeader = (value) => normalize(String(value || '')).replace(/\s+/g, '');
                 const headerIndex = matrix.findIndex((row) => {
                     const keys = (row || []).map(normalizeHeader);
-                    const hasCode = keys.includes('site') || keys.includes('sitecode') || keys.includes('sitecode4') || keys.includes('kodetoko') || keys.includes('kodestore') || keys.includes('storecode');
-                    const hasName = keys.includes('sitedescr') || keys.includes('sitedescription') || keys.includes('namatoko') || keys.includes('namastore') || keys.includes('storename');
-                    const hasUsefulDetail = keys.includes('typestore') || keys.includes('emailstore') || keys.includes('emailtoko') || keys.includes('storehead') || keys.includes('areamanager') || keys.includes('regionalmanager');
-                    return hasCode && (hasName || hasUsefulDetail);
+                    const hasCode = keys.includes('site') || keys.includes('sitecode') || keys.includes('sitecode4') || keys.includes('kodetoko') || keys.includes('kodestore') || keys.includes('storecode') || keys.includes('code') || keys.includes('kode');
+                    const hasName = keys.includes('sitedescr') || keys.includes('sitedescription') || keys.includes('namatoko') || keys.includes('namastore') || keys.includes('storename') || keys.includes('sitename') || keys.includes('store') || keys.includes('nama') || keys.includes('toko');
+                    const hasUsefulDetail = keys.includes('typestore') || keys.includes('emailstore') || keys.includes('emailtoko') || keys.includes('storehead') || keys.includes('areamanager') || keys.includes('regionalmanager') || keys.includes('alamat') || keys.includes('address');
+                    return (hasCode && (hasName || hasUsefulDetail)) || (hasName && hasUsefulDetail);
                 });
                 let rows;
                 if (headerIndex >= 0) {
@@ -1220,12 +1273,18 @@ function getStoresForBestie(bestieName) {
     const key = normalize(bestieName);
     const assigned = BESTIE_ASSIGNMENTS
         .filter((item) => !key || normalize(item.bestieName) === key)
-        .map((item) => ({
-        label: getStoreLabel(item),
-        source: 'assignment',
-        assignment: item,
-        value: getStoreLabel(item)
-    }))
+        .map((item) => {
+            const rawLabel = getStoreLabel(item);
+            const master = findMasterStore(rawLabel) || (item.storeCode ? findMasterStore(item.storeCode) : null);
+            const label = cleanText(master?.siteDescr || rawLabel);
+            return {
+                label,
+                source: 'assignment',
+                assignment: item,
+                master: master || undefined,
+                value: label
+            };
+        })
         .filter((item) => item.label);
 
     let adminAssigned = [];
@@ -1291,7 +1350,32 @@ function findMasterStore(storeName) {
     const key = normalize(storeName);
     if (!key)
         return null;
-    return getEffectiveMasterStores().find((item) => normalize(item.siteDescr) === key || normalize(item.siteCode) === key || normalize(item.siteCode4) === key) || null;
+    const codeKey = normalizeMasterStoreCode(key);
+    const effectiveStores = getEffectiveMasterStores();
+
+    // 1. Exact match on siteDescr, siteCode, or siteCode4
+    let found = effectiveStores.find((item) => 
+        normalize(item.siteDescr) === key || 
+        normalize(item.siteCode) === key || 
+        normalize(item.siteCode4) === key
+    );
+    if (found) return found;
+
+    // 2. Normalized code match (with 4-digit padding)
+    if (codeKey) {
+        found = effectiveStores.find((item) => 
+            normalizeMasterStoreCode(item.siteCode4) === codeKey || 
+            normalizeMasterStoreCode(item.siteCode) === codeKey
+        );
+        if (found) return found;
+    }
+
+    // 3. Substring / contains description match
+    found = effectiveStores.find((item) => {
+        const itemDescr = normalize(item.siteDescr);
+        return itemDescr && (itemDescr.includes(key) || key.includes(itemDescr));
+    });
+    return found || null;
 }
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
@@ -1305,29 +1389,43 @@ function getStoreWebDetail(storeName) {
         }
     } catch (e) {}
     const approvedManual = findApprovedManualStore(storeName);
-    const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName || adminAssignment?.storeName || approvedManual?.siteDescr || approvedManual?.storeName);
+    const master = findMasterStore(storeName) ||
+        (assignment?.storeCode ? findMasterStore(assignment.storeCode) : null) ||
+        (adminAssignment?.storeCode ? findMasterStore(adminAssignment.storeCode) : null) ||
+        (assignment?.storeName ? findMasterStore(assignment.storeName) : null) ||
+        (assignment?.assignmentStoreName ? findMasterStore(assignment.assignmentStoreName) : null) ||
+        (approvedManual?.siteDescr ? findMasterStore(approvedManual.siteDescr) : null) ||
+        (approvedManual?.siteCode ? findMasterStore(approvedManual.siteCode) : null) ||
+        null;
+
     const merged = {
         ...(assignment || {}),
         ...(adminAssignment ? { storeName: adminAssignment.storeName, siteDescr: adminAssignment.storeName, siteCode: adminAssignment.storeCode, siteCode4: adminAssignment.storeCode } : {}),
         ...(master || {}),
         ...(approvedManual || {})
     };
-    if (!merged.siteDescr)
-        merged.siteDescr = approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || adminAssignment?.storeName || storeName || '';
-    if (!merged.address)
-        merged.address = assignment?.storeAddress || '';
-    if (!merged.siteCode && (assignment?.storeCode || adminAssignment?.storeCode))
-        merged.siteCode = assignment?.storeCode || adminAssignment?.storeCode;
-    if (!merged.siteCode4 && (assignment?.storeCode || adminAssignment?.storeCode))
-        merged.siteCode4 = assignment?.storeCode || adminAssignment?.storeCode;
-    if (!merged.storeHead && assignment?.storeHead)
-        merged.storeHead = assignment.storeHead;
-    if (!merged.areaManager && assignment?.areaManager)
-        merged.areaManager = assignment.areaManager;
-    if (!merged.regionalManager && assignment?.regionalManager)
-        merged.regionalManager = assignment.regionalManager;
-    if (!merged.city && assignment?.city)
-        merged.city = assignment.city;
+
+    // Master store details take top priority whenever available
+    merged.siteDescr = cleanText(master?.siteDescr || approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || adminAssignment?.storeName || storeName || '');
+    merged.storeName = merged.siteDescr;
+    merged.siteCode = cleanText(master?.siteCode || master?.siteCode4 || assignment?.storeCode || adminAssignment?.storeCode || '');
+    merged.siteCode4 = cleanText(master?.siteCode4 || normalizeMasterStoreCode(merged.siteCode));
+    merged.storeCode = merged.siteCode4 || merged.siteCode;
+    merged.storeHead = cleanText(master?.storeHead || assignment?.storeHead || '');
+    merged.areaManager = cleanText(master?.areaManager || assignment?.areaManager || '');
+    merged.areaManagerEmail = cleanText(master?.areaManagerEmail || '');
+    merged.regionalManager = cleanText(master?.regionalManager || assignment?.regionalManager || '');
+    merged.regionalManagerEmail = cleanText(master?.regionalManagerEmail || '');
+    merged.address = cleanText(master?.address || assignment?.storeAddress || '');
+    merged.storeAddress = merged.address;
+    merged.city = cleanText(master?.city || assignment?.city || '');
+    merged.type = cleanText(master?.type || master?.typeStore || assignment?.type || '');
+    merged.typeStore = merged.type;
+    merged.emailStore = cleanText(master?.emailStore || '');
+    merged.latitude = cleanText(master?.latitude || '');
+    merged.longitude = cleanText(master?.longitude || '');
+    merged.operationalStatus = cleanText(master?.operationalStatus || 'active');
+
     return merged;
 }
 window.getStoreWebDetail = getStoreWebDetail;

@@ -82,7 +82,7 @@ function AppBottomNav({ screen, setScreen, visit, onNewVisit, onClearData, onTit
     );
 }
 const MobileBottomNav = AppBottomNav;
-function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, onDashboard }) {
+function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, onDashboard, masterStoreRevision }) {
     const [viewMode, setViewMode] = useState('section');
     
     useEffect(() => {
@@ -100,7 +100,7 @@ function VisitWorkspace({ visit, update, activeSection, goSection, onPreview, on
     if (!visit)
         return React.createElement("main", { className: "workspace-page w-full px-4 py-8 lg:px-8 lg:pb-8", style: { paddingBottom: '220px' } },
             React.createElement(EmptyState, { icon: "clipboard", title: "Belum ada visit aktif" }));
-    const screens = [React.createElement(VisitSetupSection, { visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update })];
+    const screens = [React.createElement(VisitSetupSection, { key: "setup-" + (masterStoreRevision || 0), visit: visit, update: update }), React.createElement(GeneralInfoSection, { visit: visit, update: update }), React.createElement(QscResultSection, { visit: visit, update: update }), React.createElement(ObservationSection, { visit: visit, update: update }), React.createElement(EvidenceSection, { visit: visit, update: update })];
     const progress = visitProgress(visit, activeSection);
     const overallProgress = Math.round((SECTION_DEFS.reduce((sum, _, idx) => sum + visitProgress(visit, idx), 0) / (SECTION_DEFS.length * 100)) * 100);
     

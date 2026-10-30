@@ -1476,6 +1476,12 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         const d = v.visitDate || v.updatedAt ? new Date(v.visitDate || v.updatedAt).toISOString().slice(0, 10) : '';
         return d === todayStr;
     }).length;
+    const [storeRevision, setStoreRevision] = useState(0);
+    useEffect(() => {
+        const handler = () => setStoreRevision(v => v + 1);
+        window.addEventListener('rbv-master-store-change', handler);
+        return () => window.removeEventListener('rbv-master-store-change', handler);
+    }, []);
     useEffect(() => {
         if ('geolocation' in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -1513,7 +1519,7 @@ function DashboardPage({ activeTab = 'home', onTabChange, history, storageLabel,
         }).filter(s => s.distance <= 10)
           .sort((a, b) => a.distance - b.distance)
           .slice(0, 10); // show up to 10 nearest stores within 10km
-    }, [userLocation]);
+    }, [userLocation, storeRevision]);
 
     const restoreInputRef = useRef(null);
     const visibleHistory = RBV_ULTRA_LITE_CAMERA_MODE ? history.slice(0, historyRenderLimit) : history;
