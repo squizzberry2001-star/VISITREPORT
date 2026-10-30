@@ -705,7 +705,11 @@ function ProgressMissingInfo({ visit, activeSection = null, maxItems = 4, compac
 function VisitSetupSection({ visit, update }) {
     // Revamp 229: master store can update from Convex while app is open.
     // Avoid memoizing against only visit fields so latest remote master data is visible immediately.
-    const storeOptions = getStoresForBestie(visit.nama).map((item) => ({ label: item.label, value: item.value || item.label }));
+    const storeOptions = getStoresForBestie(visit.nama).map((item) => ({
+        label: item.label,
+        value: item.value || item.label,
+        disabled: !!item.disabled
+    }));
     const baseDetail = getStoreWebDetail(visit.store);
     const manualDetail = visit.manualStoreDetail || {};
     const detail = { ...baseDetail, ...manualDetail, siteDescr: visit.store || manualDetail.siteDescr || baseDetail.siteDescr };
@@ -713,7 +717,8 @@ function VisitSetupSection({ visit, update }) {
     const detailValue = (key, fallback = '') => manualDetail[key] ?? fallback ?? '';
     function handleBestieChange(value) {
         const stores = getStoresForBestie(value);
-        update({ nama: value, store: stores[0]?.label || '', manualStoreDetail: {} });
+        const validStore = stores.find((item) => item.value !== '___SEPARATOR___' && !item.disabled);
+        update({ nama: value, store: validStore?.label || '', manualStoreDetail: {} });
     }
     function handleStoreChange(value) {
         update({ store: value, manualStoreDetail: {} });

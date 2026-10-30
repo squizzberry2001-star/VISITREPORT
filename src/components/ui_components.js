@@ -581,6 +581,9 @@ function SelectInput({ children, className = '', ...props }) {
 }
 function SelectField({ label, value, options, onChange, placeholder = 'Pilih', required, icon, disabled }) {
     const normalizedOptions = (options || []).map((item) => typeof item === 'string' ? { label: item, value: item } : item);
+    if (value && !normalizedOptions.some((item) => (item.value || item.label) === value)) {
+        normalizedOptions.unshift({ label: value, value: value });
+    }
     return (React.createElement(Field, { label: label, required: required },
         React.createElement("div", { className: "select-field-wrap relative" },
             icon ? React.createElement("span", { className: "select-field-icon pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 text-slate-400" },

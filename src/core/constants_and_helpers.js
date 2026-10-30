@@ -272,7 +272,7 @@ function savePdfSettings(settings) {
     return next;
 }
 const SESSION_ID = `react_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-const APP_BUILD_VERSION = 'revamp327-modular-v122';
+const APP_BUILD_VERSION = 'revamp327-modular-v123';
 const APP_VERSION_KEY = 'rbv_app_version_v1';
 const APP_RELOAD_LOCK_KEY = 'rbv_auto_reload_lock_v1';
 const VERSION_ENDPOINT = 'version.json';
@@ -1227,13 +1227,39 @@ function getStoresForBestie(bestieName) {
         value: getStoreLabel(item)
     }))
         .filter((item) => item.label);
-    const approvedManual = readApprovedManualStores().map((item) => ({
-        label: cleanText(item.storeName || item.siteDescr),
-        source: 'manual-approved',
-        master: item,
-        value: cleanText(item.storeName || item.siteDescr)
-    })).filter((item) => item.label);
-    const userStores = assigned.length ? assigned : fallback;
+
+    let adminAssigned = [];
+    try {
+        if (typeof readAdminAssignedStores === 'function') {
+            adminAssigned = readAdminAssignedStores()
+                .filter((item) => !key || normalize(item.bestieName) === key)
+                .map((item) => ({
+                    label: cleanText(item.storeName),
+                    source: 'admin-assigned',
+                    assignment: item,
+                    value: cleanText(item.storeName)
+                }))
+                .filter((item) => item.label);
+        }
+    } catch (e) {
+        adminAssigned = [];
+    }
+
+    let approvedManual = [];
+    try {
+        if (typeof readApprovedManualStores === 'function') {
+            approvedManual = readApprovedManualStores().map((item) => ({
+                label: cleanText(item.storeName || item.siteDescr),
+                source: 'manual-approved',
+                master: item,
+                value: cleanText(item.storeName || item.siteDescr)
+            })).filter((item) => item.label);
+        }
+    } catch (e) {
+        approvedManual = [];
+    }
+
+    const userStores = [...assigned, ...adminAssigned];
     const otherStores = getEffectiveMasterStores().map((item) => ({
         label: cleanText(item.siteDescr),
         source: 'master',
@@ -1269,21 +1295,31 @@ function findMasterStore(storeName) {
 }
 function getStoreWebDetail(storeName) {
     const assignment = findAssignmentStore(storeName);
+    let adminAssignment = null;
+    try {
+        const storeKey = normalize(storeName);
+        if (storeKey && typeof readAdminAssignedStores === 'function') {
+            adminAssignment = readAdminAssignedStores().find(item => 
+                normalize(item.storeName) === storeKey || normalize(item.storeCode) === storeKey
+            ) || null;
+        }
+    } catch (e) {}
     const approvedManual = findApprovedManualStore(storeName);
-    const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName || approvedManual?.siteDescr || approvedManual?.storeName);
+    const master = findMasterStore(storeName || assignment?.storeName || assignment?.assignmentStoreName || adminAssignment?.storeName || approvedManual?.siteDescr || approvedManual?.storeName);
     const merged = {
         ...(assignment || {}),
+        ...(adminAssignment ? { storeName: adminAssignment.storeName, siteDescr: adminAssignment.storeName, siteCode: adminAssignment.storeCode, siteCode4: adminAssignment.storeCode } : {}),
         ...(master || {}),
         ...(approvedManual || {})
     };
     if (!merged.siteDescr)
-        merged.siteDescr = approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || storeName || '';
+        merged.siteDescr = approvedManual?.storeName || assignment?.storeName || assignment?.assignmentStoreName || adminAssignment?.storeName || storeName || '';
     if (!merged.address)
         merged.address = assignment?.storeAddress || '';
-    if (!merged.siteCode && assignment?.storeCode)
-        merged.siteCode = assignment.storeCode;
-    if (!merged.siteCode4 && assignment?.storeCode)
-        merged.siteCode4 = assignment.storeCode;
+    if (!merged.siteCode && (assignment?.storeCode || adminAssignment?.storeCode))
+        merged.siteCode = assignment?.storeCode || adminAssignment?.storeCode;
+    if (!merged.siteCode4 && (assignment?.storeCode || adminAssignment?.storeCode))
+        merged.siteCode4 = assignment?.storeCode || adminAssignment?.storeCode;
     if (!merged.storeHead && assignment?.storeHead)
         merged.storeHead = assignment.storeHead;
     if (!merged.areaManager && assignment?.areaManager)
@@ -1346,12 +1382,15 @@ function createVisit(bestieName = '', storeName = '') {
     const detail = getStoreWebDetail(storeName);
     const login = readBestieLogin();
     const resolvedBestie = cleanText(bestieName, login.name || '');
+    const foundBestie = (login.name && normalize(login.name) === normalize(resolvedBestie))
+        ? login
+        : (getAllBesties().find((b) => normalize(b.name) === normalize(resolvedBestie)) || null);
     const now = Date.now();
     return {
         id: `visit_${now}_${Math.random().toString(36).slice(2, 8)}`,
         createdAt: now,
         updatedAt: now,
-        bestieNik: login.name && normalize(login.name) === normalize(resolvedBestie) ? login.nik : '',
+        bestieNik: foundBestie ? (foundBestie.nik || '') : '',
         nama: resolvedBestie,
         store: cleanText(storeName || detail.siteDescr),
         tanggal: new Date().toISOString().slice(0, 10),

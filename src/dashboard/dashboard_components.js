@@ -2157,13 +2157,19 @@ function NewVisitModal({ open, onClose, onCreate }) {
     const [manualRegionalManager, setManualRegionalManager] = useState('');
     const [manualAddress, setManualAddress] = useState('');
     const [manualNote, setManualNote] = useState('');
-    const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({ label: item.label, value: item.value || item.label })), [bestieName]);
+    const storeOptions = useMemo(() => getStoresForBestie(bestieName).map((item) => ({
+        label: item.label,
+        value: item.value || item.label,
+        disabled: !!item.disabled
+    })), [bestieName]);
     useEffect(() => {
         if (!open)
             return;
         const login = readBestieLogin();
         const initialBestie = login.name || BESTIE_NAMES[0] || '';
-        const initialStore = getStoresForBestie(initialBestie)[0]?.label || '';
+        const options = getStoresForBestie(initialBestie);
+        const validStore = options.find((item) => item.value !== '___SEPARATOR___' && !item.disabled);
+        const initialStore = validStore?.label || '';
         setBestieName(initialBestie);
         setStoreName(initialStore);
         setManualOpen(false);
@@ -2177,7 +2183,8 @@ function NewVisitModal({ open, onClose, onCreate }) {
     useEffect(() => {
         const options = getStoresForBestie(bestieName);
         if (!storeName || !options.some((item) => normalize(item.label) === normalize(storeName))) {
-            setStoreName(options[0]?.label || '');
+            const validStore = options.find((item) => item.value !== '___SEPARATOR___' && !item.disabled);
+            setStoreName(validStore?.label || '');
         }
     }, [bestieName]);
     function submitManualRequest() {
